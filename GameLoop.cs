@@ -8,6 +8,12 @@ internal static class GameLoop
         // Initialize the deck with two decks of cards
         List<Card> deck = InitializeDeck();
 
+        Console.WriteLine("Display the deck (unshuffled):");
+        foreach (var card in deck)
+        {
+            Console.WriteLine(card.DisplayValue);
+        }
+
         // Shuffle the deck
         ShuffleDeck(deck);
 
@@ -33,19 +39,28 @@ internal static class GameLoop
     }
 
     // Helper method to initialize the deck
-    
-    private static List<Card> InitializeDeck()
+
+    private static List<Card> InitializeDeck(int numberOfDecks = 2)
     {
         List<Card> deck = [];
-        string[] suits = ["Hearts", "Diamonds", "Clubs", "Spades"];
-        string[] ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King", "Ace"];
+        var suits = Common.CardSuits_NoJokers();
+        var ranks = Common.CardRankCodes_NoJokers();
 
-        foreach (string suit in suits)
+        foreach (CardSuit suit in suits)
         {
-            foreach (string rank in ranks)
+            foreach (CardRank rank in ranks)
             {
-                deck.Add(new Card { Suit = suit, Rank = rank });
+                for (var i = 0; i < numberOfDecks; i++)
+                {
+                    deck.Add(new Card(rank, suit));
+                }
             }
+        }
+
+        for (var i = 0; i < numberOfDecks; i++)
+        {
+            deck.Add(new Card(CardRank.Joker, CardColor.Red));
+            deck.Add(new Card(CardRank.Joker, CardColor.Black));
         }
 
         return deck;
