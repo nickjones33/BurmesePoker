@@ -10,9 +10,14 @@ internal static class GameLoop
         table.Players = InitializePlayers();
         table.DealCardsToPlayers(13);
         table.SetCurrentRoundMoneyCards();
+        table.MarkDeckAndPlayerMoneyCards();
 
         Console.WriteLine($"MoneyCards: {table.CurrentRoundMoneyCards.First().DisplayValue} and {table.CurrentRoundMoneyCards.Last().DisplayValue}");
-
+        Console.WriteLine("Deck:");
+        foreach (Card card in table.Deck)
+        {
+            Console.WriteLine(card.DisplayValue);
+        }
         foreach (Player player in table.Players)
         {
             Console.WriteLine($"{player.Name} has {player.Hand.Count} cards and {player.Money} money. They start with the following cards:");
@@ -26,20 +31,13 @@ internal static class GameLoop
         bool gameIsOver = false;
         while (!gameIsOver)
         {
-            // Implement the game logic here, including player turns, drawing, discarding, sets, sequences, and scoring.
-            // You would need to handle user input and update the game state accordingly.
-            // This code is a simplified placeholder for the game loop.
-            Console.WriteLine("Game loop (your logic here)");
-
-            // Set gameIsOver to true when the game is finished.
-            // For example, when a player goes out or after a certain number of rounds.
+            
             gameIsOver = true;
         }
 
-        Console.WriteLine("Game over. Display final scores and determine the winner.");
+        Console.WriteLine("Game over.");
     }
 
-    // Helper method to initialize players
     private static List<Player> InitializePlayers() => [
         new Player("Su Htwe", 100),
         new Player("Aung", 100),
@@ -47,6 +45,4 @@ internal static class GameLoop
         new Player("Cobra", 100),
         new Player("Nick", 100),
     ];
-
-    
 }

@@ -5,10 +5,10 @@ internal class Deck : List<Card>
     internal Deck() : base() { }
     internal Deck(IEnumerable<Card> collection) : base(collection) { }
 
-    internal void Shuffle()
+    internal Deck Shuffle()
     {
         Random random = new();
-        this.OrderBy(x => random.Next());
+        return new(this.OrderBy(x => random.Next()));
     }
 
     internal Card DrawFromTop()
