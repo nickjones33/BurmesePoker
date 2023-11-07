@@ -4,15 +4,14 @@ internal static class GameLoop
     internal static void Main()
     {
         Console.WriteLine("Welcome to Burmese Poker!");
-        Table table = new()
-        {
-            Deck = CardFactory.MakeDecks(2)
-        };
-        Common.ShuffleDeck(table.Deck);
-        Console.WriteLine($"There are {table.Deck.Count} cards in the deck.");
 
+        Table table = new();
+        table.SetupDeck();
         table.Players = InitializePlayers();
-        DealCardsToPlayers(table.Deck, table.Players, 13);
+        table.DealCardsToPlayers(13);
+        table.SetCurrentRoundMoneyCards();
+
+        Console.WriteLine($"MoneyCards: {table.CurrentRoundMoneyCards.First().DisplayValue} and {table.CurrentRoundMoneyCards.Last().DisplayValue}");
 
         foreach (Player player in table.Players)
         {
@@ -49,15 +48,5 @@ internal static class GameLoop
         new Player("Nick", 100),
     ];
 
-    private static void DealCardsToPlayers(List<Card> deck, List<Player> players, int cardsPerPlayer)
-    {
-        for (int i = 0; i < cardsPerPlayer; i++)
-        {
-            foreach (Player player in players)
-            {
-                player.Hand.Add(deck.First());
-                deck.RemoveAt(0);
-            }
-        }
-    }
+    
 }
