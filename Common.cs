@@ -4,11 +4,11 @@ public static class Common
 {
     public static IEnumerable<Card> ShuffleDeck(IEnumerable<Card> input)
     {
-        var random = new Random();
+        Random random = new Random();
         return input.OrderBy(x => random.Next());
     }
     public static IEnumerable<CardSuit> CardSuits_All() {
-        var noJokers = CardSuits_NoJokers();
+        IEnumerable<CardSuit> noJokers = CardSuits_NoJokers();
         return noJokers.Append(CardSuit.Joker);
     }
     public static IEnumerable<CardSuit> CardSuits_NoJokers() => new List<CardSuit>
@@ -19,7 +19,7 @@ public static class Common
         CardSuit.Diamonds
     };
     public static IEnumerable<CardRank> CardRankCodes_All() {
-        var noJokers = CardRankCodes_NoJokers();
+        IEnumerable<CardRank> noJokers = CardRankCodes_NoJokers();
         return noJokers.Append(CardRank.Joker);
     }
     public static IEnumerable<CardRank> CardRankCodes_NoJokers() => new List<CardRank>

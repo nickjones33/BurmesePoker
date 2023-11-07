@@ -4,16 +4,21 @@ internal static class GameLoop
     internal static void Main()
     {
         Console.WriteLine("Welcome to Burmese Poker!");
-        List<Card> deck = CardFactory.MakeDecks(2);
-        Common.ShuffleDeck(deck);
-        Console.WriteLine($"There are {deck.Count} cards in the deck.");
+        Table table = new()
+        {
+            Deck = CardFactory.MakeDecks(2)
+        };
+        Common.ShuffleDeck(table.Deck);
+        Console.WriteLine($"There are {table.Deck.Count} cards in the deck.");
 
-        List<Player> players = InitializePlayers();
-        DealCardsToPlayers(deck, players, 13);
+        table.Players = InitializePlayers();
+        DealCardsToPlayers(table.Deck, table.Players, 13);
 
-        foreach (var player in players) {
-            Console.WriteLine($"{player.Name} has {player.Hand.Count} cards and {player.Money} money.");
-            foreach (var card in player.Hand) {
+        foreach (Player player in table.Players)
+        {
+            Console.WriteLine($"{player.Name} has {player.Hand.Count} cards and {player.Money} money. They start with the following cards:");
+            foreach (Card card in player.Hand)
+            {
                 Console.WriteLine(card.DisplayValue);
             }
         }
