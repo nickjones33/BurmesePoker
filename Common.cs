@@ -2,6 +2,11 @@ namespace BurmesePoker;
 
 public static class Common
 {
+    public static IEnumerable<Card> ShuffleDeck(IEnumerable<Card> input)
+    {
+        var random = new Random();
+        return input.OrderBy(x => random.Next());
+    }
     public static IEnumerable<CardSuit> CardSuits_All() {
         var noJokers = CardSuits_NoJokers();
         return noJokers.Append(CardSuit.Joker);

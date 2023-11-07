@@ -21,6 +21,8 @@ public class Card
         Color = color;
         Suit = CardSuit.Joker;
     }
+    
+    public Guid Id { get; } = Guid.NewGuid();
 
     public CardSuit Suit { get; }
     public CardRank Rank { get; }

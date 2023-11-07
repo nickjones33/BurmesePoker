@@ -3,23 +3,20 @@ internal static class GameLoop
 {
     internal static void Main()
     {
-        Console.WriteLine("Welcome to Burmese Rummy!");
+        Console.WriteLine("Welcome to Burmese Poker!");
+        List<Card> deck = CardFactory.MakeDecks(2);
+        Common.ShuffleDeck(deck);
+        Console.WriteLine($"There are {deck.Count} cards in the deck.");
 
-        // Initialize the deck with two decks of cards
-        List<Card> deck = InitializeDeck();
-
-        Console.WriteLine("Display the deck (unshuffled):");
-        foreach (var card in deck)
-        {
-            Console.WriteLine(card.DisplayValue);
-        }
-
-        // Shuffle the deck
-        ShuffleDeck(deck);
-
-        // Deal cards to players
         List<Player> players = InitializePlayers();
-        DealCards(deck, players);
+        DealCardsToPlayers(deck, players, 13);
+
+        foreach (var player in players) {
+            Console.WriteLine($"{player.Name} has {player.Hand.Count} cards and {player.Money} money.");
+            foreach (var card in player.Hand) {
+                Console.WriteLine(card.DisplayValue);
+            }
+        }
 
         // Main game loop
         bool gameIsOver = false;
@@ -38,51 +35,24 @@ internal static class GameLoop
         Console.WriteLine("Game over. Display final scores and determine the winner.");
     }
 
-    // Helper method to initialize the deck
+    // Helper method to initialize players
+    private static List<Player> InitializePlayers() => [
+        new Player("Su Htwe", 100),
+        new Player("Aung", 100),
+        new Player("Mya Lay", 100),
+        new Player("Cobra", 100),
+        new Player("Nick", 100),
+    ];
 
-    private static List<Card> InitializeDeck(int numberOfDecks = 2)
+    private static void DealCardsToPlayers(List<Card> deck, List<Player> players, int cardsPerPlayer)
     {
-        List<Card> deck = [];
-        var suits = Common.CardSuits_NoJokers();
-        var ranks = Common.CardRankCodes_NoJokers();
-
-        foreach (CardSuit suit in suits)
+        for (int i = 0; i < cardsPerPlayer; i++)
         {
-            foreach (CardRank rank in ranks)
+            foreach (Player player in players)
             {
-                for (var i = 0; i < numberOfDecks; i++)
-                {
-                    deck.Add(new Card(rank, suit));
-                }
+                player.Hand.Add(deck.First());
+                deck.RemoveAt(0);
             }
         }
-
-        for (var i = 0; i < numberOfDecks; i++)
-        {
-            deck.Add(new Card(CardRank.Joker, CardColor.Red));
-            deck.Add(new Card(CardRank.Joker, CardColor.Black));
-        }
-
-        return deck;
-    }
-
-    // Helper method to shuffle the deck
-    private static void ShuffleDeck(List<Card> deck)
-    {
-        // Add code to shuffle the deck
-    }
-
-    // Helper method to initialize players
-    private static List<Player> InitializePlayers()
-    {
-        List<Player> players = new List<Player>();
-        // Add code to create and name the players
-        return players;
-    }
-
-    // Helper method to deal cards to players
-    private static void DealCards(List<Card> deck, List<Player> players)
-    {
-        // Add code to deal cards to players
     }
 }
