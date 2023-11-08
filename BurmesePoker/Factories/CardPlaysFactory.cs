@@ -67,14 +67,10 @@ internal static class CardPlaysFactory
         foreach (CardPlay cleanRun in runsStartingWithNonJokers)
         {
             List<Card> cardsInRun = [.. cleanRun.Cards.OrderBy(c => c.Rank)];
-            //maybe for each joker in hand? need to think here
-            for (int i = 1; i < cardsInRun.Count; i++) //intentionally skipping first card as those are covered in "runsstartingwithjokers"
-            {
-                if (cardsInRun[i].Rank != CardRank.Joker)
-                {
 
-                }
-            }
+            List<CardPlay> permutations = [];
+
+            alternativePermutations.AddRange(permutations);
         }
         List<CardPlay> runsStartingWithJokers = [];
         foreach (Card joker in jokers)
@@ -114,6 +110,22 @@ internal static class CardPlaysFactory
             }
         }
         return [.. runsStartingWithNonJokers, .. runsStartingWithJokers];
+    }
+    private static void CalculatePermutationsRecursive(List<Card> originalCardsInPlay, List<Card> jokers,
+        int index, List<Card> currentPlay, List<CardPlay> results)
+    {
+        if (index == originalCardsInPlay.Count) //base case check
+        {
+            results.Add(new CardPlay(CardPlayType.Run, currentPlay));
+            return;
+        }
+
+        if (jokers.Count > 0)
+        {
+            var firstJoker = jokers.First();
+            currentPlay.Add(firstJoker);
+            
+        }
     }
     private static List<CardPlay> MakeSetsFromHand(List<Card> hand)
     {
