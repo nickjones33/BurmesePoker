@@ -28,14 +28,28 @@ internal class Table
         {
             if (CurrentRoundMoneyCards.Any(mc => mc.ValueEqualTo(card)))
             {
-                card.IsMoneyCard = true;
+                if (!card.IsMoneyCard)
+                {
+                    card.MoneyCardStatus = MoneyCardStatus.MoneyCard;
+                }
+                else
+                {
+                    card.MoneyCardStatus = MoneyCardStatus.DoubleMoneyCard;
+                }
             }
         }
         foreach (Card card in AllPlayerCards)
         {
             if (CurrentRoundMoneyCards.Any(mc => mc.ValueEqualTo(card)))
             {
-                card.IsMoneyCard = true;
+                if (!card.IsMoneyCard)
+                {
+                    card.MoneyCardStatus = MoneyCardStatus.MoneyCard;
+                }
+                else
+                {
+                    card.MoneyCardStatus = MoneyCardStatus.DoubleMoneyCard;
+                }
             }
         }
     }

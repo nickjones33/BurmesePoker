@@ -1,18 +1,20 @@
 namespace BurmesePoker;
 
-public class Card
+internal class Card
 {
     //standard card constructor
-    public Card(CardRank rank, CardSuit suit)
+    internal Card(CardRank rank, CardSuit suit)
     {
         Rank = rank;
         Suit = suit;
         Color = suit == CardSuit.Hearts || suit == CardSuit.Diamonds ? CardColor.Red : CardColor.Black;
 
-        IsMoneyCard = (rank == CardRank.Seven && suit == CardSuit.Diamonds) || (rank == CardRank.Ace && suit == CardSuit.Spades);
+        MoneyCardStatus = (rank == CardRank.Seven && suit == CardSuit.Diamonds) || (rank == CardRank.Ace && suit == CardSuit.Spades) ?
+            MoneyCardStatus.MoneyCard :
+            MoneyCardStatus.NotMoneyCard;
     }
     //joker constructor (suitless)
-    public Card(CardRank rank, CardColor color)
+    internal Card(CardRank rank, CardColor color)
     {
         if (rank != CardRank.Joker)
         {
@@ -24,17 +26,25 @@ public class Card
         Suit = CardSuit.Joker;
     }
 
-    public Guid Id { get; } = Guid.NewGuid();
+    internal Guid Id { get; } = Guid.NewGuid();
 
-    public CardSuit Suit { get; }
-    public CardRank Rank { get; }
-    public CardColor Color { get; }
-    public bool IsMoneyCard { get; set; } = false;
+    internal CardSuit Suit { get; }
+    internal CardRank Rank { get; }
+    internal CardColor Color { get; }
+    internal MoneyCardStatus MoneyCardStatus { get; set; } = MoneyCardStatus.NotMoneyCard;
+    internal bool IsMoneyCard => MoneyCardStatus != MoneyCardStatus.NotMoneyCard;
+    private string MoneyCardDisplay => MoneyCardStatus switch
+    {
+        MoneyCardStatus.NotMoneyCard => "",
+        MoneyCardStatus.MoneyCard => "($)",
+        MoneyCardStatus.DoubleMoneyCard => "($$)",
+        _ => throw new IndexOutOfRangeException(MoneyCardStatus.ToString())
+    };
 
-    public string DisplayValue => Rank != CardRank.Joker ?
+    internal string DisplayValue => Rank != CardRank.Joker ?
         $"{Common.DisplayCode(Rank)}{Common.DisplaySuit(Suit)}{(IsMoneyCard ? "($)" : "")}" :
-        $"{Common.DisplayCode(Rank)}({Color}){(IsMoneyCard ? "($)" : "")}";
-    public int RankOrder => Common.CardRankOrder(Rank);
+        $"{Common.DisplayCode(Rank)}({Color}){MoneyCardDisplay}";
+    internal int RankOrder => Common.CardRankOrder(Rank);
 
-    public bool ValueEqualTo(Card card) => Suit == card.Suit && Rank == card.Rank && Color == card.Color;
+    internal bool ValueEqualTo(Card card) => Suit == card.Suit && Rank == card.Rank && Color == card.Color;
 }

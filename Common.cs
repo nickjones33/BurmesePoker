@@ -1,23 +1,23 @@
 namespace BurmesePoker;
 
-public static class Common
+internal static class Common
 {
-    public static IEnumerable<CardSuit> CardSuits_All() {
+    internal static IEnumerable<CardSuit> CardSuits_All() {
         IEnumerable<CardSuit> noJokers = CardSuits_NoJokers();
         return noJokers.Append(CardSuit.Joker);
     }
-    public static IEnumerable<CardSuit> CardSuits_NoJokers() => new List<CardSuit>
+    internal static IEnumerable<CardSuit> CardSuits_NoJokers() => new List<CardSuit>
     {
         CardSuit.Hearts,
         CardSuit.Spades,
         CardSuit.Clubs,
         CardSuit.Diamonds
     };
-    public static IEnumerable<CardRank> CardRankCodes_All() {
+    internal static IEnumerable<CardRank> CardRankCodes_All() {
         IEnumerable<CardRank> noJokers = CardRankCodes_NoJokers();
         return noJokers.Append(CardRank.Joker);
     }
-    public static IEnumerable<CardRank> CardRankCodes_NoJokers() => new List<CardRank>
+    internal static IEnumerable<CardRank> CardRankCodes_NoJokers() => new List<CardRank>
     {
         CardRank.Two,
         CardRank.Three,
@@ -33,7 +33,7 @@ public static class Common
         CardRank.King,
         CardRank.Ace
     };
-    public static int CardRankOrder(CardRank input) => input switch
+    internal static int CardRankOrder(CardRank input) => input switch
     {
         CardRank.Two => 0,
         CardRank.Three => 1,
@@ -50,7 +50,7 @@ public static class Common
         CardRank.Ace => 12,
         _ => throw new IndexOutOfRangeException(input.ToString()),
     };
-    public static string DisplayCode(CardRank input) => input switch
+    internal static string DisplayCode(CardRank input) => input switch
     {
         CardRank.Two => "2",
         CardRank.Three => "3",
@@ -68,7 +68,7 @@ public static class Common
         CardRank.Joker => "Joker",
         _ => throw new IndexOutOfRangeException(input.ToString()),
     };
-    public static string DisplaySuit(CardSuit input) => input switch
+    internal static string DisplaySuit(CardSuit input) => input switch
     {
         CardSuit.Joker => "",
         CardSuit.Hearts => "♥",
@@ -79,7 +79,12 @@ public static class Common
     };
 }
 
-public enum CardRank
+internal enum MoneyCardStatus {
+    NotMoneyCard,
+    MoneyCard,
+    DoubleMoneyCard
+}
+internal enum CardRank
 {
     Two,
     Three,
@@ -96,7 +101,7 @@ public enum CardRank
     Ace,
     Joker
 }
-public enum CardSuit
+internal enum CardSuit
 {
     Joker,
     Hearts,
@@ -104,7 +109,7 @@ public enum CardSuit
     Clubs,
     Diamonds
 }
-public enum CardColor {
+internal enum CardColor {
     Red,
     Black
 }

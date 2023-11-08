@@ -1,8 +1,8 @@
 namespace BurmesePoker;
 
-public static class CardFactory
+internal static class CardFactory
 {
-    public static List<Card> MakeDecks(int numberOfDecks)
+    internal static List<Card> MakeDecks(int numberOfDecks)
     {
         List<Card> cards = [];
         for (int i = 0; i < numberOfDecks; i++)
@@ -11,7 +11,7 @@ public static class CardFactory
         }
         return cards;
     }
-    public static List<Card> MakeDeck()
+    internal static List<Card> MakeDeck()
     {
         List<Card> deck = [];
         foreach (CardSuit suit in Common.CardSuits_NoJokers())

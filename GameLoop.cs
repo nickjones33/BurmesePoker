@@ -40,19 +40,6 @@ internal class GameMaster
         table.MarkDeckAndPlayerMoneyCards();
 
         Console.WriteLine($"MoneyCards: {table.CurrentRoundMoneyCards.First().DisplayValue} and {table.CurrentRoundMoneyCards.Last().DisplayValue}");
-        Console.WriteLine("Deck:");
-        foreach (Card card in table.Deck)
-        {
-            Console.WriteLine(card.DisplayValue);
-        }
-        foreach (Player player in table.PlayersInOrder)
-        {
-            Console.WriteLine($"{player.Name} has {player.Hand.Count} cards and {player.Money} money. They start with the following cards:");
-            foreach (Card card in player.Hand)
-            {
-                Console.WriteLine(card.DisplayValue);
-            }
-        }
     }
     private static PlayersInOrder InitializePlayers()
     {
