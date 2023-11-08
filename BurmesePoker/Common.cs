@@ -190,3 +190,8 @@ internal enum CardColor
     Red,
     Black
 }
+internal enum CardPlayType
+{
+    Run,
+    Set
+}
