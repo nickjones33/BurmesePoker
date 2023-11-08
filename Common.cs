@@ -2,7 +2,69 @@ namespace BurmesePoker;
 
 internal static class Common
 {
-    internal static IEnumerable<CardSuit> CardSuits_All() {
+    internal static (CardRank rank, CardColor color, CardSuit suit) DetermineCardRankSuitFromString(string input)
+    {
+        if (input.Length < 2) throw new ArgumentException("Input must be at least 2 characters long.");
+        if (input.Length == 2)
+        {
+            CardRank rank = CardRankFromString(input.ToUpper()[0].ToString());
+            CardSuit cardSuit = CardSuitFromChar(input.ToUpper()[1]);            
+            CardColor cardColor = CardColorFromSuit(cardSuit);
+            return (rank, cardColor, cardSuit);
+        }
+        else if (input.Length == 3)
+        {
+            if (input[..2] == "10") //has to be 10 or fall through to joker
+            {
+                CardSuit suit = CardSuitFromChar(input.ToUpper()[2]);
+                return (CardRank.Ten, CardColorFromSuit(suit), suit);
+            }
+        }
+        
+        return (CardRank.Joker, CardColorFromString(input.ToUpper()[^0]), CardSuit.Joker); //joker
+    }
+    internal static CardColor CardColorFromSuit(CardSuit suit) => suit switch
+    {
+        CardSuit.Hearts => CardColor.Red,
+        CardSuit.Diamonds => CardColor.Red,
+        CardSuit.Spades => CardColor.Black,
+        CardSuit.Clubs => CardColor.Black,
+        _ => throw new ArgumentException("Input must be a valid card suit."),
+    };
+    internal static CardSuit CardSuitFromChar(char input) => input switch
+    {
+        'H' => CardSuit.Hearts,
+        'D' => CardSuit.Diamonds,
+        'S' => CardSuit.Spades,
+        'C' => CardSuit.Clubs,
+        _ => throw new ArgumentException("Input must be a valid card suit."),
+    };
+    internal static CardRank CardRankFromString(string input) => input switch
+    {
+        "2" => CardRank.Two,
+        "3" => CardRank.Three,
+        "4" => CardRank.Four,
+        "5" => CardRank.Five,
+        "6" => CardRank.Six,
+        "7" => CardRank.Seven,
+        "8" => CardRank.Eight,
+        "9" => CardRank.Nine,
+        "10" => CardRank.Ten,
+        "T" => CardRank.Ten,
+        "J" => CardRank.Jack,
+        "Q" => CardRank.Queen,
+        "K" => CardRank.King,
+        "A" => CardRank.Ace,
+        _ => throw new ArgumentException("Input must be a valid card rank."),
+    };
+    internal static CardColor CardColorFromString(char input) => input switch
+    {
+        'R' => CardColor.Red,
+        'B' => CardColor.Black,
+        _ => throw new ArgumentException("Input must be a valid card color."),
+    };
+    internal static IEnumerable<CardSuit> CardSuits_All()
+    {
         IEnumerable<CardSuit> noJokers = CardSuits_NoJokers();
         return noJokers.Append(CardSuit.Joker);
     }
@@ -13,7 +75,8 @@ internal static class Common
         CardSuit.Clubs,
         CardSuit.Diamonds
     };
-    internal static IEnumerable<CardRank> CardRankCodes_All() {
+    internal static IEnumerable<CardRank> CardRankCodes_All()
+    {
         IEnumerable<CardRank> noJokers = CardRankCodes_NoJokers();
         return noJokers.Append(CardRank.Joker);
     }
@@ -65,7 +128,7 @@ internal static class Common
         CardRank.Queen => "Q",
         CardRank.King => "K",
         CardRank.Ace => "A",
-        CardRank.Joker => "Joker",
+        CardRank.Joker => "🃏",
         _ => throw new IndexOutOfRangeException(input.ToString()),
     };
     internal static string DisplaySuit(CardSuit input) => input switch
@@ -79,7 +142,13 @@ internal static class Common
     };
 }
 
-internal enum MoneyCardStatus {
+internal enum PlayerAction
+{
+    Draw,
+    Pickup
+}
+internal enum MoneyCardStatus
+{
     NotMoneyCard,
     MoneyCard,
     DoubleMoneyCard
@@ -109,7 +178,8 @@ internal enum CardSuit
     Clubs,
     Diamonds
 }
-internal enum CardColor {
+internal enum CardColor
+{
     Red,
     Black
 }

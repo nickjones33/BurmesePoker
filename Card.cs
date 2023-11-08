@@ -32,6 +32,7 @@ internal class Card
     internal CardRank Rank { get; }
     internal CardColor Color { get; }
     internal MoneyCardStatus MoneyCardStatus { get; set; } = MoneyCardStatus.NotMoneyCard;
+    internal Player? MoneyCardOwner { get; set; } = null;
     internal bool IsMoneyCard => MoneyCardStatus != MoneyCardStatus.NotMoneyCard;
     private string MoneyCardDisplay => MoneyCardStatus switch
     {
@@ -42,7 +43,7 @@ internal class Card
     };
 
     internal string DisplayValue => Rank != CardRank.Joker ?
-        $"{Common.DisplayCode(Rank)}{Common.DisplaySuit(Suit)}{(IsMoneyCard ? "($)" : "")}" :
+        $"{Common.DisplayCode(Rank)}{Common.DisplaySuit(Suit)}{MoneyCardDisplay}" :
         $"{Common.DisplayCode(Rank)}({Color}){MoneyCardDisplay}";
     internal int RankOrder => Common.CardRankOrder(Rank);
 

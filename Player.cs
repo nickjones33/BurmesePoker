@@ -2,8 +2,9 @@ namespace BurmesePoker;
 
 internal class Player(string name, int money)
 {
-    public string Name { get; } = name;
-    public List<Card> Hand { get; set; } = [];
-    public int Score { get; set; }
-    public int Money { get; set; } = money;
+    internal string Name { get; } = name;
+    internal List<Card> Hand { get; set; } = [];
+    internal List<Card> Discard { get; set; } = [];
+    internal int Score { get; set; }
+    internal int Money { get; set; } = money;
 }

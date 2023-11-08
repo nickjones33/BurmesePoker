@@ -10,8 +10,7 @@ internal class Table
     internal int RoundNumber { get; set; } = 0;
     internal PlayersInOrder? PlayersInOrder { get; set; }
     internal Deck Deck { get; set; } = [];
-    internal List<Card> Discard { get; set; } = [];
-    internal IEnumerable<Card> AllCards => Deck.Concat(Discard).Concat(AllPlayerCards).Concat(CurrentRoundMoneyCards);
+    internal IEnumerable<Card> AllCards => Deck.Concat(AllPlayerCards).Concat(CurrentRoundMoneyCards);
     internal IEnumerable<Card> AllPlayerCards => PlayersInOrder?.SelectMany(x => x.Hand) ?? [];
     internal IEnumerable<Card> CurrentRoundMoneyCards { get; set; } = [];
 
@@ -24,21 +23,8 @@ internal class Table
 
     internal void MarkDeckAndPlayerMoneyCards()
     {
-        foreach (Card card in Deck)
-        {
-            if (CurrentRoundMoneyCards.Any(mc => mc.ValueEqualTo(card)))
-            {
-                if (!card.IsMoneyCard)
-                {
-                    card.MoneyCardStatus = MoneyCardStatus.MoneyCard;
-                }
-                else
-                {
-                    card.MoneyCardStatus = MoneyCardStatus.DoubleMoneyCard;
-                }
-            }
-        }
-        foreach (Card card in AllPlayerCards)
+        var cardsToBeMarked = Deck.Concat(AllPlayerCards).Concat(CurrentRoundMoneyCards);
+        foreach (Card card in cardsToBeMarked)
         {
             if (CurrentRoundMoneyCards.Any(mc => mc.ValueEqualTo(card)))
             {
