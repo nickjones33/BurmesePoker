@@ -41,7 +41,7 @@ internal class Card
         MoneyCardStatus.DoubleMoneyCard => "($$)",
         _ => throw new IndexOutOfRangeException(MoneyCardStatus.ToString())
     };
-
+    public override string ToString() => DisplayValue;
     internal string DisplayValue => Rank != CardRank.Joker ?
         $"{Common.DisplayCode(Rank)}{Common.DisplaySuit(Suit)}{MoneyCardDisplay}" :
         $"{Common.DisplayCode(Rank)}({Color}){MoneyCardDisplay}";

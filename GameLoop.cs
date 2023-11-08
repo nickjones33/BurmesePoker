@@ -39,7 +39,7 @@ internal class GameMaster
     private void StartTurn(Player currentPlayer, Player? previousPlayer, Player nextPlayer)
     {
         Console.WriteLine($"{currentPlayer.Name}'s turn.");
-        Console.WriteLine($"Your hand: {string.Join(", ", currentPlayer.Hand.Select(x => x.DisplayValue))}");
+        Console.WriteLine($"Your hand: {currentPlayer.PrintOrderedHand}");
         if (previousPlayer == null) //special first round/turn moneycard procedures
         {
             Card topMoneyCard = Table.CurrentRoundMoneyCards.Last();
@@ -77,10 +77,9 @@ internal class GameMaster
             }
             else if (playerAction == PlayerAction.Pickup)
             {
-                var pickupCard = discardOption;
                 previousPlayer.Discard.Remove(discardOption);
-                currentPlayer.Hand.Add(pickupCard);
-                Console.WriteLine($"{currentPlayer.Name} picked up {pickupCard.DisplayValue}.");
+                currentPlayer.Hand.Add(discardOption);
+                Console.WriteLine($"{currentPlayer.Name} picked up {discardOption.DisplayValue}.");
             }
 
             PlayerDiscard(currentPlayer);
@@ -94,7 +93,7 @@ internal class GameMaster
     }
     private void PlayerDiscard(Player currentPlayer)
     {
-        var playerDiscardDescription = UserPromptFactory.PlayerDiscard(currentPlayer.Name);
+        var playerDiscardDescription = UserPromptFactory.ResponseForPlayerDiscard(currentPlayer);
         var discardMatch = currentPlayer.Hand.FirstOrDefault(x => x.Rank == playerDiscardDescription.Rank &&
             x.Color == playerDiscardDescription.Color && x.Suit == playerDiscardDescription.Suit);
         if (discardMatch == null) throw new InvalidOperationException("Card to discard was not found in player's hand.");

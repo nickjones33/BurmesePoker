@@ -8,7 +8,7 @@ internal static class Common
         if (input.Length == 2)
         {
             CardRank rank = CardRankFromString(input.ToUpper()[0].ToString());
-            CardSuit cardSuit = CardSuitFromChar(input.ToUpper()[1]);            
+            CardSuit cardSuit = CardSuitFromChar(input.ToUpper()[1].ToString());            
             CardColor cardColor = CardColorFromSuit(cardSuit);
             return (rank, cardColor, cardSuit);
         }
@@ -16,7 +16,7 @@ internal static class Common
         {
             if (input[..2] == "10") //has to be 10 or fall through to joker
             {
-                CardSuit suit = CardSuitFromChar(input.ToUpper()[2]);
+                CardSuit suit = CardSuitFromChar(input.ToUpper()[2].ToString());
                 return (CardRank.Ten, CardColorFromSuit(suit), suit);
             }
         }
@@ -31,12 +31,17 @@ internal static class Common
         CardSuit.Clubs => CardColor.Black,
         _ => throw new ArgumentException("Input must be a valid card suit."),
     };
-    internal static CardSuit CardSuitFromChar(char input) => input switch
+    internal static CardSuit CardSuitFromChar(string input) => input switch
     {
-        'H' => CardSuit.Hearts,
-        'D' => CardSuit.Diamonds,
-        'S' => CardSuit.Spades,
-        'C' => CardSuit.Clubs,
+        "H" => CardSuit.Hearts,
+        "D" => CardSuit.Diamonds,
+        "S" => CardSuit.Spades,
+        "C" => CardSuit.Clubs,
+        "" => CardSuit.Joker,
+        "♥" => CardSuit.Hearts,
+        "♠" => CardSuit.Spades,
+        "♣" => CardSuit.Clubs,
+        "♦" => CardSuit.Diamonds,
         _ => throw new ArgumentException("Input must be a valid card suit."),
     };
     internal static CardRank CardRankFromString(string input) => input switch
@@ -55,6 +60,7 @@ internal static class Common
         "Q" => CardRank.Queen,
         "K" => CardRank.King,
         "A" => CardRank.Ace,
+        "🃏" => CardRank.Joker,
         _ => throw new ArgumentException("Input must be a valid card rank."),
     };
     internal static CardColor CardColorFromString(char input) => input switch
@@ -111,6 +117,7 @@ internal static class Common
         CardRank.Queen => 10,
         CardRank.King => 11,
         CardRank.Ace => 12,
+        CardRank.Joker => 13,
         _ => throw new IndexOutOfRangeException(input.ToString()),
     };
     internal static string DisplayCode(CardRank input) => input switch

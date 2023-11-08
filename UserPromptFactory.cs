@@ -9,15 +9,13 @@ internal static class UserPromptFactory
     private static string TextForTakingTopMoneyCard(string playerName, Card topMoneyCard) =>
         $"{playerName}, would you like to take the top money card? ({topMoneyCard.DisplayValue})";
 
-    internal static Card PlayerDiscard(string playerName)
-    {
-        var (discardRank, discardColor, discardSuit) = Common.DetermineCardRankSuitFromString(ResponseForDiscard(playerName));
-        if (discardRank == CardRank.Joker) return new Card(discardRank, discardColor);
-        return new Card(discardRank, discardSuit);
+    internal static Card ResponseForPlayerDiscard(Player player) {
+        var discardDisplayValue = AnsiConsole.Prompt(
+            new SelectionPrompt<Card>()
+                .Title($"{player.Name}, which card would you like to discard?")
+                .AddChoices(player.Hand.OrderBy(x => x.RankOrder)));
+        return discardDisplayValue;
     }
-    private static string ResponseForDiscard(string playerName) => AnsiConsole.Ask<string>(TextForDiscard(playerName));
-    private static string TextForDiscard(string playerName) =>
-        $"{playerName}, which card would you like to discard? (e.g. 'AH' Ace of Hearts, 'JoR' Red Joker)";
 
     internal static PlayerAction ResponseForAction(string playerName) => 
         AnsiConsole.Prompt(
