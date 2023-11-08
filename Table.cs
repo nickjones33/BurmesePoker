@@ -7,11 +7,12 @@ internal class Table
         Deck = new Deck(CardFactory.MakeDecks(2));
         Deck = Deck.Shuffle();
     }
-    internal List<Player> Players { get; set; } = [];
+    internal int RoundNumber { get; set; } = 0;
+    internal PlayersInOrder? PlayersInOrder { get; set; }
     internal Deck Deck { get; set; } = [];
     internal List<Card> Discard { get; set; } = [];
     internal IEnumerable<Card> AllCards => Deck.Concat(Discard).Concat(AllPlayerCards).Concat(CurrentRoundMoneyCards);
-    internal IEnumerable<Card> AllPlayerCards => Players.SelectMany(x => x.Hand);
+    internal IEnumerable<Card> AllPlayerCards => PlayersInOrder?.SelectMany(x => x.Hand) ?? [];
     internal IEnumerable<Card> CurrentRoundMoneyCards { get; set; } = [];
 
     internal void SetCurrentRoundMoneyCards()
@@ -41,9 +42,10 @@ internal class Table
 
     internal void DealCardsToPlayers(int cardsPerPlayer)
     {
+        if (PlayersInOrder == null) throw new InvalidOperationException("Cannot deal cards to players when there are no players.");
         for (int i = 0; i < cardsPerPlayer; i++)
         {
-            foreach (Player player in Players)
+            foreach (Player player in PlayersInOrder)
             {
                 player.Hand.Add(Deck.DrawFromTop());
             }
