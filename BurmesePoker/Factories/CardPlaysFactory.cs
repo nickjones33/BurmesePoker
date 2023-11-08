@@ -15,11 +15,11 @@ internal static class CardPlaysFactory
     {
         List<CardPlay> runs = [];
 
-        var jokers = hand.Where(card => card.Rank == CardRank.Joker).ToList();
-        var diamonds = hand.Where(card => card.Suit == CardSuit.Diamonds).OrderBy(card => card.Rank).ToList();
-        var clubs = hand.Where(card => card.Suit == CardSuit.Clubs).OrderBy(card => card.Rank).ToList();
-        var spades = hand.Where(card => card.Suit == CardSuit.Spades).OrderBy(card => card.Rank).ToList();
-        var hearts = hand.Where(card => card.Suit == CardSuit.Hearts).OrderBy(card => card.Rank).ToList();
+        List<Card> jokers = hand.Where(card => card.Rank == CardRank.Joker).ToList();
+        List<Card> diamonds = [.. hand.Where(card => card.Suit == CardSuit.Diamonds).OrderBy(card => card.Rank)];
+        List<Card> clubs = [.. hand.Where(card => card.Suit == CardSuit.Clubs).OrderBy(card => card.Rank)];
+        List<Card> spades = [.. hand.Where(card => card.Suit == CardSuit.Spades).OrderBy(card => card.Rank)];
+        List<Card> hearts = [.. hand.Where(card => card.Suit == CardSuit.Hearts).OrderBy(card => card.Rank)];
 
         if (diamonds.Count + jokers.Count >= 3) runs.AddRange(MakeRunsFromSuit(diamonds, jokers));
         if (clubs.Count + jokers.Count >= 3) runs.AddRange(MakeRunsFromSuit(clubs, jokers));
@@ -30,18 +30,19 @@ internal static class CardPlaysFactory
     }
     private static List<CardPlay> MakeRunsFromSuit(List<Card> suitedOrderedCards, List<Card> jokers)
     {
-        List<CardPlay> sets = [];
-        foreach (var card in suitedOrderedCards)
+        List<CardPlay> runsStartingWithNonJokers = [];
+        foreach (Card card in suitedOrderedCards)
         {
             List<Card> potentialCardsInPlay = [card];
-            var tmpJokers = jokers;
+            List<Card> tmpJokers = [.. jokers];
             bool outOfUsableCards = false;
             while (!outOfUsableCards)
             {
-                var nextCardInRun = suitedOrderedCards.Where(c => c.Rank == card.Rank + 1).FirstOrDefault();
+                Card mostRecentCardInRun = potentialCardsInPlay.Last();
+                Card? nextCardInRun = suitedOrderedCards.Where(c => c.Rank == mostRecentCardInRun.Rank + 1).FirstOrDefault();
                 if (nextCardInRun == null)
                 {
-                    if (card.Rank == CardRank.Ace)
+                    if (mostRecentCardInRun.Rank == CardRank.Ace)
                     {
                         nextCardInRun = suitedOrderedCards.Where(c => c.Rank == CardRank.Two).FirstOrDefault();
                     }
@@ -55,12 +56,64 @@ internal static class CardPlaysFactory
                         outOfUsableCards = true;
                     }
                 }
-                if (nextCardInRun != null) potentialCardsInPlay.Add(nextCardInRun);
-                if (potentialCardsInPlay.Count >= 3) sets.Add(new CardPlay(CardPlayType.Run, potentialCardsInPlay));
+                if (!outOfUsableCards)
+                {
+                    if (nextCardInRun != null) potentialCardsInPlay.Add(nextCardInRun);
+                    if (potentialCardsInPlay.Count >= 3) runsStartingWithNonJokers.Add(new CardPlay(CardPlayType.Run, potentialCardsInPlay.ToList()));
+                }
             }
-            
         }
-        return sets;
+        List<CardPlay> alternativePermutations = [];
+        foreach (CardPlay cleanRun in runsStartingWithNonJokers)
+        {
+            List<Card> cardsInRun = [.. cleanRun.Cards.OrderBy(c => c.Rank)];
+            //maybe for each joker in hand? need to think here
+            for (int i = 1; i < cardsInRun.Count; i++) //intentionally skipping first card as those are covered in "runsstartingwithjokers"
+            {
+                if (cardsInRun[i].Rank != CardRank.Joker)
+                {
+
+                }
+            }
+        }
+        List<CardPlay> runsStartingWithJokers = [];
+        foreach (Card joker in jokers)
+        {
+            foreach (Card cardToFollowTheJoker in suitedOrderedCards)
+            {
+                List<Card> potentialCardsInPlay = [joker, cardToFollowTheJoker];
+                List<Card> tmpJokers = [.. jokers];
+                tmpJokers.RemoveAt(0); //exclude one to account for current joker
+                bool outOfUsableCards = false;
+                while (!outOfUsableCards)
+                {
+                    Card mostRecentCardInRun = potentialCardsInPlay.Last();
+                    Card? nextCardInRun = suitedOrderedCards.Where(c => c.Rank == mostRecentCardInRun.Rank + 1).FirstOrDefault();
+                    if (nextCardInRun == null)
+                    {
+                        if (mostRecentCardInRun.Rank == CardRank.Ace)
+                        {
+                            nextCardInRun = suitedOrderedCards.Where(c => c.Rank == CardRank.Two).FirstOrDefault();
+                        }
+                        else if (tmpJokers.Count != 0)
+                        {
+                            nextCardInRun = tmpJokers.First();
+                            tmpJokers.RemoveAt(0);
+                        }
+                        else
+                        {
+                            outOfUsableCards = true;
+                        }
+                    }
+                    if (!outOfUsableCards)
+                    {
+                        if (nextCardInRun != null) potentialCardsInPlay.Add(nextCardInRun);
+                        if (potentialCardsInPlay.Count >= 3) runsStartingWithJokers.Add(new CardPlay(CardPlayType.Run, potentialCardsInPlay.ToList()));
+                    }
+                }
+            }
+        }
+        return [.. runsStartingWithNonJokers, .. runsStartingWithJokers];
     }
     private static List<CardPlay> MakeSetsFromHand(List<Card> hand)
     {

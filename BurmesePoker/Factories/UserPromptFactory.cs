@@ -10,7 +10,7 @@ internal static class UserPromptFactory
         $"{playerName}, would you like to take the top money card? ({topMoneyCard.DisplayValue})";
 
     internal static Card ResponseForPlayerDiscard(Player player) {
-        var discardDisplayValue = AnsiConsole.Prompt(
+        Card discardDisplayValue = AnsiConsole.Prompt(
             new SelectionPrompt<Card>()
                 .Title($"{player.Name}, which card would you like to discard?")
                 .AddChoices(player.Hand.OrderBy(x => x.RankOrder)));

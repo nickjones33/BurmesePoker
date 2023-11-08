@@ -13,14 +13,14 @@ internal class Deck : List<Card>
 
     internal Card DrawFromTop()
     {
-        var topCard = this.First();
+        Card topCard = this.First();
         this.RemoveAt(0);
         return topCard;
     }
 
     internal Card DrawFromBottom()
     {
-        var bottomCard = this.Last();
+        Card bottomCard = this.Last();
         this.RemoveAt(this.Count - 1);
         return bottomCard;
     }

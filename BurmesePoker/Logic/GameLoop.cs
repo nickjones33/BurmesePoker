@@ -55,13 +55,13 @@ internal class GameMaster
     }
     private void HandleNormalTurn(Player currentPlayer, Player previousPlayer)
     {
-        var discardOption = previousPlayer.Discard.Last();
+        Card discardOption = previousPlayer.Discard.Last();
         Console.WriteLine($"{previousPlayer.Name} discarded {discardOption.DisplayValue}. You may pick it up if you'd like.");
-        var playerAction = UserPromptFactory.ResponseForAction(currentPlayer.Name);
+        PlayerAction playerAction = UserPromptFactory.ResponseForAction(currentPlayer.Name);
 
         if (playerAction == PlayerAction.Draw)
         {
-            var drawnCard = Table.Deck.DrawFromTop();
+            Card drawnCard = Table.Deck.DrawFromTop();
             drawnCard.MoneyCardOwner = currentPlayer;
             currentPlayer.Hand.Add(drawnCard);
             Console.WriteLine($"{currentPlayer.Name} drew {drawnCard.DisplayValue}.");
@@ -82,7 +82,7 @@ internal class GameMaster
         //TODO - ask sorta-previous player for permission
         if (playerWantsTopMoneyCard)
         {
-            var cloneOfTopMoneyCard = new Card(topMoneyCard.Rank, topMoneyCard.Suit)
+            Card cloneOfTopMoneyCard = new Card(topMoneyCard.Rank, topMoneyCard.Suit)
             {
                 MoneyCardStatus = topMoneyCard.MoneyCardStatus,
                 MoneyCardOwner = null //belongs to the deck, doesn't score for the new steward
@@ -91,7 +91,7 @@ internal class GameMaster
         }
         else
         {
-            var drawnCard = Table.Deck.DrawFromTop();
+            Card drawnCard = Table.Deck.DrawFromTop();
             drawnCard.MoneyCardOwner = currentPlayer;
             currentPlayer.Hand.Add(drawnCard);
         }
@@ -99,8 +99,8 @@ internal class GameMaster
     }
     private void HandlePlayerDiscard(Player currentPlayer)
     {
-        var playerDiscardDescription = UserPromptFactory.ResponseForPlayerDiscard(currentPlayer);
-        var discardMatch = currentPlayer.Hand.FirstOrDefault(x => x.Rank == playerDiscardDescription.Rank &&
+        Card playerDiscardDescription = UserPromptFactory.ResponseForPlayerDiscard(currentPlayer);
+        Card? discardMatch = currentPlayer.Hand.FirstOrDefault(x => x.Rank == playerDiscardDescription.Rank &&
             x.Color == playerDiscardDescription.Color && x.Suit == playerDiscardDescription.Suit);
         if (discardMatch == null) throw new InvalidOperationException("Card to discard was not found in player's hand.");
         currentPlayer.Hand.Remove(discardMatch);

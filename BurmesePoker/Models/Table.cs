@@ -16,14 +16,14 @@ internal class Table
 
     internal void SetCurrentRoundMoneyCards()
     {
-        var bottomCard = Deck.DrawFromBottom();
-        var topCard = Deck.DrawFromTop();
+        Card bottomCard = Deck.DrawFromBottom();
+        Card topCard = Deck.DrawFromTop();
         CurrentRoundMoneyCards = [bottomCard, topCard];
     }
 
     internal void MarkDeckAndPlayerMoneyCards()
     {
-        var cardsToBeMarked = Deck.Concat(AllPlayerCards).Concat(CurrentRoundMoneyCards);
+        IEnumerable<Card> cardsToBeMarked = Deck.Concat(AllPlayerCards).Concat(CurrentRoundMoneyCards);
         foreach (Card card in cardsToBeMarked)
         {
             if (CurrentRoundMoneyCards.Any(mc => mc.ValueEqualTo(card)))
