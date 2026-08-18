@@ -68,9 +68,12 @@ that asserted it. **Any red tree from here on is a real problem.**
 - `CardText.ParseRank` was kept from the old `CardRankFromString` (it was not on P0's drop
   list) and is expected to earn its keep building hands in later packets' tests. Nothing in
   the domain calls it yet.
-- The solution file is **`BurmesePoker.slnx`** (the newer XML format, now the `dotnet new
-  sln` default). Nick's standing preference is the newest supported .NET tooling — don't
-  "fix" it back to a classic `.sln`.
+- **All three projects target `net10.0`** and the solution file is **`BurmesePoker.slnx`**
+  (the newer XML format, now the `dotnet new sln` default). Both were chosen deliberately:
+  Nick's standing preference is the newest supported .NET tooling. Don't "fix" either back.
+  The test packages (`Microsoft.NET.Test.Sdk` 17.6.0, `xunit` 2.4.2) are still on their 2023
+  versions — they build and pass clean on net10.0, but they are the one piece of tooling not
+  yet current.
 - `.gitignore` was broadened from four hard-coded project paths to plain `bin/` and `obj/`,
   since the project names changed.
 - **`BUILD-PLAN` §5 P3's "Done when" said 8 candidates** while the packet body said 5 — the

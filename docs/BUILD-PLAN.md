@@ -106,10 +106,11 @@ BurmesePoker.Domain/
   Abstractions/ IPlayerAgent, IGameObserver
 ```
 
-**Solution file format:** `BurmesePoker.slnx`, the XML format that is now the .NET
-default (`dotnet new sln` emits it, VS 17.13+ and SDK 9.0.200+ read it). Nick's standing
-preference is the newest supported .NET tooling, so prefer `.slnx` over the classic `.sln`
-if the question comes up again.
+**Tooling.** The solution file is `BurmesePoker.slnx`, the XML format that is now the .NET
+default (`dotnet new sln` emits it). All three projects target **`net10.0`**, matching the
+installed SDK. Nick's standing preference is the newest supported .NET tooling — prefer the
+newer option whenever this kind of question comes up again, rather than the
+backwards-compatible one.
 
 **As built by P0:** `Cards/Rank.cs`, `Cards/Suit.cs`, `Cards/CardColor.cs`,
 `Cards/CardText.cs`, `Melds/MeldKind.cs`. Everything else in the tree above is still to
@@ -342,7 +343,7 @@ kept-then-deleted tests.
   52 ranked + 2 jokers (one red, one black).
 - `Deck` as a **plain class wrapping a list** — *not* a `List<Card>` subclass. Expose
   `DrawFromTop`, `DrawFromBottom`, `Count`, and `Shuffle(Random)`.
-- Use `Random.Shuffle(Span<T>)` (available in net8.0), **not** `OrderBy(r.Next())` — the old
+- Use `Random.Shuffle(Span<T>)`, **not** `OrderBy(r.Next())` — the old
   shuffle was not a uniform permutation.
 
 **Acceptance tests.**

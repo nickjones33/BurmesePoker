@@ -55,8 +55,9 @@ dotnet test --filter "FullyQualifiedName~SomeTestName"   # single test
 dotnet run --project BurmesePoker.Console       # run the game (a placeholder until P8)
 ```
 
-The installed SDK (10.x) is newer than the target framework (`net8.0`). This builds fine and
-is not a problem to "fix" unless asked.
+All three projects target **`net10.0`**, matching the installed SDK (10.0.111). Nick's
+standing preference is the newest supported .NET tooling — see the `.slnx` solution format
+for the same call. Don't downgrade either back for compatibility's sake.
 
 ## What the game is
 
