@@ -4,7 +4,7 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-18 (rev 8 — **all blocking questions closed**; no match-end rule).
+Last revised: 2026-08-18 (rev 9 — records what a **turned-up joker** would designate, §9 #11).
 
 ---
 
@@ -120,6 +120,15 @@ The distinguishing mechanic of the game.
 
 > **`OPEN` — why 7♦ and A♠?** No source explains this and Nick doesn't recall. It may be
 > arbitrary house tradition. Recorded as-is.
+
+> **`OPEN` — what if a turned-up card is a joker?** 4 of the 108 cards are jokers, so one of
+> the two cards turned up at setup is a joker roughly one round in fourteen, and no source
+> says what that does. Three readings: it designates the **jokers of its own colour** (2
+> cards — what §4.2's exact match says if a joker's colour is read as its identity), it
+> designates **all four jokers**, or jokers **cannot be money cards** and the card is set
+> aside and another turned. **Recommend the first**, because it is §4.2 applied unchanged
+> rather than a new rule. Tracked as §9 #11; the safe default is recorded in `BUILD-PLAN.md`
+> P2.
 
 ### 4.2 Matching — `PLAYER`, Settled
 
@@ -510,6 +519,7 @@ the **7♦** — one of your two permanent money cards. Almost certainly chance.
 | 8 | Max jokers per meld? | 6.1 | Unknown — recommend *unlimited* | Meld validation |
 | 9 | One shared discard pile or per-player piles? | 5 | Unknown — largely moot | Low |
 | 10 | Why 7♦ and A♠ specifically? | 4.1 | Unknown, likely unrecoverable | None |
+| 11 | If a **joker** is turned up as a money card, what does it designate? | 4.1 | Unknown — recommend *the two jokers of that colour* | Money designation (P2) |
 
 
 **Nothing here blocks the build.** Every remaining item has a safe default recorded in

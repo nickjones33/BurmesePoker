@@ -100,3 +100,7 @@ Each of these has a safe default and does not block the build. Ask only if it's 
   (§9 #7 — Nick doesn't recall this being a rule.)
 - **Why these two cards.** *"Is there a reason the 7♦ and A♠ in particular are the money
   cards?"* (§9 #10 — likely unrecoverable, but cheap to ask.)
+- **A joker turned up as a money card.** *"At the start of a round, when you turn the two
+  cards over for the money cards, what happens if one of them is a joker?"* (§9 #11 — asked
+  flat, with no options offered. If the answer is that it does become a money card, the
+  follow-up is: *"and then which cards in your hand pay out for it?"*)

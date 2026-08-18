@@ -1,7 +1,7 @@
 # Burmese Poker — Build Plan
 
 **Supersedes `RECONCILIATION-PLAN.md`**, which assumed the existing code was the foundation.
-Rules authority remains `RULES.md` (rev 8).
+Rules authority remains `RULES.md` (rev 9).
 
 Designed to be worked through across **many separate sessions**. Every packet in §5 is
 self-contained: it names what to read, what it depends on, what to build, and how to know
@@ -115,8 +115,10 @@ supported .NET tooling — prefer the newer option whenever this kind of questio
 again, rather than the backwards-compatible one.
 
 **As built by P0:** `Cards/Rank.cs`, `Cards/Suit.cs`, `Cards/CardColor.cs`,
-`Cards/CardText.cs`, `Melds/MeldKind.cs`. Everything else in the tree above is still to
-come. The old exe project is renamed `BurmesePoker.Console`; the test project references
+`Cards/CardText.cs`, `Melds/MeldKind.cs`. **Added by P1:** `Cards/CardId.cs`,
+`Cards/Card.cs`, `Cards/Deck.cs`, `Cards/DeckBuilder.cs`, `Cards/DeckExhaustedException.cs`
+— the last is not in the sketch above but belongs to `Cards/`. Everything else in the tree
+above is still to come. The old exe project is renamed `BurmesePoker.Console`; the test project references
 **Domain only**, so nothing can accidentally test through the front end.
 
 ---
@@ -357,6 +359,23 @@ kept-then-deleted tests.
 - Drawing from an empty deck throws a **domain** exception, not `InvalidOperationException`
   from `.First()`.
 
+> **Amended after the P1 session (2026-08-18).** Built as specified, plus four small
+> additions the acceptance tests wanted and later packets will use:
+> - `Card.Ranked(id, rank, suit)` and `Card.Joker(id, color)` factories. The positional
+>   constructor stays public (§3.1), but the factories derive `Color` from `Suit`, so a card
+>   whose colour contradicts its suit cannot be built by accident. **Prefer them everywhere.**
+> - `Deck.TwoDecks()` — a shoe in one call, since `new Deck(DeckBuilder.BuildTwoDecks())`
+>   appears in every test and will appear in `RoundEngine`.
+> - `Deck.IsEmpty` and `Deck.Cards` (a **live**, read-only view, top first — copy it before
+>   drawing or shuffling if you need a snapshot).
+> - `Card.ToString()` renders `5♥` / `🃏Red` via `CardText`, so assertion failures are
+>   readable. It is debug text, not front-end formatting; P8 owns display.
+>
+> `DeckExhaustedException` lives in `Domain/Cards/` and derives from `Exception` directly,
+> **not** from `InvalidOperationException` — the point of the acceptance criterion is that a
+> caller can tell an empty draw pile (a real game situation, `RULES.md` §5) apart from a
+> programming error.
+
 **Done when.** All of the above pass and no other packet's types are needed.
 
 ---
@@ -386,6 +405,15 @@ kept-then-deleted tests.
 - A card never recorded has `OwnerOf == null`.
 - Ownership is write-once: re-recording a card that already has an owner is either rejected or
   a no-op — it must never transfer (`RULES.md` §4.4 rule 2).
+
+> **Amended after the P1 session (2026-08-18) — a turned-up joker.** `SameValueAs` compares
+> rank, suit **and colour**, so for ranked cards it is exactly §4.2's rank-and-suit match
+> (colour is a function of suit). For a joker it also discriminates by colour — and nothing
+> says what happens if one of the two turned-up money cards **is** a joker, which it can be:
+> 4 of the 108 cards are jokers, so it happens roughly one round in fourteen.
+> **Safe default: no special case at all.** Designate by `SameValueAs` like any other card,
+> which makes a turned-up red joker designate the two red jokers and neither black one.
+> Do **not** write a joker branch. Tracked as `RULES.md` §9 #11.
 
 **Done when.** Designation is a pure function of the turned-up cards, with no mutation of any
 `Card`.
@@ -570,8 +598,10 @@ card prevents re-exploring permutations of the same cover.
   ownership with the **original drawer**.
 - Setup rejects 3 players and 7 players.
 
-**Open decisions.** Deck exhaustion and match end are **not** in this packet — see P9. Have
-`RoundEngine` throw a clearly-named domain exception on exhaustion for now.
+**Open decisions.** Deck exhaustion and match end are **not** in this packet — see P9. The
+domain exception already exists: P1 built `Cards.DeckExhaustedException`, which `Deck` throws
+from both draw methods. **Let it propagate — do not invent a second one**, and do not catch it
+until P9 implements the reshuffle.
 
 **Done when.** A scripted round runs end to end in tests with no console involvement.
 
