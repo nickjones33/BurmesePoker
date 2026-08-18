@@ -120,7 +120,10 @@ again, rather than the backwards-compatible one.
 — the last is not in the sketch above but belongs to `Cards/`. **Added by P3:**
 `Melds/MeldSlot.cs`, `Melds/Meld.cs`, `Melds/RunGenerator.cs`. **By P4:**
 `Melds/SetGenerator.cs`. **By P5:** `Melds/MeldCandidates.cs`, `Melds/HandEvaluator.cs` —
-which completes `Melds/`. `Money/`, `Play/` and `Abstractions/` are still to come. The old exe project is renamed `BurmesePoker.Console`; the test project references
+which completes `Melds/`. **By P2:** `Money/MoneyCardRegistry.cs`, `Money/CardOwnership.cs`
+and `Play/PlayerId.cs` — the last is brought forward out of `Play/` because ownership is
+recorded against a player, and P2 needs the type. `Abstractions/` and the rest of `Play/` are
+still to come. The old exe project is renamed `BurmesePoker.Console`; the test project references
 **Domain only**, so nothing can accidentally test through the front end.
 
 ---
@@ -420,6 +423,15 @@ kept-then-deleted tests.
 **Done when.** Designation is a pure function of the turned-up cards, with no mutation of any
 `Card`.
 
+> **As built (2026-08-18).** Both types are exactly as specified above. `Multiplier` is
+> `(permanent ? 1 : 0) + (turnedUp ? 1 : 0)`, so doubling is the overlap and the ceiling falls
+> out with no clamp. The permanent designators are two `Card`s with **negative ids**, compared
+> by `SameValueAs` like any other designator — they are values, never dealt. `RecordFromDeck`
+> re-recording the **same** owner is a no-op; re-recording a **different** owner throws
+> `InvalidOperationException`, since one physical card cannot come off the deck twice.
+> `CardOwnership.Records` is a live `IReadOnlyDictionary<CardId, PlayerId>` — **the surface P6
+> settles from.** No joker branch was written, per the amendment above.
+
 ---
 
 ### P3 — Run candidate generation
@@ -649,6 +661,16 @@ card prevents re-exploring permutations of the same cover.
 - A money card left undrawn in the deck is owned by nobody and pays nobody.
 - Property test: deltas always sum to zero for any configuration.
 
+> **Amended after the P2 session (2026-08-18) — settlement needs a card lookup.**
+> `CardOwnership.Records` is keyed by **`CardId`**, but `MoneyCardRegistry.Multiplier` takes a
+> **`Card`** (designation is by value). So `Settlement.ForRound` must be able to resolve an id
+> back to a card, and needs the round's shoe passed in alongside the registry and the
+> ownership. **`DeckBuilder.BuildTwoDecks()` returns the 108 cards with `CardId.Value` equal
+> to the list index**, so the lookup is an array index, not a dictionary — but note that
+> `Deck.Cards` is *shuffled* and therefore **not** index-aligned. Do not widen
+> `RecordFromDeck` to take a whole `Card` instead; BUILD-PLAN §3.3 fixes its signature, and
+> ownership is deliberately about the physical card, not its value.
+
 **Done when.** All pass, including the §4.3 worked example reproduced exactly.
 
 ---
@@ -659,8 +681,9 @@ card prevents re-exploring permutations of the same cover.
 
 **Read first.** `RULES.md` §3, §5, §7.1. §3.5 above.
 
-**Build.** `PlayerId`, `PlayerState`, `TableState`, `TurnAction`, `TurnContext`,
-`IPlayerAgent`, `IGameObserver`, `RoundEngine`.
+**Build.** `PlayerState`, `TableState`, `TurnAction`, `TurnContext`, `IPlayerAgent`,
+`IGameObserver`, `RoundEngine`. **`PlayerId` already exists** — P2 brought it forward into
+`Play/`; do not redefine it.
 
 **Flow to implement.**
 1. Setup: shuffle, deal 13 each — **recording ownership on every dealt card** (`RULES.md`
