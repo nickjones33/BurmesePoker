@@ -83,6 +83,13 @@ that asserted it. **Any red tree from here on is a real problem.**
      `--filter "FullyQualifiedName~Name"` is rejected under MTP.
 - The test project is now `<OutputType>Exe</OutputType>` — xunit v3 test projects are
   self-hosting executables. That is expected, not a mistake.
+- **Unused packages were dropped, deliberately.** The test project references **`xunit.v3`
+  and nothing else** — no `xunit.runner.visualstudio` (IDE Test Explorer integration only;
+  the CLI does not need it) and no coverage collector (nothing collects coverage). The
+  Console project has **no `Spectre.Console` reference** — it went unused when `Logic/` was
+  deleted. **P8 adds Spectre back as its first step**, at the current version rather than the
+  2023 pin. If you want coverage or IDE test discovery later, add the package then; don't
+  treat their absence as an oversight.
 - `.gitignore` was broadened from four hard-coded project paths to plain `bin/` and `obj/`,
   since the project names changed.
 - **`BUILD-PLAN` §5 P3's "Done when" said 8 candidates** while the packet body said 5 — the

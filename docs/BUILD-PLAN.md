@@ -586,6 +586,11 @@ card prevents re-exploring permutations of the same cover.
 **Build.** `SpectrePlayerAgent : IPlayerAgent`, `ConsoleObserver : IGameObserver`,
 `CardFormatting` using the salvaged `CardText`, and `Program.cs` wiring.
 
+**First step: add the Spectre.Console package back.** P0 carried the 2023 `Spectre.Console`
+0.47.0 reference forward, but nothing referenced it once `Logic/` was deleted, so it was
+dropped as dead weight. Add the current version — `dotnet add BurmesePoker.Console package
+Spectre.Console` — rather than restoring the 2023 pin.
+
 **Requirements.**
 - Hand display sorted by the salvaged rank order, with money-card markers (`($)`, `($$)`).
 - Prompts for: draw vs. pick up, which card to discard, claim the money card, declare.
