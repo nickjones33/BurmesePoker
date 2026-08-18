@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="BurmesePoker.Console/BurmesePoker.Console.csproj" />
+  <Project Path="BurmesePoker.Domain/BurmesePoker.Domain.csproj" />
+  <Project Path="BurmesePoker.Tests/BurmesePoker.Tests.csproj" />
+</Solution>

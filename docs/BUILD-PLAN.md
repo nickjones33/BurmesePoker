@@ -1,7 +1,7 @@
 # Burmese Poker — Build Plan
 
 **Supersedes `RECONCILIATION-PLAN.md`**, which assumed the existing code was the foundation.
-Rules authority remains `RULES.md` (rev 4).
+Rules authority remains `RULES.md` (rev 8).
 
 Designed to be worked through across **many separate sessions**. Every packet in §5 is
 self-contained: it names what to read, what it depends on, what to build, and how to know
@@ -105,6 +105,16 @@ BurmesePoker.Domain/
   Play/        PlayerId, PlayerState, TableState, TurnAction, RoundEngine, MatchEngine
   Abstractions/ IPlayerAgent, IGameObserver
 ```
+
+**Solution file format:** `BurmesePoker.slnx`, the XML format that is now the .NET
+default (`dotnet new sln` emits it, VS 17.13+ and SDK 9.0.200+ read it). Nick's standing
+preference is the newest supported .NET tooling, so prefer `.slnx` over the classic `.sln`
+if the question comes up again.
+
+**As built by P0:** `Cards/Rank.cs`, `Cards/Suit.cs`, `Cards/CardColor.cs`,
+`Cards/CardText.cs`, `Melds/MeldKind.cs`. Everything else in the tree above is still to
+come. The old exe project is renamed `BurmesePoker.Console`; the test project references
+**Domain only**, so nothing can accidentally test through the front end.
 
 ---
 
@@ -282,7 +292,7 @@ order. P6 needs P1 and P2 only.
    then `git tag pre-rewrite`. **Do this before deleting anything** — `docs/` is currently
    untracked and would otherwise be lost.
 2. Create `BurmesePoker.Domain` (classlib), retarget `BurmesePoker.Console` (the existing exe
-   project, renamed), keep `BurmesePoker.Tests`. Wire project references and update the `.sln`.
+   project, renamed), keep `BurmesePoker.Tests`. Wire project references and update the solution file.
 3. Port `Common.cs` lines 26–197 into `Domain/Cards/CardText.cs` (display glyphs, display
    codes, rank ordering) and the enum files. **Drop** `DetermineCardRankSuitFromString`,
    `CardSuitFromChar`, `CardColorFromString`, `CardSuits_All`, `CardRankCodes_All` — all dead,
@@ -291,8 +301,26 @@ order. P6 needs P1 and P2 only.
 5. Delete the two existing tests. Their content is already captured — and corrected — in
    `docs/spec/RUN-CANDIDATES.md`, and they remain in git under `pre-rewrite`.
 
-**Acceptance.** `dotnet build` green. `dotnet test` green with zero tests. No file references
-a deleted type. `git tag pre-rewrite` exists.
+**Enum fates, decided in the P0 session.** Of the five enums in the old `Common.cs`:
+`CardRank` → `Rank` (numeric, joker member dropped — §3.2); `CardSuit` → `Suit` (joker member
+dropped, for the same reason and so that `Card.Suit` being `null` is the single joker
+signal); `CardColor` carries over unchanged; `CardPlayType` → `Melds/MeldKind`;
+`MoneyCardStatus` **dropped**, superseded by `MoneyCardRegistry.Multiplier` returning
+`0/1/2` (§3.3); `PlayerAction` **dropped**, superseded by `TurnAction` in P7.
+
+`UserPromptFactory` is **not** carried into the Console project despite §1.2 listing it as a
+keep — step 4 deletes `Logic/` wholesale, and §1.3 rules out a `legacy/` folder. It survives
+at the `pre-rewrite` tag, which is where P8 should read it from. Same disposition as the
+kept-then-deleted tests.
+
+**Acceptance.** `dotnet build` green. `dotnet test` green. No file references a deleted type.
+`git tag pre-rewrite` exists.
+
+> **Amended after the P0 session (2026-08-18).** The original acceptance said *"green with
+> zero tests"*. A zero-test suite exits 0 but only prints *"No test is available…"*, and it
+> would leave the freshly-ported `CardText` uncovered. P0 therefore ships `CardTextTests` —
+> 28 cases over the display, ordering and parse tables it ports. Coverage of what a packet
+> writes belongs to that packet.
 
 **Done when.** The solution is three projects and the only domain code is enums plus `CardText`.
 
@@ -305,8 +333,11 @@ a deleted type. `git tag pre-rewrite` exists.
 **Read first.** §3.1, §3.2. `RULES.md` §2.
 
 **Build.**
-- `Rank`, `Suit`, `CardColor` (§3.2 numeric ranks).
-- `CardId`, `Card` as `readonly record struct` (§3.1).
+- `Rank`, `Suit`, `CardColor` — **already built by P0** in `Domain/Cards/`, in their target
+  §3.2 shape: numeric ranks 2..14, no `Joker` member in either `Rank` or `Suit`. Nothing to
+  do here beyond using them.
+- `CardId`, `Card` as `readonly record struct` (§3.1). Jokers carry `Rank = null` **and**
+  `Suit = null`, and are distinguished from each other by `Color` plus `Id`.
 - `DeckBuilder.BuildTwoDecks()` → 108 cards, `CardId` 0..107, sequential. Each deck is
   52 ranked + 2 jokers (one red, one black).
 - `Deck` as a **plain class wrapping a list** — *not* a `List<Card>` subclass. Expose
@@ -394,7 +425,11 @@ joker instance**. Do not port the greedy walk.
   candidates. *Direct regression test for the verified infinite loop.*
 - Two copies of 3♦ with `2♦4♦` → candidates using each copy distinctly.
 
-**Done when.** All pass, including the 8-candidate joker case.
+**Done when.** All pass, including the **5**-candidate joker case.
+
+> The count is 5, not 8. `docs/spec/RUN-CANDIDATES.md` §4 corrects the 2023 test, which
+> counted joker *interpretations* rather than distinct `CardId` sets. This "Done when" line
+> said 8 until the P0 session caught the contradiction with the packet's own body.
 
 ---
 
@@ -627,7 +662,7 @@ For picking up in a fresh session with no memory of this conversation.
 
 | Risk | Mitigation |
 |---|---|
-| **P3 is the hard packet** — window-based generation with joker substitution is fiddly, and everything downstream depends on it. | The 8-candidate test is an exact, pre-existing spec. Write the tests first. Do not start P5 until P3 is green. |
+| **P3 is the hard packet** — window-based generation with joker substitution is fiddly, and everything downstream depends on it. | The candidate-count tests are an exact, pre-existing spec (5, not the 2023 test's 8 — see `docs/spec/RUN-CANDIDATES.md` §4). Write the tests first. Do not start P5 until P3 is green. |
 | Candidate explosion on joker-heavy hands. | Deduplicate by `CardId` set at generation. With only 4 jokers the bound is small; add a test asserting candidate counts stay in the hundreds, not millions. |
 | The rewrite stalls half-finished, as in 2023. | Packets are individually shippable and each ends green. P1–P6 are pure domain with no UI dependency, so progress is real even if the console never gets built. |
 | Rules drift as more is recalled. | `RULES.md` provenance tags make revisiting cheap; §9 tracks what is still unrecorded. |

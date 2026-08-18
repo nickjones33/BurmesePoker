@@ -1,4 +1,2 @@
-/BurmesePoker/bin
-/BurmesePoker/obj
-/BurmesePoker.Tests/bin
-/BurmesePoker.Tests/obj
+bin/
+obj/

@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BurmesePoker\BurmesePoker.csproj" />
+    <ProjectReference Include="..\BurmesePoker.Domain\BurmesePoker.Domain.csproj" />
   </ItemGroup>
 
 </Project>

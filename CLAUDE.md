@@ -11,7 +11,8 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-This project is **mid-rewrite**. Whether or not you use the skill, read these first:
+This project is **mid-rewrite**. **P0 is done** — the 2023 implementation has been deleted and
+the solution is now three projects. Whether or not you use the skill, read these first:
 
 1. **`docs/STATUS.md`** — which work packet is next, and the state of the tree. Update it at
    the end of every session.
@@ -20,11 +21,18 @@ This project is **mid-rewrite**. Whether or not you use the skill, read these fi
 3. **`docs/RULES.md`** — **the only rules authority.** Every rule is tagged with provenance
    and confidence.
 
-**The code currently in `BurmesePoker/` is the abandoned 2023 implementation and is being
-retired** (`BUILD-PLAN.md` §1). Do **not** fix its bugs, improve its structure, or extend it.
-It survives only until packet P0 restructures the solution. Roughly 180 lines of enums and
-lookup tables from `Common.cs` are salvaged; everything else is discarded, preserved in git
-under the tag `pre-rewrite`.
+**The abandoned 2023 implementation is gone.** P0 deleted it; it survives only at the git tag
+`pre-rewrite`. Roughly 180 lines of enums and lookup tables from `Common.cs` were salvaged into
+`BurmesePoker.Domain/Cards/`. Do **not** restore the rest, and do not treat anything at
+`pre-rewrite` as a source of rules — read it only as history (`BUILD-PLAN.md` §1).
+
+The solution is:
+
+```
+BurmesePoker.Domain/     pure rules. no I/O, no Spectre. everything new goes here.
+BurmesePoker.Console/    Spectre.Console front end. the only project that prints. rebuilt in P8.
+BurmesePoker.Tests/      xunit against Domain's public API. references Domain only.
+```
 
 ## Rules of engagement
 
@@ -44,10 +52,8 @@ under the tag `pre-rewrite`.
 dotnet build                                    # build solution
 dotnet test                                     # run all tests
 dotnet test --filter "FullyQualifiedName~SomeTestName"   # single test
-dotnet run --project BurmesePoker               # run the game (interactive; needs a TTY)
+dotnet run --project BurmesePoker.Console       # run the game (a placeholder until P8)
 ```
-
-After P0 the run target becomes `BurmesePoker.Console`.
 
 The installed SDK (10.x) is newer than the target framework (`net8.0`). This builds fine and
 is not a problem to "fix" unless asked.
