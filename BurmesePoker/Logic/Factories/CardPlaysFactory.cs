@@ -63,6 +63,7 @@ internal static class CardPlaysFactory
                 }
             }
         }
+        
         List<CardPlay> alternativePermutations = [];
         foreach (CardPlay cleanRun in runsStartingWithNonJokers)
         {
@@ -70,8 +71,11 @@ internal static class CardPlaysFactory
 
             List<CardPlay> permutations = [];
 
+            CalculatePermutationsRecursively(cardsInRun, jokers, 1, [], permutations);
+
             alternativePermutations.AddRange(permutations);
         }
+
         List<CardPlay> runsStartingWithJokers = [];
         foreach (Card joker in jokers)
         {
@@ -111,21 +115,10 @@ internal static class CardPlaysFactory
         }
         return [.. runsStartingWithNonJokers, .. runsStartingWithJokers];
     }
-    private static void CalculatePermutationsRecursive(List<Card> originalCardsInPlay, List<Card> jokers,
+    private static void CalculatePermutationsRecursively(List<Card> originalCardsInPlay, List<Card> jokers,
         int index, List<Card> currentPlay, List<CardPlay> results)
     {
-        if (index == originalCardsInPlay.Count) //base case check
-        {
-            results.Add(new CardPlay(CardPlayType.Run, currentPlay));
-            return;
-        }
-
-        if (jokers.Count > 0)
-        {
-            var firstJoker = jokers.First();
-            currentPlay.Add(firstJoker);
-            
-        }
+        
     }
     private static List<CardPlay> MakeSetsFromHand(List<Card> hand)
     {

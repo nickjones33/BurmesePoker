@@ -17,6 +17,7 @@ public class CardPlayFactoryTests
         Assert.NotNull(result);
         Assert.Equal(3, result.Count);
     }
+    
     [Fact]
     public void CardPlays_Runs_HappyPath_Jokers()
     {
