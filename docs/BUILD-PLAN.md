@@ -555,6 +555,21 @@ card prevents re-exploring permutations of the same cover.
 - `TryFindCover` melds are pairwise disjoint by `CardId` and cover the hand exactly.
 - Evaluation of a 13-card hand completes in well under a second.
 
+> **Re-planned by the P4 session (2026-08-18).** P3 and P4 are both built, so
+> `MeldCandidates.For` is now a concatenation of two `IReadOnlyList<Meld>`s — but not a naive
+> one:
+> - **The two generators can emit the same card set**, and `MeldCandidates.For` should
+>   de-duplicate across them with the same
+>   `new HashSet<HashSet<CardId>>(HashSet<CardId>.CreateSetComparer())`. It happens for any
+>   meld holding **at most one real card**: `{9♦,🃏,🃏}` is a run (the jokers play the 10♦ and
+>   J♦) *and* a set (they play the 9♠ and 9♥), and `{🃏,🃏,🃏}` is both trivially. Keeping both
+>   is not wrong — identity is the card set, so the cover search would simply try the same
+>   cover twice — but it doubles that branch of the search for nothing, and it makes
+>   `TryFindCover` report a meld's kind arbitrarily. Keep the **run** interpretation, which is
+>   the first one generated.
+> - **Both generators already return `IReadOnlyList<Meld>`**, eagerly. Match that rather than
+>   the `IEnumerable<Meld>` of §3.4.
+>
 > **Re-planned by the P3 session (2026-08-18).**
 > - **Use `Meld.CardIds` and `Meld.Overlaps`** — both exist for this search. Nothing else on
 >   `Meld` is identity; the interpretation on each `MeldSlot` is display only.
@@ -747,7 +762,7 @@ For picking up in a fresh session with no memory of this conversation.
 | Risk | Mitigation |
 |---|---|
 | ~~**P3 is the hard packet**~~ — **done 2026-08-18.** Window-based generation with joker substitution was fiddly, and everything downstream depends on it. | The candidate-count tests were an exact, pre-existing spec (5, not the 2023 test's 8 — see `docs/spec/RUN-CANDIDATES.md` §4), and they were written first. P5 may now proceed. |
-| Candidate explosion on joker-heavy hands. | Deduplicate by `CardId` set at generation, and choose joker instances as combinations rather than permutations. **Measured worst case: 4,032 candidates in milliseconds** — thousands, not the hundreds this row assumed, and nowhere near millions. P5 should index candidates by `CardId` rather than scanning them (see P5's re-plan note). |
+| Candidate explosion on joker-heavy hands. | Deduplicate by `CardId` set at generation, and choose joker instances as combinations rather than permutations. **Measured worst case: 4,032 run candidates in milliseconds** — thousands, not the hundreds this row assumed, and nowhere near millions. **Sets add almost nothing**: a set holds at most four cards, so no hand can produce many. P4's measured worst case is **639** — nine cards of one rank split (3,2,2,2) across the suits plus all four jokers. The risk is P3's alone. P5 should index candidates by `CardId` rather than scanning them (see P5's re-plan note). |
 | The rewrite stalls half-finished, as in 2023. | Packets are individually shippable and each ends green. P1–P6 are pure domain with no UI dependency, so progress is real even if the console never gets built. |
 | Rules drift as more is recalled. | `RULES.md` provenance tags make revisiting cheap; §9 tracks what is still unrecorded. |
 | Three projects is over-engineering. | Noted in §2. The enforcement is the point, but a single project with `IGameObserver` is an acceptable fallback. |

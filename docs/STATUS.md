@@ -10,21 +10,22 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P2 or P4 — both unblocked, both small.** No blockers. **P4** (sets) is now the
-shortest path to P5, because P3 built the `Meld` vocabulary P4 reuses; **P2** (money
-designation) is independent of both and equally self-contained.
+**Next packet: P5 (exact-cover hand evaluator) or P2 (money designation).** No blockers.
+**P5** is now unblocked — P3 and P4 have both shipped, so every input it needs exists, and it
+is the component the game has never had. **P2** is independent of the meld work and remains
+equally self-contained; it is the smaller of the two.
 
-P0, P1 and P3 are done. The 2023 implementation is gone from the tree and lives only at the
+P0, P1, P3 and P4 are done. The 2023 implementation is gone from the tree and lives only at the
 `pre-rewrite` tag. The solution is three projects — `BurmesePoker.Domain` (pure rules),
 `BurmesePoker.Console` (Spectre-less placeholder until P8), and `BurmesePoker.Tests`
 (references **Domain only**).
 
 Domain now holds `Cards/{Rank,Suit,CardColor,CardText,CardId,Card,Deck,DeckBuilder,
-DeckExhaustedException}` and `Melds/{MeldKind,MeldSlot,Meld,RunGenerator}`. The card model,
-the 108-card shoe, and run candidate generation are real. Sets (P4), money designation (P2)
+DeckExhaustedException}` and `Melds/{MeldKind,MeldSlot,Meld,RunGenerator,SetGenerator}`. The
+card model, the 108-card shoe, and **both** meld generators are real. Money designation (P2)
 and the cover search (P5) do not exist yet.
 
-✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **82 passed,
+✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **100 passed,
 0 failed**. **Any red tree is a real problem.**
 
 ---
@@ -37,15 +38,15 @@ and the cover search (P5) do not exist yet.
 | ☑ | **P1** Cards, deck, identity | P0 | done 2026-08-18 |
 | ☐ | **P2** Money designation and ownership | P1 | **ready** — see the turned-up-joker default below |
 | ☑ | **P3** Run candidate generation | P1 | done 2026-08-18 — spec updated with what it found |
-| ☐ | **P4** Set candidate generation | P1 | **ready** — smallest; reuses `Meld`/`MeldSlot` from P3 |
-| ☐ | **P5** Exact-cover hand evaluator | P3, P4 | |
+| ☑ | **P4** Set candidate generation | P1 | done 2026-08-18 |
+| ☐ | **P5** Exact-cover hand evaluator | P3, P4 | **ready** — both generators exist; see the cross-generator duplicate note below |
 | ☐ | **P6** Stakes and settlement | P1, P2 | |
 | ☐ | **P7** Round and turn engine | P5, P6 | |
 | ☐ | **P8** Console front end | P7 | |
 | ☐ | **P9** End-to-end play | P8 | |
 | ☐ | **P10** Bot opponents and hints | P9 | optional |
 
-**P2 and P4 are independent of each other.** P5 needs P4 (it already has P3).
+**P2 is independent of the meld packets.** P5's dependencies are both satisfied.
 
 ---
 
@@ -53,7 +54,36 @@ and the cover search (P5) do not exist yet.
 
 *Anything a cold context would need: decisions taken, surprises, deliberate leftovers.*
 
-**From P3 (most recent):**
+**From P4 (most recent):**
+
+- **`SetGenerator.Candidates(hand)` → `IReadOnlyList<Meld>`**, mirroring `RunGenerator` in
+  every respect: eager, de-duplicated by card set, jokers taken in ascending index order.
+  It walks the **four suits once per rank**, taking each suit as a held card, a joker, or
+  nothing — a three-card set is a four-suit set with one suit left unfilled. That single
+  formulation gives the ≥3-distinct-suits rule, the four-card maximum and joker substitution
+  at once, with no subset enumeration anywhere.
+- **⚠️ The two generators can emit the same card set — P5 must de-duplicate across them.**
+  It happens for any meld holding **at most one real card**: `{9♦,🃏,🃏}` is a run (jokers as
+  10♦ and J♦) *and* a set (jokers as 9♠ and 9♥), and `{🃏,🃏,🃏}` is both trivially. Not
+  wrong — identity is the card set — but it makes the cover search try the same cover twice
+  and makes `TryFindCover` report a kind arbitrarily. **`MeldCandidates.For` should
+  de-duplicate with the usual set comparer and keep the run interpretation**, which is
+  generated first. BUILD-PLAN P5 has been amended to say so.
+- **Sets cannot explode the way runs can.** Measured worst case **639** candidates — nine
+  cards of one rank split (3,2,2,2) across the suits plus all four jokers — against P3's
+  4,032. The closed form is in the test: every choice of *k* real cards in distinct suits
+  plus *j* jokers with 3 ≤ k+j ≤ 4. The §7 risk row now says the explosion risk is P3's alone.
+- **The brute-force cross-check paid off again**, and was trivial for sets: a subset is a set
+  iff it holds 3–4 cards whose real members share a rank and occupy distinct suits. Nothing
+  had to be said about jokers at all — with at most four cards there is always a free suit.
+- **All-joker sets are emitted**, matching P3 and `RULES.md` §9 #8's *unlimited jokers*
+  recommendation. `AHandOfNothingButJokersStillMakesSets` and its `RunGenerator` twin are the
+  pair to change together if that ever settles the other way.
+- **No new rules question.** §6.2 was already `EXPERT`-confirmed and settled; the packet
+  needed no judgement call beyond the all-joker default P3 had already taken.
+- P4 shipped 18 tests (100 total).
+
+**Still current, from P3:**
 
 - **`RunGenerator.Candidates(hand)` returns `IReadOnlyList<Meld>`**, not the bare
   `IEnumerable<Meld>` of BUILD-PLAN §3.4 — generation is eager anyway, because
@@ -161,6 +191,7 @@ in rev 10) whether a meld may be made of nothing but jokers. `QUESTIONS-FOR-MYA-
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-18 | P4 | ☑ Done. `SetGenerator` — one walk over the four suits per rank, each taken as a held card, a specific joker, or nothing; de-duplicated by card set. Duplicate suits impossible by construction, so a set is at most four cards. Build clean, **100 passed / 0 failed** (18 new), including a brute-force cross-check over every subset. Measured the worst case at 639 candidates and amended the §7 risk row. Re-planned P5: the two generators collide on any meld with ≤1 real card, so `MeldCandidates.For` must de-duplicate across them. |
 | 2026-08-18 | P3 | ☑ Done. `MeldSlot`, `Meld` (identity is its `CardId` set) and `RunGenerator` — window-based generation with joker substitution, jokers chosen as combinations. Reference hand yields the specified **5** candidates. Build clean, **82 passed / 0 failed** (22 new). Corrected two counts in `docs/spec/RUN-CANDIDATES.md` (76, not 77; 4,032, not "hundreds"), widened `RULES.md` §9 #8 to cover all-joker melds (rev 10), and re-planned P4 and P5 around the shared `Meld` vocabulary. |
 | 2026-08-18 | P1 | ☑ Done. `CardId`, `Card` (record struct: `==` is instance identity, `SameValueAs` is value identity), `DeckBuilder.BuildTwoDecks()` → 108 cards with sequential ids, `Deck` (draw from either end, Fisher–Yates shuffle), `DeckExhaustedException`. Build clean, **60 passed / 0 failed** (32 new). Raised `RULES.md` §9 #11 (turned-up joker) and amended BUILD-PLAN P1, P2 and P7. |
 | 2026-08-18 | P0 | ☑ Done. Tagged `pre-rewrite`, then deleted `Models/`, `Logic/` and `Common.cs`. Solution restructured to Domain/Console/Tests. Salvaged the enums and display tables into `Cards/{Rank,Suit,CardColor,CardText}` and `Melds/MeldKind`. Build clean, **28 passed / 0 failed**. Amended P0's acceptance (tests, not zero tests) and P3's "Done when" (5 candidates, not 8). |
