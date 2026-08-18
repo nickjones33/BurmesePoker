@@ -117,8 +117,10 @@ again, rather than the backwards-compatible one.
 **As built by P0:** `Cards/Rank.cs`, `Cards/Suit.cs`, `Cards/CardColor.cs`,
 `Cards/CardText.cs`, `Melds/MeldKind.cs`. **Added by P1:** `Cards/CardId.cs`,
 `Cards/Card.cs`, `Cards/Deck.cs`, `Cards/DeckBuilder.cs`, `Cards/DeckExhaustedException.cs`
-— the last is not in the sketch above but belongs to `Cards/`. Everything else in the tree
-above is still to come. The old exe project is renamed `BurmesePoker.Console`; the test project references
+— the last is not in the sketch above but belongs to `Cards/`. **Added by P3:**
+`Melds/MeldSlot.cs`, `Melds/Meld.cs`, `Melds/RunGenerator.cs`. **By P4:**
+`Melds/SetGenerator.cs`. **By P5:** `Melds/MeldCandidates.cs`, `Melds/HandEvaluator.cs` —
+which completes `Melds/`. `Money/`, `Play/` and `Abstractions/` are still to come. The old exe project is renamed `BurmesePoker.Console`; the test project references
 **Domain only**, so nothing can accidentally test through the front end.
 
 ---
@@ -551,7 +553,8 @@ card prevents re-exploring permutations of the same cover.
 - 13 unrelated cards → not winning.
 - 12 meldable cards plus one orphan → **not** winning (partial cover must fail).
 - **A hand that wins only if a joker substitutes for a card it holds** → winning. *This is the
-  P3 joker-substitution rationale under test; if P3 is wrong this fails.*
+  P3 joker-substitution rationale under test; if P3 is wrong this fails.* **Build it out of a
+  set, not a run** — see the P5 note below.
 - `TryFindCover` melds are pairwise disjoint by `CardId` and cover the hand exactly.
 - Evaluation of a 13-card hand completes in well under a second.
 
@@ -581,6 +584,34 @@ card prevents re-exploring permutations of the same cover.
 > - **A meld may be nothing but jokers** (`RULES.md` §9 #8). Do not assume a ranked card.
 
 **Done when.** All pass. `IsWinning` is the only win authority in the codebase.
+
+> **Built by the P5 session (2026-08-18).** As specified, with three findings worth carrying.
+> - **The "wins only if a joker substitutes for a card it holds" hand has to be a set.** With
+>   a run it cannot be built at all: a joker can nearly always play *outward* from a run onto
+>   a rank the hand does not hold — one below the bottom card, or one above the top — so there
+>   is always a rival cover in which the joker substitutes for a card that is merely missing,
+>   and a generator that only ever filled gaps would still find it. The escape closes only at
+>   the ace, and blocking the other end just moves the boundary one rank along, all the way to
+>   holding the whole suit. A **set** has no such escape, because it is capped at four suits:
+>   hold all four suits of one rank plus a fifth copy (two decks) and a joker — six cards that
+>   can only cover as two three-card sets — and whichever suit the joker plays, the hand is
+>   holding it. That is the acceptance test. The run flavour is tested one level down instead,
+>   on `MeldCandidates`: the five-card window `2♦ 3♦ [🃏] 5♦ 6♦` while the real 4♦ is melded
+>   into a set of fours.
+> - **`TryFindCover` returns *a* cover, not a canonical one**, and not the one a human would
+>   draw. Thirteen hearts in sequence come back as `3+3+3+4`, because the search takes the
+>   first candidate containing the lowest uncovered card. Nothing downstream may assume a
+>   particular decomposition — see the notes on P8 and P10.
+> - **Jokers make almost any hand winnable**, which matters when writing *negative* tests: with
+>   two spare jokers any orphan finds a set, so a hand that must come back `false` has to be
+>   joker-free (or joker-poor). Two of the first negative hands drafted for this packet were
+>   winning by that route.
+>
+> **Measured.** The whole suite of three thirteen-card stress hands — including the
+> 4,032-candidate one, and a two-deck hand holding every diamond twice — evaluates in about
+> **100 ms** all told. Pinning to the lowest uncovered card is what makes that true; the
+> memoisation of dead ends changed nothing measurable and is kept only as a bound on hands
+> nobody has thought of.
 
 ---
 
@@ -686,6 +717,10 @@ Spectre.Console` — rather than restoring the 2023 pin.
 - Hand display sorted by the salvaged rank order, with money-card markers (`($)`, `($$)`).
 - Prompts for: draw vs. pick up, which card to discard, claim the money card, declare.
 - **Offer "declare" only when `HandEvaluator.IsWinning` is true**, and show the cover found.
+  ⚠️ **`TryFindCover` returns *a* cover, not the tidiest one** (P5): a whole suit in sequence
+  comes back as four melds, not one. If the declaration should read the way a player would lay
+  it out, that is P8's own presentation problem — re-cover the hand preferring longer melds,
+  or sort what comes back. Do not "fix" the evaluator for it.
 - Configurable player count and stakes at startup.
 
 **Acceptance.** Manual: `dotnet run --project BurmesePoker.Console` plays a full round to
@@ -731,9 +766,15 @@ settlement. No domain type references Spectre.
 ### P10 — Bot opponents and hints (optional)
 
 Only worth doing if you want to play solo. `MeldCandidates` plus `HandEvaluator` already give
-a greedy bot most of what it needs: keep the largest cover found, prefer discarding cards in
-no candidate, never discard an owned money card. A "best cover so far" hint for human players
-falls out of `TryFindCover`.
+a greedy bot most of what it needs: prefer discarding cards in no candidate, never discard an
+owned money card.
+
+⚠️ **What P5 did *not* build is a partial cover.** `TryFindCover` is all-or-nothing — it
+answers "can these cards be covered exactly", and returns nothing at all when they cannot. A
+bot's "keep the largest cover found" and a human's "best cover so far" hint are a different
+search: maximise the cards covered rather than demand every one of them. It is the same
+backtracking over the same index, scored instead of short-circuited, and it belongs here in
+P10, not in the win authority.
 
 ---
 
@@ -762,7 +803,7 @@ For picking up in a fresh session with no memory of this conversation.
 | Risk | Mitigation |
 |---|---|
 | ~~**P3 is the hard packet**~~ — **done 2026-08-18.** Window-based generation with joker substitution was fiddly, and everything downstream depends on it. | The candidate-count tests were an exact, pre-existing spec (5, not the 2023 test's 8 — see `docs/spec/RUN-CANDIDATES.md` §4), and they were written first. P5 may now proceed. |
-| Candidate explosion on joker-heavy hands. | Deduplicate by `CardId` set at generation, and choose joker instances as combinations rather than permutations. **Measured worst case: 4,032 run candidates in milliseconds** — thousands, not the hundreds this row assumed, and nowhere near millions. **Sets add almost nothing**: a set holds at most four cards, so no hand can produce many. P4's measured worst case is **639** — nine cards of one rank split (3,2,2,2) across the suits plus all four jokers. The risk is P3's alone. P5 should index candidates by `CardId` rather than scanning them (see P5's re-plan note). |
+| ~~Candidate explosion on joker-heavy hands~~ — **contained, measured 2026-08-18.** | Deduplicate by `CardId` set at generation, and choose joker instances as combinations rather than permutations. **Measured worst case: 4,032 run candidates in milliseconds** — thousands, not the hundreds this row assumed, and nowhere near millions. **Sets add almost nothing**: a set holds at most four cards, so no hand can produce many. P4's measured worst case is **639** — nine cards of one rank split (3,2,2,2) across the suits plus all four jokers. The risk is P3's alone. P5 does index candidates by `CardId` — by the *lowest* one in each meld — and evaluates three thirteen-card stress hands in about 100 ms in total. |
 | The rewrite stalls half-finished, as in 2023. | Packets are individually shippable and each ends green. P1–P6 are pure domain with no UI dependency, so progress is real even if the console never gets built. |
 | Rules drift as more is recalled. | `RULES.md` provenance tags make revisiting cheap; §9 tracks what is still unrecorded. |
 | Three projects is over-engineering. | Noted in §2. The enforcement is the point, but a single project with `IGameObserver` is an acceptable fallback. |

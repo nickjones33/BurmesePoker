@@ -10,22 +10,22 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P5 (exact-cover hand evaluator) or P2 (money designation).** No blockers.
-**P5** is now unblocked — P3 and P4 have both shipped, so every input it needs exists, and it
-is the component the game has never had. **P2** is independent of the meld work and remains
-equally self-contained; it is the smaller of the two.
+**Next packet: P2 (money designation and ownership).** No blockers. It is the only packet left
+whose dependencies are met — P6 needs it, and P7 needs P6 — so the critical path now runs
+through it. It is also self-contained and small.
 
-P0, P1, P3 and P4 are done. The 2023 implementation is gone from the tree and lives only at the
-`pre-rewrite` tag. The solution is three projects — `BurmesePoker.Domain` (pure rules),
+P0, P1, P3, P4 and P5 are done. The 2023 implementation is gone from the tree and lives only at
+the `pre-rewrite` tag. The solution is three projects — `BurmesePoker.Domain` (pure rules),
 `BurmesePoker.Console` (Spectre-less placeholder until P8), and `BurmesePoker.Tests`
 (references **Domain only**).
 
 Domain now holds `Cards/{Rank,Suit,CardColor,CardText,CardId,Card,Deck,DeckBuilder,
-DeckExhaustedException}` and `Melds/{MeldKind,MeldSlot,Meld,RunGenerator,SetGenerator}`. The
-card model, the 108-card shoe, and **both** meld generators are real. Money designation (P2)
-and the cover search (P5) do not exist yet.
+DeckExhaustedException}` and `Melds/{MeldKind,MeldSlot,Meld,RunGenerator,SetGenerator,
+MeldCandidates,HandEvaluator}` — **`Melds/` is complete.** The card model, the 108-card shoe,
+both meld generators and the win authority are real. **Nothing about money exists yet**, and
+neither does anything in `Money/`, `Play/` or `Abstractions/`.
 
-✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **100 passed,
+✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **119 passed,
 0 failed**. **Any red tree is a real problem.**
 
 ---
@@ -36,17 +36,17 @@ and the cover search (P5) do not exist yet.
 |:-:|---|---|---|
 | ☑ | **P0** Restructure and salvage | — | done 2026-08-18 |
 | ☑ | **P1** Cards, deck, identity | P0 | done 2026-08-18 |
-| ☐ | **P2** Money designation and ownership | P1 | **ready** — see the turned-up-joker default below |
+| ☐ | **P2** Money designation and ownership | P1 | **next** — see the turned-up-joker default below |
 | ☑ | **P3** Run candidate generation | P1 | done 2026-08-18 — spec updated with what it found |
 | ☑ | **P4** Set candidate generation | P1 | done 2026-08-18 |
-| ☐ | **P5** Exact-cover hand evaluator | P3, P4 | **ready** — both generators exist; see the cross-generator duplicate note below |
+| ☑ | **P5** Exact-cover hand evaluator | P3, P4 | done 2026-08-18 |
 | ☐ | **P6** Stakes and settlement | P1, P2 | |
 | ☐ | **P7** Round and turn engine | P5, P6 | |
 | ☐ | **P8** Console front end | P7 | |
 | ☐ | **P9** End-to-end play | P8 | |
 | ☐ | **P10** Bot opponents and hints | P9 | optional |
 
-**P2 is independent of the meld packets.** P5's dependencies are both satisfied.
+**P2 is the last packet independent of everything else.** P6 depends on it, and P7 on P6.
 
 ---
 
@@ -54,7 +54,44 @@ and the cover search (P5) do not exist yet.
 
 *Anything a cold context would need: decisions taken, surprises, deliberate leftovers.*
 
-**From P4 (most recent):**
+**From P5 (most recent):**
+
+- **`MeldCandidates.For(hand)` → `IReadOnlyList<Meld>`**: runs first, then the sets whose card
+  set no run already covers. `HandEvaluator.IsWinning(hand)` and
+  `HandEvaluator.TryFindCover(hand, out var cover)` are the win authority — **the only one**.
+  Nothing else in the codebase may decide a hand has gone out.
+- **`TryFindCover` returns *a* cover, never a canonical one.** Thirteen hearts in sequence come
+  back as `3+3+3+4`, not as one thirteen-card run, because the search takes the first candidate
+  containing the lowest uncovered card. `IsWinning` is what is settled; the shape of the cover
+  is not. **P8 must not assume the tidy grouping** — BUILD-PLAN P8 has been amended.
+- **A "wins only if a joker plays a card the hand holds" test cannot be built out of a run.**
+  A joker can nearly always play *outward* from a run onto a rank the hand does not hold —
+  below the bottom card or above the top — so a rival cover always exists in which the joker
+  merely fills a gap, and a generator that never substituted for a held card would find it too.
+  Blocking one end only moves the boundary a rank along, and the ace is the sole natural stop.
+  **A set has no escape**: it is capped at four suits, so five fives (two decks) plus a joker
+  can only cover as two three-card sets, and whichever suit the joker plays is one the hand
+  holds. That is `AHandWinsOnlyByPlayingAJokerAsACardItAlsoHolds`. The run flavour is tested
+  one level down, on the candidate `2♦ 3♦ [🃏] 5♦ 6♦` with the real 4♦ melded elsewhere.
+- **Jokers make almost any hand winnable — mind this when writing negative tests.** With two
+  spare jokers any orphan finds a set, so a hand that must evaluate `false` has to be
+  joker-free or joker-poor. Two drafted "not winning" hands turned out to be winning that way.
+- **Performance is a non-issue.** Three thirteen-card stress hands — the 4,032-candidate one,
+  a two-deck hand holding every diamond twice, and a losing hand that forces full exhaustion —
+  take about **100 ms** in total. The pinning does that work; the dead-end memo changed nothing
+  measurable and is kept only as a bound.
+- **No partial-cover search exists**, deliberately. `TryFindCover` is all-or-nothing. A bot's
+  "largest cover found" and a player's "best so far" hint need a *scored* version of the same
+  backtracking, and BUILD-PLAN P10 now says so.
+- **No purity requirement is implemented** — `RULES.md` §7.1 leaves "is a pure sequence
+  required" open and recommends treating it as not-a-rule. If it ever settles the other way it
+  is a filter on the cover, not a change to the search.
+- **Guards:** the same card instance twice throws `ArgumentException`; a hand over
+  `HandEvaluator.MaximumHandSize` (64, one bit per card) throws; an empty hand is covered by no
+  melds at all and returns `true`.
+- **No new rules question.** P5 shipped 19 tests (119 total).
+
+**Still current, from P4:**
 
 - **`SetGenerator.Candidates(hand)` → `IReadOnlyList<Meld>`**, mirroring `RunGenerator` in
   every respect: eager, de-duplicated by card set, jokers taken in ascending index order.
@@ -191,6 +228,7 @@ in rev 10) whether a meld may be made of nothing but jokers. `QUESTIONS-FOR-MYA-
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-18 | P5 | ☑ Done. `MeldCandidates.For` (runs, then the sets no run already consumes) and `HandEvaluator.IsWinning` / `TryFindCover` — backtracking pinned to the lowest uncovered card, candidates indexed by their lowest card, coverage carried as a bitmask so dead ends memoise. Build clean, **119 passed / 0 failed** (19 new). Found that the joker-substitution acceptance hand has to be built from a set rather than a run, and that `TryFindCover`'s cover is not canonical; amended BUILD-PLAN P5, P8, P10 and the §7 risk table. |
 | 2026-08-18 | P4 | ☑ Done. `SetGenerator` — one walk over the four suits per rank, each taken as a held card, a specific joker, or nothing; de-duplicated by card set. Duplicate suits impossible by construction, so a set is at most four cards. Build clean, **100 passed / 0 failed** (18 new), including a brute-force cross-check over every subset. Measured the worst case at 639 candidates and amended the §7 risk row. Re-planned P5: the two generators collide on any meld with ≤1 real card, so `MeldCandidates.For` must de-duplicate across them. |
 | 2026-08-18 | P3 | ☑ Done. `MeldSlot`, `Meld` (identity is its `CardId` set) and `RunGenerator` — window-based generation with joker substitution, jokers chosen as combinations. Reference hand yields the specified **5** candidates. Build clean, **82 passed / 0 failed** (22 new). Corrected two counts in `docs/spec/RUN-CANDIDATES.md` (76, not 77; 4,032, not "hundreds"), widened `RULES.md` §9 #8 to cover all-joker melds (rev 10), and re-planned P4 and P5 around the shared `Meld` vocabulary. |
 | 2026-08-18 | P1 | ☑ Done. `CardId`, `Card` (record struct: `==` is instance identity, `SameValueAs` is value identity), `DeckBuilder.BuildTwoDecks()` → 108 cards with sequential ids, `Deck` (draw from either end, Fisher–Yates shuffle), `DeckExhaustedException`. Build clean, **60 passed / 0 failed** (32 new). Raised `RULES.md` §9 #11 (turned-up joker) and amended BUILD-PLAN P1, P2 and P7. |
