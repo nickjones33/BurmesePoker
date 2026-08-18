@@ -108,9 +108,11 @@ BurmesePoker.Domain/
 
 **Tooling.** The solution file is `BurmesePoker.slnx`, the XML format that is now the .NET
 default (`dotnet new sln` emits it). All three projects target **`net10.0`**, matching the
-installed SDK. Nick's standing preference is the newest supported .NET tooling — prefer the
-newer option whenever this kind of question comes up again, rather than the
-backwards-compatible one.
+installed SDK. Tests are **xunit v3 on Microsoft.Testing.Platform** — the test project is an
+`Exe`, `global.json` opts `dotnet test` into MTP mode, and filtering uses `--filter-method` /
+`--filter-class` rather than VSTest's `--filter`. Nick's standing preference is the newest
+supported .NET tooling — prefer the newer option whenever this kind of question comes up
+again, rather than the backwards-compatible one.
 
 **As built by P0:** `Cards/Rank.cs`, `Cards/Suit.cs`, `Cards/CardColor.cs`,
 `Cards/CardText.cs`, `Melds/MeldKind.cs`. Everything else in the tree above is still to

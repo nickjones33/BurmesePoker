@@ -51,13 +51,19 @@ BurmesePoker.Tests/      xunit against Domain's public API. references Domain on
 ```bash
 dotnet build                                    # build solution
 dotnet test                                     # run all tests
-dotnet test --filter "FullyQualifiedName~SomeTestName"   # single test
+dotnet test --filter-method "*SomeTestName*"     # single test (xunit v3 / MTP syntax)
+dotnet test --filter-class "*CardTextTests*"     # single test class
 dotnet run --project BurmesePoker.Console       # run the game (a placeholder until P8)
 ```
 
-All three projects target **`net10.0`**, matching the installed SDK (10.0.111). Nick's
-standing preference is the newest supported .NET tooling — see the `.slnx` solution format
-for the same call. Don't downgrade either back for compatibility's sake.
+All three projects target **`net10.0`**, matching the installed SDK (10.0.111). Tests are
+**xunit v3** running on **Microsoft.Testing.Platform**, not VSTest — `global.json` opts
+`dotnet test` into MTP mode, which the .NET 10 SDK requires for MTP test projects. The test
+project is therefore an `Exe`, and **test filtering uses `--filter-method` / `--filter-class`,
+not VSTest's `--filter "FullyQualifiedName~…"`**, which MTP rejects.
+
+Nick's standing preference is the newest supported .NET tooling — the `.slnx` solution format
+is the same call. Don't downgrade any of it back for compatibility's sake.
 
 ## What the game is
 

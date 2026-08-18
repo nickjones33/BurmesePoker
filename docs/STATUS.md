@@ -71,9 +71,18 @@ that asserted it. **Any red tree from here on is a real problem.**
 - **All three projects target `net10.0`** and the solution file is **`BurmesePoker.slnx`**
   (the newer XML format, now the `dotnet new sln` default). Both were chosen deliberately:
   Nick's standing preference is the newest supported .NET tooling. Don't "fix" either back.
-  The test packages (`Microsoft.NET.Test.Sdk` 17.6.0, `xunit` 2.4.2) are still on their 2023
-  versions — they build and pass clean on net10.0, but they are the one piece of tooling not
-  yet current.
+  The test stack is current too: **xunit v3 4.0.0** on **Microsoft.Testing.Platform**, with
+  `xunit.runner.visualstudio` 4.0.0 and `Microsoft.Testing.Extensions.CodeCoverage` 18.10.0.
+  `Microsoft.NET.Test.Sdk` and `coverlet.collector` are **gone** — both are VSTest-era and MTP
+  replaces them.
+- **Two consequences of the MTP move a cold session will trip over:**
+  1. `global.json` opts `dotnet test` into MTP mode. The .NET 10 SDK refuses to run MTP test
+     projects through the legacy VSTest target, so **do not delete `global.json`** — without
+     it `dotnet test` fails outright. (The opt-in is `global.json`, *not* `dotnet.config`.)
+  2. **Filtering is `--filter-method "*Name*"` / `--filter-class "*Name*"`.** VSTest's
+     `--filter "FullyQualifiedName~Name"` is rejected under MTP.
+- The test project is now `<OutputType>Exe</OutputType>` — xunit v3 test projects are
+  self-hosting executables. That is expected, not a mistake.
 - `.gitignore` was broadened from four hard-coded project paths to plain `bin/` and `obj/`,
   since the project names changed.
 - **`BUILD-PLAN` §5 P3's "Done when" said 8 candidates** while the packet body said 5 — the
