@@ -66,31 +66,39 @@ is not cosmetic.
 
 ## 4. Acceptance criteria for P3
 
+*All ticked by the P3 session (2026-08-18); see `BurmesePoker.Tests/Melds/RunGeneratorTests.cs`.*
+
 Given `2♦ 3♦ 4♦ + red Joker`:
 
-- [ ] Exactly **5** candidates, matching S1–S5 by `CardId` set.
-- [ ] `{2♦,4♦,J}` is present — the substitution case (§3).
-- [ ] Each candidate carries a valid interpretation: a contiguous same-suit rank sequence
+- [x] Exactly **5** candidates, matching S1–S5 by `CardId` set.
+- [x] `{2♦,4♦,J}` is present — the substitution case (§3).
+- [x] Each candidate carries a valid interpretation: a contiguous same-suit rank sequence
       where every joker maps to a rank not otherwise supplied by the run.
-- [ ] No candidate appears twice by `CardId` set.
+- [x] No candidate appears twice by `CardId` set.
 
 Given `2♦ 3♦ 4♦ 5♦` (no jokers):
 
-- [ ] Exactly **3** candidates — `2-3-4`, `3-4-5`, `2-3-4-5`. *Ports the passing 2023 test.*
+- [x] Exactly **3** candidates — `2-3-4`, `3-4-5`, `2-3-4-5`. *Ports the passing 2023 test.*
 
 Ace handling (`RULES.md` §6.1):
 
-- [ ] `A♦ 2♦ 3♦` → valid (ace low).
-- [ ] `Q♦ K♦ A♦` → valid (ace high).
-- [ ] `K♦ A♦ 2♦` → **no** run containing all three (no wrap).
+- [x] `A♦ 2♦ 3♦` → valid (ace low).
+- [x] `Q♦ K♦ A♦` → valid (ace high).
+- [x] `K♦ A♦ 2♦` → **no** run containing all three (no wrap).
 
 Robustness:
 
-- [ ] `A♦` through `K♦` — all 13 ranks of one suit — **terminates**, returning finitely many
+- [x] `A♦` through `K♦` — all 13 ranks of one suit — **terminates**, returning finitely many
       candidates. *Regression test for the verified infinite loop; the 2023 code hangs here.*
-- [ ] Two copies of `3♦` with `2♦ 4♦` → candidates exist using **each copy distinctly**
+      The count is **76**: 77 windows (11 ace-low, 66 ascending), of which two — `A-2-…-K`
+      and `2-…-K-A` — are the same thirteen cards read two ways, and so one candidate.
+- [x] Two copies of `3♦` with `2♦ 4♦` → candidates exist using **each copy distinctly**
       (defect D4), and are not deduplicated into one.
-- [ ] A joker-heavy hand keeps the candidate count in the hundreds, not millions.
+- [x] A joker-heavy hand keeps the candidate count bounded. **Measured: 4,032** for
+      `2♦…10♦` plus all four jokers, the worst case a 13-card hand can reach — thousands, not
+      the "hundreds" this line estimated before P3 measured it, and nowhere near millions.
+      The number is a property of the hand, not of the algorithm: a brute-force enumeration
+      of all 8,192 subsets agrees on it card set for card set (§6).
 
 ## 5. Generation approach
 
@@ -108,3 +116,35 @@ Then deduplicate by `CardId` set, keeping the first interpretation seen.
 Ace handling is explicit, never arithmetic: a window either ascends within `[2..14]` (ace high,
 final position only) or begins with the ace treated as `1` followed by `2,3,…`. A window may
 never pass through the ace in the middle.
+
+---
+
+## 6. What P3 actually built (2026-08-18)
+
+Implemented as `Domain/Melds/{Meld, MeldSlot, RunGenerator}`, exactly the window formulation
+of §5. Four things are worth carrying forward — the first two are corrections to this
+document, the last two are for **P4** and **P5**.
+
+**Joker instances are chosen as a set, not placed as a permutation.** The recursion fills
+positions left to right and may only take jokers in **ascending index order**. Two jokers
+swapped between the same two positions are the same set of cards, so enumerating
+permutations would generate every candidate `k!` times and then throw the duplicates away.
+With four jokers that is a 24× saving on the worst case, and it is why the generator returns
+4,032 candidates in milliseconds rather than tens of thousands of dead branches.
+
+**De-duplication needs no custom comparer.** `HashSet<CardId>.CreateSetComparer()` gives
+structural set equality off the shelf, so the seen-set is
+`HashSet<HashSet<CardId>>(HashSet<CardId>.CreateSetComparer())`. **P4 should do the same.**
+
+**`Meld` is shared, and `MeldSlot` carries the interpretation.** A slot is
+`(Card Card, Rank PlaysAs, Suit InSuit)` — for a real card those are its own rank and suit,
+for a joker they are what it stands in for. This covers sets as well as runs: the joker in
+`9♥ 9♠ 🃏` plays as, say, `9♦`, and P4 should record that rather than inventing a second
+shape. `Meld` validates only what is universal (three cards or more, no card used twice);
+run and set legality belong to the generators. Identity is `Meld.CardIds`, and
+`Meld.Overlaps` is there for P5.
+
+**All-joker melds are emitted.** `🃏🃏🃏` satisfies a three-card window with nothing real in
+it. That follows from `RULES.md` §9 #8's *unlimited jokers* recommendation, which rev 10
+widened to name this case explicitly. **P4 should match it** — a set of three jokers, for
+consistency — and P5 must not assume every meld contains a ranked card.

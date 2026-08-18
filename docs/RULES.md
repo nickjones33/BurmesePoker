@@ -4,7 +4,8 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-18 (rev 9 — records what a **turned-up joker** would designate, §9 #11).
+Last revised: 2026-08-18 (rev 10 — widens §9 #8 to ask whether a meld may be **made only of
+jokers**, raised while building run generation).
 
 ---
 
@@ -308,7 +309,7 @@ You are therefore always at 13 cards between turns, and 14 during your turn.
 | Three or more cards, **same suit**, **consecutive rank**. | `PLAYER` `CODE` `IR` | Settled |
 | **Aces do not wrap.** `A-2-3` is legal; `Q-K-A` is legal; **`K-A-2` is not**. An ace is high or low within a run, never both. | `PLAYER` `IR` | Settled |
 | Jokers substitute for a missing card. | `CODE` `IR` | Settled |
-| Maximum jokers per meld. | `OPEN` | Unknown |
+| Maximum jokers per meld — **including whether a meld may be nothing but jokers**. | `OPEN` | Unknown |
 
 > ⚠️ **The code currently allows `K-A-2`.** Its rank order is a full cycle. This both
 > contradicts the rule above *and* causes a **verified infinite loop** — a hand holding all
@@ -516,11 +517,19 @@ the **7♦** — one of your two permanent money cards. Almost certainly chance.
 | 5 | Is the money-card claim once per game or per round, and who approves it? | 4.5 | Unknown | Turn logic |
 | 6 | What is the exception to the mandatory discard? | 7.1 | Unknown | Win detection |
 | 7 | Is a pure sequence required? | 7.1 | Unknown — recommend *no* | Win detection |
-| 8 | Max jokers per meld? | 6.1 | Unknown — recommend *unlimited* | Meld validation |
+| 8 | Max jokers per meld — and may a meld be **entirely** jokers? | 6.1 | Unknown — recommend *unlimited*, which permits an all-joker meld | Meld validation |
 | 9 | One shared discard pile or per-player piles? | 5 | Unknown — largely moot | Low |
 | 10 | Why 7♦ and A♠ specifically? | 4.1 | Unknown, likely unrecoverable | None |
 | 11 | If a **joker** is turned up as a money card, what does it designate? | 4.1 | Unknown — recommend *the two jokers of that colour* | Money designation (P2) |
 
+
+> **#8 widened in rev 10, while building P3.** "Unlimited jokers" was recorded as a bound on
+> substitution, but a window-based generator answers a sharper version of the question by
+> construction: with four jokers in hand, `🃏🃏🃏` satisfies a three-card window with nothing
+> real in it. **P3 takes the recommendation literally and emits all-joker melds** — a lower
+> bound of one real card per meld is a rule nothing in §6.1 states, and inventing it would be
+> the stricter, not the safer, choice. Four jokers exist in the shoe, so a hand can hold at
+> most four; the effect is bounded and easy to reverse if Mya Lay says otherwise.
 
 **Nothing here blocks the build.** Every remaining item has a safe default recorded in
 `BUILD-PLAN.md`. They are worth settling for fidelity, not for progress.

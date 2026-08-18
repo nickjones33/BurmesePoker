@@ -1,7 +1,7 @@
 # Burmese Poker — Build Plan
 
 **Supersedes `RECONCILIATION-PLAN.md`**, which assumed the existing code was the foundation.
-Rules authority remains `RULES.md` (rev 9).
+Rules authority remains `RULES.md` (rev 10).
 
 Designed to be worked through across **many separate sessions**. Every packet in §5 is
 self-contained: it names what to read, what it depends on, what to build, and how to know
@@ -462,6 +462,23 @@ joker instance**. Do not port the greedy walk.
 > counted joker *interpretations* rather than distinct `CardId` sets. This "Done when" line
 > said 8 until the P0 session caught the contradiction with the packet's own body.
 
+> **Amended after the P3 session (2026-08-18).** Built as specified. Four things later
+> packets need to know, worked out in full in `docs/spec/RUN-CANDIDATES.md` §6:
+> - **P3 also built `Meld` and `MeldSlot`**, which P4 and P5 share. A `MeldSlot` is
+>   `(Card Card, Rank PlaysAs, Suit InSuit)` — for a joker, what it is standing in for. A
+>   `Meld` is `Kind` plus slots; its **identity is `CardIds`**, and it validates only what is
+>   universal (≥ 3 cards, no card twice). Run and set legality stay with the generators.
+> - **Jokers are chosen as a set, not placed as a permutation.** The recursion may only take
+>   jokers in ascending index order, which is what stops it generating each candidate `k!`
+>   times.
+> - **Two counts here were wrong and are now measured.** All thirteen ranks of one suit gives
+>   **76** candidates, not the 77 the window arithmetic suggests: `A-2-…-K` and `2-…-K-A` are
+>   the same thirteen cards. The joker-heavy worst case (`2♦…10♦` + four jokers) is **4,032**
+>   candidates, not "hundreds" — thousands is the true bound, and it is inherent to the hand.
+> - **All-joker melds are emitted**, following `RULES.md` §9 #8's *unlimited jokers*
+>   recommendation, which rev 10 widened to name that case. P4 matches it; P5 must not assume
+>   a meld contains a ranked card.
+
 ---
 
 ### P4 — Set candidate generation
@@ -489,6 +506,25 @@ filling absent suits with a specific joker instance.
 - No candidate ever exceeds 4 cards.
 
 **Done when.** All pass.
+
+> **Re-planned by the P3 session (2026-08-18).** P3 built the shared vocabulary, so P4 is
+> smaller than it looks — reuse, do not re-invent:
+> - **Return `IReadOnlyList<Meld>` built from `MeldSlot`s**, as `RunGenerator.Candidates`
+>   does. A set's slot interpretation is the **suit** a joker plays as: the joker in
+>   `9♥ 9♠ 🃏` records `PlaysAs = Nine, InSuit = Diamonds` (or Clubs — either, kept once).
+> - **De-duplicate the same way**, with
+>   `new HashSet<HashSet<CardId>>(HashSet<CardId>.CreateSetComparer())`. No custom comparer.
+> - **Choose joker instances as a combination, not a permutation** — the same ascending-index
+>   trick. Which joker fills which absent suit does not change the card set, so the naive form
+>   emits duplicates and throws them away.
+> - **Emit the all-joker set** (`🃏🃏🃏`), for consistency with P3 and `RULES.md` §9 #8.
+> - **Two copies of one suit is not a wider set, it is two candidates.** `9♥9♥9♠9♦` yields the
+>   sets that pick *one* of the two 9♥ — the duplicate-copy rule of defect D4 again.
+> - Test hands come from `BurmesePoker.Tests/Hands.cs` — `Hands.Of("9H", "9S", "RJ")`, ids
+>   assigned in the order listed. It exists already; extend it rather than writing another.
+> - A **brute-force cross-check** over every subset of the hand was worth more than any single
+>   count assertion in P3 — it catches both over- and under-generation. Sets are cheap to
+>   check this way (same rank, distinct suits, jokers fill the rest). Write one.
 
 ---
 
@@ -518,6 +554,16 @@ card prevents re-exploring permutations of the same cover.
   P3 joker-substitution rationale under test; if P3 is wrong this fails.*
 - `TryFindCover` melds are pairwise disjoint by `CardId` and cover the hand exactly.
 - Evaluation of a 13-card hand completes in well under a second.
+
+> **Re-planned by the P3 session (2026-08-18).**
+> - **Use `Meld.CardIds` and `Meld.Overlaps`** — both exist for this search. Nothing else on
+>   `Meld` is identity; the interpretation on each `MeldSlot` is display only.
+> - **Budget for thousands of candidates, not dozens.** A pathological hand (nine consecutive
+>   cards of one suit plus four jokers) produces 4,032 run candidates on its own. Pinning to
+>   the lowest uncovered `CardId` is therefore not just a de-duplication trick, it is what
+>   keeps the search tractable: **index the candidates by `CardId` once** so each step tries
+>   only the melds containing that card, rather than scanning the whole list.
+> - **A meld may be nothing but jokers** (`RULES.md` §9 #8). Do not assume a ranked card.
 
 **Done when.** All pass. `IsWinning` is the only win authority in the codebase.
 
@@ -700,8 +746,8 @@ For picking up in a fresh session with no memory of this conversation.
 
 | Risk | Mitigation |
 |---|---|
-| **P3 is the hard packet** — window-based generation with joker substitution is fiddly, and everything downstream depends on it. | The candidate-count tests are an exact, pre-existing spec (5, not the 2023 test's 8 — see `docs/spec/RUN-CANDIDATES.md` §4). Write the tests first. Do not start P5 until P3 is green. |
-| Candidate explosion on joker-heavy hands. | Deduplicate by `CardId` set at generation. With only 4 jokers the bound is small; add a test asserting candidate counts stay in the hundreds, not millions. |
+| ~~**P3 is the hard packet**~~ — **done 2026-08-18.** Window-based generation with joker substitution was fiddly, and everything downstream depends on it. | The candidate-count tests were an exact, pre-existing spec (5, not the 2023 test's 8 — see `docs/spec/RUN-CANDIDATES.md` §4), and they were written first. P5 may now proceed. |
+| Candidate explosion on joker-heavy hands. | Deduplicate by `CardId` set at generation, and choose joker instances as combinations rather than permutations. **Measured worst case: 4,032 candidates in milliseconds** — thousands, not the hundreds this row assumed, and nowhere near millions. P5 should index candidates by `CardId` rather than scanning them (see P5's re-plan note). |
 | The rewrite stalls half-finished, as in 2023. | Packets are individually shippable and each ends green. P1–P6 are pure domain with no UI dependency, so progress is real even if the console never gets built. |
 | Rules drift as more is recalled. | `RULES.md` provenance tags make revisiting cheap; §9 tracks what is still unrecorded. |
 | Three projects is over-engineering. | Noted in §2. The enforcement is the point, but a single project with `IGameObserver` is an acceptable fallback. |

@@ -93,6 +93,9 @@ Each of these has a safe default and does not block the build. Ask only if it's 
 - **Going out without discarding.** *"Is there ever a time you can go out without discarding a
   card at the end of your turn?"* (§9 #6 — Nick recalls an exception but not what it is.)
 - **Jokers in one meld.** *"Can you use two jokers in the same run or set, or only one?"* (§9 #8)
+- **A meld of nothing but jokers.** *"If you were holding three jokers, could you put those
+  three down together as one of your melds?"* (§9 #8 — asked as a table situation, with no
+  option offered either way.)
 - **Claiming the turned-up money card.** *"When someone takes the turned-up money card at the
   start — does that happen every round or only at the very beginning of the game? And does
   anyone have to agree to it?"* (§9 #5)
