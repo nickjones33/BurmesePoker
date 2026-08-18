@@ -10,23 +10,24 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P6 (stakes and settlement).** No blockers — P1 and P2 are both done, and P6 is
-now the only packet whose dependencies are met. P7 needs P6, so the critical path still runs
-straight through it.
+**Next packet: P7 (round and turn engine).** No blockers — P5 and P6 are both done, so every
+dependency is met. It is also the only packet that can be picked up: everything left is the
+chain P7 → P8 → P9 → P10.
 
-P0, P1, P2, P3, P4 and P5 are done. The 2023 implementation is gone from the tree and lives
-only at the `pre-rewrite` tag. The solution is three projects — `BurmesePoker.Domain` (pure
-rules), `BurmesePoker.Console` (Spectre-less placeholder until P8), and `BurmesePoker.Tests`
-(references **Domain only**).
+P0 through P6 are all done, so **the entire rules core exists and is tested** — cards, melds,
+the win authority, and money. What remains is the engine and the front end. The 2023
+implementation is gone from the tree and lives only at the `pre-rewrite` tag. The solution is
+three projects — `BurmesePoker.Domain` (pure rules), `BurmesePoker.Console` (Spectre-less
+placeholder until P8), and `BurmesePoker.Tests` (references **Domain only**).
 
 Domain now holds `Cards/{Rank,Suit,CardColor,CardText,CardId,Card,Deck,DeckBuilder,
 DeckExhaustedException}`, `Melds/{MeldKind,MeldSlot,Meld,RunGenerator,SetGenerator,
-MeldCandidates,HandEvaluator}`, `Money/{MoneyCardRegistry,CardOwnership}` and
-`Play/PlayerId`. **`Melds/` is complete**, and money *designation* and *ownership* are real.
-`Money/` still lacks `Stakes` and `Settlement` — **no money actually moves yet** — and
-`Play/` holds nothing but `PlayerId`. `Abstractions/` does not exist.
+MeldCandidates,HandEvaluator}`, `Money/{MoneyCardRegistry,CardOwnership,Stakes,Settlement}`
+and `Play/PlayerId`. **`Melds/` and `Money/` are both complete** — money is designated, owned
+and now actually moves. `Play/` still holds nothing but `PlayerId`, and `Abstractions/` does
+not exist; P7 builds both.
 
-✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **148 passed,
+✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **174 passed,
 0 failed**. **Any red tree is a real problem.**
 
 ---
@@ -41,13 +42,13 @@ MeldCandidates,HandEvaluator}`, `Money/{MoneyCardRegistry,CardOwnership}` and
 | ☑ | **P3** Run candidate generation | P1 | done 2026-08-18 — spec updated with what it found |
 | ☑ | **P4** Set candidate generation | P1 | done 2026-08-18 |
 | ☑ | **P5** Exact-cover hand evaluator | P3, P4 | done 2026-08-18 |
-| ☐ | **P6** Stakes and settlement | P1, P2 | **next** — needs a card lookup, see below |
-| ☐ | **P7** Round and turn engine | P5, P6 | |
+| ☑ | **P6** Stakes and settlement | P1, P2 | done 2026-08-18 — settlement takes the *unshuffled* shoe |
+| ☐ | **P7** Round and turn engine | P5, P6 | **next** |
 | ☐ | **P8** Console front end | P7 | |
 | ☐ | **P9** End-to-end play | P8 | |
 | ☐ | **P10** Bot opponents and hints | P9 | optional |
 
-**Everything left is a chain**: P6 → P7 → P8 → P9 → P10. There is no longer any packet that
+**Everything left is a chain**: P7 → P8 → P9 → P10. There is no longer any packet that
 can be picked up independently.
 
 ---
@@ -56,7 +57,48 @@ can be picked up independently.
 
 *Anything a cold context would need: decisions taken, surprises, deliberate leftovers.*
 
-**From P2 (most recent):**
+**From P6 (most recent):**
+
+- **`Settlement.ForRound(players, winner, stakes, moneyCards, ownership, shoe)` →
+  `IReadOnlyDictionary<PlayerId, int>`** of **net** deltas, positive to collect. Every player
+  at the table appears, including zero deltas, and the deltas always sum to zero. It is a
+  static class — settlement holds no state.
+- **⚠️ The `shoe` parameter must be `DeckBuilder.BuildTwoDecks()` order, and this is checked.**
+  Settlement resolves an owned `CardId` to a `Card` by *index*, and rejects any list where
+  `shoe[i].Id.Value != i` — so **passing `Deck.Cards` throws**, because it is shuffled. That
+  guard is deliberate: without it a shuffled shoe would settle the wrong cards in silence, and
+  every arithmetic test would still pass. **P7 must keep the builder list it made the round's
+  `Deck` from** and hand that over; `Deck` copies its cards, so the list is never disturbed.
+- **Settlement is never given a hand, and a reflection test pins the parameter list** so it
+  stays that way. This is RULES.md §4.4 encoded in a signature: the question is never who
+  *holds* a card. The two headline tests — a money card its owner discarded, and one an
+  opponent is holding — pass without any notion of a hand existing at all.
+- **`Stakes` is a `sealed record`, not a struct.** A `readonly record struct` was the obvious
+  reflex, but `default(Stakes)` would then be a silent $0/$0 game that still sums to zero and
+  passes every property test. A class makes the omission a `NullReferenceException` instead.
+  Both values must be **positive**; `Stakes.Standard` is $5 / $1.
+- **The 7♦ pays *once* unless it is also turned up.** Permanent designation and turned-up
+  designation are separate summands (P2), so an owned 7♦ in a round where the turned-up cards
+  are something else pays `1 × MoneyCardValue`, not 2. A draft test asserted +8 for exactly
+  that case and was wrong; the arithmetic is unchanged, the expectation was.
+- **Guards, all `ArgumentException`:** winner not at the table, a player seated twice, an empty
+  table, an ownership record naming somebody not at the table, an owned id outside the shoe,
+  and the misaligned-shoe check above. **There is no no-winner settlement** — P7 rounds end on
+  a declaration, and P9 reshuffles rather than ending one early.
+- **Zero-sum is property-tested** over 500 randomised rounds (2–6 players, random stakes,
+  random turned-up cards, up to 80 owned cards). Sample the deal with `Random.Shuffle` over a
+  copy of the shoe — cards must be **distinct**, or `RecordFromDeck` rightly throws on the
+  second owner of one physical card. This makes P9's match-level conservation test a test of
+  *banking*, not of settlement; BUILD-PLAN P9 has been amended to say so.
+- **P8 gets net deltas only** — no breakdown of round payment against side-bet, no per-card
+  detail. If the console wants "−$5 for the round, +$3 in money cards" it computes the
+  side-bet half itself from `ownership.Records` and `Multiplier`. BUILD-PLAN P8 amended.
+- **No new rules question.** §4.3, §4.4 and §7.2 are all `PLAYER`/`EXPERT` Settled and the
+  worked example is reproduced exactly; nothing needed a judgement call. `RULES.md` is
+  untouched at rev 10.
+- P6 shipped 26 tests (174 total).
+
+**From P2:**
 
 - **`MoneyCardRegistry(turnedUp).Multiplier(card)` → 0 / 1 / 2** is the whole designation API,
   and it is a pure function of the turned-up cards — no `Card` is written to, ever. The
@@ -269,6 +311,7 @@ in rev 10) whether a meld may be made of nothing but jokers. `QUESTIONS-FOR-MYA-
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-18 | P6 | ☑ Done. `Stakes` (sealed record, positive-only, `Standard` = $5/$1) and `Settlement.ForRound` → per-player net deltas: flat round value from every loser to the winner, then each **owned** money card paying its owner `multiplier × money card value` from every other player. Walks ownership records and is never given a hand — pinned by a reflection test on the parameter list. Resolves an owned `CardId` through the **unshuffled** shoe by index and rejects a shuffled one outright. Build clean, **174 passed / 0 failed** (26 new), including the §4.3 worked example and a 500-round zero-sum property test. Amended BUILD-PLAN §2, P7 (keep the builder list; one roster; a round always has a winner), P8 (net deltas only) and P9 (conservation is a banking test). |
 | 2026-08-18 | P2 | ☑ Done. `MoneyCardRegistry` (pure function of the turned-up cards; permanent 7♦/A♠ as negative-id value designators; multiplier is permanent + turned-up, so doubling is the overlap and its own ceiling) and `CardOwnership` (append-only, write-once, no transfer/clear/remove — enforced by a reflection test). `PlayerId` brought forward into `Play/`. Build clean, **148 passed / 0 failed** (29 new). Re-planned P6: `Records` is keyed by `CardId` while `Multiplier` takes a `Card`, so settlement needs the shoe passed in — `DeckBuilder.BuildTwoDecks()` is index-aligned, `Deck.Cards` is not. Amended BUILD-PLAN §2, P2, P6 and P7. |
 | 2026-08-18 | P5 | ☑ Done. `MeldCandidates.For` (runs, then the sets no run already consumes) and `HandEvaluator.IsWinning` / `TryFindCover` — backtracking pinned to the lowest uncovered card, candidates indexed by their lowest card, coverage carried as a bitmask so dead ends memoise. Build clean, **119 passed / 0 failed** (19 new). Found that the joker-substitution acceptance hand has to be built from a set rather than a run, and that `TryFindCover`'s cover is not canonical; amended BUILD-PLAN P5, P8, P10 and the §7 risk table. |
 | 2026-08-18 | P4 | ☑ Done. `SetGenerator` — one walk over the four suits per rank, each taken as a held card, a specific joker, or nothing; de-duplicated by card set. Duplicate suits impossible by construction, so a set is at most four cards. Build clean, **100 passed / 0 failed** (18 new), including a brute-force cross-check over every subset. Measured the worst case at 639 candidates and amended the §7 risk row. Re-planned P5: the two generators collide on any meld with ≤1 real card, so `MeldCandidates.For` must de-duplicate across them. |

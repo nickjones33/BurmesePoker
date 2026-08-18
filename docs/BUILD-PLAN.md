@@ -122,7 +122,8 @@ again, rather than the backwards-compatible one.
 `Melds/SetGenerator.cs`. **By P5:** `Melds/MeldCandidates.cs`, `Melds/HandEvaluator.cs` —
 which completes `Melds/`. **By P2:** `Money/MoneyCardRegistry.cs`, `Money/CardOwnership.cs`
 and `Play/PlayerId.cs` — the last is brought forward out of `Play/` because ownership is
-recorded against a player, and P2 needs the type. `Abstractions/` and the rest of `Play/` are
+recorded against a player, and P2 needs the type. **By P6:** `Money/Stakes.cs` and
+`Money/Settlement.cs`, which completes `Money/`. `Abstractions/` and the rest of `Play/` are
 still to come. The old exe project is renamed `BurmesePoker.Console`; the test project references
 **Domain only**, so nothing can accidentally test through the front end.
 
@@ -720,6 +721,23 @@ until P9 implements the reshuffle.
 
 **Done when.** A scripted round runs end to end in tests with no console involvement.
 
+> **Amended after the P6 session (2026-08-18) — what settlement now demands of the engine.**
+> `Settlement.ForRound(players, winner, stakes, moneyCards, ownership, shoe)` is built and is
+> the only thing that moves money. Three consequences for `RoundEngine`:
+> 1. **Keep the unshuffled shoe.** Settlement resolves an owned `CardId` back to a `Card` by
+>    *index*, and validates that `shoe[i].Id.Value == i` — passing `Deck.Cards` throws, by
+>    design, because it is shuffled. So hold on to the `DeckBuilder.BuildTwoDecks()` list the
+>    round's `Deck` was built from and pass **that**. `Deck` copies its cards, so the builder
+>    list is never disturbed by shuffling or drawing.
+> 2. **One roster, used for both.** Settlement throws if the winner is not among the players,
+>    if a player appears twice, or if an ownership record names somebody not at the table. The
+>    list handed to settlement must be the round's seating.
+> 3. **A round always has a winner.** There is deliberately no no-winner settlement — the round
+>    ends on a declaration (P9 reshuffles rather than ending a round early).
+>
+> `Stakes` is a `sealed record` (never null, both values positive) with `Stakes.Standard` =
+> $5 / $1. It belongs to the match, not the round: fix it once at setup and pass it down.
+
 ---
 
 ### P8 — Console front end
@@ -750,6 +768,14 @@ Spectre.Console` — rather than restoring the 2023 pin.
 settlement. No domain type references Spectre.
 
 **Done when.** A round is playable start to finish and money changes hands.
+
+> **Amended after the P6 session (2026-08-18) — settlement reports net deltas only.**
+> `Settlement.ForRound` returns an unordered `IReadOnlyDictionary<PlayerId, int>` of **net**
+> movements — one number per player, positive to collect. There is **no breakdown** of the
+> round payment against the money-card side-bet, and no per-card detail. If the console wants
+> to say *"−$5 for the round, +$3 in money cards"*, P8 builds that itself: the side-bet half is
+> a short walk of `ownership.Records` through `registry.Multiplier`, exactly as settlement does
+> it. Don't assume the domain hands it over, and don't widen `ForRound` for presentation.
 
 ---
 
@@ -783,6 +809,13 @@ settlement. No domain type references Spectre.
   owner.**
 
 **Done when.** A full match is playable and banks reconcile.
+
+> **Amended after the P6 session (2026-08-18) — conservation is already half-proved.**
+> Settlement's deltas **sum to zero for any configuration**, which a property test pins over
+> 500 randomised rounds. So "money is conserved across the match" reduces to *banking the
+> deltas correctly*: `MatchEngine` adds each round's deltas to the running banks and nothing
+> else. If a match-level conservation test ever fails, the fault is in the banking, not in
+> settlement.
 
 ---
 
@@ -827,6 +860,6 @@ For picking up in a fresh session with no memory of this conversation.
 |---|---|
 | ~~**P3 is the hard packet**~~ — **done 2026-08-18.** Window-based generation with joker substitution was fiddly, and everything downstream depends on it. | The candidate-count tests were an exact, pre-existing spec (5, not the 2023 test's 8 — see `docs/spec/RUN-CANDIDATES.md` §4), and they were written first. P5 may now proceed. |
 | ~~Candidate explosion on joker-heavy hands~~ — **contained, measured 2026-08-18.** | Deduplicate by `CardId` set at generation, and choose joker instances as combinations rather than permutations. **Measured worst case: 4,032 run candidates in milliseconds** — thousands, not the hundreds this row assumed, and nowhere near millions. **Sets add almost nothing**: a set holds at most four cards, so no hand can produce many. P4's measured worst case is **639** — nine cards of one rank split (3,2,2,2) across the suits plus all four jokers. The risk is P3's alone. P5 does index candidates by `CardId` — by the *lowest* one in each meld — and evaluates three thirteen-card stress hands in about 100 ms in total. |
-| The rewrite stalls half-finished, as in 2023. | Packets are individually shippable and each ends green. P1–P6 are pure domain with no UI dependency, so progress is real even if the console never gets built. |
+| The rewrite stalls half-finished, as in 2023. | Packets are individually shippable and each ends green. P1–P6 are pure domain with no UI dependency, so progress is real even if the console never gets built. **As of 2026-08-18 P0–P6 are all done**, so the entire rules core — cards, melds, the win authority, and money — exists and is tested; what remains is the engine and the front end. |
 | Rules drift as more is recalled. | `RULES.md` provenance tags make revisiting cheap; §9 tracks what is still unrecorded. |
 | Three projects is over-engineering. | Noted in §2. The enforcement is the point, but a single project with `IGameObserver` is an acceptable fallback. |
