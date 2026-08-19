@@ -164,7 +164,10 @@ come, in P9. The old exe project is renamed `BurmesePoker.Console`; the test pro
 `BurmesePoker.Console/{Program, CardFormatting, SpectrePlayerAgent, ConsoleObserver}.cs` and
 a `Spectre.Console` 0.57.2 reference — the one project that prints, and the one project that
 knows Spectre exists. **A consequence worth stating: nothing in `BurmesePoker.Console` is
-unit-tested**, by the same reference rule; P8 was verified by driving the binary.
+unit-tested**, by the same reference rule; P8 was verified by driving the binary. **By P9:**
+`Play/MatchEngine.cs` — which **completes `Play/`, and with it every folder in the sketch
+above**. Everything from here adds a new folder (`Agents/` in P10) or a new project
+(`BurmesePoker.Sim` in P12).
 
 ---
 
@@ -1075,6 +1078,24 @@ packet — surface each round's `TableState`, and put `Turns` on `RoundResult`.
 > else. If a match-level conservation test ever fails, the fault is in the banking, not in
 > settlement.
 
+> **As built (2026-08-18).** `MatchEngine` holds the seating, the stakes, the banks and one
+> `Random`; `PlayRound()` shuffles and `PlayRound(drawOrder)` is the scriptable twin, both
+> returning a **`RoundRecord(RoundResult, TableState)`** — the §3.8 pair. It keeps **no history**,
+> so a long simulation does not pay for tables it has already read. Four things worth carrying
+> forward:
+> - ⚠️ **`RoundEngine` now takes a `Random`, and it is required.** A round needs randomness for
+>   the reshuffle, and defaulting it would have made an exhausted round irreproducible in
+>   silence (§3.7). A round is reproducible from its draw order **and** its seed.
+> - **`CardOwnership.TryRecordFromDeck`** is the reshuffle's half of write-once: it keeps the
+>   first owner and answers *false* instead of throwing. `RecordFromDeck` stays strict for the
+>   deal, where a card leaving the deck twice really is a bug.
+> - **`TurnContext.Round`** was added, because an agent lives for a whole match and turn 1 of
+>   round 2 was indistinguishable from turn 1 of round 1 — which left the opening player's hand
+>   on screen at the start of every round after the first. Public information; no leak.
+> - ⚠️ **A round that nobody can win no longer ends.** Before the reshuffle, passive play ran
+>   the deck out and threw; now the cards circulate for ever, and only a declaration ends a
+>   round (RULES.md §7.1). The rules working as written — but it bites P10 and P12, below.
+
 ---
 
 ### P10 — Bot opponents (solo play against the computer)
@@ -1132,6 +1153,15 @@ What is left is ordinary rummy reasoning:
 **Done when.** `dotnet run --project BurmesePoker.Console` offers *"how many of you are
 people?"*, and one person can play a full match against bots.
 
+> **Amended after the P9 session (2026-08-18) — the termination test is not a formality.**
+> With the reshuffle built (RULES.md §5), a round only ends when somebody declares, so **a
+> strategy that never improves its hand plays for ever**. "A bot-only match terminates" is
+> therefore a real property of the heuristic rather than a box to tick, and the first bot
+> should be checked against it before anything is built on top. Two smaller notes: a bot that
+> keeps per-round state must key it on **`TurnContext.Round`** as well as `TurnNumber`, for the
+> reason P9 found in the console agent; and `TurnContext` already answers `CanDeclare`, so a
+> bot never needs to run the evaluator itself to know whether to go out.
+
 > **Hints are P11, not here.** A hint is the same scored cover pointed at a human, and it is a
 > presentation decision about when to interrupt somebody — it belongs with the rest of the UX
 > pass, drawn next to the card it is advising against in `SpectrePlayerAgent.ChooseDiscard`.
@@ -1154,7 +1184,11 @@ is the UI.**
 - **Show the hand as the melds it nearly is** — group by P10's scored cover so a player sees
   the three melds they have and the four loose cards, rather than thirteen sorted cards.
 - **A discard hint**, off the same scored cover, next to the card it advises against.
-- **Standings and a between-round summary** — banks carried over (P9), who won what.
+- **Standings and a between-round summary** — banks carried over (P9), who won what. ⚠️ **P9
+  built the plain version**: a settlement table split into the round payment and the money-card
+  side bet, a standings table of the running banks, and *"another round?"* between rounds. What
+  is missing is the history — who won each round, and how the banks moved — which needs
+  remembering, because `MatchEngine` deliberately keeps no per-round history.
 - **A settled colour and marker language**, defined once: the `($)` / `($$)` / `★` set from P8
   extended rather than re-invented per screen.
 - **`--seed`**, so a strange round can be replayed and reported.
@@ -1208,6 +1242,19 @@ the evaluator may not be "optimised" into a different answer.
 
 **Done when.** Two strategies can be played off against each other over thousands of games and
 the winner is reproducible from a seed.
+
+> **Amended after the P9 session (2026-08-18) — three things the match engine settles.**
+> - ⚠️ **A run needs a turn cap, and it belongs to the harness.** A round ends only on a
+>   declaration (RULES.md §7.1) and the reshuffle keeps the cards moving, so a weak strategy can
+>   play for ever. The domain will not invent a limit — that would be inventing a rule — so the
+>   harness must bound a round itself, and **report how many rounds it abandoned**, because a
+>   strategy that stalls is a result rather than an error.
+> - **`MatchEngine` keeps no history.** `PlayRound` hands back `(RoundResult, TableState)` and
+>   forgets it, so the harness derives what it wants per round and drops the table. That is the
+>   §3.8 seam working as intended; do not add a history to the engine to make a report easier.
+> - **The seed is the whole story.** `MatchEngine` takes one `Random` and uses it for every deal
+>   and every reshuffle, so a match is reproducible from its seed and its seating alone
+>   (§3.7 item 1) — which is exactly the join key §3.8 item 4 asks for.
 
 ---
 

@@ -66,6 +66,17 @@ public sealed class PlayerState
         return discarded;
     }
 
+    /// <summary>
+    /// Empties this pile and hands the cards over — the reshuffle at deck exhaustion, which
+    /// gathers <em>every</em> pile at once (RULES.md §5).
+    /// </summary>
+    internal List<Card> TakeAllDiscards()
+    {
+        var gathered = new List<Card>(_discards);
+        _discards.Clear();
+        return gathered;
+    }
+
     internal Card TakeTopDiscard()
     {
         if (_discards.Count == 0)

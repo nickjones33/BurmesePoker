@@ -34,6 +34,12 @@ public interface IGameObserver
     /// <summary>A player discarded. Ownership is unaffected (RULES.md §4.4).</summary>
     void PlayerDiscarded(PlayerId player, Card card) { }
 
+    /// <summary>
+    /// The draw pile ran out, so every discard pile was gathered and shuffled into a new one
+    /// (RULES.md §5). Rare — most rounds end first.
+    /// </summary>
+    void DiscardsReshuffled(int cards) { }
+
     /// <summary>A player laid down all 13 cards and ended the round (RULES.md §7.1).</summary>
     void PlayerDeclared(PlayerId player, IReadOnlyList<Meld> melds) { }
 

@@ -28,9 +28,12 @@ namespace BurmesePoker.Domain.Play;
 /// the players in seating order, which is also the order settlement is handed.
 /// </para>
 /// <para>
-/// <b>Deck exhaustion is not handled here.</b> If nobody declares before the draw pile runs
-/// out, <see cref="DeckExhaustedException"/> propagates out of <see cref="Play"/>. Catching
-/// it and reshuffling the discards is P9's job (RULES.md §5).
+/// <b>Deck exhaustion is handled at the moment of drawing</b> (RULES.md §5): if the draw pile
+/// is empty when somebody draws, every discard pile is gathered, shuffled, and becomes the new
+/// draw pile. It cannot be handled around <see cref="Play"/> instead, because the exception
+/// would unwind from the middle of a turn with no resume point.
+/// <see cref="DeckExhaustedException"/> therefore now means what it should — there is nothing
+/// left anywhere, in the deck or in any discard pile.
 /// </para>
 /// </remarks>
 public sealed class RoundEngine
@@ -50,6 +53,7 @@ public sealed class RoundEngine
 
     private readonly Dictionary<PlayerId, IPlayerAgent> _agents;
     private readonly IGameObserver _observer;
+    private readonly Random _random;
     private readonly int _round;
 
     /// <param name="players">The seating order. Between four and six, no duplicates.</param>
@@ -59,6 +63,12 @@ public sealed class RoundEngine
     /// The whole 108-card shoe in the order it will leave the deck, top first. Must be a
     /// permutation of <see cref="DeckBuilder.BuildTwoDecks"/> — every card exactly once.
     /// </param>
+    /// <param name="random">
+    /// The randomness the <em>round</em> needs, which is the reshuffle at deck exhaustion
+    /// (RULES.md §5). Required rather than defaulted, because a round is reproducible from its
+    /// draw order and its seed together, and a domain type that reached for
+    /// <see cref="Random.Shared"/> would break that in silence (BUILD-PLAN §3.7).
+    /// </param>
     /// <param name="round">Which round of the match this is, for narration.</param>
     /// <param name="observer">Narration sink. Optional; nothing is required of it.</param>
     public RoundEngine(
@@ -66,40 +76,17 @@ public sealed class RoundEngine
         IReadOnlyDictionary<PlayerId, IPlayerAgent> agents,
         Stakes stakes,
         IReadOnlyList<Card> drawOrder,
+        Random random,
         int round = 1,
         IGameObserver? observer = null)
     {
-        ArgumentNullException.ThrowIfNull(players);
-        ArgumentNullException.ThrowIfNull(agents);
         ArgumentNullException.ThrowIfNull(stakes);
         ArgumentNullException.ThrowIfNull(drawOrder);
+        ArgumentNullException.ThrowIfNull(random);
         ArgumentOutOfRangeException.ThrowIfLessThan(round, 1);
 
-        if (players.Count is < MinimumPlayers or > MaximumPlayers)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(players),
-                players.Count,
-                $"A round is for {MinimumPlayers} to {MaximumPlayers} players (RULES.md §2.1).");
-        }
-
-        if (players.Distinct().Count() != players.Count)
-        {
-            throw new ArgumentException("The same player is seated twice.", nameof(players));
-        }
-
-        _agents = [];
-
-        foreach (var player in players)
-        {
-            if (!agents.TryGetValue(player, out var agent) || agent is null)
-            {
-                throw new ArgumentException($"{player} has no agent.", nameof(agents));
-            }
-
-            _agents[player] = agent;
-        }
-
+        _agents = RequireAPlayableTable(players, agents);
+        _random = random;
         _round = round;
         _observer = observer ?? new SilentObserver();
 
@@ -124,7 +111,46 @@ public sealed class RoundEngine
         var deck = Deck.TwoDecks();
         deck.Shuffle(random);
 
-        return new RoundEngine(players, agents, stakes, [.. deck.Cards], round, observer);
+        return new RoundEngine(players, agents, stakes, [.. deck.Cards], random, round, observer);
+    }
+
+    /// <summary>
+    /// Checks that the table can be dealt at all, and takes a private copy of the agents.
+    /// Shared with <see cref="MatchEngine"/> so the rule is stated once.
+    /// </summary>
+    internal static Dictionary<PlayerId, IPlayerAgent> RequireAPlayableTable(
+        IReadOnlyList<PlayerId> players,
+        IReadOnlyDictionary<PlayerId, IPlayerAgent> agents)
+    {
+        ArgumentNullException.ThrowIfNull(players);
+        ArgumentNullException.ThrowIfNull(agents);
+
+        if (players.Count is < MinimumPlayers or > MaximumPlayers)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(players),
+                players.Count,
+                $"A round is for {MinimumPlayers} to {MaximumPlayers} players (RULES.md §2.1).");
+        }
+
+        if (players.Distinct().Count() != players.Count)
+        {
+            throw new ArgumentException("The same player is seated twice.", nameof(players));
+        }
+
+        var seated = new Dictionary<PlayerId, IPlayerAgent>(players.Count);
+
+        foreach (var player in players)
+        {
+            if (!agents.TryGetValue(player, out var agent) || agent is null)
+            {
+                throw new ArgumentException($"{player} has no agent.", nameof(agents));
+            }
+
+            seated[player] = agent;
+        }
+
+        return seated;
     }
 
     /// <summary>The table as it stands. Readable at any point, including before the first turn.</summary>
@@ -137,8 +163,9 @@ public sealed class RoundEngine
     /// Plays turns until somebody declares, and settles.
     /// </summary>
     /// <exception cref="DeckExhaustedException">
-    /// The draw pile ran out before anyone went out. Deliberately not caught: the reshuffle
-    /// is P9's (RULES.md §5).
+    /// There was nothing left to draw anywhere — neither in the draw pile nor in any discard
+    /// pile, so not even the reshuffle of RULES.md §5 could carry on. A real end state, and
+    /// rarer than the reshuffle that prevents it.
     /// </exception>
     public RoundResult Play()
     {
@@ -170,17 +197,17 @@ public sealed class RoundEngine
 
         // 1. Take exactly one card (RULES.md §5), by one of three routes. Only the blind
         //    draw comes from the deck, so only the blind draw confers ownership (§4.4).
-        var context = new TurnContext(Table, seat, turn, available, canClaim, taken: null);
+        var context = new TurnContext(Table, seat, _round, turn, available, canClaim, taken: null);
         var taken = TakeCard(agent, seat, previous, context);
 
         // 2. Discard (RULES.md §5). Ownership is untouched by it (§4.4).
-        context = new TurnContext(Table, seat, turn, available, canClaim, taken);
+        context = new TurnContext(Table, seat, _round, turn, available, canClaim, taken);
         var discarded = seat.Discard(agent.ChooseDiscard(context));
         _observer.PlayerDiscarded(seat.Id, discarded);
 
         // 3. Only then may the hand be laid down — the discard comes first and the reveal
         //    follows it (RULES.md §7.1).
-        context = new TurnContext(Table, seat, turn, available, canClaim, taken);
+        context = new TurnContext(Table, seat, _round, turn, available, canClaim, taken);
 
         if (!HandEvaluator.TryFindCover(seat.Hand, out var melds) || !agent.Declare(context))
         {
@@ -192,7 +219,7 @@ public sealed class RoundEngine
         var payouts = Settlement.ForRound(
             Table.Players, seat.Id, Table.Stakes, Table.MoneyCards, Table.Ownership, Table.Shoe);
 
-        var result = new RoundResult(_round, seat.Id, melds, payouts);
+        var result = new RoundResult(_round, seat.Id, melds, payouts, turn);
         _observer.RoundSettled(result);
         return result;
     }
@@ -221,9 +248,19 @@ public sealed class RoundEngine
             return pickedUp;
         }
 
+        if (Table.DrawPile.IsEmpty)
+        {
+            // The draw pile is out, so the discards become the new one (RULES.md §5). Here
+            // rather than around Play(), because there is no resume point mid-turn.
+            _observer.DiscardsReshuffled(Table.ReplaceDrawPileWithTheDiscards(_random));
+        }
+
         var drawn = Table.DrawPile.DrawFromTop();
         seat.Take(drawn);
-        Table.Ownership.RecordFromDeck(drawn.Id, seat.Id);
+
+        // First acquisition wins (RULES.md §5): after a reshuffle a card can leave the deck a
+        // second time, and its original owner keeps it.
+        Table.Ownership.TryRecordFromDeck(drawn.Id, seat.Id);
         _observer.PlayerDrew(seat.Id, drawn);
         return drawn;
     }

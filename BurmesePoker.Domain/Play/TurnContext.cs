@@ -28,6 +28,7 @@ public sealed class TurnContext
     internal TurnContext(
         TableState table,
         PlayerState seat,
+        int round,
         int turnNumber,
         Card? availableDiscard,
         bool canClaimTurnedUpMoneyCard,
@@ -35,6 +36,7 @@ public sealed class TurnContext
     {
         _table = table;
         _seat = seat;
+        Round = round;
         TurnNumber = turnNumber;
         AvailableDiscard = availableDiscard;
         CanClaimTurnedUpMoneyCard = canClaimTurnedUpMoneyCard;
@@ -49,6 +51,13 @@ public sealed class TurnContext
 
     /// <summary>Everyone at the table, in turn order.</summary>
     public IReadOnlyList<PlayerId> Players => _table.Players;
+
+    /// <summary>
+    /// Which round of the match this is, counting from 1. Public information — everybody at
+    /// the table knows — and the only thing that tells a turn apart from the same-numbered
+    /// turn of the round before, which a front end that changes hands per turn depends on.
+    /// </summary>
+    public int Round { get; }
 
     /// <summary>Which turn of the round this is, counting from 1.</summary>
     public int TurnNumber { get; }

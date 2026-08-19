@@ -16,6 +16,7 @@ namespace BurmesePoker.Tests.Play;
 internal sealed class RecordingObserver : IGameObserver
 {
     private TableState? _table;
+    private int? _drawsBeforeFirstReshuffle;
 
     public List<string> Events { get; } = [];
 
@@ -29,6 +30,22 @@ internal sealed class RecordingObserver : IGameObserver
 
     /// <summary>Hand sizes seen after each completed discard, flattened across seats.</summary>
     public List<int> HandSizesBetweenTurns { get; } = [];
+
+    /// <summary>Every blind draw, in order — who drew and what.</summary>
+    public List<(PlayerId Player, Card Card)> Draws { get; } = [];
+
+    /// <summary>How many cards each reshuffle gathered (RULES.md §5). Empty in most rounds.</summary>
+    public List<int> Reshuffles { get; } = [];
+
+    /// <summary>
+    /// Every ownership as it stood at the first reshuffle. Nothing recorded before that moment
+    /// may change afterwards — ownership is write-once (RULES.md §5).
+    /// </summary>
+    public Dictionary<CardId, PlayerId> OwnersAtFirstReshuffle { get; } = [];
+
+    /// <summary>The draws that happened after the first reshuffle.</summary>
+    public List<(PlayerId Player, Card Card)> DrawsAfterFirstReshuffle =>
+        [.. Draws.Skip(_drawsBeforeFirstReshuffle ?? Draws.Count)];
 
     public void Watch(TableState table)
     {
@@ -44,7 +61,25 @@ internal sealed class RecordingObserver : IGameObserver
 
     public void PlayerDrew(PlayerId player, Card card)
     {
+        Draws.Add((player, card));
         Events.Add($"{player} drew {card}");
+        Check();
+    }
+
+    public void DiscardsReshuffled(int cards)
+    {
+        if (_table is not null && Reshuffles.Count == 0)
+        {
+            _drawsBeforeFirstReshuffle = Draws.Count;
+
+            foreach (var (id, owner) in _table.Ownership.Records)
+            {
+                OwnersAtFirstReshuffle[id] = owner;
+            }
+        }
+
+        Reshuffles.Add(cards);
+        Events.Add($"discards reshuffled: {cards} cards");
         Check();
     }
 

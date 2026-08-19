@@ -111,6 +111,13 @@ Each of these has a safe default and does not block the build. Ask only if it's 
   you threw away, or one off the top of the deck — and then you have to throw one away. Are
   you allowed to throw away that same card you just took?"* (§9 #13 — asked flat; the
   interesting half is the card taken from the discard pile.)
+- **Where everybody sits, round after round.** *"When you finish a round and deal the next
+  one, does everyone stay in the same seats and keep going round the same way, or does anything
+  move — who deals, who goes first, where people sit?"* (§9 #14 — asked flat; the engine
+  currently keeps the seating it was given for the whole session.)
+- **The turned-up cards once the deck runs out.** *"The two cards you turned over for the money
+  cards are lying there all round. If the deck runs out and you gather the discards up to make a
+  new deck, do those two go in as well, or do they stay where they are?"* (§9 #4 — asked flat.)
 - **A joker turned up as a money card.** *"At the start of a round, when you turn the two
   cards over for the money cards, what happens if one of them is a joker?"* (§9 #11 — asked
   flat, with no options offered. If the answer is that it does become a money card, the

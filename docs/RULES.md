@@ -4,9 +4,9 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-18 (rev 11 — adds §9 #12 and #13, both raised while building the round
-engine: whether a claimed money card still designates its value, and whether a player may
-discard the very card they have just taken).
+Last revised: 2026-08-18 (rev 12 — adds §9 #14, raised while building the match engine: whether
+seating moves between rounds. §9 #4 and #5 also gain the defaults P9 took, and §5's reshuffle
+is now implemented rather than pending).
 
 ---
 
@@ -288,6 +288,14 @@ You are therefore always at 13 cards between turns, and 14 during your turn.
 > exhaustion, gather *all* of them. Only the current top discard is ever takeable, so the
 > distinction stays invisible during normal play.
 
+> ✅ **Built in P9.** The gather happens at the moment somebody draws into an empty pile, not
+> around the round, because there is no resume point mid-turn. Every pile is swept; the
+> turned-up cards are left where they are (§9 #4). One consequence worth knowing: with the
+> reshuffle in place, **a round in which nobody's hand ever improves does not end**, because
+> only a declaration ends a round (§7.1) and the cards now circulate for ever. That is the
+> rules working as written, not a defect — but it means a table of players who never try to
+> win never finishes, which matters to anything driving the game automatically.
+
 > ⚠️ **Reshuffling collides with permanent ownership — resolved.** A genuine edge case, produced
 > by combining two settled rules rather than by any one of them:
 >
@@ -514,8 +522,8 @@ the **7♦** — one of your two permanent money cards. Almost certainly chance.
 
 
 
-| 4 | Do the turned-up cards stay out of play permanently? | 4.5 | Open — recommend *yes* | Deck exhaustion |
-| 5 | Is the money-card claim once per game or per round, and who approves it? | 4.5 | Unknown | Turn logic |
+| 4 | Do the turned-up cards stay out of play permanently? | 4.5 | Open — recommend *yes*, **taken as the default by P9** | Deck exhaustion |
+| 5 | Is the money-card claim once per game or per round, and who approves it? | 4.5 | Unknown — **P9 defaults to *per round*, approved by nobody** | Turn logic |
 | 6 | What is the exception to the mandatory discard? | 7.1 | Unknown | Win detection |
 | 7 | Is a pure sequence required? | 7.1 | Unknown — recommend *no* | Win detection |
 | 8 | Max jokers per meld — and may a meld be **entirely** jokers? | 6.1 | Unknown — recommend *unlimited*, which permits an all-joker meld | Meld validation |
@@ -524,6 +532,7 @@ the **7♦** — one of your two permanent money cards. Almost certainly chance.
 | 11 | If a **joker** is turned up as a money card, what does it designate? | 4.1 | Unknown — recommend *the two jokers of that colour* | Money designation (P2) |
 | 12 | When the opening player **claims** the turned-up money card, does that card's value still pay for the rest of the round? | 4.5 | Unknown — recommend *yes* | Money designation (P7) |
 | 13 | May a player discard the very card they just took? | 5 | Unknown — recommend *yes* | Turn logic (P7) |
+| 14 | Does anything move between rounds — the seating, the deal, who goes first? | 3 | Unknown — recommend *no* | Match setup (P9) |
 
 
 > **#8 widened in rev 10, while building P3.** "Unlimited jokers" was recorded as a bound on
@@ -552,6 +561,32 @@ the **7♦** — one of your two permanent money cards. Almost certainly chance.
 > the safe default: nothing forbids it**, and the engine accepts it. If it turns out to be a
 > rule it is a single guard in `RoundEngine`, and the question is really only about the
 > *pickup* — throwing back a card drawn blind is unremarkable.
+
+> **#4, #5 and #14 all came due in rev 12, while building the match engine (P9).** None of the
+> three blocks anything; each is one line to reverse.
+>
+> **#4 — the turned-up cards and the reshuffle.** RULES.md §5 says to gather *the discards*
+> when the draw pile runs out, and says nothing about the one or two cards lying turned up on
+> the table. **P9 takes #4's standing recommendation literally: they stay out of play**, so the
+> reshuffle sweeps every discard pile and leaves the table alone. The alternative would put the
+> designators back into circulation mid-round, which would also mean a player could draw the
+> very card that designates the money — a stranger rule than the one taken, and one nothing in
+> §4 hints at. Reversing it is a line in `TableState.ReplaceDrawPileWithTheDiscards`.
+>
+> **#5 — how often the claim is offered.** A match is a sequence of rounds, each with its own
+> two cards turned up (§3 step 4), so **P9 offers the claim on the opening turn of *every*
+> round** — the reading on which the claim belongs to the setup that produced the card, not to
+> the session. "Once per game" would mean a round after the first turns two money cards up and
+> lets nobody take either, which is hard to square with §4.5 describing it as part of the
+> opening turn. Nobody approves it: the opener is simply asked. If it turns out to be
+> once-a-game, `MatchEngine` would pass the fact along to the round it builds.
+>
+> **#14 — what moves between rounds.** §3 step 2 randomises seating at setup and the rules say
+> nothing at all about a second round: no dealer, no rotation, no "the winner deals next".
+> **P9 keeps the seating it was given for the whole match**, so the same player opens every
+> round. Whether that confers an advantage is a question for P12 rather than a rules question,
+> but if seating does move, the change is in `MatchEngine` alone — the round engine already
+> takes its seating as given.
 
 **Nothing here blocks the build.** Every remaining item has a safe default recorded in
 `BUILD-PLAN.md`. They are worth settling for fidelity, not for progress.

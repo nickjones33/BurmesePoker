@@ -56,6 +56,15 @@ public sealed class ConsoleObserver : IGameObserver
             $"{Who(player)} claimed the turned-up {CardFormatting.Of(card)} off the table "
             + "[grey](held, but owned by nobody)[/].");
 
+    /// <remarks>
+    /// Public and worth saying out loud: the pile everybody has been throwing into is now the
+    /// deck, so a card somebody discarded ten turns ago can come back (RULES.md §5).
+    /// </remarks>
+    public void DiscardsReshuffled(int cards) =>
+        AnsiConsole.MarkupLine(
+            $"[yellow]The draw pile ran out.[/] All {cards} discards were gathered and shuffled "
+            + "into a new one [grey](a money card still pays whoever the deck gave it to first)[/].");
+
     public void PlayerDiscarded(PlayerId player, Card card) =>
         AnsiConsole.MarkupLine($"{Who(player)} discarded {CardFormatting.Of(card)}.");
 

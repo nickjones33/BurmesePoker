@@ -113,7 +113,44 @@ public sealed class TableState
             ? seat
             : throw new ArgumentException($"{player} is not at this table.", nameof(player));
 
-    internal Deck DrawPile { get; }
+    internal Deck DrawPile { get; private set; }
+
+    /// <summary>
+    /// Gathers every discard pile, shuffles it, and makes it the new draw pile (RULES.md §5).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The turned-up cards are not gathered.</b> They stay on the table for the rest of the
+    /// round — RULES.md §9 #4's recommendation, taken as the default.
+    /// </para>
+    /// <para>
+    /// Every pile is swept, which is safe because only the previous player's top discard is
+    /// ever takeable and this runs at the moment a player draws, by which point that offer has
+    /// been declined (RULES.md §9 #9). Cards move from the piles into the new deck in one step,
+    /// so an observer looking between engine steps still sees all 108.
+    /// </para>
+    /// </remarks>
+    /// <returns>How many cards were gathered. Zero means there is genuinely nothing left.</returns>
+    internal int ReplaceDrawPileWithTheDiscards(Random random)
+    {
+        if (!DrawPile.IsEmpty)
+        {
+            throw new InvalidOperationException(
+                "The discards are gathered when the draw pile runs out, not before (RULES.md §5).");
+        }
+
+        var gathered = new List<Card>();
+
+        foreach (var seat in _seats)
+        {
+            gathered.AddRange(seat.TakeAllDiscards());
+        }
+
+        var replacement = new Deck(gathered);
+        replacement.Shuffle(random);
+        DrawPile = replacement;
+        return gathered.Count;
+    }
 
     /// <summary>
     /// Takes the top money card off the table (RULES.md §4.5). The <b>actual</b> card leaves

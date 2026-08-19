@@ -57,6 +57,33 @@ public sealed class CardOwnership
         _owners.Add(card, owner);
     }
 
+    /// <summary>
+    /// Records that the deck gave <paramref name="card"/> to <paramref name="owner"/>, unless
+    /// somebody already owns it — <b>first acquisition wins</b> (RULES.md §5).
+    /// </summary>
+    /// <returns>
+    /// <c>true</c> if <paramref name="owner"/> now owns the card, whether this call recorded
+    /// it or an earlier one did; <c>false</c> if it stays with the player who acquired it first.
+    /// </returns>
+    /// <remarks>
+    /// This is the reshuffle case, and the only one where a card can legitimately leave the
+    /// deck twice: Alice is dealt the 7♦ and discards it, the draw pile runs out, the discards
+    /// are gathered and shuffled, and Bob draws the 7♦ from the new pile. Ownership never
+    /// transfers (RULES.md §4.4), so Alice keeps it and Bob simply holds it.
+    /// <see cref="RecordFromDeck"/> stays strict for the deal, where a card leaving the deck
+    /// twice really is a bug.
+    /// </remarks>
+    public bool TryRecordFromDeck(CardId card, PlayerId owner)
+    {
+        if (_owners.TryGetValue(card, out var existing))
+        {
+            return existing == owner;
+        }
+
+        _owners.Add(card, owner);
+        return true;
+    }
+
     /// <summary>The player the deck gave this card to, or <c>null</c> if it owns nothing.</summary>
     public PlayerId? OwnerOf(CardId card) =>
         _owners.TryGetValue(card, out var owner) ? owner : null;

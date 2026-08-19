@@ -27,7 +27,7 @@ namespace BurmesePoker.Console;
 public sealed class SpectrePlayerAgent : IPlayerAgent
 {
     private readonly IReadOnlyDictionary<PlayerId, string> _names;
-    private int _turnInProgress;
+    private (int Round, int Turn) _turnInProgress;
 
     public SpectrePlayerAgent(IReadOnlyDictionary<PlayerId, string> names) =>
         _names = names ?? throw new ArgumentNullException(nameof(names));
@@ -114,15 +114,18 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
     /// calls, because a turn asks a different number of questions depending on what is
     /// available — the opening turn is offered the money card, later turns are offered the
     /// discard, and only a winning hand is offered the declaration.
+    /// <b>The round has to be part of it</b>: an agent lives for the whole match, and turn 1
+    /// of round 2 is a different turn from turn 1 of round 1 — tracking the number alone left
+    /// the opener's cards on screen at the start of every round after the first.
     /// </remarks>
     private void BeginTurn(TurnContext context)
     {
-        if (context.TurnNumber == _turnInProgress)
+        if ((context.Round, context.TurnNumber) == _turnInProgress)
         {
             return;
         }
 
-        _turnInProgress = context.TurnNumber;
+        _turnInProgress = (context.Round, context.TurnNumber);
 
         AnsiConsole.Clear();
         AnsiConsole.Write(new Rule($"Turn {context.TurnNumber} — {Who(context.Player)}").LeftJustified());

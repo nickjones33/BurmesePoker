@@ -11,11 +11,12 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-This project is **mid-rewrite, and the game is playable**. **P0–P8 are done**: the 2023
+This project is **mid-rewrite, and the game is playable**. **P0–P9 are done**: the 2023
 implementation has been deleted, the solution is three projects, the whole rules core is built
 and tested, and `dotnet run --project BurmesePoker.Console` deals a hotseat round for 4–6
-people and plays it to settlement. **P9 (repeated rounds) is next**, then P10 (bots — solo
-play). Whether or not you use the skill, read these first:
+people, plays it to settlement, and goes round again with the banks carrying over. **P10 (bots
+— solo play) is next**, and it is the fan-out point for everything after it. Whether or not you
+use the skill, read these first:
 
 1. **`docs/STATUS.md`** — which work packet is next, and the state of the tree. Update it at
    the end of every session.

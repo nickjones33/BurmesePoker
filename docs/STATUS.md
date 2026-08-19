@@ -2,7 +2,7 @@
 
 Cross-session progress tracker. **`/poker` reads this first and updates it last.**
 
-Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 11) · Skill: `.claude/skills/poker/SKILL.md`
+Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 12) · Skill: `.claude/skills/poker/SKILL.md`
 
 State markers: `☐` not started · `◐` in progress · `☑` done
 
@@ -10,35 +10,36 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P9 (end-to-end play).** No blockers.
+**Next packet: P10 (bot opponents — solo play).** No blockers.
 
-**The roadmap was extended on 2026-08-18** with the four goals now recorded in
-**`BUILD-PLAN.md` §0** — solo play against the computer, a console worth sitting at,
-strategy simulation at scale, and a multiplayer app with AI seats. **P9 picks up two
-requirements from it** (§3.8, below) but is otherwise unchanged.
-**P10 (bots) is the fan-out point**: solo play *is* bots, a discard hint is the same scored
-search, a simulation is bots playing each other, and a network timeout is a bot taking over a
-seat. After P10, **P11, P12 and P13 are independent** and can be taken in any order.
+**P0 through P9 are done, so the game is a *game*:** `dotnet run --project
+BurmesePoker.Console` deals for 4–6 people at one keyboard, plays a round to settlement, asks
+*"another round?"*, carries the banks over, and reshuffles the discards if the draw pile runs
+dry. What is missing is somebody to play against — **P10 is the fan-out point**: solo play *is*
+bots, a discard hint is the same scored search, a simulation is bots playing each other, and a
+network timeout is a bot taking over a seat. After P10, **P11, P12 and P13 are independent** and
+can be taken in any order.
 
-P0 through P8 are all done, so **the game is playable**: `dotnet run --project
-BurmesePoker.Console` deals a round for 4–6 people at one keyboard and plays it through to
-settlement. What P9 adds is *repetition* — many rounds, banks carrying over, and the
-reshuffle when the draw pile runs dry. The 2023 implementation is gone from the tree and
-lives only at the `pre-rewrite` tag. The solution is three projects —
-`BurmesePoker.Domain` (pure rules), `BurmesePoker.Console` (Spectre.Console 0.57.2, the only
-project that prints), and `BurmesePoker.Tests` (references **Domain only**).
+The 2023 implementation is gone from the tree and lives only at the `pre-rewrite` tag. The
+solution is three projects — `BurmesePoker.Domain` (pure rules), `BurmesePoker.Console`
+(Spectre.Console 0.57.2, the only project that prints), and `BurmesePoker.Tests` (references
+**Domain only**).
 
-Domain now holds `Cards/{Rank,Suit,CardColor,CardText,CardId,Card,Deck,DeckBuilder,
+Domain holds `Cards/{Rank,Suit,CardColor,CardText,CardId,Card,Deck,DeckBuilder,
 DeckExhaustedException}`, `Melds/{MeldKind,MeldSlot,Meld,RunGenerator,SetGenerator,
 MeldCandidates,HandEvaluator}`, `Money/{MoneyCardRegistry,CardOwnership,Stakes,Settlement}`,
-`Play/{PlayerId,TurnAction,PlayerState,TableState,TurnContext,RoundResult,RoundEngine}` and
-`Abstractions/{IPlayerAgent,IGameObserver}`. **`Melds/`, `Money/` and `Abstractions/` are
-complete**; `Play/` wants only `MatchEngine`, which is P9's. Console holds
-`{Program,CardFormatting,SpectrePlayerAgent,ConsoleObserver}` — **P8 changed nothing in
-Domain**.
+`Play/{PlayerId,TurnAction,PlayerState,TableState,TurnContext,RoundResult,RoundEngine,
+MatchEngine}` and `Abstractions/{IPlayerAgent,IGameObserver}`. **Every folder in BUILD-PLAN §2's
+sketch is now complete** — P10 adds a new one, `Domain/Agents/`. Console holds
+`{Program,CardFormatting,SpectrePlayerAgent,ConsoleObserver}`.
 
-✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **192 passed,
+✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **208 passed,
 0 failed**. **Any red tree is a real problem.**
+
+⚠️ **One hazard a cold context must know before writing a test or a bot:** with the reshuffle
+built, **a round in which nobody's hand ever improves never ends.** Only a declaration ends a
+round (RULES.md §7.1) and the cards now circulate for ever, so a table of passive agents loops
+until it is killed. Every round-level test needs a seat that eventually declares.
 
 ---
 
@@ -55,14 +56,14 @@ Domain**.
 | ☑ | **P6** Stakes and settlement | P1, P2 | done 2026-08-18 — settlement takes the *unshuffled* shoe |
 | ☑ | **P7** Round and turn engine | P5, P6 | done 2026-08-18 — deals from a draw order, not a shuffle |
 | ☑ | **P8** Console front end | P7 | done 2026-08-18 — hotseat; verified by driving a pty |
-| ☐ | **P9** End-to-end play | P8 | **next** — read §3.8 first: it adds two requirements |
-| ☐ | **P10** Bot opponents — solo play | P9 | **promoted out of "optional" 2026-08-18** |
+| ☑ | **P9** End-to-end play | P8 | done 2026-08-18 — the reshuffle lives inside `RoundEngine.TakeCard` |
+| ☐ | **P10** Bot opponents — solo play | P9 | **next** — a strategy that never improves never ends a round |
 | ☐ | **P11** Console UX pass | P10 | the terminal *is* the UI (§0) |
 | ☐ | **P12** Simulation at scale | P10 | thousands of games, seeded and parallel |
 | ☐ | **P13** Multiplayer app | P10 | XL — split it when it is next |
 
-**P9 → P10 is a chain; after that it forks.** P11, P12 and P13 depend on P10 and on nothing
-else, so any of them can be picked up in any order — or dropped.
+**P10 is the fork.** P11, P12 and P13 depend on P10 and on nothing else, so any of them can be
+picked up in any order — or dropped.
 
 ⚠️ **Four things the extension changed for work that is already planned**, all recorded in
 `BUILD-PLAN.md`:
@@ -74,12 +75,11 @@ else, so any of them can be picked up in any order — or dropped.
 3. **§3.7 makes simulation a first-class consumer.** Determinism, no I/O and no mutable
    statics already hold; **speed is the one unmeasured thing**, and `TryFindCover` runs after
    every discard by every player.
-4. **§3.8 makes the *statistics* a constraint on P9, not a P12 problem.** A strategy
-   comparison wants five kinds of thing; two of them — how close the losers were, and how much
-   of the money was the side bet — are reachable **only through the round's `TableState`**. So
-   a `MatchEngine` that hands back banks alone would quietly foreclose on the simulation goal.
-   It is the same surfacing the console already needs, so **one mechanism serves both**.
-   P9 also gains one field: **`Turns` on `RoundResult`**, free where the engine already counts.
+4. ✅ **§3.8's statistics constraint — delivered by P9.** `MatchEngine.PlayRound` returns a
+   `RoundRecord(RoundResult, TableState)`, so how close the losers were and how much of the
+   money was the side bet both stay reachable, and `RoundResult.Turns` is carried at the
+   source. The engine keeps **no** per-round history: a consumer derives what it wants and
+   drops the table.
 
 ---
 
@@ -87,7 +87,70 @@ else, so any of them can be picked up in any order — or dropped.
 
 *Anything a cold context would need: decisions taken, surprises, deliberate leftovers.*
 
-**From P8 (most recent):**
+**From P9 (most recent):**
+
+- **`MatchEngine(players, agents, stakes, random, observer = null)`** holds the seating, the
+  stakes, the banks and the one `Random`. **`PlayRound()`** shuffles a fresh shoe;
+  **`PlayRound(drawOrder)`** is the scriptable twin, mirroring `RoundEngine`'s own pair. Both
+  return a **`RoundRecord(RoundResult Result, TableState Table)`** — the §3.8 pair, which is
+  also what the console's settlement report reads. `Banks` is a live view, everyone starts at
+  zero, and `RoundsPlayed` counts. **Nothing is retained per round**; do not add a history to
+  make a report easier (P11 remembers its own).
+- ⚠️ **`RoundEngine`'s constructor now takes a `Random`, and it is required** — inserted after
+  `drawOrder`, before `round` and `observer`. A round needs randomness for the reshuffle, and
+  defaulting it would have made an exhausted round irreproducible in silence (BUILD-PLAN §3.7).
+  Test call sites pass `new Random(seed)`; `RoundEngineTests.Engine(...)` takes an optional
+  `seed` that only matters if the round actually reshuffles.
+- **The reshuffle is in `RoundEngine.TakeCard`, at the moment of drawing** — `if
+  (Table.DrawPile.IsEmpty)` → `TableState.ReplaceDrawPileWithTheDiscards(random)`, which sweeps
+  **every** seat's pile, shuffles, and installs a new `Deck`. Safe to sweep all of them because
+  the current player has already declined the offered discard by then. **The turned-up cards
+  are not gathered** (RULES.md §9 #4's recommendation, taken). `DeckExhaustedException` now
+  means what it says: nothing left anywhere, which is a real end state rather than a crash.
+- **Ownership across the reshuffle is `CardOwnership.TryRecordFromDeck`** — keeps the first
+  owner and returns `false` rather than throwing. The blind draw calls it; **the deal still
+  calls the strict `RecordFromDeck`**, where a card leaving the deck twice really is a bug.
+  RULES.md §5's "first acquisition wins" is now a method rather than a paragraph.
+- ⚠️ **`TurnContext` gained `Round`, and it fixed a real concealment bug.** An agent lives for
+  the whole match, so `SpectrePlayerAgent`'s "have I already begun this turn?" check — which
+  compared `TurnNumber` alone — matched turn 1 of round 2 against turn 1 of round 1 and
+  **skipped the screen clear at the start of every round after the first**, leaving the
+  previous hand on screen. It now tracks `(Round, TurnNumber)`. The round number is public
+  information, so nothing leaks; the P7 reflection test still passes.
+- ⚠️ **A round nobody can win now runs for ever.** This is the biggest behavioural change in
+  the packet and it deleted a test: `NobodyDeclaringRunsTheDrawPileOutAndSaysSo` used to assert
+  the throw, and now hangs. Every round-level test needs a seat that declares —
+  `RoundEngineTests.WaitingToDeclare(turns)` builds one that holds a winning hand and declines
+  until its *n*th turn, which is how the long reshuffle rounds are driven (a 4-player round
+  exhausts the pile on **turn 55**, having gathered exactly 54 cards).
+- **`ReshuffleSeed = 2` is pinned deliberately.** Any seed reshuffles, but seed 2 is one where
+  the 7♦ Bo threw away comes back to *somebody else*, which is the case the rule is about. If
+  that test ever needs re-seeding, seeds 3, 4, 5, 7, 11… also work.
+- **`RecordingObserver` grew** `Draws`, `Reshuffles`, `OwnersAtFirstReshuffle` and
+  `DrawsAfterFirstReshuffle`, and `IGameObserver` gained **`DiscardsReshuffled(int cards)`** —
+  which is also how P12 counts deck exhaustions (§3.8).
+- **The console plays a match now**: `Program` loops `PlayRound()` → settlement report →
+  standings → `AnsiConsole.Confirm("Another round?")`, and prints the rounds played on the way
+  out. Standings is a small table of the running banks, title `Standings` with the round count
+  as a caption (a `Title` long enough to exceed the table's width wraps ugly).
+- **No Console tests, still by construction** — the test project references Domain only.
+  Verification was again a throwaway harness under the scratchpad: it links
+  `BurmesePoker.Console/*.cs` plus the test project's `Hands`, `DealBuilder` and
+  `ScriptedPlayerAgent`, sets `<StartupObject>` to its own entry point so `Program.Main` does
+  not clash, and **calls `Program`'s private `ReportSettlement` / `ReportStandings` by
+  reflection** — same-assembly, so `BindingFlags.NonPublic` reaches them. Driven through a pty
+  with `script -qec "dotnet run --no-build" /dev/null < keys`. **Two tricks worth keeping:**
+  arrow-key escapes fed to a Spectre `SelectionPrompt` did not register, so rig the deal such
+  that the card to discard **sorts first** (hearts sort first, jokers last) and plain Enter
+  picks it; and give the winning hand no hearts so the drawn heart is that card. Two full
+  rounds were played, banks reaching +$28 / −$4 / −$12 / −$12 — summing to zero.
+- **Three rules defaults taken, all recorded in `RULES.md` rev 12 §9 and phrased neutrally in
+  `QUESTIONS-FOR-MYA-LAY.md`:** **#4** the turned-up cards are not swept into the reshuffle;
+  **#5** the money-card claim is offered every round, approved by nobody; **#14** (new) nothing
+  moves between rounds — the seating the match was given is played all session.
+- P9 shipped 16 tests and removed 1 (208 total).
+
+**Still current, from P8:**
 
 - **The console is a hotseat, and concealment is the screen clearing.** Every seat is a
   person at the same terminal, so `SpectrePlayerAgent.BeginTurn` clears the screen once per
@@ -166,10 +229,8 @@ else, so any of them can be picked up in any order — or dropped.
   blind draws, ever. A claim records nothing, a pickup records nothing, a discard changes
   nothing. `OnlyTheDealAndABlindDrawEverConferOwnership` exercises all three routes in one
   round and asserts the count.
-- **Deck exhaustion still propagates, and P9 cannot fix it by catching `Play()`.** The
-  exception unwinds from mid-turn with no resume point. The reshuffle belongs inside
-  `RoundEngine.TakeCard`, gathering the discard piles at the moment of drawing. **BUILD-PLAN
-  P9 has been amended** — this is the one thing P7 re-planned that matters.
+- ~~Deck exhaustion still propagates~~ — ✅ **done in P9**, inside `RoundEngine.TakeCard`
+  exactly as P7 predicted it would have to be.
 - **Seating is taken as given.** RULES.md §3 step 2 randomises it, but an engine that
   reshuffled its own seating could not be scripted, so P8's `Program.cs` randomises before
   constructing. The same list is what settlement is handed.
@@ -437,6 +498,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-18 | P9 | ☑ Done. `MatchEngine` — repeated rounds, banks carrying over, no automatic end — returning a `RoundRecord(RoundResult, TableState)` per round and keeping no history. Deck exhaustion now **reshuffles inside `RoundEngine.TakeCard`**: every discard pile gathered and shuffled into a new draw pile, the turned-up cards left alone, ownership held by whoever acquired the card first (`CardOwnership.TryRecordFromDeck`). `RoundResult.Turns` added; `IGameObserver.DiscardsReshuffled` added; `RoundEngine` now **requires** a `Random`. ⚠️ Found and fixed a real concealment bug the match loop exposed — `SpectrePlayerAgent` compared turn numbers alone and so skipped its screen clear on turn 1 of every round after the first; `TurnContext` gained `Round`. `Program` now loops rounds, asks *"another round?"* and prints standings. Build clean, **208 passed / 0 failed** (16 new, 1 removed — a passive round no longer terminates, so the old exhaustion test would hang). Verified the console by driving two full rounds through a pty. Rules defaults taken for `RULES.md` §9 #4 and #5, and new #14 raised (rev 12). Amended BUILD-PLAN §2, P10, P11 and P12. |
 | 2026-08-18 | — | **Statistics added as a design constraint** (doc-only, no code). `BUILD-PLAN.md` **§3.8**: the domain gains no notion of a statistic, and everything a strategy comparison wants is derived by the consumer from three seams — the observer stream, the per-round `(RoundResult, TableState)` pair, and a **recording decorator over `IPlayerAgent`** for anything decision-level (which needs no domain change and serves human replay too). Four constraints recorded, the sharpest being that ⚠️ **P9 must surface each round's table or two of the five stat families become unreachable**. P9 also gains `Turns` on `RoundResult`. §3.5 now says the observer event set is open but **hot** — events pass what the engine holds and never allocate. P12's build list rewritten against §3.8; §0, CLAUDE.md and the `/poker` skill's stale P0 baseline exception brought current. Build clean, **192 passed / 0 failed** — unchanged. |
 | 2026-08-18 | — | **Roadmap extended** (doc-only, no code). Nick named four goals beyond a playable game; written up as `BUILD-PLAN.md` **§0**, with **§3.6** (agents stay synchronous — a remote player blocks in the agent, one table is one task) and **§3.7** (simulation is a first-class consumer: determinism ✅, no I/O ✅, no mutable statics ✅, speed ⚠️ unmeasured) taken now rather than discovered later. **P10 promoted out of "optional" and rewritten** — its "never discard an owned money card" heuristic contradicted §4.4 and is corrected, bots move to `Domain/Agents/` so they are testable and reusable, and the scored partial cover P5 left unbuilt is specified here. Added **P11** (console UX), **P12** (simulation at scale), **P13** (multiplayer). §4 graph and §7 risks updated. Build clean, **192 passed / 0 failed** — unchanged, nothing was built. |
 | 2026-08-18 | P8 | ☑ Done. `CardFormatting`, `SpectrePlayerAgent`, `ConsoleObserver` and a `Program` that asks for players and stakes, randomises the seating, plays a round and reports the settlement split into its round and money-card halves. Hotseat concealment: clear and hand over the keyboard once a turn; blind draws are narrated without the card. Spectre.Console 0.57.2 added back. **No Domain change, so no new tests — 192 passed / 0 failed**, build clean; verified manually by driving the real binary and a rigged winning deal through a pty. Amended BUILD-PLAN P9 (the console's settlement report needs each round's `TableState`, so `MatchEngine` must surface it; between-round "stop playing" is the console's to ask) and P10. |

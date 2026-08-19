@@ -66,7 +66,7 @@ public class RoundEngineTests
         var agents = seats.ToDictionary(seat => seat, _ => (IPlayerAgent)ScriptedPlayerAgent.Passive());
 
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => new RoundEngine(seats, agents, Stakes.Standard, order));
+            () => new RoundEngine(seats, agents, Stakes.Standard, order, new Random(1)));
     }
 
     [Fact]
@@ -213,13 +213,98 @@ public class RoundEngineTests
     }
 
     [Fact]
-    public void NobodyDeclaringRunsTheDrawPileOutAndSaysSo()
+    public void RunningTheDrawPileOutGathersTheDiscardsShufflesThemAndPlayCarriesOn()
     {
-        var engine = Engine(Order(DealBuilder.ForPlayers(4)), Passive(4));
+        // Fifty-four cards to draw and one drawn per turn, so turn 55 is the first to find the
+        // pile empty — and by then 54 cards have been discarded and none taken (RULES.md §5).
+        var observer = new RecordingObserver();
+        var engine = Engine(
+            Order(DealBuilder.ForPlayers(4).Give(0, WinningHand)),
+            Agents(WaitingToDeclare(turns: 15)),
+            observer);
 
-        // Not caught here: gathering the discards and reshuffling is P9's (RULES.md §5).
-        Assert.Throws<DeckExhaustedException>(() => engine.Play());
-        Assert.Equal(0, engine.Table.DrawPileCount);
+        observer.Watch(engine.Table);
+
+        var result = engine.Play();
+
+        Assert.Equal([54], observer.Reshuffles);
+        Assert.Equal(Alice, result.Winner);
+        Assert.Equal(57, result.Turns);
+
+        // Three turns were played out of the replacement pile.
+        Assert.Equal(51, engine.Table.DrawPileCount);
+
+        // The gathering moves cards; it must not lose or copy one.
+        Assert.All(observer.CardsInPlay, count => Assert.Equal(DeckBuilder.TotalCards, count));
+        Assert.All(observer.DistinctCardsInPlay, count => Assert.Equal(DeckBuilder.TotalCards, count));
+    }
+
+    [Fact]
+    public void TheTurnedUpCardsAreNotGatheredIntoTheReshuffle()
+    {
+        // They stay out of play for the rest of the round — RULES.md §9 #4's recommendation,
+        // taken as the default. Only the discards are gathered (§5).
+        var observer = new RecordingObserver();
+        var engine = Engine(
+            Order(DealBuilder.ForPlayers(4).Give(0, WinningHand)),
+            Agents(WaitingToDeclare(turns: 15)),
+            observer);
+
+        observer.Watch(engine.Table);
+        engine.Play();
+
+        Assert.Equal(2, engine.Table.TurnedUpOnTable.Count);
+        Assert.Contains(engine.Table.TurnedUpFromTop, engine.Table.TurnedUpOnTable);
+        Assert.Contains(engine.Table.TurnedUpFromBottom, engine.Table.TurnedUpOnTable);
+    }
+
+    [Fact]
+    public void AMoneyCardDiscardedAndRedrawnAfterAReshuffleStillPaysItsFirstOwner()
+    {
+        // Bob is dealt the 7♦ — a permanent money card (RULES.md §4.1) — and throws it away on
+        // his first turn. It lies in his discard pile until the draw pile runs out, is gathered
+        // and shuffled back in, and comes off the deck again for somebody else. Ownership is
+        // write-once and does not follow the card: first acquisition wins (RULES.md §5).
+        var observer = new RecordingObserver();
+        var engine = Engine(
+            Order(DealBuilder.ForPlayers(4).Give(0, WinningHand).Give(1, "7D")),
+            Agents(WaitingToDeclare(turns: 26), new ScriptedPlayerAgent(new ScriptedTurn { Discard = "7D" })),
+            observer,
+            seed: ReshuffleSeed);
+
+        observer.Watch(engine.Table);
+        var seven = engine.Table.SeatOf(Bob).Hand.Single(card => card.SameValueAs(Hands.Value("7D")));
+
+        var result = engine.Play();
+
+        Assert.Single(observer.Reshuffles);
+
+        var redrawn = observer.DrawsAfterFirstReshuffle.Single(draw => draw.Card.Id == seven.Id);
+        Assert.NotEqual(Bob, redrawn.Player);
+        Assert.Equal(Bob, engine.Table.Ownership.OwnerOf(seven.Id));
+
+        // And nothing else that was owned before the reshuffle changed hands either.
+        Assert.All(
+            observer.OwnersAtFirstReshuffle,
+            owned => Assert.Equal(owned.Value, engine.Table.Ownership.OwnerOf(owned.Key)));
+
+        Assert.Equal(0, result.Payouts.Values.Sum());
+    }
+
+    [Fact]
+    public void TheResultSaysHowManyTurnsTheRoundRan()
+    {
+        // Free where the engine already counts, and the most-wanted round statistic
+        // (BUILD-PLAN §3.8).
+        var immediate = Engine(
+            Order(DealBuilder.ForPlayers(4).Give(0, WinningHand)),
+            Agents(new ScriptedPlayerAgent(new ScriptedTurn { Declare = true })));
+
+        Assert.Equal(1, immediate.Play().Turns);
+
+        var lap = Engine(LongerRound(), Agents(new ScriptedPlayerAgent(new ScriptedTurn(), Declaring("2C"))));
+
+        Assert.Equal(5, lap.Play().Turns);
     }
 
     [Fact]
@@ -259,9 +344,9 @@ public class RoundEngineTests
         var agents = FourPlayers.ToDictionary(player => player, _ => (IPlayerAgent)ScriptedPlayerAgent.Passive());
 
         Assert.Throws<ArgumentException>(
-            () => new RoundEngine([Alice, Bob, Carol, Carol], agents, Stakes.Standard, order));
+            () => new RoundEngine([Alice, Bob, Carol, Carol], agents, Stakes.Standard, order, new Random(1)));
         Assert.Throws<ArgumentException>(
-            () => new RoundEngine(FourPlayers, new Dictionary<PlayerId, IPlayerAgent> { [Alice] = agents[Alice] }, Stakes.Standard, order));
+            () => new RoundEngine(FourPlayers, new Dictionary<PlayerId, IPlayerAgent> { [Alice] = agents[Alice] }, Stakes.Standard, order, new Random(1)));
     }
 
     [Fact]
@@ -320,6 +405,19 @@ public class RoundEngineTests
         Assert.Empty(leaks);
     }
 
+    /// <summary>
+    /// The seed the reshuffle test is pinned to. Any seed reshuffles, but this one puts the
+    /// 7♦ back into somebody else's hands, which is the case the rule is about.
+    /// </summary>
+    private const int ReshuffleSeed = 2;
+
+    /// <summary>
+    /// A seat holding a winning hand that declines to declare until its <paramref name="turns"/>th
+    /// turn — the way to make a round run long enough to empty the draw pile.
+    /// </summary>
+    private static ScriptedPlayerAgent WaitingToDeclare(int turns) =>
+        new([.. Enumerable.Repeat(new ScriptedTurn(), turns - 1), new ScriptedTurn { Declare = true }]);
+
     /// <summary>Alice needs one more turn, so the round runs a full lap of the table first.</summary>
     private static IReadOnlyList<Card> LongerRound() =>
         Order(DealBuilder.ForPlayers(4)
@@ -342,15 +440,21 @@ public class RoundEngineTests
             player => player,
             player => player.Value < agents.Length ? agents[player.Value] : ScriptedPlayerAgent.Passive());
 
+    /// <remarks>
+    /// The seed matters only if the round runs the draw pile out and reshuffles (RULES.md §5);
+    /// tests that do give their own.
+    /// </remarks>
     private static RoundEngine Engine(
         IReadOnlyList<Card> order,
         IReadOnlyDictionary<PlayerId, IPlayerAgent> agents,
-        IGameObserver? observer = null) =>
+        IGameObserver? observer = null,
+        int seed = 1) =>
         new(
             [.. agents.Keys.OrderBy(player => player.Value)],
             agents,
             Stakes.Standard,
             order,
+            new Random(seed),
             observer: observer);
 
     private sealed class RogueAgent(Card discard) : IPlayerAgent

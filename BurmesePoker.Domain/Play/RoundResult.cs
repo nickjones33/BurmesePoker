@@ -18,8 +18,14 @@ namespace BurmesePoker.Domain.Play;
 /// table appears, and the values sum to zero. There is no breakdown of the round payment
 /// against the money-card side-bet — see BUILD-PLAN P8 if you want one.
 /// </param>
+/// <param name="Turns">
+/// How many turns the round ran, counting the winner's last one. Carried here because the
+/// engine has the number for free in the loop it already keeps; every other statistic is
+/// derived by the consumer from the observer stream or the table (BUILD-PLAN §3.8).
+/// </param>
 public sealed record RoundResult(
     int Round,
     PlayerId Winner,
     IReadOnlyList<Meld> Melds,
-    IReadOnlyDictionary<PlayerId, int> Payouts);
+    IReadOnlyDictionary<PlayerId, int> Payouts,
+    int Turns);

@@ -17,9 +17,10 @@ namespace BurmesePoker.Console;
 /// which is also the order settlement is handed.
 /// </para>
 /// <para>
-/// <b>One round.</b> Repeated rounds with banks carrying over are P9's <c>MatchEngine</c>, and
-/// so is the reshuffle when the draw pile runs dry — until then an exhausted deck ends the
-/// programme with an explanation rather than a stack trace.
+/// <b>Round after round, until the table says stop.</b> Nothing ends a match on its own
+/// (RULES.md §7.2), so <em>"another round?"</em> is asked here rather than in the domain — it
+/// is not a move, so it is not a question for an agent either. The banks are the
+/// <see cref="MatchEngine"/>'s to keep and this file's to draw.
 /// </para>
 /// </remarks>
 internal static class Program
@@ -46,28 +47,69 @@ internal static class Program
         AnsiConsole.MarkupLine($"[grey]{CardFormatting.Name(names, seating[0])} opens.[/]");
         AnsiConsole.WriteLine();
 
-        var observer = new ConsoleObserver(names);
-        var engine = RoundEngine.Shuffled(
+        var match = new MatchEngine(
             seating,
             seating.ToDictionary(player => player, IPlayerAgent (_) => new SpectrePlayerAgent(names)),
             stakes,
             Random.Shared,
-            round: 1,
-            observer);
+            new ConsoleObserver(names));
 
         try
         {
-            var result = engine.Play();
-            ReportSettlement(result, engine.Table, names);
+            do
+            {
+                var played = match.PlayRound();
+                ReportSettlement(played.Result, played.Table, names);
+                ReportStandings(match, names);
+            }
+            while (AnsiConsole.Confirm("Another round?"));
+
+            AnsiConsole.MarkupLine(
+                $"[grey]{match.RoundsPlayed} round{(match.RoundsPlayed == 1 ? string.Empty : "s")} played. "
+                + "Nothing ends a game but the players (RULES.md §7.2).[/]");
+
             return 0;
         }
         catch (DeckExhaustedException)
         {
+            // The reshuffle (RULES.md §5) means this now takes the draw pile *and* every
+            // discard pile being empty at once, which is a genuine end state rather than the
+            // crash it used to be.
             AnsiConsole.MarkupLine(
-                "[yellow]The draw pile ran out before anybody went out.[/] Gathering the "
-                + "discards and playing on is P9's job (RULES.md §5); for now the round ends here.");
+                "[yellow]There is nothing left to draw anywhere[/] — not in the deck and not in "
+                + "a discard pile — so the round cannot go on. The standings stand as they were.");
+
+            ReportStandings(match, names);
             return 1;
         }
+    }
+
+    /// <summary>
+    /// Draws the running banks. They start at zero and carry over, and nothing resets them —
+    /// there is no target score and no round limit (RULES.md §7.2).
+    /// </summary>
+    private static void ReportStandings(MatchEngine match, IReadOnlyDictionary<PlayerId, string> names)
+    {
+        if (match.RoundsPlayed == 0)
+        {
+            return;
+        }
+
+        var grid = new Table().Border(TableBorder.Rounded)
+            .Title("[bold]Standings[/]")
+            .Caption($"[grey]after {match.RoundsPlayed} round{(match.RoundsPlayed == 1 ? string.Empty : "s")}[/]");
+
+        grid.AddColumn("Player");
+        grid.AddColumn(new TableColumn("Bank").RightAligned());
+
+        foreach (var (player, bank) in match.Banks.OrderByDescending(entry => entry.Value))
+        {
+            grid.AddRow(CardFormatting.Name(names, player), $"[bold]{Amount(bank)}[/]");
+        }
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(grid);
+        AnsiConsole.WriteLine();
     }
 
     private static Dictionary<PlayerId, string> AskWhoIsPlaying()

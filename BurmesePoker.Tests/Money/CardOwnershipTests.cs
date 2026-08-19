@@ -67,6 +67,33 @@ public class CardOwnershipTests
     }
 
     [Fact]
+    public void ARedrawAfterAReshuffleLeavesTheCardWithWhoeverAcquiredItFirst()
+    {
+        // Alice is dealt the 7♦ and discards it; the draw pile runs out, the discards are
+        // gathered, and Bo draws the same physical card. First acquisition wins — Alice keeps
+        // it and Bo simply holds it (RULES.md §5).
+        var ownership = new CardOwnership();
+        ownership.RecordFromDeck(Id(7), Ava);
+
+        Assert.False(ownership.TryRecordFromDeck(Id(7), Bo));
+        Assert.Equal(Ava, ownership.OwnerOf(Id(7)));
+        Assert.Single(ownership.Records);
+    }
+
+    [Fact]
+    public void ACardNobodyOwnsIsRecordedForWhoeverDrewIt()
+    {
+        var ownership = new CardOwnership();
+
+        Assert.True(ownership.TryRecordFromDeck(Id(7), Ava));
+        Assert.Equal(Ava, ownership.OwnerOf(Id(7)));
+
+        // Re-recording the same owner says yes and changes nothing.
+        Assert.True(ownership.TryRecordFromDeck(Id(7), Ava));
+        Assert.Single(ownership.Records);
+    }
+
+    [Fact]
     public void RecordsExposesEveryOwnershipForSettlement()
     {
         // P6 settles by walking these records, never by looking at hands.
