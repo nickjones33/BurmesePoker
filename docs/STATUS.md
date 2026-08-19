@@ -10,22 +10,24 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P8 (console front end).** No blockers. Everything left is the chain
-P8 → P9 → P10.
+**Next packet: P9 (end-to-end play).** No blockers. What is left is P9 → P10.
 
-P0 through P7 are all done, so **the entire game exists except a way to play it**. A round
-runs end to end in tests: deal, turn up the money cards, take turns, declare, settle — with
-no console anywhere near it. The 2023 implementation is gone from the tree and lives only at
-the `pre-rewrite` tag. The solution is three projects — `BurmesePoker.Domain` (pure rules),
-`BurmesePoker.Console` (a one-line placeholder until P8), and `BurmesePoker.Tests`
-(references **Domain only**).
+P0 through P8 are all done, so **the game is playable**: `dotnet run --project
+BurmesePoker.Console` deals a round for 4–6 people at one keyboard and plays it through to
+settlement. What P9 adds is *repetition* — many rounds, banks carrying over, and the
+reshuffle when the draw pile runs dry. The 2023 implementation is gone from the tree and
+lives only at the `pre-rewrite` tag. The solution is three projects —
+`BurmesePoker.Domain` (pure rules), `BurmesePoker.Console` (Spectre.Console 0.57.2, the only
+project that prints), and `BurmesePoker.Tests` (references **Domain only**).
 
 Domain now holds `Cards/{Rank,Suit,CardColor,CardText,CardId,Card,Deck,DeckBuilder,
 DeckExhaustedException}`, `Melds/{MeldKind,MeldSlot,Meld,RunGenerator,SetGenerator,
 MeldCandidates,HandEvaluator}`, `Money/{MoneyCardRegistry,CardOwnership,Stakes,Settlement}`,
 `Play/{PlayerId,TurnAction,PlayerState,TableState,TurnContext,RoundResult,RoundEngine}` and
 `Abstractions/{IPlayerAgent,IGameObserver}`. **`Melds/`, `Money/` and `Abstractions/` are
-complete**; `Play/` wants only `MatchEngine`, which is P9's.
+complete**; `Play/` wants only `MatchEngine`, which is P9's. Console holds
+`{Program,CardFormatting,SpectrePlayerAgent,ConsoleObserver}` — **P8 changed nothing in
+Domain**.
 
 ✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **192 passed,
 0 failed**. **Any red tree is a real problem.**
@@ -44,12 +46,12 @@ complete**; `Play/` wants only `MatchEngine`, which is P9's.
 | ☑ | **P5** Exact-cover hand evaluator | P3, P4 | done 2026-08-18 |
 | ☑ | **P6** Stakes and settlement | P1, P2 | done 2026-08-18 — settlement takes the *unshuffled* shoe |
 | ☑ | **P7** Round and turn engine | P5, P6 | done 2026-08-18 — deals from a draw order, not a shuffle |
-| ☐ | **P8** Console front end | P7 | **next** |
-| ☐ | **P9** End-to-end play | P8 | |
+| ☑ | **P8** Console front end | P7 | done 2026-08-18 — hotseat; verified by driving a pty |
+| ☐ | **P9** End-to-end play | P8 | **next** |
 | ☐ | **P10** Bot opponents and hints | P9 | optional |
 
-**Everything left is a chain**: P8 → P9 → P10. There is no longer any packet that
-can be picked up independently.
+**What is left is a chain**: P9 → P10. There is no longer any packet that can be picked up
+independently.
 
 ---
 
@@ -57,7 +59,51 @@ can be picked up independently.
 
 *Anything a cold context would need: decisions taken, surprises, deliberate leftovers.*
 
-**From P7 (most recent):**
+**From P8 (most recent):**
+
+- **The console is a hotseat, and concealment is the screen clearing.** Every seat is a
+  person at the same terminal, so `SpectrePlayerAgent.BeginTurn` clears the screen once per
+  turn, names the player, and waits for *"are you at the keyboard?"* before drawing their
+  hand. It fires on whichever of the four questions comes first, and tracks the turn by
+  `TurnContext.TurnNumber` rather than by counting calls — **a turn asks a varying number of
+  questions** (the opener is offered the money card, later turns the discard, only a winning
+  hand the declaration).
+- **`ConsoleObserver.PlayerDrew` deliberately does not print the card.** The domain narrates
+  private information and says so; filtering is the front end's job (BUILD-PLAN §3.5). A
+  pickup, a claim, a discard and a declaration are all public and are printed in full.
+  A side effect of the per-turn clear: **public narration scrolls away**. The table panel
+  reprints what still matters (turned-up cards, draw count, the takeable discard). If P9
+  wants a running log it needs a panel that survives the clear, not more `WriteLine`s.
+- **The star marks an owned *money* card, not any owned card.** Everything dealt is owned, so
+  starring ownership alone marked all thirteen and said nothing. `CardFormatting.Of(card,
+  registry, owned)` only stars when the multiplier is non-zero — a money card with no star
+  came from a discard pile or off the table and pays somebody else.
+- **The settlement breakdown lives in `Program`, not in the observer**, because settlement
+  returns net deltas only and splitting them needs `TableState.Ownership` and
+  `TableState.Shoe`, which are on the table rather than in the `RoundResult`. The round half
+  is derived from the winner (flat, RULES.md §7.2) and the money-card half is the remainder,
+  so **the two columns always add up to what the domain actually settled**. ⚠️ **This is the
+  one thing P9 must re-plan around** — see BUILD-PLAN P9, amended.
+- **Prompts are offered unconditionally and that is correct.** The engine only asks a question
+  that has a legal answer, so neither the claim, the pickup nor the declaration needs a
+  legality check on the console side; adding one would duplicate the rules outside the domain.
+- **No tests were added — by construction.** The test project references Domain only, so
+  nothing in `BurmesePoker.Console` is unit-testable, and P8 changed no Domain code: still
+  **192 passed / 0 failed**. Verification was manual, and worth repeating the recipe:
+  `script -qec "dotnet run --project BurmesePoker.Console" /dev/null < keys` gives Spectre a
+  pty (piped stdin fails — `System.Console.ReadKey` throws when input is redirected, and
+  `Program` refuses to start with a clear message rather than a stack trace). A second,
+  throwaway harness under the scratchpad linked the test project's `DealBuilder`,
+  `ScriptedPlayerAgent` and `Hands` sources, rigged a winning deal, and drove **a real
+  `SpectrePlayerAgent` to a declaration** — that is how the declare prompt and the settlement
+  table were seen working, arithmetic checked by hand (+16 / 0 / −8 / −8, summing to zero).
+- **Spectre.Console is back at 0.57.2**, the current release, not the 2023 pin of 0.47.0.
+  Only `BurmesePoker.Console` references it.
+- **No new rules question.** Everything P8 needed was settled: §3 step 2 (seating is
+  randomised in `Program`), §4.4/§4.5 (a claimed card is held but owned by nobody), §6.3
+  (concealment), §7.2 (a flat round payment).
+
+**Still current, from P7:**
 
 - **`new RoundEngine(players, agents, stakes, drawOrder, round, observer)` deals in the
   constructor and `Play()` runs the turns**, so `engine.Table` is readable before the first
@@ -363,6 +409,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-18 | P8 | ☑ Done. `CardFormatting`, `SpectrePlayerAgent`, `ConsoleObserver` and a `Program` that asks for players and stakes, randomises the seating, plays a round and reports the settlement split into its round and money-card halves. Hotseat concealment: clear and hand over the keyboard once a turn; blind draws are narrated without the card. Spectre.Console 0.57.2 added back. **No Domain change, so no new tests — 192 passed / 0 failed**, build clean; verified manually by driving the real binary and a rigged winning deal through a pty. Amended BUILD-PLAN P9 (the console's settlement report needs each round's `TableState`, so `MatchEngine` must surface it; between-round "stop playing" is the console's to ask) and P10. |
 | 2026-08-18 | P7 | ☑ Done. `TurnAction`, `PlayerState`, `TableState`, `TurnContext`, `RoundResult`, `RoundEngine`, `IPlayerAgent`, `IGameObserver`. A round deals from a validated draw order (so it is scriptable), turns up bottom-then-top, offers the claim on the opening turn only, records ownership on deals and blind draws alone, discards before revealing, and settles on a declaration. Build clean, **192 passed / 0 failed** (18 new), including the four acceptance tests — expected settlement, 13/14 hand sizes, 108 distinct cards at every event, and a claim that grants no ownership. Raised `RULES.md` §9 #12 and #13 (rev 11), both defaulted. Amended BUILD-PLAN §2, §3.5, P8 (what the engine asks the console) and **P9 (the reshuffle must go inside the engine — catching `Play()` cannot resume a round)**. |
 | 2026-08-18 | P6 | ☑ Done. `Stakes` (sealed record, positive-only, `Standard` = $5/$1) and `Settlement.ForRound` → per-player net deltas: flat round value from every loser to the winner, then each **owned** money card paying its owner `multiplier × money card value` from every other player. Walks ownership records and is never given a hand — pinned by a reflection test on the parameter list. Resolves an owned `CardId` through the **unshuffled** shoe by index and rejects a shuffled one outright. Build clean, **174 passed / 0 failed** (26 new), including the §4.3 worked example and a 500-round zero-sum property test. Amended BUILD-PLAN §2, P7 (keep the builder list; one roster; a round always has a winner), P8 (net deltas only) and P9 (conservation is a banking test). |
 | 2026-08-18 | P2 | ☑ Done. `MoneyCardRegistry` (pure function of the turned-up cards; permanent 7♦/A♠ as negative-id value designators; multiplier is permanent + turned-up, so doubling is the overlap and its own ceiling) and `CardOwnership` (append-only, write-once, no transfer/clear/remove — enforced by a reflection test). `PlayerId` brought forward into `Play/`. Build clean, **148 passed / 0 failed** (29 new). Re-planned P6: `Records` is keyed by `CardId` while `Multiplier` takes a `Card`, so settlement needs the shoe passed in — `DeckBuilder.BuildTwoDecks()` is index-aligned, `Deck.Cards` is not. Amended BUILD-PLAN §2, P2, P6 and P7. |

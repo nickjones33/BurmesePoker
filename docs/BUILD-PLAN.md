@@ -127,7 +127,11 @@ recorded against a player, and P2 needs the type. **By P6:** `Money/Stakes.cs` a
 TableState, TurnContext, RoundResult, RoundEngine}.cs` and `Abstractions/{IPlayerAgent,
 IGameObserver}.cs`, which completes `Abstractions/`. Only `Play/MatchEngine.cs` is still to
 come, in P9. The old exe project is renamed `BurmesePoker.Console`; the test project references
-**Domain only**, so nothing can accidentally test through the front end.
+**Domain only**, so nothing can accidentally test through the front end. **By P8:**
+`BurmesePoker.Console/{Program, CardFormatting, SpectrePlayerAgent, ConsoleObserver}.cs` and
+a `Spectre.Console` 0.57.2 reference — the one project that prints, and the one project that
+knows Spectre exists. **A consequence worth stating: nothing in `BurmesePoker.Console` is
+unit-tested**, by the same reference rule; P8 was verified by driving the binary.
 
 ---
 
@@ -809,6 +813,30 @@ settlement. No domain type references Spectre.
 > a short walk of `ownership.Records` through `registry.Multiplier`, exactly as settlement does
 > it. Don't assume the domain hands it over, and don't widen `ForRound` for presentation.
 
+> **As built (2026-08-18).** Four files in `BurmesePoker.Console`, none of them known to the
+> domain: `CardFormatting` (glyphs, ordering, money markers, cover rendering),
+> `SpectrePlayerAgent` (the four questions), `ConsoleObserver` (narration) and `Program`
+> (setup, one round, settlement report). **Spectre.Console 0.57.2**, the current release.
+> Decisions worth knowing:
+> - **It is a hotseat.** Every seat is a person at one terminal, so a turn starts by clearing
+>   the screen, naming the player and waiting for *"are you at the keyboard?"*. The handover
+>   fires on whichever question comes first and is keyed on `TurnContext.TurnNumber`, because
+>   the number of questions in a turn varies.
+> - **`PlayerDrew` narrates the player, not the card** — the domain hands over private
+>   information by design and the console filters it. Pickups, claims, discards and
+>   declarations are public and printed in full.
+> - **The money star is only ever on a money card.** Everything dealt is owned, so starring
+>   ownership alone marks the whole hand; what a player needs is which of the cards that *pay*
+>   pay them.
+> - **The cover is sorted, not recomputed** — longest meld first. Re-covering the hand to lay
+>   it out the way a player would remains unbuilt and unneeded.
+> - **Manual verification, since Tests references Domain only**: Spectre needs a pty, so
+>   `script -qec "dotnet run --project BurmesePoker.Console" /dev/null < keys` drives it;
+>   piped stdin cannot work (`Console.ReadKey` throws on redirected input) and `Program` says
+>   so instead of crashing. A throwaway scratch harness linking the test project's
+>   `DealBuilder`/`ScriptedPlayerAgent`/`Hands` drove a real `SpectrePlayerAgent` to a
+>   declaration, which is how the declare prompt and the settlement table were seen.
+
 ---
 
 ### P9 — End-to-end play and the remaining rules
@@ -864,6 +892,26 @@ settlement. No domain type references Spectre.
 > round's turned-up cards and nothing is ever mutated. Bank the `RoundResult.Payouts` and go
 > again. A `RoundEngine` plays exactly one round and refuses a second `Play()`.
 >
+> **Amended after the P8 session (2026-08-18) — what the console now needs from a match.**
+> The front end exists and works a round at a time; three things follow for `MatchEngine`.
+> 1. ⚠️ **The console's settlement report needs each round's `TableState`.** `RoundResult`
+>    carries net deltas only, and splitting them into the round payment and the money-card
+>    side bet needs `Ownership` and `Shoe`, which live on the table. Today `Program` reads
+>    `engine.Table` after `Play()`. **So `MatchEngine` must surface the round's table** — the
+>    cheapest shape is a per-round result that pairs the `RoundResult` with the `TableState`
+>    it settled from, or an event raised as each round ends. Do *not* solve it by widening
+>    `RoundResult` with presentation data or by handing `CardOwnership` to `TurnContext`; the
+>    second would leak which money cards an opponent was dealt, which P7's reflection test
+>    forbids outright.
+> 2. **"Stop playing" is the console's question, not the domain's** (RULES.md §7.2 — no
+>    automatic match end). `MatchEngine` should play a round when asked and hand back the
+>    banks; `Program` asks *"another round?"* between rounds and prints standings on the way
+>    out. An `IPlayerAgent` method for it would be wrong — it is not a move.
+> 3. **Banks are the console's to display and the engine's to keep.** Every player starts at
+>    zero and each round's deltas are added; conservation is then a property of the addition
+>    (see the P6 note below). The settlement report's two columns already reconcile per round,
+>    so a standings table only needs the running total.
+>
 > **Amended after the P6 session (2026-08-18) — conservation is already half-proved.**
 > Settlement's deltas **sum to zero for any configuration**, which a property test pins over
 > 500 randomised rounds. So "money is conserved across the match" reduces to *banking the
@@ -878,6 +926,13 @@ settlement. No domain type references Spectre.
 Only worth doing if you want to play solo. `MeldCandidates` plus `HandEvaluator` already give
 a greedy bot most of what it needs: prefer discarding cards in no candidate, never discard an
 owned money card.
+
+> **Amended after the P8 session (2026-08-18) — the seams are already there.** A bot is an
+> `IPlayerAgent`, so it drops into `Program`'s agent dictionary beside `SpectrePlayerAgent`
+> with no other change; the only new setup question is which seats are human. A *hint* for a
+> human player is different — it wants a scored, partial version of the cover search
+> (see the P5 note), and `SpectrePlayerAgent.ChooseDiscard` is where it would be drawn, next
+> to the card it is advising against.
 
 ⚠️ **What P5 did *not* build is a partial cover.** `TryFindCover` is all-or-nothing — it
 answers "can these cards be covered exactly", and returns nothing at all when they cannot. A

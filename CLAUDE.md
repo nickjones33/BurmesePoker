@@ -30,7 +30,7 @@ The solution is:
 
 ```
 BurmesePoker.Domain/     pure rules. no I/O, no Spectre. everything new goes here.
-BurmesePoker.Console/    Spectre.Console front end. the only project that prints. rebuilt in P8.
+BurmesePoker.Console/    Spectre.Console front end. the only project that prints. built in P8.
 BurmesePoker.Tests/      xunit against Domain's public API. references Domain only.
 ```
 
@@ -53,7 +53,7 @@ dotnet build                                    # build solution
 dotnet test                                     # run all tests
 dotnet test --filter-method "*SomeTestName*"     # single test (xunit v3 / MTP syntax)
 dotnet test --filter-class "*CardTextTests*"     # single test class
-dotnet run --project BurmesePoker.Console       # run the game (a placeholder until P8)
+dotnet run --project BurmesePoker.Console       # play a round (needs a real terminal)
 ```
 
 All three projects target **`net10.0`**, matching the installed SDK (10.0.111). Tests are
