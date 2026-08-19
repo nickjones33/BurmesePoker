@@ -40,6 +40,18 @@
 
     --accent: #17457f;
     --on-accent: #ffffff;
+
+    /* The table itself. A card table is green in any light, so the two themes differ in how
+       deep it is rather than in what colour it is. */
+    --felt: #1c5641;
+    --on-felt: #f0f7f3;
+    --on-felt-muted: #b9d5c8;
+    --edge-felt: #79b89e;
+
+    /* The seat the table is waiting on (BUILD-PLAN P13.5). A line, so it is measured at 3:1
+       — and it is never the only thing saying so: the glyph and the word are on the panel. */
+    --edge-raised-turn: #9a6a00;
+    --edge-felt-turn: #f0c860;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -63,5 +75,13 @@
 
         --accent: #3d7ddb;
         --on-accent: #08111f;
+
+        --felt: #10352a;
+        --on-felt: #e6f2ec;
+        --on-felt-muted: #a3c2b4;
+        --edge-felt: #5f9c85;
+
+        --edge-raised-turn: #d79c2a;
+        --edge-felt-turn: #e7bb55;
     }
 }

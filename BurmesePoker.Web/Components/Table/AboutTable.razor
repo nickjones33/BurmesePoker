@@ -1,0 +1,40 @@
+@*
+    What this table is, and the seed it came out of. Closed, because it answers questions a
+    player asks once and a developer asks often.
+
+    🔥 The second of the three places prose is allowed to live (BUILD-PLAN P13.5). The page used
+    to open with three sentences about pace and concealment and follow them with a line about
+    the seed. None of it is wrong and none of it belongs on the felt.
+
+    ⚠️ The seed stays reachable rather than being deleted: it is how a match gets reported, and
+    `--seed` deals the same one again (P14, §3.9).
+*@
+
+<details class="about">
+    <summary>
+        <span class="glyph" aria-hidden="true">i</span>
+        <span class="what">About this table</span>
+    </summary>
+
+    <p>
+        A round at a time, at a pace you can follow. Every hand is concealed until somebody lays
+        all thirteen down (RULES.md §7.1) — so you are shown your own and nobody else's, and
+        anyone here only to watch is shown none at all. Nothing ends a match: the next round is
+        dealt on top of the banks (§7.2).
+    </p>
+
+    <p class="seed">
+        Seed <strong>@Seed</strong> — every card in this match comes out of it, and
+        <code>--seed @Seed</code> deals it again.
+    </p>
+
+    <p>
+        <a href="rules">How it is played</a>
+    </p>
+</details>
+
+@code {
+    /// <summary>The one seed this whole table is reproducible from.</summary>
+    [Parameter, EditorRequired]
+    public int Seed { get; set; }
+}

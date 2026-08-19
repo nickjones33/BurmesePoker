@@ -235,6 +235,187 @@ public class TableBoardTests
         Assert.NotEmpty(shown);
     }
 
+    /// <summary>
+    /// ✅ <b>P13.5 — the spotlight is a fact the table stated, never one the board guessed.</b>
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <c>Acting</c> and <c>Turn</c> are different facts and the felt draws only the second.
+    /// After a seat has moved, <c>Acting</c> is that seat and <c>Turn</c> is whoever the table
+    /// has since turned to — which, in a client with seats at positions, is the difference
+    /// between a spotlight and a lie.
+    /// </remarks>
+    [Fact]
+    public void WhoseTurnItIsComesFromTheTableAndIsNotWhoMovedLast()
+    {
+        var board = Empty()
+            .After(new TableEvent.RoundStarted(1, [KingOfDiamonds, SevenOfSpades]))
+            .After(new TableEvent.TurnBegan(One, 1, 1));
+
+        Assert.Equal(One, board.Turn);
+        Assert.Equal(1, board.TurnNumber);
+        Assert.Null(board.Acting);
+        Assert.True(board.SeatOf(One).IsTheirTurn);
+        Assert.False(board.SeatOf(Two).IsTheirTurn);
+
+        board = board
+            .After(new TableEvent.Discarded(One, KingOfDiamonds))
+            .After(new TableEvent.TurnBegan(Two, 1, 2));
+
+        // One moved last; Two is the seat being waited on. Only Two is spotlighted.
+        Assert.Equal(One, board.Acting);
+        Assert.Equal(Two, board.Turn);
+        Assert.True(board.SeatOf(One).IsActing);
+        Assert.False(board.SeatOf(One).IsTheirTurn);
+        Assert.True(board.SeatOf(Two).IsTheirTurn);
+
+        // ⚠️ And it says nothing. A turn beginning is not narration — the log would be half
+        // announcements of moves that are about to be narrated anyway. Counted rather than
+        // matched on wording: the deal's own line already contains the word "turned".
+        Assert.Equal(2, board.Log.Count);
+        Assert.Equal(
+            board.Log.Count,
+            Empty()
+                .After(new TableEvent.RoundStarted(1, [KingOfDiamonds, SevenOfSpades]))
+                .After(new TableEvent.Discarded(One, KingOfDiamonds))
+                .Log.Count);
+    }
+
+    /// <remarks>
+    /// Nobody is being waited on between a settlement and the next deal, and a felt that kept
+    /// the last spotlight burning would say the round was still going.
+    /// </remarks>
+    [Fact]
+    public void NobodyIsSpotlightedOnceTheRoundIsOver()
+    {
+        var board = Empty()
+            .After(new TableEvent.RoundStarted(1, [KingOfDiamonds]))
+            .After(new TableEvent.TurnBegan(Three, 1, 7))
+            .After(new TableEvent.Declared(Three, []))
+            .After(new TableEvent.Settled(Settlement(Three)));
+
+        Assert.Null(board.Turn);
+        Assert.All(board.Seats, seat => Assert.False(seat.IsTheirTurn));
+    }
+
+    /// <summary>
+    /// ✅ <b>P13.5 — a discard pile is a pile, because a card leaves it again.</b>
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Found by needing the middle of the table to be honest.</b> The felt shows the one
+    /// discard the seat being waited on may take, and until P13.5 the board kept only each
+    /// seat's <em>top</em> card — so once somebody took a discard, the board went on showing a
+    /// card that was by then in their hand. The card is found by identity rather than by
+    /// assuming whose pile it must have been (§3.1).
+    /// </remarks>
+    [Fact]
+    public void TakingADiscardUncoversTheOneUnderIt()
+    {
+        var board = Empty()
+            .After(new TableEvent.RoundStarted(1, [SevenOfSpades]))
+            .After(new TableEvent.Discarded(Two, KingOfDiamonds))
+            .After(new TableEvent.Discarded(Two, OtherKingOfDiamonds));
+
+        Assert.Equal(OtherKingOfDiamonds, board.SeatOf(Two).LastDiscard);
+
+        board = board.After(new TableEvent.TookDiscard(Three, OtherKingOfDiamonds));
+
+        // The other copy of the same value is still underneath — instance identity, not value.
+        Assert.Equal(KingOfDiamonds, board.SeatOf(Two).LastDiscard);
+        Assert.Equal([KingOfDiamonds], board.Pile(Two));
+
+        board = board.After(new TableEvent.TookDiscard(Four, KingOfDiamonds));
+
+        Assert.Null(board.SeatOf(Two).LastDiscard);
+        Assert.Empty(board.Pile(Two));
+    }
+
+    /// <remarks>
+    /// The card on offer is the previous seat's top one, which is what
+    /// <c>TurnContext.AvailableDiscard</c> hands the seat itself — the same pile, read the same
+    /// way round.
+    /// </remarks>
+    [Fact]
+    public void TheDiscardOnOfferIsThePreviousSeatsTopCard()
+    {
+        var board = Empty()
+            .After(new TableEvent.RoundStarted(1, [SevenOfSpades]))
+            .After(new TableEvent.Discarded(One, KingOfDiamonds))
+            .After(new TableEvent.TurnBegan(Two, 1, 2));
+
+        Assert.Equal(KingOfDiamonds, board.AvailableDiscard);
+
+        // Four sits before One, and has thrown nothing.
+        Assert.Null(board.After(new TableEvent.TurnBegan(One, 1, 5)).AvailableDiscard);
+
+        // Nobody is being waited on, so nothing is on offer.
+        Assert.Null(Empty().After(new TableEvent.RoundStarted(1, [SevenOfSpades])).AvailableDiscard);
+    }
+
+    /// <summary>
+    /// ✅ <b>P13.5 — the draw pile is counted from the public game, not sent.</b>
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Nothing was added to the wire for the number in the middle of the felt.</b> The shoe
+    /// is 108 (RULES.md §2), thirteen go to each seat and the turned-up cards come off it (§3), a
+    /// blind draw takes one, and a reshuffle says how many the gathered discards made (§5). A
+    /// watcher at a real table can do the same arithmetic — the alternative was a count on
+    /// <c>IGameObserver.PlayerDrew</c>, which is a domain change for a decoration.
+    /// </remarks>
+    [Fact]
+    public void TheDrawPileIsCountedFromWhatTheTableSaid()
+    {
+        var board = Empty().After(new TableEvent.RoundStarted(1, [KingOfDiamonds, SevenOfSpades]));
+
+        Assert.Equal(DeckBuilder.TotalCards - (RoundEngine.HandSize * 4) - 2, board.DrawPileCount);
+
+        // A blind draw takes one; taking a discard and claiming off the table take none.
+        board = board
+            .After(new TableEvent.Drew(One, null))
+            .After(new TableEvent.Discarded(One, KingOfDiamonds))
+            .After(new TableEvent.TookDiscard(Two, KingOfDiamonds))
+            .After(new TableEvent.MoneyCardClaimed(Two, SevenOfSpades));
+
+        Assert.Equal(DeckBuilder.TotalCards - (RoundEngine.HandSize * 4) - 3, board.DrawPileCount);
+
+        // A reshuffle says how many the gathered discards made, and empties every pile with it.
+        board = board.After(new TableEvent.DiscardsReshuffled(9));
+
+        Assert.Equal(9, board.DrawPileCount);
+        Assert.All(board.Seating, seat => Assert.Empty(board.Pile(seat)));
+    }
+
+    /// <remarks>
+    /// 🔥 <b>The arithmetic, checked against a round the engine really played</b> rather than
+    /// against itself. The board's count and the table's own <c>DrawPileCount</c> are worked out
+    /// two entirely different ways — one from 108 and the narration, one from the deck object —
+    /// and they must agree at the end of the round or the number on the felt is a fiction.
+    /// </remarks>
+    [Fact]
+    public void TheCountedDrawPileAgreesWithTheOneTheEngineIsHolding()
+    {
+        var table = TableSession.Open(
+            [.. new[] { (One, "Mya Lay"), (Two, "Cobra"), (Three, "Su Htwe"), (Four, "Aung Aung") }
+                .Select(seat => TableSeat.Computer(seat.Item1, seat.Item2, new GreedyBotAgent()))],
+            new TableOptions { Seed = 20260819 });
+
+        var watcher = table.Watch();
+        var played = table.PlayRound();
+
+        var board = watcher.Events.Aggregate(
+            TableBoard.Of(table.Players, table.Names),
+            (folded, moment) => folded.After(moment));
+
+        Assert.Equal(played.Table.DrawPileCount, board.DrawPileCount);
+        Assert.True(board.DrawPileCount > 0, "a round that emptied the shoe would not test the arithmetic.");
+    }
+
+    private static RoundResult Settlement(PlayerId winner) => new(
+        Round: 1,
+        Winner: winner,
+        Turns: 7,
+        Melds: [],
+        Payouts: new Dictionary<PlayerId, int> { [One] = 0, [Two] = 0, [Three] = 0, [Four] = 0 });
+
     private static TableBoard Empty() => TableBoard.Of(
         [One, Two, Three, Four],
         new Dictionary<PlayerId, string>

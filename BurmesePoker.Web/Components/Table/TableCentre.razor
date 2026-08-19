@@ -1,0 +1,90 @@
+@*
+    The middle of the table: what everybody shares. The deck, the money cards turned up on it,
+    and the one discard the seat being waited on may take.
+
+    🔥 These were three bordered boxes in a sidebar until P13.5, which is what a document about
+    a game looks like. They are the middle of the table, so they are drawn in the middle of it.
+
+    ⚠️ Every card here is public by the rules — the turned-up cards are dealt face up
+    (RULES.md §3), and a discard happens in front of the table (§5, §6.3). The deck is the one
+    thing on the felt that is drawn face down, and it is drawn face down because it is: there
+    is no card in the markup to hide.
+
+    The prose that used to explain all this is in TableLegend, one disclosure away.
+*@
+
+<div class="centre">
+    <div class="deck">
+        <span class="back" aria-hidden="true"></span>
+        <span class="count" aria-hidden="true">@Board.DrawPileCount</span>
+        <span class="said">The deck: @Board.DrawPileCount cards left to draw.</span>
+    </div>
+
+    <div class="pot">
+        <p class="label" id="turned-up-label">
+            <span class="glyph" aria-hidden="true">@DisplayTokens.For(CardDisplayState.PaysOnce)</span>
+            <span class="what">Money cards</span>
+        </p>
+        @if (Board.TurnedUp.Count == 0)
+        {
+            <p class="empty">
+                <span aria-hidden="true">—</span>
+                <span class="said">@Nothing</span>
+            </p>
+        }
+        else
+        {
+            <ul class="cards" aria-labelledby="turned-up-label">
+                @foreach (var card in Board.TurnedUp)
+                {
+                    <li @key="card.Id.Value">
+                        <CardChip Card="card"
+                                  Big="true"
+                                  Token="@DisplayTokens.For(CardDisplayState.PaysOnce)"
+                                  TokenWords="turned up, so both copies pay their owner this round" />
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+
+    <div class="offer">
+        <p class="label" id="offer-label">
+            <span class="glyph" aria-hidden="true">▾</span>
+            <span class="what">Discard</span>
+        </p>
+        @if (Board.AvailableDiscard is { } offered)
+        {
+            <p class="cards" aria-labelledby="offer-label">
+                <CardChip Card="offered" Big="true" TokenWords="@Whose" />
+            </p>
+        }
+        else
+        {
+            <p class="empty">
+                <span aria-hidden="true">—</span>
+                <span class="said">Nothing to take; the deck is the only way in.</span>
+            </p>
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>The public game, as the board has it.</summary>
+    [Parameter, EditorRequired]
+    public TableBoard Board { get; set; } = default!;
+
+    /// <summary>
+    /// Why there is nothing turned up. The opening player may take the top one off the table
+    /// (RULES.md §4.5), which is the ordinary reason and worth telling somebody who was not
+    /// watching when it happened.
+    /// </summary>
+    private string Nothing => Board.Round == 0
+        ? "Nothing turned up yet — the first hand is being dealt."
+        : "Nothing left on the table: the opening player claimed it.";
+
+    /// <summary>Whose discard is on offer, which is the seat before the one being waited on.</summary>
+    private string Whose => Board.Turn is { } waiting
+        ? $"on offer to {(Board.Names.TryGetValue(waiting, out var name) ? name : $"seat {waiting.Value}")}"
+        : "the last discard";
+}

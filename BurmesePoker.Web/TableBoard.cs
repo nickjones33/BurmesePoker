@@ -40,7 +40,7 @@ public sealed record TableBoard
         Seating = seating;
         Names = names;
         Banks = seating.ToDictionary(player => player, _ => 0);
-        LastDiscards = new Dictionary<PlayerId, Card?>();
+        DiscardPiles = new Dictionary<PlayerId, IReadOnlyList<Card>>();
         TurnedUp = [];
         Log = [];
         Declaration = [];
@@ -75,11 +75,57 @@ public sealed record TableBoard
     /// <summary>Each seat's running total, accumulated from the settlements the table was told about.</summary>
     public IReadOnlyDictionary<PlayerId, int> Banks { get; private init; }
 
-    /// <summary>The top of each seat's discard pile, as far as a watcher has seen.</summary>
-    public IReadOnlyDictionary<PlayerId, Card?> LastDiscards { get; private init; }
+    /// <summary>
+    /// Each seat's discard pile, oldest first, as far as a watcher has seen it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A pile, not a top card, because a card leaves it again.</b> The seat after you may
+    /// take your discard (RULES.md §5), which uncovers the one under it — so a board that kept
+    /// only the top card went on showing a card that was in somebody else's hand. Folded from
+    /// <see cref="TableEvent.Discarded"/> and <see cref="TableEvent.TookDiscard"/>, and emptied
+    /// by <see cref="TableEvent.DiscardsReshuffled"/>, which gathers every pile into the deck.
+    /// </remarks>
+    public IReadOnlyDictionary<PlayerId, IReadOnlyList<Card>> DiscardPiles { get; private init; }
 
-    /// <summary>Whoever moved last — as close to "whose turn" as the public narration gets.</summary>
+    /// <summary>The top of each seat's discard pile, as far as a watcher has seen.</summary>
+    public IReadOnlyDictionary<PlayerId, Card?> LastDiscards =>
+        DiscardPiles.ToDictionary(pile => pile.Key, pile => pile.Value.Count > 0 ? pile.Value[^1] : (Card?)null);
+
+    /// <summary>Whoever moved last — as close to "whose turn" as the public narration used to get.</summary>
+    /// <remarks>
+    /// ⚠️ <b>Kept, and no longer drawn as a spotlight.</b> Until P13.5 this was the only answer
+    /// the public game had to <em>whose turn is it</em>, and it is the wrong one — it points at
+    /// the seat that has just finished. <see cref="Turn"/> is the right one now; this survives
+    /// because <em>who moved last</em> is a real, different fact and the narration is folded
+    /// from it.
+    /// </remarks>
     public PlayerId? Acting { get; private init; }
+
+    /// <summary>
+    /// Whose turn it is: the seat the table is waiting on (BUILD-PLAN P13.5).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Public, and asked for rather than inferred.</b> It comes from
+    /// <see cref="TableEvent.TurnBegan"/>, which the server broadcasts to everybody — a spotlight
+    /// on a seat is only honest if the table really said so.
+    /// </remarks>
+    public PlayerId? Turn { get; private init; }
+
+    /// <summary>Which turn of the round is being played, counting from 1, or 0 before the first.</summary>
+    public int TurnNumber { get; private init; }
+
+    /// <summary>
+    /// How many cards are left to draw.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Counted from the public game, not sent.</b> The shoe is 108 cards
+    /// (RULES.md §2), thirteen go to each seat and the turned-up cards come off it
+    /// (RULES.md §3), a blind draw takes one, and a reshuffle says how many the gathered
+    /// discards made (RULES.md §5). A watcher at a real table can do the same arithmetic, so
+    /// nothing had to be added to the wire for it — and <c>TableBoardTests</c> checks it against
+    /// a round the engine really played.
+    /// </remarks>
+    public int DrawPileCount { get; private init; }
 
     /// <summary>Who declared and ended the round, once somebody has.</summary>
     public PlayerId? Declarer { get; private init; }
@@ -103,14 +149,61 @@ public sealed record TableBoard
     public bool InPlay => Round > 0 && Settlement is null && !Abandoned;
 
     /// <summary>The seats in seating order, each with everything a watcher may show about it.</summary>
-    public IEnumerable<SeatLine> Seats => Seating.Select(player => new SeatLine(
+    public IEnumerable<SeatLine> Seats => Seating.Select(SeatOf);
+
+    /// <summary>One seat, as a watcher may show it.</summary>
+    public SeatLine SeatOf(PlayerId player) => new(
         player,
         Names.TryGetValue(player, out var name) ? name : $"Seat {player.Value}",
         Banks.TryGetValue(player, out var bank) ? bank : 0,
-        LastDiscards.TryGetValue(player, out var discard) ? discard : null,
+        Pile(player) is { Count: > 0 } pile ? pile[^1] : null,
         IsActing: Acting == player && InPlay,
+        IsTheirTurn: Turn == player && InPlay,
         HasDeclared: Declarer == player,
-        Won: Settlement?.Winner == player));
+        Won: Settlement?.Winner == player);
+
+    /// <summary>
+    /// The one discard the seat being waited on may take instead of drawing (RULES.md §5) —
+    /// the top of the previous seat's pile, or null on the opening turn and between turns.
+    /// </summary>
+    /// <remarks>
+    /// <b>The middle of the table is the shared game, so this belongs to the board and not to a
+    /// prompt.</b> It agrees with <c>TurnContext.AvailableDiscard</c> by construction: the same
+    /// pile, read the same way round.
+    /// </remarks>
+    public Card? AvailableDiscard
+    {
+        get
+        {
+            if (Turn is not { } waiting || !InPlay)
+            {
+                return null;
+            }
+
+            var seat = -1;
+
+            for (var at = 0; at < Seating.Count; at++)
+            {
+                if (Seating[at] == waiting)
+                {
+                    seat = at;
+                }
+            }
+
+            if (seat < 0)
+            {
+                return null;
+            }
+
+            var before = Seating[(seat - 1 + Seating.Count) % Seating.Count];
+
+            return Pile(before) is { Count: > 0 } pile ? pile[^1] : null;
+        }
+    }
+
+    /// <summary>One seat's discard pile, oldest first. Empty when it has thrown nothing yet.</summary>
+    public IReadOnlyList<Card> Pile(PlayerId player) =>
+        DiscardPiles.TryGetValue(player, out var pile) ? pile : [];
 
     /// <summary>What one seat took home this round, or null before it is settled.</summary>
     public int? PayoutOf(PlayerId player) =>
@@ -134,8 +227,15 @@ public sealed record TableBoard
             {
                 Round = started.Round,
                 TurnedUp = [.. started.TurnedUp],
-                LastDiscards = new Dictionary<PlayerId, Card?>(),
+                DiscardPiles = new Dictionary<PlayerId, IReadOnlyList<Card>>(),
+                // The shoe, less thirteen to every seat and the cards turned up off it
+                // (RULES.md §2, §3). Everything after this is one card at a time.
+                DrawPileCount = DeckBuilder.TotalCards
+                    - (RoundEngine.HandSize * Seating.Count)
+                    - started.TurnedUp.Count,
                 Acting = null,
+                Turn = null,
+                TurnNumber = 0,
                 Declarer = null,
                 Declaration = [],
                 Settlement = null,
@@ -146,10 +246,22 @@ public sealed record TableBoard
                 started.TurnedUp,
                 LogTone.Money),
 
+            // ⚠️ Said by nothing. A spotlight moving round the table is not narration — the log
+            // would be half turn announcements, and every one of them is about to be followed
+            // by the line that says what the seat actually did (BUILD-PLAN P13.5).
+            TableEvent.TurnBegan began => this with
+            {
+                Turn = began.Player,
+                TurnNumber = began.Turn
+            },
+
             // A watcher is told that somebody drew and never what (TableFanOut). The card is
             // non-null only for the seat that drew it, which this page never is — it is read
             // here rather than assumed away, because P13.4 seats a player at the same board.
-            TableEvent.Drew drew => Moved(drew.Player).Say(
+            TableEvent.Drew drew => (Moved(drew.Player) with
+            {
+                DrawPileCount = Math.Max(0, DrawPileCount - 1)
+            }).Say(
                 Round,
                 drew.Card is null
                     ? $"{Who(drew.Player)} drew from the deck."
@@ -157,7 +269,13 @@ public sealed record TableBoard
                 drew.Card is { } seen ? [seen] : [],
                 LogTone.Normal),
 
-            TableEvent.TookDiscard took => Moved(took.Player).Say(
+            // ⚠️ The card leaves whichever pile it was on top of, which is what stops a
+            // watcher being shown a card that is now in somebody's hand. Found by the pile,
+            // not by turn order: instance identity is exact and an assumption is not (§3.1).
+            TableEvent.TookDiscard took => (Moved(took.Player) with
+            {
+                DiscardPiles = Taken(DiscardPiles, took.Card)
+            }).Say(
                 Round,
                 $"{Who(took.Player)} took the discard",
                 [took.Card],
@@ -176,7 +294,7 @@ public sealed record TableBoard
 
             TableEvent.Discarded discarded => (Moved(discarded.Player) with
             {
-                LastDiscards = With(LastDiscards, discarded.Player, discarded.Card)
+                DiscardPiles = Thrown(DiscardPiles, discarded.Player, discarded.Card)
             }).Say(
                 Round,
                 $"{Who(discarded.Player)} discarded",
@@ -185,7 +303,11 @@ public sealed record TableBoard
 
             // RULES.md §5: the discards become the new draw pile, so a card thrown ten turns
             // ago can come back. Worth saying out loud.
-            TableEvent.DiscardsReshuffled reshuffled => Say(
+            TableEvent.DiscardsReshuffled reshuffled => (this with
+            {
+                DiscardPiles = new Dictionary<PlayerId, IReadOnlyList<Card>>(),
+                DrawPileCount = reshuffled.Cards
+            }).Say(
                 Round,
                 $"The draw pile ran out. All {reshuffled.Cards} discards were gathered and shuffled "
                 + "into a new one — a money card still pays whoever the deck gave it to first.",
@@ -207,7 +329,8 @@ public sealed record TableBoard
                 Settlement = settled.Result,
                 RoundsPlayed = settled.Result.Round,
                 Banks = Banked(Banks, settled.Result),
-                Acting = null
+                Acting = null,
+                Turn = null
             }).Say(
                 Round,
                 $"The money is settled. {Who(settled.Result.Winner)} won the round in "
@@ -217,14 +340,15 @@ public sealed record TableBoard
 
             TableEvent.SeatPlayedByTheComputer taken => Say(
                 taken.Round,
-                $"{Who(taken.Player)} is being played by the computer.",
+                $"{Who(taken.Player)} ran out of time — the computer is playing this seat.",
                 [],
                 LogTone.Quiet),
 
             TableEvent.TableAbandoned abandoned => (this with
             {
                 Abandoned = true,
-                Acting = null
+                Acting = null,
+                Turn = null
             }).Say(
                 abandoned.Round,
                 $"Round {abandoned.Round} was given up on after {abandoned.Limit:g} — only a "
@@ -261,11 +385,34 @@ public sealed record TableBoard
         // Instance identity: the other copy of the same value stays on the table (§3.1).
         [.. cards.Where(card => card.Id != gone.Id)];
 
-    private static IReadOnlyDictionary<PlayerId, Card?> With(
-        IReadOnlyDictionary<PlayerId, Card?> discards,
+    private static IReadOnlyDictionary<PlayerId, IReadOnlyList<Card>> Thrown(
+        IReadOnlyDictionary<PlayerId, IReadOnlyList<Card>> piles,
         PlayerId player,
-        Card card) =>
-        new Dictionary<PlayerId, Card?>(discards) { [player] = card };
+        Card card)
+    {
+        var copy = new Dictionary<PlayerId, IReadOnlyList<Card>>(piles);
+        copy[player] = piles.TryGetValue(player, out var pile) ? [.. pile, card] : [card];
+        return copy;
+    }
+
+    /// <summary>The piles with one card lifted off whichever of them was holding it.</summary>
+    private static IReadOnlyDictionary<PlayerId, IReadOnlyList<Card>> Taken(
+        IReadOnlyDictionary<PlayerId, IReadOnlyList<Card>> piles,
+        Card taken)
+    {
+        var copy = new Dictionary<PlayerId, IReadOnlyList<Card>>(piles);
+
+        foreach (var (player, pile) in piles)
+        {
+            if (pile.Count > 0 && pile[^1].Id == taken.Id)
+            {
+                copy[player] = [.. pile.Take(pile.Count - 1)];
+                break;
+            }
+        }
+
+        return copy;
+    }
 
     private static IReadOnlyDictionary<PlayerId, int> Banked(
         IReadOnlyDictionary<PlayerId, int> banks,
@@ -287,7 +434,8 @@ public sealed record TableBoard
 /// <param name="Name">What to call whoever is in it.</param>
 /// <param name="Bank">Their running total across the rounds this page has watched.</param>
 /// <param name="LastDiscard">The top of their discard pile, or null before they have thrown one.</param>
-/// <param name="IsActing">Whether theirs was the last move — the nearest the public game gets to "whose turn".</param>
+/// <param name="IsActing">Whether theirs was the last move. <b>Not whose turn it is</b> — see <paramref name="IsTheirTurn"/>.</param>
+/// <param name="IsTheirTurn">Whether the table is waiting on them right now (BUILD-PLAN P13.5).</param>
 /// <param name="HasDeclared">Whether they laid down all thirteen and ended the round.</param>
 /// <param name="Won">Whether the settlement names them the winner.</param>
 public sealed record SeatLine(
@@ -296,6 +444,7 @@ public sealed record SeatLine(
     int Bank,
     Card? LastDiscard,
     bool IsActing,
+    bool IsTheirTurn,
     bool HasDeclared,
     bool Won);
 

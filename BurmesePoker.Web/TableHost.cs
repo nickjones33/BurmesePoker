@@ -94,7 +94,7 @@ public sealed class TableHost : IAsyncDisposable
         var patience = TimeSpan.FromSeconds(configuration.GetValue<int?>("patience") ?? 90);
 
         _table = TableSession.Open(
-            [.. Enumerable.Range(1, Seats).Select(Seat)],
+            [.. Enumerable.Range(1, Seats).Select(Fill)],
             new TableOptions
             {
                 Seed = Seed,
@@ -116,7 +116,7 @@ public sealed class TableHost : IAsyncDisposable
     }
 
     /// <summary>One seat: yours if it is the one you asked for, and the computer's otherwise.</summary>
-    private TableSeat Seat(int seat) => seat == SeatNumber
+    private TableSeat Fill(int seat) => seat == SeatNumber
         ? TableSeat.Person(new PlayerId(seat), You)
         : TableSeat.Computer(
             new PlayerId(seat),
@@ -137,6 +137,16 @@ public sealed class TableHost : IAsyncDisposable
 
     /// <summary>Which seat is yours, one-based; zero when you are only watching.</summary>
     public int SeatNumber { get; }
+
+    /// <summary>
+    /// Your seat, or null when nobody at this table is you.
+    /// </summary>
+    /// <remarks>
+    /// What <see cref="Presentation.TableRing"/> turns the felt by (BUILD-PLAN P13.5), and the
+    /// reason it is a <see cref="PlayerId"/> rather than the number: a seat number is
+    /// configuration, and a table is laid out from seats.
+    /// </remarks>
+    public PlayerId? Seat => SeatNumber == 0 ? null : new PlayerId(SeatNumber);
 
     /// <summary>What the table calls you.</summary>
     public string You { get; }

@@ -8,6 +8,14 @@
     ⚠️ Nothing here works anything out. The grouping, the per-card cost and the computer's
     suggestion all arrive already decided in the HandView — re-deriving a recommendation in a
     component is the one thing P13.1 wrote a type to prevent.
+
+    🔥 THE FOURTEEN SENTENCES (BUILD-PLAN P13.5). Every card used to carry "melds nothing" or
+    "breaks a meld — costs 3" underneath it, which was the largest block of text on the page and
+    was also wrong: it is a COST label that read as a STATUS label, and "melds nothing" appeared
+    under a row headed "run of 3", contradicting it. What it is really saying is how many melded
+    cards throwing that card gives up. So it is a number now — −3, and nothing at all when the
+    answer is zero — and the whole phrase is in the card's accessible name, where it was always
+    the better sentence.
 *@
 
 @if (Hand is null)
@@ -17,37 +25,41 @@
 else
 {
     <section class="hand" aria-labelledby="hand-heading">
+        @*
+            ⚠️ Plain text, not a glyph with a hidden twin. A number in a pill is already as short
+            as it gets and it reads correctly aloud — "your hand, 13 cards, 6 melding" — so there
+            is nothing here for a .said to say differently.
+        *@
         <h3 id="hand-heading">
-            Your hand — @Hand.Count cards, @Hand.Covered of them melding
+            <span class="what">Your hand</span>
+            <span class="tally">@Hand.Count cards</span>
+            <span class="tally melding">@Hand.Covered melding</span>
         </h3>
 
         <ul class="groups">
             @foreach (var group in Groups)
             {
                 <li @key="group.Key" class="group @(group.Melded ? "melded" : "loose")">
-                    <p class="label">
-                        <span class="token" aria-hidden="true">@group.Token</span>
-                        <span class="what">@group.Label</span>
-                    </p>
+                    <p class="label">@group.Label</p>
                     <ul class="cards">
-                        @foreach (var card in group.Cards)
+                        @foreach (var held in group.Cards)
                         {
-                            <li @key="card.Card.Id.Value">
-                                @if (Throwing && First is { } first && card.Card.Id == first)
+                            <li @key="held.Card.Card.Id.Value">
+                                @if (Throwing && First is { } first && held.Card.Card.Id == first)
                                 {
-                                    <button type="button" class="throw" @ref="_first" @onclick="() => OnThrow.InvokeAsync(card.Card)">
-                                        @Face(card)
+                                    <button type="button" class="throw" @ref="_first" @onclick="() => OnThrow.InvokeAsync(held.Card.Card)">
+                                        @Face(held)
                                     </button>
                                 }
                                 else if (Throwing)
                                 {
-                                    <button type="button" class="throw" @onclick="() => OnThrow.InvokeAsync(card.Card)">
-                                        @Face(card)
+                                    <button type="button" class="throw" @onclick="() => OnThrow.InvokeAsync(held.Card.Card)">
+                                        @Face(held)
                                     </button>
                                 }
                                 else
                                 {
-                                    <span class="held">@Face(card)</span>
+                                    <span class="held">@Face(held)</span>
                                 }
                             </li>
                         }
@@ -55,13 +67,6 @@ else
                 </li>
             }
         </ul>
-
-        <p class="note">
-            @DisplayTokens.For(CardDisplayState.PaysOnce) pays its owner once and
-            @DisplayTokens.For(CardDisplayState.PaysDouble) twice;
-            @DisplayTokens.Owned marks the ones the deck gave to you, which pay you whether you
-            keep them or throw them away (RULES.md §4.4).
-        </p>
     </section>
 }
 
@@ -102,9 +107,10 @@ else
                 yield return new Group(
                     string.Join('-', meld.Meld.CardIds.Select(id => id.Value)),
                     Melded: true,
-                    DisplayTokens.For(CardDisplayState.Melded),
-                    $"{meld.Label} of {meld.Count}",
-                    meld.Cards);
+                    // "run 3", never "meld run 3": the word run is itself the non-colour marker
+                    // this row needs (§3.11 A2), and the meld token beside it said it twice.
+                    $"{meld.Label} {meld.Count}",
+                    [.. meld.Slots.Select(pair => new Held(pair.Slot, pair.Card))]);
             }
 
             if (Hand.Loose.Count > 0)
@@ -112,11 +118,8 @@ else
                 yield return new Group(
                     "loose",
                     Melded: false,
-                    DisplayTokens.For(CardDisplayState.Loose),
-                    // The token beside it already says "loose", so the label finishes the phrase
-                    // rather than repeating it: "loose · 7 cards".
-                    $"{Hand.Loose.Count} cards",
-                    Hand.Loose);
+                    $"{DisplayTokens.For(CardDisplayState.Loose)} {Hand.Loose.Count}",
+                    [.. Hand.Loose.Select(card => new Held(null, card))]);
             }
         }
     }
@@ -126,75 +129,171 @@ else
     /// becomes your turn to throw (§3.11 B7), and it is the only card that captures a reference.
     /// </summary>
     private CardId? First => Groups.SelectMany(group => group.Cards)
-        .Select(card => (CardId?)card.Card.Id)
+        .Select(held => (CardId?)held.Card.Card.Id)
         .FirstOrDefault();
 
     /// <summary>Focus the first card, for the turn arriving rather than for a render.</summary>
-    public ValueTask FocusAsync() =>
-        string.IsNullOrEmpty(_first.Id) ? ValueTask.CompletedTask : _first.FocusAsync();
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>A focus call must never be able to take the circuit down, and this one could.</b>
+    /// An <c>ElementReference</c> keeps its id after the element it named has been removed, so
+    /// the emptiness check below only ever guarded the very first render. Everything after it
+    /// raced: <c>OnAfterRenderAsync</c> decides to move focus because a question is standing,
+    /// and between that decision and the interop call reaching the browser the question can be
+    /// answered — the buttons become spans, the element goes, and the call lands on nothing.
+    /// <b>Blazor turns an unhandled interop exception into a dead circuit</b>, and a dead
+    /// circuit in this client is a page that looks completely correct and does nothing at all
+    /// (P13.3's finding, in a new dress).
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Found by playing 1,429 turns and reading the server log</b>, not by looking at the
+    /// page: the browser showed a hand, a prompt and a spotlight, and every card refused every
+    /// press in silence. A person who answers quickly hits exactly the same race.
+    /// </para>
+    /// <para>
+    /// So focus is best-effort by construction. <b>Nothing to focus is not an error</b> — the
+    /// turn has moved on, which is the only reason the control could have gone.
+    /// </para>
+    /// </remarks>
+    public async ValueTask FocusAsync()
+    {
+        if (string.IsNullOrEmpty(_first.Id))
+        {
+            return;
+        }
+
+        try
+        {
+            await _first.FocusAsync();
+        }
+        catch (JSException)
+        {
+            // The control went away between the render that asked for this and the call
+            // arriving. There is nothing to focus and nothing to do about it.
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is going away. Focus is the least of it.
+        }
+    }
 
     /// <summary>
     /// One card's face and what it would cost to throw it. <b>Content, not a tooltip</b>
-    /// (§3.11 B9) — the cost and the suggestion are the reason to look at the hand at all.
+    /// (§3.11 B9) — the number is the reason to look at the hand at all, and the sentence
+    /// behind it is in the card's accessible name rather than on the felt.
     /// </summary>
-    private RenderFragment Face(CardView card) =>
+    private RenderFragment Face(Held held) =>
         @<span class="card">
-            <CardChip Card="card.Card" Token="@Mark(card)" TokenWords="@Words(card)" />
-            @if (Hints)
+            <CardChip Card="held.Card.Card" Big="true" Token="@Mark(held)" TokenWords="@Words(held)" />
+            @if (Hints && Badge(held.Card) is { } cost)
             {
-                <span class="cost @(card.CostOfThrowing == 0 ? "free" : "dear")">@Cost(card)</span>
+                <span class="cost" aria-hidden="true">@cost</span>
             }
         </span>;
 
-    /// <summary>The non-colour marker (§3.11 A2), or none for a card with nothing to say.</summary>
-    private static string? Mark(CardView card)
+    /// <summary>
+    /// What a joker is standing in for, written after its face exactly as the console writes it
+    /// — <c>🃏(6♣)</c>. <b>Display only, never identity</b> (<c>MeldSlot</c>): the meld decides
+    /// what the joker is playing as, and a card that is not a joker stands in for nothing.
+    /// </summary>
+    private static string? StandsFor(MeldSlot? slot) => slot is { IsSubstitute: true } sub
+        ? $"({CardText.DisplayCode(sub.PlaysAs)}{CardText.DisplaySuit(sub.InSuit)})"
+        : null;
+
+    private static string? StandsForWords(MeldSlot? slot) => slot is { IsSubstitute: true } sub
+        ? $"standing in for the {CardWords.For(Card.Ranked(sub.Card.Id, sub.PlaysAs, sub.InSuit))}"
+        : null;
+
+    /// <summary>
+    /// The non-colour marker (§3.11 A2), or none for a card with nothing to say.
+    /// ⚠️ <b>The computer's arrow is a hint like any other</b>: with the hints off it goes,
+    /// otherwise unchecking the box leaves the suggestion on the card it was pointing at.
+    /// </summary>
+    private string? Mark(Held held)
     {
-        var tokens = card.Tokens
+        var tokens = held.Card.Tokens
             .Where(token => token != DisplayTokens.For(CardDisplayState.Melded))
             .Where(token => token != DisplayTokens.For(CardDisplayState.Loose))
+            .Where(token => Hints || token != DisplayTokens.SuggestedThrow)
             .ToArray();
 
-        return tokens.Length == 0 ? null : string.Concat(tokens);
+        var stands = StandsFor(held.Slot);
+
+        return tokens.Length == 0 && stands is null ? null : stands + string.Concat(tokens);
     }
 
-    private static string? Words(CardView card)
+    /// <summary>
+    /// Everything true of this card, as one sentence for the ear.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>This is where the prose went.</b> The cost used to be a line of text under every
+    /// card; it is a number on the card now and the whole phrase is here, in the accessible
+    /// name of the very button that throws it. <b>An icon with no accessible name is worse than
+    /// the prose it replaced</b> (BUILD-PLAN P13.5).
+    /// </remarks>
+    private string? Words(Held held)
     {
         var said = new List<string>();
 
-        if (card.Multiplier == 1)
+        if (StandsForWords(held.Slot) is { } standing)
         {
-            said.Add("pays its owner");
-        }
-        else if (card.Multiplier >= 2)
-        {
-            said.Add("pays its owner twice");
+            said.Add(standing);
         }
 
-        if (card.IsOwned)
+        // ⚠️ Holding is not owning (RULES.md §4.4), and the ear is told which of the two this
+        // is rather than being told the mechanism and left to work it out. A money card you did
+        // not get from the deck pays somebody else — or, if it was claimed off the table,
+        // nobody — and either way it does not pay you.
+        if (held.Card.Multiplier >= 1)
         {
-            said.Add("and it is yours");
+            var pays = held.Card.Multiplier >= 2 ? "a money card that pays double" : "a money card";
+
+            said.Add(held.Card.IsOwned
+                ? $"{pays}, and it is yours — it pays you even if you throw it away"
+                : $"{pays}, but not one of yours");
         }
 
-        if (card.IsSuggestedThrow)
+        // ⚠️ The same gate as Mark, and for the same reason: a hint nobody asked for must not
+        // survive in the words just because it stopped being drawn.
+        if (Hints)
         {
-            said.Add("the computer would throw this one");
+            said.Add(Cost(held.Card));
+
+            if (held.Card.IsSuggestedThrow)
+            {
+                said.Add("the computer would throw this one");
+            }
         }
 
         return said.Count == 0 ? null : string.Join(", ", said);
     }
 
-    private static string Cost(CardView card) => card switch
+    /// <summary>
+    /// What throwing this card costs, as a number — or none, when the answer is nothing.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A cost, not a status.</b> The old label said <em>"melds nothing"</em> under a row
+    /// headed <em>run of 3</em>, which contradicts itself; what it meant was that throwing that
+    /// card would give up no meld. A signed number cannot be misread as a description of the
+    /// card, and a card that costs nothing carries no badge at all rather than a zero — the
+    /// group it sits under already says it is loose.
+    /// </remarks>
+    private static string? Badge(CardView card) =>
+        card.CostOfThrowing == 0 ? null : $"−{card.CostOfThrowing}";
+
+    private static string Cost(CardView card) => card.CostOfThrowing switch
     {
-        { IsSuggestedThrow: true, CostOfThrowing: 0 } => "melds nothing — the computer would throw this",
-        { IsSuggestedThrow: true } => $"breaks a meld, costs {card.CostOfThrowing} — the computer would still throw this",
-        { CostOfThrowing: 0 } => "melds nothing",
-        _ => $"breaks a meld — costs {card.CostOfThrowing}"
+        0 => "throwing it gives up nothing",
+        1 => "throwing it gives up 1 melded card",
+        var many => $"throwing it gives up {many} melded cards"
     };
+
+    /// <summary>One card of the hand, with the meld slot it fills — or none, if it is loose.</summary>
+    private sealed record Held(MeldSlot? Slot, CardView Card);
 
     private sealed record Group(
         string Key,
         bool Melded,
-        string Token,
         string Label,
-        IReadOnlyList<CardView> Cards);
+        IReadOnlyList<Held> Cards);
 }

@@ -1,15 +1,23 @@
+/*
+    The bottom third of the page, and the only part of it anybody handles. Negative space is
+    what the felt is spent on; this is what the rest is spent on.
+*/
 .you {
-    padding: 0.85rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.7rem 0.9rem 0.9rem;
     border: 1px solid var(--edge-raised);
-    border-radius: 8px;
+    border-radius: 12px;
     background: var(--raised);
 }
 
-/* The seat being asked something is marked by a thicker edge as well as a colour — nothing on
-   this page is carried by colour alone (§3.11 A2). */
+/* Your seat while the table is waiting on you — an edge and a glyph, never colour alone
+   (§3.11 A2). It matches the ring the seat panel on the felt is wearing at the same moment. */
 .you.asking {
-    border-width: 3px;
-    border-color: var(--accent);
+    border-color: var(--edge-raised-turn);
+    border-width: 2px;
+    padding: calc(0.7rem - 1px) calc(0.9rem - 1px) calc(0.9rem - 1px);
 }
 
 .head {
@@ -18,12 +26,22 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 0.4rem 1.5rem;
-    margin-bottom: 0.6rem;
 }
 
 h2 {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1.05rem;
+}
+
+.marker {
+    color: var(--on-raised-muted);
+}
+
+.you.asking .marker {
+    color: var(--on-raised-money);
 }
 
 .hints {

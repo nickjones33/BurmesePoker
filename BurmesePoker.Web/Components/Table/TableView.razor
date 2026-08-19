@@ -5,13 +5,32 @@
     It subscribes to the host's board — which is folded from a watcher's connection and from
     nothing else — and re-renders when the table says something. There is no second route to
     the session: what cannot reach this component cannot be drawn by it (P13.3 acceptance 2).
+
+    🔥 A TABLE, NOT A DOCUMENT (BUILD-PLAN P13.5). The felt is a grid of named areas and every
+    seat is placed in one by name; you are at the front of it whichever seat number you were
+    dealt, and the others go clockwise from your left. The rotation is TableRing's — a pure
+    function of the seating and of which seat is yours, unit-tested, and with no pixels in it.
+
+    ⚠️ The seats are in TURN ORDER, CLOCKWISE FROM YOUR LEFT AND ENDING WITH YOURS — which is
+    both the DOM order and the order they go round the felt, and the order they stack in when
+    the felt is too narrow to be a ring. Nothing here uses `order:` or absolute placement, which
+    is exactly how a ring of seats scrambles the tab order (§3.11 B6). There is no focusable
+    control in a seat panel at all, so what this really protects is the order a screen reader
+    reads the table in — and turn order is the one that means something at a card table.
 *@
 @implements IDisposable
 @inject TableHost Host
 
 <section class="table" aria-labelledby="table-heading">
     <header class="board">
-        <h2 id="table-heading">
+        @*
+            ⚠️ The page's one <h1>, and it lives here rather than on the page around it. The
+            table used to be introduced by a heading that said "The table" above a heading that
+            said which round it was, which is one heading too many for a page that is a table
+            (BUILD-PLAN P13.5). Everything below it — your seat, the log, the settlement — is an
+            <h2>, so the outline is still an outline.
+        *@
+        <h1 id="table-heading">
             @if (_board.Round == 0)
             {
                 <text>Dealing…</text>
@@ -20,62 +39,39 @@
             {
                 <text>Round @_board.Round</text>
             }
-        </h2>
-        <p class="seed">
-            Seed <strong>@Host.Seed</strong> — every card in this match comes out of it.
-        </p>
+        </h1>
+
+        @if (!_yours)
+        {
+            @* ⚠️ Said out loud: a watcher has no seat, so the front one is not theirs. *@
+            <p class="watching">
+                <span class="glyph" aria-hidden="true">👁</span>
+                <span>Watching. No seat here is yours; the front one is the first dealt.</span>
+            </p>
+        }
     </header>
 
-    @*
-        Your seat first: the question the table is waiting on is the thing to put at the top of
-        the page, and the rest of the table is what it is read against.
-    *@
-    <YourSeat />
+    <div class="felt seats-@_ring.Count" role="group" aria-label="The table">
+        <TableCentre Board="_board" />
 
-    <div class="felt">
-        <section class="turned-up" aria-labelledby="turned-up-heading">
-            <h3 id="turned-up-heading">Turned up on the table</h3>
-            @if (_board.TurnedUp.Count == 0)
+        @*
+            ⚠️ role="list" is belt and braces. The list is display:contents so that its seats
+            become items of the felt's own grid, and an implicit list role has historically been
+            dropped when a list box disappears from layout; naming it keeps the semantics
+            whatever the engine does.
+        *@
+        <ol class="ring" role="list" aria-label="The seats, in turn order, ending with yours">
+            @foreach (var place in _ring)
             {
-                <p class="nothing">
-                    @(_board.Round == 0
-                        ? "Nothing yet — the first hand is being dealt."
-                        : "Nothing left: the opening player claimed it (RULES.md §4.5).")
-                </p>
+                <SeatPanel @key="place.Player.Value"
+                           Seat="_board.SeatOf(place.Player)"
+                           Seated="place.Place"
+                           Yours="place.IsYours" />
             }
-            else
-            {
-                <ul class="cards">
-                    @foreach (var card in _board.TurnedUp)
-                    {
-                        <li @key="card.Id.Value">
-                            <CardChip Card="card"
-                                      Token="@DisplayTokens.For(CardDisplayState.PaysOnce)"
-                                      TokenWords="pays its owner this round" />
-                        </li>
-                    }
-                </ul>
-            }
-            <p class="note">
-                Both copies of each of these pay their owner, and 7♦ and A♠ always do
-                (RULES.md §4.1, §4.2).
-            </p>
-        </section>
-
-        <section class="seating" aria-labelledby="seating-heading">
-            <h3 id="seating-heading">The seats</h3>
-            <ul class="seats">
-                @foreach (var seat in _seats)
-                {
-                    <SeatPanel @key="seat.Player.Value" Seat="seat" />
-                }
-            </ul>
-            <p class="note">
-                Every hand is concealed until somebody declares (RULES.md §7.1), and a watcher
-                is sent no hand at all — not a hidden one.
-            </p>
-        </section>
+        </ol>
     </div>
+
+    <YourSeat />
 
     <RoundLogPanel Lines="_board.Log" />
 
@@ -83,11 +79,18 @@
     {
         <SettlementPanel Result="settled" Seats="_seats" />
     }
+
+    <div class="asides">
+        <TableLegend />
+        <AboutTable Seed="Host.Seed" />
+    </div>
 </section>
 
 @code {
     private TableBoard _board = default!;
     private IReadOnlyList<SeatLine> _seats = [];
+    private IReadOnlyList<RingPlace> _ring = [];
+    private bool _yours;
 
     /// <remarks>
     /// ⚠️ <b>Runs twice</b> — once while the page is prerendered on the request, and again when
@@ -113,10 +116,16 @@
         _ = InvokeAsync(StateHasChanged);
     }
 
+    /// <remarks>
+    /// The ring is worked out here rather than per seat, so the whole table is laid out from one
+    /// snapshot of the board and cannot be turned half way round mid-render.
+    /// </remarks>
     private void Take()
     {
         _board = Host.Board;
         _seats = [.. _board.Seats];
+        _ring = TableRing.Around(_board.Seating, Host.Seat);
+        _yours = Host.Seat is not null;
     }
 
     /// <remarks>

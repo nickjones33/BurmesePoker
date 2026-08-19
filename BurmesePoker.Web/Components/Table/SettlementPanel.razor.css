@@ -6,12 +6,26 @@
 }
 
 h2 {
-    margin: 0 0 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0 0 0.7rem;
     font-size: 1.05rem;
 }
 
-.won {
-    margin: 0 0 0.9rem;
+.glyph {
+    color: var(--on-raised-money);
+}
+
+.turns {
+    padding: 0.05rem 0.45rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 999px;
+    color: var(--on-raised-muted);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
 }
 
 .melds {
@@ -76,8 +90,4 @@ td {
     color: var(--on-raised-muted);
 }
 
-.note {
-    margin: 0.9rem 0 0;
-    color: var(--on-raised-muted);
-    font-size: 0.9rem;
-}
+

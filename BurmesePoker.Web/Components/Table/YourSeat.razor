@@ -1,11 +1,15 @@
 @*
-    Your half of the table: the question, the hand it is about, and whether the computer is
-    allowed to have an opinion about it.
+    Your half of the table: the hand, the question about it, and whether the computer is allowed
+    to have an opinion.
 
     🔥 Everything drawn here came out of the SeatPrompt this seat was sent, through SeatBoard,
     and out of nothing else. There is no route from a component to the TableSession, which is
     what keeps ConcealmentTests standing in front of the page rather than beside it
     (BUILD-PLAN P13.4 acceptance 3).
+
+    ⚠️ The hand comes first and the action bar last, which is the order they are on screen and
+    the order they are read in (§3.11 B6). The question is answered by pressing a card as often
+    as by pressing a button, so the cards must be above the bar and not below it.
 
     ⚠️ Subscribed here and unhooked in Dispose (§3.11 A5), and the re-render goes through
     InvokeAsync because the table speaks on the round's thread (§3.11 C15).
@@ -17,21 +21,24 @@
 {
     <section class="you @(_seat.IsYourTurn ? "asking" : null)" aria-labelledby="you-heading">
         <header class="head">
-            <h2 id="you-heading">Your seat — @_seat.Name</h2>
+            <h2 id="you-heading">
+                <span class="marker" aria-hidden="true">@(_seat.IsYourTurn ? "▶" : "·")</span>
+                @_seat.Name
+            </h2>
 
             <p class="hints">
                 <input type="checkbox" id="show-hints" @bind="_hints" />
-                <label for="show-hints">Show what the computer would do</label>
+                <label for="show-hints">Hints</label>
             </p>
         </header>
-
-        <TurnPrompt @ref="_prompt" Asking="_seat.Asking" OnAnswer="Answer" />
 
         <HandPanel @ref="_hand"
                    Hand="_seat.Hand"
                    Hints="_hints"
                    Throwing="@(_seat.Asking?.Question == SeatQuestion.Discard)"
                    OnThrow="Throw" />
+
+        <TurnPrompt @ref="_prompt" Asking="_seat.Asking" OnAnswer="Answer" />
     </section>
 }
 

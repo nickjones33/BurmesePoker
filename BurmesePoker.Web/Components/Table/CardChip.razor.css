@@ -6,8 +6,8 @@
     display: inline-flex;
     align-items: baseline;
     gap: 0.15rem;
-    min-height: 28px;
-    min-width: 28px;
+    min-height: 30px;
+    min-width: 30px;
     padding: 0.2rem 0.45rem;
     border: 1px solid var(--edge-raised);
     border-radius: 6px;
@@ -18,11 +18,51 @@
 }
 
 .face {
+    display: inline-flex;
+    align-items: baseline;
     font-weight: 700;
 }
 
 .pip {
     margin-left: 0.05rem;
+}
+
+/*
+    A card the player handles. Big enough to read at a glance and far past the 24 px floor
+    (WCAG 2.5.8) — Board Game Arena asks 32 px and recommends 40–44, and a card you are throwing
+    away for money should be comfortably past that.
+*/
+.chip.big {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    min-width: 3.4rem;
+    min-height: 4.4rem;
+    padding: 0.35rem 0.3rem;
+    border-radius: 9px;
+    font-size: 1.35rem;
+}
+
+.chip.big .face {
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.05;
+}
+
+.chip.big .pip {
+    margin-left: 0;
+    font-size: 1.15rem;
+}
+
+/*
+    ⚠️ Written, not typed. See the note in the component: the 🃏 character is a colour picture at
+    this size, and two attempts at drawing a jester's cap produced a crown and then a blob. Three
+    letters, tightened so they take about the room "10" does.
+*/
+.rank.wild {
+    letter-spacing: -0.04em;
+    font-size: 0.78em;
 }
 
 .black .face {
@@ -37,6 +77,11 @@
     color: var(--on-raised-money);
     font-size: 0.8rem;
     font-weight: 700;
+}
+
+.chip.big .token {
+    font-size: 0.72rem;
+    line-height: 1;
 }
 
 /* Said, not shown: the words a screen reader reads in place of the glyph. */

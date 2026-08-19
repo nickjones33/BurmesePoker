@@ -213,23 +213,65 @@ dotnet run --project BurmesePoker.Web
 Then open the address it prints (`http://localhost:5188` by default). **You are seat 1** and the
 other three are the computer's, at the same pace the console uses.
 
-**It asks the same four questions**, in the same order, and it shows the same things: your hand
-grouped into the melds it nearly is, what each card would cost you to throw, the star on the
-money cards the deck gave you, and the arrow on the card the computer would throw. **The whole
-turn works from the keyboard** — when it becomes your turn the focus lands on the first control
-of the question, `Tab` moves between them, and `Enter` presses one. Choosing a discard means
-tabbing to a card and pressing it: **a card you throw is a button.**
+**It asks the same four questions**, in the same order. It does not say them the same way.
 
-Three differences worth knowing:
+### The table
 
-- **You can see the whole table.** Every seat, its bank and the top of its discard pile are on
-  screen at once, and the round log runs down the side. The console clears the screen between
-  turns because a hotseat game has to; a browser never does.
+**You are at the front of it, whichever seat you were dealt** — the others go clockwise from your
+left, in the order they play. Four, five and six seats all fit; five leaves the far end of the
+table empty and six fills it.
+
+**The middle of the felt is what everybody shares**: the deck with how many cards are left on it,
+the money cards turned up this round, and **the one discard you may take**. If the middle offers
+you a card, the button at the bottom offers you the same card — they are the same fact.
+
+**Each seat around you is small on purpose**: a name, a bank, and the top of its discard pile.
+That is everything the rules let you know about somebody else (RULES.md §7.1).
+
+| On a seat | Means |
+|---|---|
+| **▶** | The table is waiting on them. **It is their turn**, not "they moved last". |
+| **✓** | They have laid all thirteen down. |
+| **♛** | They won the round. |
+| **▾** | The top of their discard pile. |
+
+### Your hand, and the bar under it
+
+Your hand is the bottom third and the cards are big, because they are the only thing on the page
+you handle. **A card you can throw is a button** — press it and your turn ends.
+
+**The small number on a card is what throwing it would cost you**: `−3` means throwing it gives
+up three melded cards. **A card with no number costs nothing** — those are the ones worth
+throwing, and they are the ones grouped under `loose`. `←` is the card the computer would throw;
+`($)` and `($$)` mark money cards, and **`★` marks the ones that pay *you***.
+
+⚠️ **`★` is the one worth understanding.** A money card pays **whoever the deck gave it to**, and
+only the deck — being dealt one or drawing one blind makes it yours, taking one from a discard or
+off the table never does (RULES.md §4.4). Ownership never moves and never lapses, so **a starred
+card goes on paying you after you have thrown it away**, and a money card *without* a star is one
+you are merely holding for somebody else. That is why throwing a money card costs you nothing.
+
+Under the hand is **one bar with the question on it**, at most two buttons, and a **"why?"** you
+can open for the rule behind it.
+
+### The rest of it
+
+- **Everything else is a press away rather than on the felt.** *What the markers mean* is the
+  whole legend, once. *About this table* has the seed, and `--seed` deals the same table again.
+- **The round log is a panel you open.** Closed, it shows the last thing that happened; open, it
+  scrolls back through the match. ⚠️ **It is still read aloud while it is closed** — the panel is
+  folded up, not switched off.
+- **The whole turn works from the keyboard.** When it becomes your turn the focus lands on the
+  first control of the question, `Tab` moves between them, and `Enter` presses one. Choosing a
+  discard means tabbing to a card and pressing it.
 - **Your hand stays on screen while the others play.** It is the hand you kept, not a picture of
   an old one.
 - **Nothing is hidden from you that the console shows you**, and nothing extra is shown. Your
-  hand reaches the page because your seat was asked a question about it; nobody else's ever
-  does.
+  hand reaches the page because your seat was asked a question about it; nobody else's ever does
+  — and a watcher (`--seat 0`) is shown no hand at all, which the page says out loud.
+- **If your connection drops, the table is still there.** It says so, stops you pressing things
+  that would go nowhere, and offers to reload.
+
 
 Useful options — all of them plain configuration, so `--` then the flag:
 

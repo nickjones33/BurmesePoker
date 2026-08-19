@@ -1,6 +1,12 @@
 @*
-    The question standing in front of you, as controls. The four IPlayerAgent asks, and no
-    others: take, claim, throw, declare.
+    The question standing in front of you, as one action bar. The four IPlayerAgent asks, and
+    no others: take, claim, throw, declare.
+
+    🔥 An action bar, not a paragraph (BUILD-PLAN P13.5). Board Game Arena's shape: at most four
+    buttons, the main action first, the quieter one beside it, and the context on the same line
+    rather than in a sentence above it. The rules citations that used to sit in the middle of
+    the question are behind a "why?" — they answer a question nobody is asking twice, and the
+    button has to be readable at a glance every single turn.
 
     ⚠️ This component holds no seat and no connection — it is given the prompt it draws and it
     hands an answer back. That is what keeps the seat's whole conversation with the table in one
@@ -11,100 +17,137 @@
 
 @if (Asking is not { } asking)
 {
-    <p class="waiting">The others are playing. Your hand is below.</p>
+    <p class="idle">
+        <span class="glyph" aria-hidden="true">⋯</span>
+        <span class="what" aria-hidden="true">Waiting</span>
+        <span class="said">It is not your turn. Your hand is above.</span>
+    </p>
 }
 else if (asking.Question == SeatQuestion.Take)
 {
-    <section class="ask" aria-labelledby="ask-heading">
-        <h3 id="ask-heading">How will you take your card?</h3>
-        <p class="detail">
+    <section class="bar" aria-labelledby="ask-heading">
+        <h3 id="ask-heading">Take a card</h3>
+        <div class="choices">
             @if (asking.AvailableDiscard is { } discard)
             {
-                <text>The discard is</text>
-                <CardChip Card="discard" />
-                <text>— taking it is not the same as being dealt it, so it would pay you nothing (RULES.md §4.4).</text>
+                <button type="button" class="main" @ref="_first" @onclick="() => Answer(new SeatAnswer.Take(TurnAction.TakeDiscard))">
+                    <span class="verb">Take</span>
+                    <CardChip Card="discard" />
+                </button>
+                <button type="button" class="second" @onclick="() => Answer(new SeatAnswer.Take(TurnAction.DrawFromDeck))">
+                    <span class="verb">Draw blind</span>
+                    <span class="aside">@asking.DrawPileCount</span>
+                </button>
             }
             else
             {
-                <text>There is nothing to take; the deck is the only way.</text>
+                <button type="button" class="main" @ref="_first" @onclick="() => Answer(new SeatAnswer.Take(TurnAction.DrawFromDeck))">
+                    <span class="verb">Draw blind</span>
+                    <span class="aside">@asking.DrawPileCount</span>
+                </button>
             }
-        </p>
-        <div class="choices">
-            <button type="button" @ref="_first" @onclick="() => Answer(new SeatAnswer.Take(TurnAction.TakeDiscard))">
-                Take the discard
-            </button>
-            <button type="button" class="second" @onclick="() => Answer(new SeatAnswer.Take(TurnAction.DrawFromDeck))">
-                Draw blind — @asking.DrawPileCount left, and a money card off the deck pays you
-            </button>
         </div>
+        <details class="why">
+            <summary>Why?</summary>
+            <p>
+                Taking the discard is not the same as being dealt it, so it would pay you nothing
+                (RULES.md §4.4). A money card off the deck is yours and pays you at settlement
+                whether you keep it or throw it away.
+            </p>
+        </details>
     </section>
 }
 else if (asking.Question == SeatQuestion.ClaimMoneyCard)
 {
-    <section class="ask" aria-labelledby="ask-heading">
-        <h3 id="ask-heading">Take the turned-up card instead of drawing?</h3>
-        <p class="detail">
+    <section class="bar" aria-labelledby="ask-heading">
+        <h3 id="ask-heading">Claim off the table?</h3>
+        <div class="choices">
             @if (asking.TurnedUpMoneyCards.Count > 0)
             {
-                <text>The top one is</text>
-                <CardChip Card="asking.TurnedUpMoneyCards[^1]"
-                          Token="@DisplayTokens.For(CardDisplayState.PaysOnce)"
-                          TokenWords="a money card" />
+                <button type="button" class="main" @ref="_first" @onclick="() => Answer(new SeatAnswer.Claim(true))">
+                    <span class="verb">Claim</span>
+                    <CardChip Card="asking.TurnedUpMoneyCards[^1]"
+                              Token="@DisplayTokens.For(CardDisplayState.PaysOnce)"
+                              TokenWords="a money card" />
+                </button>
+                <button type="button" class="second" @onclick="() => Answer(new SeatAnswer.Claim(false))">
+                    <span class="verb">Leave it</span>
+                </button>
             }
-            <text>
-                It costs you your draw, and the table gives it rather than the deck — so it pays
-                nobody (RULES.md §4.5).
-            </text>
-        </p>
-        <div class="choices">
-            <button type="button" @ref="_first" @onclick="() => Answer(new SeatAnswer.Claim(true))">
-                Take it off the table
-            </button>
-            <button type="button" class="second" @onclick="() => Answer(new SeatAnswer.Claim(false))">
-                Leave it and draw
-            </button>
+            else
+            {
+                <button type="button" class="main" @ref="_first" @onclick="() => Answer(new SeatAnswer.Claim(false))">
+                    <span class="verb">Nothing to claim — go on</span>
+                </button>
+            }
         </div>
+        <details class="why">
+            <summary>Why?</summary>
+            <p>
+                Only the opening player may (RULES.md §4.5). It costs you your draw, and the
+                table gives it rather than the deck — so you hold it, but it pays nobody.
+            </p>
+        </details>
     </section>
 }
 else if (asking.Question == SeatQuestion.Discard)
 {
-    <section class="ask" aria-labelledby="ask-heading">
-        <h3 id="ask-heading">Which card will you throw away?</h3>
+    <section class="bar throwing" aria-labelledby="ask-heading">
+        <h3 id="ask-heading">Throw one away</h3>
         <p class="detail">
             @if (asking.Taken is { } taken)
             {
-                <text>You took</text>
+                <span class="verb" aria-hidden="true">You took</span>
                 <CardChip Card="taken" Token="@Mark(asking, taken)" TokenWords="@Words(asking, taken)" />
-                <text>—</text>
             }
-            <text>press a card in your hand below. Throwing it ends your turn.</text>
+            <span class="said">Press a card in your hand above. Throwing it ends your turn.</span>
+            <span class="hint" aria-hidden="true">↑ press a card</span>
         </p>
+        <details class="why">
+            <summary>Why?</summary>
+            <p>
+                Every turn is take one, throw one (RULES.md §5). The number on a card is what
+                throwing it costs you — how many melded cards it gives up — and you may throw
+                back the one you just took.
+            </p>
+        </details>
     </section>
 }
 else
 {
-    <section class="ask" aria-labelledby="ask-heading">
-        <h3 id="ask-heading">All thirteen meld. Will you go out?</h3>
+    <section class="bar" aria-labelledby="ask-heading">
+        <h3 id="ask-heading">All thirteen meld</h3>
         <ol class="laid">
             @foreach (var meld in asking.Hand.Melds)
             {
                 <li @key="Key(meld)">
-                    <span class="kind">@meld.Label</span>
-                    @foreach (var card in meld.Cards)
+                    <span class="kind" aria-hidden="true">@meld.Label</span>
+                    @foreach (var (slot, card) in meld.Slots)
                     {
-                        <CardChip @key="card.Card.Id.Value" Card="card.Card" />
+                        <CardChip @key="card.Card.Id.Value"
+                                  Card="card.Card"
+                                  Token="@StandsFor(slot)"
+                                  TokenWords="@StandsForWords(slot)" />
                     }
                 </li>
             }
         </ol>
         <div class="choices">
-            <button type="button" @ref="_first" @onclick="() => Answer(new SeatAnswer.Declaration(true))">
-                Declare and end the round
+            <button type="button" class="main" @ref="_first" @onclick="() => Answer(new SeatAnswer.Declaration(true))">
+                <span class="verb">Declare and go out</span>
             </button>
             <button type="button" class="second" @onclick="() => Answer(new SeatAnswer.Declaration(false))">
-                Not yet
+                <span class="verb">Not yet</span>
             </button>
         </div>
+        <details class="why">
+            <summary>Why?</summary>
+            <p>
+                Nothing ends a round but a declaration (RULES.md §7.1): all thirteen laid down at
+                once, in melds that share no card. The winner takes a flat stake from everybody
+                else, and the money cards pay their owners whatever happens.
+            </p>
+        </details>
     </section>
 }
 
@@ -123,13 +166,72 @@ else
     /// Focus the first control of the prompt, which is what §3.11 B7 asks for: focus moves when
     /// the turn does. Only one branch above is ever on screen, so only one of them captured it.
     /// </summary>
-    public ValueTask FocusAsync() =>
-        string.IsNullOrEmpty(_first.Id) ? ValueTask.CompletedTask : _first.FocusAsync();
+    /// <remarks>
+    /// ⚠️ <b>Only the first control captures a reference.</b> Blazor invokes a <c>@@ref</c>
+    /// capture when an element is <em>inserted</em>, not on every diff, so a second capture in
+    /// the same branch would silently win (P13.4).
+    /// </remarks>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>A focus call must never be able to take the circuit down, and this one could.</b>
+    /// An <c>ElementReference</c> keeps its id after the element it named has been removed, so
+    /// the emptiness check below only ever guarded the very first render. Everything after it
+    /// raced: <c>OnAfterRenderAsync</c> decides to move focus because a question is standing,
+    /// and between that decision and the interop call reaching the browser the question can be
+    /// answered — the buttons become spans, the element goes, and the call lands on nothing.
+    /// <b>Blazor turns an unhandled interop exception into a dead circuit</b>, and a dead
+    /// circuit in this client is a page that looks completely correct and does nothing at all
+    /// (P13.3's finding, in a new dress).
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Found by playing 1,429 turns and reading the server log</b>, not by looking at the
+    /// page: the browser showed a hand, a prompt and a spotlight, and every card refused every
+    /// press in silence. A person who answers quickly hits exactly the same race.
+    /// </para>
+    /// <para>
+    /// So focus is best-effort by construction. <b>Nothing to focus is not an error</b> — the
+    /// turn has moved on, which is the only reason the control could have gone.
+    /// </para>
+    /// </remarks>
+    public async ValueTask FocusAsync()
+    {
+        if (string.IsNullOrEmpty(_first.Id))
+        {
+            return;
+        }
+
+        try
+        {
+            await _first.FocusAsync();
+        }
+        catch (JSException)
+        {
+            // The control went away between the render that asked for this and the call
+            // arriving. There is nothing to focus and nothing to do about it.
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is going away. Focus is the least of it.
+        }
+    }
 
     private Task Answer(SeatAnswer answer) => OnAnswer.InvokeAsync(answer);
 
     /// <summary>A stable key per meld: the cards it is made of, which no other meld holds (§3.1).</summary>
     private static string Key(MeldView meld) => string.Join('-', meld.Meld.CardIds.Select(id => id.Value));
+
+    /// <summary>
+    /// What a joker is standing in for, written after its face exactly as the console writes
+    /// it — <c>🃏(4♦)</c>. <b>The interpretation is display only, never identity</b>
+    /// (<c>MeldSlot</c>): it is the meld that decides what the joker is playing as here.
+    /// </summary>
+    private static string? StandsFor(MeldSlot slot) => slot.IsSubstitute
+        ? $"({CardText.DisplayCode(slot.PlaysAs)}{CardText.DisplaySuit(slot.InSuit)})"
+        : null;
+
+    private static string? StandsForWords(MeldSlot slot) => slot.IsSubstitute
+        ? $"standing in for the {CardWords.For(Card.Ranked(slot.Card.Id, slot.PlaysAs, slot.InSuit))}"
+        : null;
 
     /// <summary>The money marker on the card you just took, if it is one (§3.11 A2).</summary>
     private static string? Mark(SeatPrompt asking, Card card) => asking.MoneyCards.Multiplier(card) switch
@@ -141,8 +243,8 @@ else
 
     private static string? Words(SeatPrompt asking, Card card) => asking.MoneyCards.Multiplier(card) switch
     {
-        >= 2 => "a money card, and it pays twice",
-        1 => "a money card",
-        _ => null
+        >= 2 => "you took it, and it is a money card that pays twice",
+        1 => "you took it, and it is a money card",
+        _ => "you took it"
     };
 }

@@ -249,6 +249,11 @@ BurmesePoker.Web/           Blazor Server. the second project that draws.
                             Table/{YourSeat, TurnPrompt, HandPanel} — the seat, and the four
                             questions as controls. TableBoard is the public game folded from a
                             watcher; **SeatBoard is one seat's, folded from its own connection**.
+                            ✅ RESHAPED (P13.5): Table/{TableCentre, TableLegend, AboutTable}
+                            added and every other table component rewritten — a felt of named
+                            grid areas, seats at positions, one action bar, and a round log you
+                            open. **No new route to anything**: TableView still takes the board
+                            and YourSeat still takes the seat.
 ```
 
 **By P13.3:** the seventh project above, `BurmesePoker.Presentation/PacedAgent.cs` **moved out of
@@ -749,7 +754,13 @@ are split by how they are checked, because a standard nobody can verify is a wis
 
 #### B. Only playing it finds these — reviewed the way P11 was reviewed
 
-6. ✅ **DONE IN P13.4 — fully playable from the keyboard, with no pointer at all.** Tab order
+6. ✅ **DONE IN P13.4, and re-verified against a ring of seats in P13.5 — fully playable from
+   the keyboard, with no pointer at all.** ⚠️ **A ring of seats is exactly where tab order
+   breaks**, so the felt is positioned with **CSS grid areas and never with `order:` or absolute
+   coordinates**: the markup order is turn order, clockwise from your left and ending with yours,
+   which is also the order the felt stacks in when it is too narrow to be a ring. There is no
+   focusable control in a seat panel at all, so what that really protects is the order a screen
+   reader reads the table in — and turn order is the one that means something at a card table. Tab order
    matches reading order; every prompt is reachable and answerable. For a turn-based card game
    this is not a concession — it is how a quick player will want to play anyway. **Reviewed the
    way P11 was: five rounds played in a headless browser with `Tab` and `Enter` and nothing
@@ -765,14 +776,28 @@ are split by how they are checked, because a standard nobody can verify is a wis
    `ConsoleObserver.Say`, and this is WCAG 4.1.3 Status Messages. ⚠️ **Polite, never
    assertive**: a bot table emits a line every few hundred milliseconds and `assertive` would
    interrupt a screen reader continuously. **The hand is not a live region**; only the log is.
-9. **Nothing meaningful lives in hover, or in a tooltip alone.** The per-card cost and the
-   computer's hint are content, not chrome — P11 already treats them that way.
-10. **`prefers-reduced-motion` and `prefers-color-scheme` are both honoured.** The pause between
-    computer turns is *pacing* and stays (it is what makes a bot seat legible — P11); anything
-    that actually moves does not.
-11. ✅ **DONE IN P13.4 — touch targets at least 24×24 CSS px** (WCAG 2.2 SC 2.5.8), and
-    comfortably larger for a card you are being asked to throw away for money. A `CardChip` is
-    28px before its padding and the button around it adds more; the hints checkbox is 24px.
+9. ✅ **DONE IN P13.5 — nothing meaningful lives in hover, or in a tooltip alone.** The per-card
+   cost and the computer's hint are content, not chrome — P11 already treats them that way, and
+   P13.5 shrank both to glyphs **on the card** rather than moving either into a tooltip. Board
+   Game Arena says the same thing: a tooltip supplements and never duplicates. ✅ **Now a
+   standard with a number on it**: `MarkupStandardsTests.NoParagraphOnTheTableIsAWallOfText`
+   allows a visible paragraph on the felt **80 characters** of prose, and exempts exactly two
+   things — a `<details>` the player can open, and a `<span class="said">`, which is the
+   accessible name of the glyph. ⚠️ **Text moved into `.said` costs nothing against the budget,
+   deliberately**: an icon with no accessible name is worse than the prose it replaced, and a
+   budget that punished the fix would produce exactly that.
+10. ✅ **DONE IN P13.5 — `prefers-reduced-motion` and `prefers-color-scheme` are both honoured.**
+    The pause between computer turns is *pacing* and stays (it is what makes a bot seat legible —
+    P11); anything that actually moves does not. **P13.5 added no animation at all**, and the
+    blanket `prefers-reduced-motion` rule in `app.css` is there so that anything added later
+    inherits the honouring rather than the habit. ⚠️ **It does not cross shadow boundaries**, so
+    motion added inside a component's own stylesheet has to repeat it. Both themes are drawn and
+    both are computed (A3).
+11. ✅ **DONE IN P13.4 and raised in P13.5 — touch targets at least 24×24 CSS px** (WCAG 2.2 SC
+    2.5.8), and comfortably larger for a card you are being asked to throw away for money.
+    **Board Game Arena asks 32×32 and recommends 40–44, and P13.5 took the recommendation**: a
+    card you press is 3.4rem × 4.4rem, every answer button is 44px tall, and the two disclosure
+    summaries are 40px. A chip you are only shown stays 30px.
 
 #### C. Blazor mechanics that are UX decisions in disguise
 
@@ -792,9 +817,22 @@ are split by how they are checked, because a standard nobody can verify is a wis
 15. ✅ **ASSERTED IN P13.3.** **Do not call `StateHasChanged` inside an event handler** — `ComponentBase` already
     re-renders after one. **Do call it, through `InvokeAsync`, when the observer stream pushes
     from a non-UI thread**, which is how every opponent's move will arrive.
-16. **Reconnection is part of the UX, not an error path.** A dropped circuit must not look like a
-    dropped game. P13 already decides that a timeout is a bot move; the client has to *say* so —
-    *"Sable is playing your seat"* — rather than freeze and hope.
+16. ✅ **DONE IN P13.5 — reconnection is part of the UX, not an error path.** A dropped circuit
+    must not look like a dropped game. P13 already decides that a timeout is a bot move; the
+    client has to *say* so rather than freeze and hope.
+    🔥 **Blazor ships an overlay if you do not, and it is the ugliest screen in the app**: a
+    hard-coded light-theme modal that ignores `prefers-color-scheme` and — the real problem —
+    **leaves the page underneath live**. `main` is not inert, every button stays focusable and
+    pressable, and focus never enters the dialog, so during an outage a player can tab to a card
+    and press it and nothing happens and nothing says why. **P13.5 owns it**: the themed palette,
+    a real `role="dialog"` that focus moves into, everything else on the page made `inert`, and a
+    plain `<a href="">` to reload, which needs no circuit because there isn't one.
+    ⚠️ **It is not a live region** — the round log is the only one (B8), and a second voice
+    competing with it during an outage is exactly the wrong moment for two.
+    ⚠️ **The element id and the four class names are Blazor's contract; the markup inside is
+    ours.** The `inert` half needs JavaScript and is a vanilla script at the end of the body,
+    deliberately not a component: *a circuit that has dropped cannot render the thing that says
+    the circuit has dropped.*
 17. ✅ **DONE IN P13.3** — every one of the five table components has its own `.razor.css`.
     **CSS isolation (`.razor.css`) over one global stylesheet**, so a component's styling cannot
     leak into the table.
@@ -818,15 +856,19 @@ P0 ─► P1 ─┬─► P2 ──────────┐                  
                                                           P13.2  table server              (no UI)
                                                           P13.3  a table you can watch     ← first UI
                                                           P13.4  a seat you can play       ← solo, in a browser
-                                                          P13.5  the lobby                 ← goal 4
+                                                          P13.5  a table, not a document   ← the layout pass
+                                                          P13.6  the lobby                 ← goal 4
 ```
 
-⚠️ **P13.1–P13.5 are strictly sequential**, which nothing else in this plan has been. Each one
+⚠️ **P13.1–P13.4 are strictly sequential**, which nothing else in this plan has been. Each one
 is the ground the next stands on: the view model before anything renders it, the seat and the
 fan-out before anything connects to them, the render model and the accessibility decisions
 before interaction, and interaction before a second person. **The one place to break the chain
-if time runs short is after P13.4** — that is a finished single-player browser game, and P13.5
-is the only part that needs another person to be worth anything.
+if time runs short is after P13.4** — that is a finished single-player browser game, and P13.6
+is the only part that needs another person to be worth anything. ⚠️ **P13.5 and P13.6 are not
+sequential with each other and were deliberately swapped** (2026-08-19, on the owner's call): the
+layout pass is markup, CSS and one presentation helper, the lobby is `TableHost`/`SeatBoard`
+ownership, and taking the layout first means the lobby arrives at a table worth joining.
 
 **P2, P3, P4 are independent of one another** — good candidates for separate sessions in any
 order. P6 needs P1 and P2 only.
@@ -862,12 +904,13 @@ and the only one that is purely optional.**
 | P10 | Bot opponents — **solo play** | P9 | L — ☑ done 2026-08-18 |
 | P11 | Console UX pass | P10 | M — ☑ done 2026-08-18 |
 | P12 | Simulation at scale | P10 | L — ☑ done 2026-08-18 |
-| P13 | **The browser client and multiplayer** | P10 | XL — **re-split 2026-08-19 into P13.1–P13.5** below |
+| P13 | **The browser client and multiplayer** | P10 | XL — **re-split 2026-08-19 into P13.1–P13.6** below |
 | P13.1 | A presentation view model, rendered two ways | P10 | M — no UI; a fifth project |
 | P13.2 | The table server | P13.1 | M — no UI; the leak test lives here |
 | P13.3 | A browser table you can watch | P13.2 | L — the first UI; Blazor Server |
 | P13.4 | A seat you can play | P13.3 | M — **solo browser play, complete** |
-| P13.5 | The lobby, and a second person | P13.4 | M — §0's goal 4 |
+| P13.5 | **A table, not a document** — the layout pass | P13.4 | M — ☑ done 2026-08-19 |
+| P13.6 | The lobby, and a second person | P13.4 (P13.5 ☑, so it joins a table worth joining) | M — §0's goal 4 |
 | P14 | Game journals — record and replay | P12 | L — ☑ done 2026-08-19 |
 | P15 | A skill ladder | P12 | M — ☑ done 2026-08-19 |
 | P16 | Does the player before you decide your game? | P15 (**P14 ☑, so rich journals are available**) | M — ☑ done 2026-08-19 |
@@ -2247,7 +2290,162 @@ all, over five rounds, with 393 tab presses walking the hand.**
 
 ---
 
-#### P13.5 — The lobby, and a second person
+#### P13.5 — A table, not a document ☑ done 2026-08-19 *(the layout pass)*
+
+**Goal.** Make the browser client look like a table people are sitting at rather than a document
+about a game they are playing. Nick's words: *"each player at a certain location at the table…
+minimize the amount of prose… more icons/symbols, perhaps larger… and relegate the prose into a
+log that is optional to view instead of being the main way to observe the info in the game."*
+
+⚠️ **Renumbered on the owner's call before committing.** This was going to be P13.6, taken after
+the lobby. It is P13.5 and the lobby is P13.6, because the two are close to orthogonal — the
+lobby's work is in `TableHost`/`SeatBoard` ownership and this is markup, CSS and one presentation
+helper — and doing the layout first means **the lobby arrives at a table worth joining** rather
+than forcing a second redesign of everything it touches.
+
+**What it built.**
+
+- **`BurmesePoker.Presentation/TableRing.cs`** — `RingSeat`, `RingPlace`, `TableRing.Around`.
+  🔥 **You are at the front of the table whichever seat you were dealt**, and the others go
+  clockwise from your left. It is a pure function of the seating and of which seat is yours, so
+  it is here rather than inline in a component: **an expression buried in Razor is unreachable
+  from a test**, and this one has thirteen. The same call `CardOrder` made in P13.1.
+- **The felt.** `TableView` is a five-column grid of *named areas* — `topleft top topright /
+  left centre right / bottom` — and every seat is placed in one **by name, never by coordinate**.
+  One template seats four, five and six; an area with no seat in it simply goes unused.
+- **`TableCentre`** — the deck, the turned-up money cards, and the one discard the seat being
+  waited on may take. These were three bordered boxes in a sidebar; they are the middle of the
+  table, so they are drawn in the middle of it.
+- **`TableLegend` and `AboutTable`** — the two disclosures the prose moved into.
+- **The action bar.** `TurnPrompt` is one bar with at most two buttons, the main action first,
+  and the rules citation behind a *"why?"*.
+
+**The three decisions worth keeping.**
+
+1. 🔥 **Whose turn it is became public, and that was the open question.** `TableBoard.IsActing`
+   meant *whose move was last* — the nearest the public game got — and a felt with seats at
+   positions cannot spotlight that without lying, because the glyph would point at the seat that
+   had just finished. **The easy road was available and was not taken.** Whose turn it is leaks
+   nothing: everybody at a real table can see who is being waited on, and the concealment is
+   about what is *in a hand* (RULES.md §7.1). So `TableEvent.TurnBegan(Player, Round, Turn)` is
+   **broadcast to everybody**, raised by `BoundedAgent` — the one decorator every seat already
+   passes through, so a bot's turn is as public as a person's — once per turn rather than once
+   per question. ⚠️ **`ConcealmentTests` was extended to cover it rather than merely still
+   passing**: the event names a seat and carries nothing else, everybody is told the same one,
+   and it is one per turn. Two mutations red.
+   ⚠️ **`BoundedAgent` is outermost, which is why the spotlight lands before the pause** — a host
+   wraps a bot in `PacedAgent` and hands it here, so a seat lights up and is *seen to think*.
+2. 🔥 **The draw pile is counted rather than sent.** The middle of the felt wants to say how many
+   cards are left. The shoe is 108 (§2), thirteen go to each seat and the turned-up cards come
+   off it (§3), a blind draw takes one, and a reshuffle says how many the discards made (§5) —
+   so a watcher can do the arithmetic, and `TableBoard` does. **The alternative was a count on
+   `IGameObserver.PlayerDrew`, which is a domain change for a decoration.** Checked against a
+   round the engine really played, two ways round.
+3. ⚠️ **A discard pile is a pile, not a top card.** The felt shows the one discard on offer, and
+   the board used to keep only each seat's most recent throw — so once somebody *took* a discard,
+   the board went on showing a card that was by then in their hand. `TableBoard.DiscardPiles`
+   folds `Discarded` and `TookDiscard`, finds the taken card **by identity rather than by
+   assuming whose pile it must have been** (§3.1), and is emptied by a reshuffle.
+
+**The prose budget, and where every sentence went.** *Prose leaves the screen; it does not leave
+the page.* Every string removed from the felt went to exactly one of three places — the
+accessible name of the thing it described, the round log, or a disclosure — and **never to a
+`title=` or a hover** (§3.11 B9).
+
+| Was on the felt | Went to |
+|---|---|
+| The page lede, three sentences | `AboutTable`, and the rules page |
+| *"Seed 435220648 — every card…"* | `AboutTable`, with `--seed` beside it |
+| *"Both copies of each of these pay their owner…"* | `TableLegend` |
+| *"Every hand is concealed until somebody declares…"* | The rules page's new *At the table* section |
+| *"($) pays its owner once and ($$) twice; ★…"* | `TableLegend`, once, for the whole table |
+| **14 × *"melds nothing"* / *"breaks a meld — costs 3"*** | A `−3` badge on the card; the phrase into the card's accessible name |
+| *"— taking it is not the same as being dealt it (RULES.md §4.4)"* | The action bar's *"why?"* |
+| *"The others are playing. Your hand is below."* | A state marker on your seat |
+
+🔥 ***"Melds nothing" was also wrong copy, and this is where it was fixed.*** It is a **cost**
+label that read as a **status** label, and it appeared under a row headed `run of 3`,
+contradicting it. It is a signed number now — `−3`, and **nothing at all when the answer is
+zero**, because the group already says the card is loose — and the sentence it replaced is in
+the accessible name of the very button that throws the card: *"seven of diamonds, a money card,
+and it is yours — it pays you even if you throw it away, throwing it gives up nothing."*
+⚠️ **An icon with no accessible name is worse than the prose it replaced**, so more symbols meant
+*more* `.said` text, not less.
+
+⚠️ **The ★ wording was rewritten mid-packet, after Nick asked what it was actually saying.** It
+explained the *mechanism* — "the deck gave that one to you" — and left the reader to work out why
+that deserved a glyph. It deserves one because **holding is not owning** (RULES.md §4.4) and that
+is the only thing deciding who gets paid. It now says the consequence: *"Yours: it pays you at
+settlement even after you throw it away. A money card without a star is one you are only holding
+— it pays somebody else."*
+
+##### What P13.5 found
+
+1. 🔥 **A focus call can kill the circuit, and a dead circuit is a page that looks perfect.**
+   §3.11 B7 moves focus when the turn does, through `ElementReference.FocusAsync`. ⚠️ **An
+   `ElementReference` keeps its id after the element it names has gone**, so the emptiness guard
+   only ever protected the first render. Everything after it raced: `OnAfterRenderAsync` decides
+   to focus because a question is standing, and between that decision and the interop call
+   reaching the browser the question can be answered — the buttons become spans and the call
+   lands on nothing. **Blazor turns an unhandled interop exception into a torn-down circuit.**
+   ⚠️ **Found by playing 1,429 turns and reading the server log, not by looking at the page**:
+   the browser showed a hand, a prompt and a spotlight, and every card refused every press in
+   silence. It is a race a quick human wins too. **Focus is best-effort by construction now**,
+   and `MarkupStandardsTests` asserts every component holding an `ElementReference` catches
+   `JSException` and `JSDisconnectedException` around it. **After the fix: 39 rounds, 473
+   answers, no circuit failures — before it, dead in round 3.**
+2. 🔥 **A hidden live region announces nothing, and this packet is the one that would have done
+   it.** The round log became a panel you open in the same packet that increased how much the
+   page leans on it. `display:none`, `[hidden]`, or a closed `<details>` would take the entire
+   narration away from the people relying on it most (WCAG 4.1.3). **The list is always rendered
+   and always live**; closing it clips it the way `.said` is clipped — off screen, still laid
+   out, still in the accessibility tree — and the only thing that depends on being open is
+   whether the box is a tab stop. Asserted, and two mutations red.
+3. ⚠️ **A glyph is not automatically better than a word, and the joker cost two drawings to
+   learn it.** The 🃏 character is a colour photograph at chip size, so it had to go. A jester's
+   cap in SVG was the obvious replacement and was **wrong twice**: three lobes above a band reads
+   as a **crown** whether the lobes are pointed or rounded — and ♛ already means *won the round*
+   two panels away on the same felt — while tilting two of them down to hang like bells stopped
+   it being a crown and made it an abstract blob at the twenty-odd pixels it is actually drawn
+   at. **It is the letters `JKR`**, which is what a real joker card has printed on it. ⚠️ Settled
+   by zooming into a screenshot at true size, which is the only thing that was ever going to
+   settle it.
+4. ⚠️ **A hidden twin is a duplicate, and three of them shipped before the accessibility tree was
+   read back.** `.said` beside visible text makes a screen reader say it twice: *"Cobra, Cobra is
+   waiting"*, *"Round log, open the round log, 1 lines"*, *"36 turns, in 36 turns"*. **A `.said`
+   is for text the eye is given as a glyph — never for text the eye is given as text.** Found by
+   reading the page's own accessibility tree out of the browser, and it is worth doing once per
+   UI packet.
+5. ⚠️ **`display: contents` is what lets a list of seats be a grid of positions.** The seats must
+   stay one `<ol>` for semantics and become individual items of the felt's grid for layout.
+   `role="list"` is kept explicitly on it, because an implicit list role has historically been
+   dropped when the list box leaves layout.
+6. ⚠️ **A ring that fits is not a ring that reads.** The felt stacks below **56rem** rather than
+   at the width where the ring stops fitting: at around 780 px the outer columns squeeze a panel
+   until the name in it truncates, and a table where you cannot read who is sitting where is
+   worse than a list. Five and six seats also get a wider felt, because *"Khine Myat Zin (bot)"*
+   is what decides how much room a seat panel needs.
+
+##### What P13.5 deliberately did not do
+
+- **The money cards you own but have already thrown away are not shown.** The legend now promises
+  they still pay you (§4.4), and the felt cannot show them: `SeatPrompt` carries ownership only
+  for the cards currently in your hand. A running *"★ 4 owned"* tally on your seat would need the
+  server to send it. **Worth doing, and it is a server change rather than a layout one.**
+- **No animation at all.** `prefers-reduced-motion` is honoured by a blanket rule in `app.css`
+  that does not cross shadow boundaries, so anything that moves has to be written inside it. The
+  pacing between bot turns is not motion and stays (§3.11 B10).
+- **Chrome will not make a window narrower than 500 px**, so 360 was checked by measuring the
+  layout in a 360 px content box — the same media-query branch that applies there — rather than
+  by screenshotting a 360 px viewport.
+
+**Acceptance.** ✅ **420 tests, up from 389, none removed.** ✅ Played at four, five and six seats
+and with `--seat 0`; a whole turn answered with `Tab` and `Enter` and nothing else; 39 rounds
+soaked with the banks summing to zero on every tick and no horizontal overflow at any width.
+
+---
+
+#### P13.6 — The lobby, and a second person
 
 **Build.** Open a table, join it, the host fills the rest with bots, play. **The lobby is not a
 domain concept** — it decides seating and names and then constructs what `Program` constructs
@@ -2807,7 +3005,7 @@ For picking up in a fresh session with no memory of this conversation.
 | ~~**Scope growth beyond a playable game**~~ (new 2026-08-18, **all but retired 2026-08-18**). §0 adds three further goals, and the 2023 failure was a half-finished thing nobody could play. | P9, P10 and P11 each ship something *more playable than before*; P12 and P13 are independent of one another after P10 (§4) and can be dropped without stranding anything. The game staying playable at every step is the mitigation. **Three of the four goals are now delivered and the tree has been green at every one of them.** Only P13 is outstanding, and it is the one that can be dropped outright without taking anything with it — **stopping after P11 leaves a finished game, a finished console and a working simulation**, not a half-built anything. ⚠️ **Re-split into five on 2026-08-19, which is where this risk bites hardest** — five sequential sub-packets is the longest unbroken chain in the plan. The mitigation is unchanged and deliberate: **P13.3 and P13.4 each ship something you can look at and play**, and stopping after P13.4 leaves a finished single-player browser game rather than a half-built lobby. |
 | **An accessibility standard retrofitted is a rewrite** (new 2026-08-19). Keyboard operability, focus behaviour and colour-independence are decided by how the markup is built, not by how it is styled — and a root-level `@rendermode InteractiveServer` cannot be narrowed later without moving every component. | **§3.11, taken before a single component exists**, and split by how each item is *checked*. Five of the seventeen are mechanical tests — the concealment leak, colour tokens, computed contrast in both themes, real controls, subscription disposal — and they land in **P13.2 and P13.3**, before there is anything to retrofit. The rest are reviewed by playing, the way P11 was reviewed, and the report has to say what was actually exercised. |
 | **A fifth project is over-engineering** (new 2026-08-19). `BurmesePoker.Presentation` exists so that one hand view serves two renderers. | The alternatives are named in §2 and both are worse: a Blazor project referencing a Spectre console, or a second implementation of a question `PartialCover` already answers — the exact drift `MeldIndex` and `CoverScore` were extracted to prevent. **The enforcement is the point** (§2), and it is one `LayeringTests` row. If it turns out thin after P13.1, folding it into Domain is a one-session reversal; folding a drifted second implementation back is not. |
-| **Blazor Server holds a live circuit per player** (new 2026-08-19). Every interaction is a round trip, and a dropped connection is a dropped game. | Four to six people a table makes the concurrency cost irrelevant; §3.10 chose the model for **concealment**, not for scale, and a JS client over the same server stays available if the feel is ever wrong. The real risk is the *reconnection experience*, which **P13.5 owns explicitly** and which the plan already has an answer to: a timeout is a bot move (P10), and the client must say so rather than freeze. |
+| **Blazor Server holds a live circuit per player** (new 2026-08-19). Every interaction is a round trip, and a dropped connection is a dropped game. | Four to six people a table makes the concurrency cost irrelevant; §3.10 chose the model for **concealment**, not for scale, and a JS client over the same server stays available if the feel is ever wrong. The real risk is the *reconnection experience*, which **P13.5 took ownership of** — the client has its own themed reconnect overlay now, and the plan already has an answer to: a timeout is a bot move (P10), and the client must say so rather than freeze. |
 | **The synchronous-agent bet is wrong at scale** (new 2026-08-18). §3.6 parks a task per table rather than making the engine resumable. | At four to six players and a handful of tables the cost is a parked task, not a thread. If it is ever wrong, the fix is a resumable engine *behind the same interface* — the agents, tests and simulation loop do not change. Revisit only with a measured problem. |
 | ~~**A measured result is really a seating artifact**~~ (new 2026-08-19, **retired the same day by P16**). Turn order is a directed cycle — only the immediately-previous player's discard is available (`RULES.md` §5) — so who sits behind whom is a variable, and P12's rotation holds it fixed rather than varying it. | **Measured, and it is real but small and not directional.** A weaker player anywhere at the table is worth 4–5 points of win rate to you; which *side* of you they sit costs nothing between two thinking strategies (−1.0 ± 2.1 pts) and 9.1 ± 2.1 points only across the random-to-greedy gulf. The size of the artifact in P12's own headline is now known: **the rotation flatters greedy by 1.1 points a seat, 2.2 of the 11.4-point gap.** The mitigation is permanent: `--seating balanced` plays every assignment, and every CSV row names `upstream_strategy` and `downstream_strategy`, so a rotated result and a balanced one can both be quoted and told apart. |
 | **Journalling slows the harness** (new 2026-08-19). §3.7 measured the work as allocation-bound, and a per-decision recorder allocates. | P14 keeps two fidelity levels and makes the rich one opt-in, and its acceptance criteria include measuring the throughput cost against P12's recorded 51/85–92 rounds a second rather than assuming it is small. If thin journalling costs more than a few percent it is built wrong. |

@@ -3,20 +3,29 @@
     money-card side bet needs the ownership record, which is on the table and not in the
     result (BUILD-PLAN P8). The console has the table; a watcher has what it was told, and it
     is told the nets.
+
+    🔥 The paragraph explaining how money cards pay is in TableLegend now (BUILD-PLAN P13.5).
+    It was true, and it was the same paragraph the felt and the hand were also carrying — a
+    settlement is a set of numbers and the melds that produced them.
 *@
 
 <section class="settled" aria-labelledby="settled-heading">
-    <h2 id="settled-heading">Round @Result.Round settled</h2>
-
-    <p class="won">
-        <strong>@Winner</strong> laid down all thirteen and went out in @Result.Turns turns.
-    </p>
+    @*
+        ⚠️ No hidden twin. "36 turns" in a pill reads correctly aloud on its own, and a .said
+        saying "in 36 turns" beside it is the same fact twice — which is what a screen reader
+        actually hears. Found by reading the heading's own text back out of the browser.
+    *@
+    <h2 id="settled-heading">
+        <span class="glyph" aria-hidden="true">♛</span>
+        <span>Round @Result.Round — @Winner went out</span>
+        <span class="turns">@Result.Turns turns</span>
+    </h2>
 
     <ol class="melds">
         @foreach (var meld in Result.Melds)
         {
             <li @key="Key(meld)">
-                <span class="kind">@DisplayTokens.For(meld.Kind)</span>
+                <span class="kind" aria-hidden="true">@DisplayTokens.For(meld.Kind)</span>
                 @foreach (var slot in meld.Slots)
                 {
                     <CardChip @key="slot.Card.Id.Value"
@@ -46,12 +55,6 @@
             }
         </tbody>
     </table>
-
-    <p class="note">
-        A money card pays its owner — whoever the deck gave it to — whether they still hold it
-        or threw it away (RULES.md §4.4). Nothing ends a match, so the next round is dealt on
-        top of these banks (RULES.md §7.2).
-    </p>
 </section>
 
 @code {

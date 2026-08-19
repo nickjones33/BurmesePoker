@@ -42,6 +42,35 @@ public abstract record TableEvent
     public sealed record RoundStarted(int Round, IReadOnlyList<Card> TurnedUp) : TableEvent;
 
     /// <summary>
+    /// The table has turned to a seat and is waiting on it. <b>Whose turn it is, and nothing
+    /// else about the turn</b> (BUILD-PLAN P13.5).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Broadcast, deliberately, after asking whether it may be.</b> Until P13.5 the
+    /// nearest the public game got to <em>whose turn</em> was <em>whose move was last</em>,
+    /// which a client with seats at positions cannot spotlight without lying — the glyph would
+    /// point at the seat that had just finished. So the question was put properly: <b>whose
+    /// turn it is leaks nothing</b>. Everybody at a real table can see who is being waited on;
+    /// the concealment is about <em>what is in a hand</em> (RULES.md §7.1), and this event
+    /// carries no card, no count and no hand. <c>ConcealmentTests</c> covers it rather than
+    /// merely still passing.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Once per turn, not once per question.</b> A turn asks between two and four
+    /// questions depending on what the seat does, and a seat that was asked more of them is not
+    /// having a longer turn — it is the same <c>(Round, TurnNumber)</c> key
+    /// <see cref="SeatPlayedByTheComputer"/> and P11's pacing decorator both use.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>It is raised by <c>BoundedAgent</c>, which wraps every seat</b> — a bot's turn is
+    /// as public as a person's, and a spotlight that only lit the seats somebody had connected
+    /// to would be worse than none.
+    /// </para>
+    /// </remarks>
+    public sealed record TurnBegan(PlayerId Player, int Round, int Turn) : TableEvent;
+
+    /// <summary>
     /// A player drew blind. <paramref name="Card"/> is the card for the player who drew it and
     /// <b>null for everybody else</b> — the one filtered event, and the reason this type exists.
     /// </summary>

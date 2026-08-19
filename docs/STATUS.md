@@ -10,9 +10,61 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P13.5 — the lobby, and a second person.** No blockers, and it is the last packet
+**Next packet: P13.6 — the lobby, and a second person.** No blockers, and it is the last packet
 in the plan. **Stopping here is a legitimate end state**: three of §0's four goals were already
-delivered, and the fourth now has a finished single-player half.
+delivered, and the fourth now has a finished — and good-looking — single-player half.
+
+✅ **P13.5 is done (2026-08-19), and the browser client is a table rather than a document about
+one.** Every seat sits at a position on a felt, **you are at the front of it whichever seat you
+were dealt**, the shared things — the deck, the money cards, the discard on offer — are in the
+middle, your hand is the big pressable thing at the bottom, the four questions are one action
+bar, and the narration is a round log you open. ⚠️ **Renumbered on the owner's call**: this was
+going to be P13.6 and the lobby was P13.5. They are close to orthogonal, and doing the layout
+first means **the lobby arrives at a table worth joining**.
+
+**What it added.** `BurmesePoker.Presentation/TableRing.cs` — the rotation, as a pure function
+with thirteen tests, because *an expression buried in Razor is unreachable from a test*. Three
+new components (`TableCentre`, `TableLegend`, `AboutTable`) and every other table component
+rewritten. **420 tests, up from 389, none removed.**
+
+🔥 **Six findings a cold context needs.**
+
+1. 🔥 **A focus call can kill the circuit, and a dead circuit is a page that looks perfect.** An
+   `ElementReference` keeps its id after its element has gone, so §3.11 B7's focus-on-turn races
+   the answer: the question is answered, the buttons become spans, and the interop call lands on
+   nothing — and **Blazor turns an unhandled interop exception into a torn-down circuit**.
+   ⚠️ **Found by playing 1,429 turns and reading the server log, not by looking at the page**:
+   the browser showed a hand, a prompt and a spotlight, and every card refused every press in
+   silence. A quick human wins the same race. **Focus is best-effort now** and
+   `MarkupStandardsTests` asserts it. **After the fix: 39 rounds, 473 answers, no failures.**
+2. 🔥 **Whose turn it is is now public, and it was the packet's one open design question.**
+   `IsActing` meant *moved last*, which a felt with seats at positions cannot spotlight without
+   lying. **The easy road was available and was not taken**: `TableEvent.TurnBegan` is broadcast
+   to everybody, raised by `BoundedAgent` (the one decorator every seat passes through, so a
+   bot's turn is as public as a person's), once per turn. ⚠️ **`ConcealmentTests` was extended to
+   cover it**, not merely left passing.
+3. 🔥 **A hidden live region announces nothing** — and this was the packet that would have done
+   it, since it is the one that demoted the log to a panel you open. The list is **always
+   rendered and always live**; closing it clips it the way `.said` is clipped. Two mutations red.
+4. ⚠️ **A hidden twin is a duplicate.** Three shipped before the accessibility tree was read
+   back: *"Cobra, Cobra is waiting"*, *"Round log, open the round log, 1 lines"*, *"36 turns, in
+   36 turns"*. **A `.said` is for text the eye gets as a glyph — never for text the eye gets as
+   text.** Read the page's own accessibility tree once per UI packet.
+5. ⚠️ **A glyph is not automatically better than a word.** The 🃏 character is a colour photograph
+   at chip size; a jester's cap in SVG replaced it and was wrong **twice** — three lobes above a
+   band is a *crown* (and ♛ already means *won the round* two panels away), and hanging the side
+   lobes made it an abstract blob at true size. **It is the letters `JKR`.** Settled by zooming
+   into a screenshot, which is the only thing that was going to settle it.
+6. ⚠️ **The draw count and the discard piles are derived from the public game, not sent.** 108
+   less thirteen a seat less the turned-up cards, one off per blind draw, reset by a reshuffle —
+   a watcher could do the same arithmetic, and the alternative was changing `IGameObserver` for a
+   decoration. And a discard **pile** rather than a top card, because a card leaves it again.
+
+⚠️ **One thing P13.5 left, and it is a server change rather than a layout one.** The legend now
+promises that a money card you own pays you *even after you throw it away* (RULES.md §4.4) — and
+the felt cannot show those cards, because `SeatPrompt` carries ownership only for the cards
+currently in your hand. A running **"★ 4 owned"** tally on your seat would need the server to
+send it.
 
 ✅ **P13.4 is done (2026-08-19), and this project has a game you can sit down and play in a
 browser.** `dotnet run --project BurmesePoker.Web` deals you into seat 1 against three bots, and
@@ -58,7 +110,7 @@ interactive island**, so §3.11 C12 is untouched.
    shortening the patience** — P13.5's lobby knows whether anybody is connected, which is the
    honest answer.
 
-⚠️ **What P13.5 has to change rather than add to.** `TableHost.Yours` is **one** `SeatBoard`,
+⚠️ **What P13.6 has to change rather than add to.** `TableHost.Yours` is **one** `SeatBoard`,
 built when the table is opened, and every circuit is handed the same one. Right for solo play,
 wrong the moment two people are here: **a `SeatBoard` belongs to a viewer, not to a host.** The
 component is already written for it — `YourSeat` reads its seat once and unhooks in `Dispose`.
@@ -182,7 +234,8 @@ was. **The one item that cannot be walked back cheaply is C12: static SSR by def
 `@rendermode InteractiveServer` on the table component and nowhere near the root.**
 
 **P13 is still the only optional part of the plan — stopping now is a legitimate end state**,
-and so is stopping after **P13.4**, which is a finished single-player browser game.
+and so is stopping after **P13.5**, which is a finished single-player browser game that looks
+like one.
 
 ✅ **P16 is done (2026-08-19), and the whole P14–P16 branch with it.** The question Nick's
 friend raised has an answer, an interval and a control:

@@ -2,10 +2,30 @@
     One card. The glyph is for the eye and hidden from the accessibility tree; the words
     beside it are for the ear (CardWords). A screen reader reading "7♦" says whatever its
     symbol table happens to say, which is not a card.
+
+    🔥 This split is what lets the table lose its prose without losing it from the page
+    (BUILD-PLAN P13.5): the face can shrink to a glyph and grow to a card, and the accessible
+    name stays the whole sentence either way.
+
+    ⚠️ A JOKER IS WRITTEN, NOT TYPED. CardText writes it 🃏, which a terminal renders as a glyph
+    and a browser renders as a small colour photograph of a card — illegible at chip size in
+    both themes, and worse the smaller it gets. So this client writes its own mark.
+
+    🔥 It is the letters JKR, and getting there cost two drawings (BUILD-PLAN P13.5). A jester's
+    cap in SVG was the obvious answer and it was wrong twice: three lobes above a band reads as
+    a CROWN whether the lobes are pointed or rounded, and ♛ already means "won the round" two
+    panels away on the same felt; tilting two of them down to hang like bells stopped it being a
+    crown and made it an abstract blob at the twenty-odd pixels it is actually drawn at. A real
+    joker card has the word printed on it, and three letters are legible at every size this
+    client uses, take the card's own red or black from the same rule the rank does, and cannot
+    be mistaken for anything. ⚠️ Judged by zooming into a screenshot at true size, which is the
+    only way any of this was ever going to be settled.
 *@
 
-<span class="chip @Shade">
-    <span class="face" aria-hidden="true">@Code<span class="pip">@Pip</span></span>
+<span class="chip @Shade @(Big ? "big" : null)">
+    <span class="face" aria-hidden="true">
+        <span class="rank @(Card.Rank is null ? "wild" : null)">@Code</span><span class="pip">@Pip</span>
+    </span>
     @if (Token is not null)
     {
         <span class="token" aria-hidden="true">@Token</span>
@@ -29,7 +49,30 @@
     [Parameter]
     public string? TokenWords { get; set; }
 
-    private string Code => CardText.DisplayCode(Card.Rank);
+    /// <summary>
+    /// Whether this is a card the player handles rather than one they are merely shown.
+    /// </summary>
+    /// <remarks>
+    /// <b>A card being shown does not need to be a card</b> — a seat's top discard, a card in a
+    /// line of the log and a meld laid down are all condensed to a chip, because the felt is
+    /// worth more than they are. <b>A card you press is a card</b>: big enough to read across a
+    /// desk and well past the 40–44 px a touch target wants (§3.11 B11, WCAG 2.5.8).
+    /// </remarks>
+    [Parameter]
+    public bool Big { get; set; }
+
+    /// <summary>
+    /// The card's short face — <c>CardText</c>'s, except for the joker.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The one place this client disagrees with <c>CardText</c>, and it disagrees on
+    /// purpose.</b> <c>CardText.DisplayCode(null)</c> is 🃏, which is right for a terminal and
+    /// is a colour photograph in a browser — see the note at the top of this file. The console
+    /// keeps its joker; a browser needs its own, and <b>this is display, which is exactly what a
+    /// front end is allowed to decide</b> (P13.1). Nothing about identity moves: a joker is
+    /// still a rankless card and <c>CardWords</c> still says "the red joker".
+    /// </remarks>
+    private string Code => Card.Rank is null ? "JKR" : CardText.DisplayCode(Card.Rank);
 
     private string Pip => CardText.DisplaySuit(Card.Suit);
 

@@ -87,3 +87,100 @@ ol {
         scroll-behavior: auto !important;
     }
 }
+
+/*
+    🔥 The reconnect overlay (§3.11 C16). It lives here rather than in a component's own
+    stylesheet because the element it styles is page chrome, outside the router and outside any
+    circuit — see the note in App.razor for why it is ours at all.
+
+    Blazor adds exactly one of four classes to #components-reconnect-modal: -show while it is
+    retrying, -hide when it is done, -failed when the retries ran out, -rejected when the server
+    has forgotten the circuit. Hidden is the default, so an outage is the only thing that shows
+    it.
+*/
+.reconnect {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    /* A scrim, not a token: it darkens whatever is behind it, which is right in both themes. */
+    background: rgba(0, 0, 0, 0.62);
+}
+
+.reconnect.components-reconnect-show,
+.reconnect.components-reconnect-failed,
+.reconnect.components-reconnect-rejected {
+    display: flex;
+}
+
+.reconnect.components-reconnect-hide {
+    display: none;
+}
+
+.reconnect:focus {
+    outline: none;
+}
+
+.reconnect .panel {
+    max-width: 30rem;
+    padding: 1.1rem 1.25rem 1.25rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 12px;
+    background: var(--raised);
+    color: var(--on-raised);
+}
+
+.reconnect h2 {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0 0 0.6rem;
+    font-size: 1.1rem;
+}
+
+.reconnect .glyph {
+    color: var(--on-raised-money);
+}
+
+.reconnect p {
+    margin: 0 0 0.7rem;
+    color: var(--on-raised-muted);
+}
+
+/* One sentence at a time: which one depends on which class Blazor put on. */
+.reconnect .rejoining,
+.reconnect .failed,
+.reconnect .rejected {
+    display: none;
+}
+
+.reconnect.components-reconnect-show .rejoining,
+.reconnect.components-reconnect-failed .failed,
+.reconnect.components-reconnect-rejected .rejected {
+    display: block;
+}
+
+.reconnect .controls {
+    margin: 0;
+}
+
+.reconnect .reload {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 6px;
+    background: var(--accent);
+    color: var(--on-accent);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+/* Only the failed and rejected states can do anything about it; retrying is retrying. */
+.reconnect.components-reconnect-show .controls {
+    display: none;
+}

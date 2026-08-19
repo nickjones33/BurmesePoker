@@ -63,9 +63,30 @@ your thirteen are fixed until your next turn; a refusal must not raise "somethin
 client that answers on the change event answers the same refused question for ever; and only the
 first control may capture a `@ref`, because Blazor captures on insertion rather than on every
 diff.** ⚠️ **A seated table no longer deals from boot** — an unanswered seat spends its whole
-patience on every question. **Next packet: P13.5**, the lobby and a second person, and it is the
-last one. ⚠️ **`TableHost.Yours` is one `SeatBoard` shared by every circuit, which is right for
-solo play and the thing P13.5 must change: a `SeatBoard` belongs to a viewer, not to a host.** **P14–P16 were added on 2026-08-19 and
+patience on every question. ✅ **P13.5 shipped the same day, and the browser client is a table
+rather than a document about one.** Every seat sits at a **position** on a felt of named grid
+areas, **you are at the front of it whichever seat you were dealt** (`TableRing`, in Presentation,
+thirteen tests), the shared things are in the middle — deck, money cards, and **the one discard on
+offer** — your hand is the big pressable thing at the bottom, the four questions are **one action
+bar**, and the narration is a **round log you open**. Three new components (`TableCentre`,
+`TableLegend`, `AboutTable`) and every other one rewritten; **420 tests, up from 389**.
+⚠️ **Renumbered on the owner's call: this is P13.5 and the lobby is P13.6**, because doing the
+layout first means the lobby arrives at a table worth joining. 🔥 **Its findings: a focus call can
+kill the circuit** — an `ElementReference` outlives its element, so §3.11 B7's focus-on-turn races
+the answer, and Blazor turns an unhandled interop exception into a torn-down circuit, **which is a
+page that looks perfect and does nothing** (found by playing 1,429 turns and reading the *server*
+log; 39 rounds clean after the fix); **whose turn it is was made public on purpose** —
+`TableEvent.TurnBegan`, broadcast from `BoundedAgent`, with `ConcealmentTests` **extended to cover
+it** rather than left passing, because *moved last* is a spotlight that lies; **a hidden live
+region announces nothing**, so the closed log is clipped like `.said` rather than hidden; **a
+hidden twin is a duplicate** (three shipped before the accessibility tree was read back); and **a
+glyph is not automatically better than a word** — the joker's jester cap read as a crown, then as
+a blob, and is the letters `JKR`. ⚠️ **The draw count and the discard piles are derived from the
+public game**, not added to the wire. ⚠️ **§3.11 B9 is a number now**: 80 characters of visible
+prose per paragraph on the felt, exempting a `<details>` and a `<span class="said">`. **Next
+packet: P13.6**, the lobby and a second person, and it is the last one. ⚠️ **`TableHost.Yours` is
+one `SeatBoard` shared by every circuit, which is right for solo play and the thing P13.6 must
+change: a `SeatBoard` belongs to a viewer, not to a host.** **P14–P16 were added on 2026-08-19 and
 all three shipped the same day.** P14: `--journal <path>` on both front ends writes every
 decision every seat made as JSON Lines, and `BurmesePoker.Sim -- replay <path>` plays it back —
 to a byte-identical CSV. A seed is a pointer into the build that produced it; a journal is the

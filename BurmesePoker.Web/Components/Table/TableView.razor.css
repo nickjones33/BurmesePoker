@@ -1,7 +1,7 @@
 .table {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
 }
 
 .board {
@@ -12,72 +12,110 @@
     gap: 0.4rem 1.5rem;
 }
 
-h2 {
+h1 {
     margin: 0;
-    font-size: 1.35rem;
+    font-size: 1.3rem;
 }
 
-h3 {
-    margin: 0 0 0.6rem;
-    font-size: 0.95rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--on-raised-muted);
-}
-
-.seed {
+.watching {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
     margin: 0;
     color: var(--on-surface-muted);
     font-size: 0.9rem;
-    font-variant-numeric: tabular-nums;
 }
 
+/*
+    🔥 THE FELT. A grid of named areas with a hole in the middle, so a seat is placed by saying
+    which side of the table it is on and never by saying where in pixels (TableRing).
+
+    Five columns rather than three, because the same template has to seat four, five and six.
+    An area with no item in it simply goes unused, so:
+
+      four seats  — left, top, right, and you at the front. The corners are empty.
+      five seats  — the far end empty, the two corners drawn inward.
+      six seats   — everything filled.
+
+    ⚠️ Nothing here reorders anything. Grid areas place; `order:` would reorder, and reordering
+    is what breaks the tab and reading order of a ring (§3.11 B6).
+*/
 .felt {
+    /* Wide enough to be a table, narrow enough that the seats read as being round one. */
+    max-width: 66rem;
+    margin-inline: auto;
+    width: 100%;
     display: grid;
-    gap: 1rem;
-    grid-template-columns: 1fr;
-    align-items: start;
+    grid-template-columns:
+        minmax(0, 1.15fr) minmax(0, 0.95fr) minmax(0, 1.4fr)
+        minmax(0, 0.95fr) minmax(0, 1.15fr);
+    grid-template-areas:
+        ".    topleft top    topright ."
+        "left centre  centre centre   right"
+        ".    bottom  bottom bottom   .";
+    align-items: center;
+    gap: 0.6rem 0.7rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--edge-felt);
+    border-radius: 18px;
+    background: var(--felt);
 }
 
-@media (min-width: 60rem) {
-    .felt {
-        grid-template-columns: minmax(16rem, 22rem) 1fr;
-    }
+/*
+    A fuller table is a wider one. Five and six seats have to fit the same five columns four
+    seats do, and the longest name at this table — "Khine Myat Zin (bot)" — is what decides how
+    much room a seat panel needs. ⚠️ A trimmed name is not an option: the felt exists to say who
+    is sitting where.
+*/
+.felt.seats-5,
+.felt.seats-6 {
+    max-width: 74rem;
 }
 
-.turned-up,
-.seating {
-    padding: 0.85rem 1rem 1rem;
-    border: 1px solid var(--edge-raised);
-    border-radius: 8px;
-    background: var(--raised);
+/*
+    ⚠️ display:contents so that the seats become items of the felt's own grid. The <ol> keeps an
+    explicit role="list" in the markup, because an implicit list role has historically been
+    dropped when the list box leaves layout.
+*/
+.ring {
+    display: contents;
 }
 
-.cards {
+.asides {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.seats {
-    display: grid;
     gap: 0.6rem;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-    margin: 0;
-    padding: 0;
-    list-style: none;
 }
 
-.nothing {
-    margin: 0;
-    color: var(--on-raised-muted);
+.asides > * {
+    flex: 1 1 18rem;
 }
 
-.note {
-    margin: 0.75rem 0 0;
-    color: var(--on-raised-muted);
-    font-size: 0.85rem;
+/*
+    Narrow enough that a ring is a lie: the felt stacks. ⚠️ The line is at 56rem rather than at
+    the point where the ring stops fitting, because a ring that fits is not the same as a ring
+    that reads: at around 780 px the outer columns squeeze a seat panel until the name inside it
+    truncates, and a table where you cannot read who is sitting where is worse than a list. The shared middle comes first because
+    it is what everybody is looking at, then the seats in the order they were already in —
+    ending with yours, which lands it directly above your hand.
+
+    ⚠️ The named areas are dropped rather than left dangling, and the seats are put back to
+    automatic placement, which is why this reaches through ::deep: a grid area named by a child
+    component means nothing once the parent stops declaring it.
+*/
+@media (max-width: 56rem) {
+    .felt {
+        grid-template-areas: none;
+        grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+        padding: 0.75rem;
+    }
+
+    .felt ::deep .seat {
+        grid-area: auto;
+    }
+
+    .felt ::deep .centre {
+        grid-area: auto;
+        grid-column: 1 / -1;
+    }
 }

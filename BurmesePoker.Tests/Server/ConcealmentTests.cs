@@ -149,6 +149,80 @@ public class ConcealmentTests(WatchedRound round) : IClassFixture<WatchedRound>
         }
     }
 
+    /// <summary>
+    /// 🔥 <b>P13.5's new event, covered rather than merely still passing.</b> Whose turn it is
+    /// is public; nothing else about a turn is.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Broadcasting it was a deliberate widening of what the table says</b> (BUILD-PLAN
+    /// P13.5), so the packet that widened it owes this test. A client with seats at positions
+    /// wants a turn spotlight, and until P13.5 the nearest the public game had was
+    /// <em>who moved last</em> — which points at the seat that has just finished.
+    /// </para>
+    /// <para>
+    /// The argument for it is that everybody at a real table can see who is being waited on:
+    /// the concealment is about what is <em>in a hand</em> (RULES.md §7.1). So the assertions
+    /// are that the event names a seat and carries nothing else, that everybody hears the same
+    /// one — including a watcher, who has no seat of their own to reason from — and that it is
+    /// one per turn rather than one per question.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void WhoseTurnItIsIsPublicAndIsAllThatIsPublicAboutATurn()
+    {
+        var watched = round.Watcher.Events.OfType<TableEvent.TurnBegan>().ToList();
+
+        Assert.NotEmpty(watched);
+
+        // Every seat at the table takes turns, and the watcher is told about all of them.
+        Assert.Equal(
+            round.Table.Players.OrderBy(player => player.Value),
+            watched.Select(began => began.Player).Distinct().OrderBy(player => player.Value));
+
+        // One per turn, whatever that turn asked. A turn asks between two and four questions.
+        Assert.Equal(
+            watched.Count,
+            watched.Select(began => (began.Player, began.Round, began.Turn)).Distinct().Count());
+
+        // Turn numbers count up from one and never go backwards within a round.
+        Assert.Equal(watched.Select(began => began.Turn), watched.Select(began => began.Turn).Order());
+        Assert.Equal(1, watched[0].Turn);
+
+        // ⚠️ And it is the same event for everybody. A seat is told exactly what the room is
+        // told — there is no per-listener variant to get wrong, which is what keeps the one
+        // filtered event (the blind draw) the only one.
+        foreach (var connection in round.Seats.Values)
+        {
+            Assert.Equal(
+                watched.Select(began => (began.Player, began.Round, began.Turn)),
+                connection.Events.OfType<TableEvent.TurnBegan>()
+                    .Select(began => (began.Player, began.Round, began.Turn)));
+        }
+    }
+
+    /// <remarks>
+    /// The other half, and the one that would catch a future widening: the sweep in
+    /// <see cref="EveryCardASeatIsSentIsOneItMaySee"/> is written over every event, so a turn
+    /// event that ever started carrying a card would fail there. This says out loud that it
+    /// carries none — a record with no <c>Card</c> on it cannot leak one.
+    /// </remarks>
+    [Fact]
+    public void ATurnEventCarriesNoCardAtAll()
+    {
+        var carried = typeof(TableEvent.TurnBegan).GetProperties()
+            .Where(property => property.PropertyType == typeof(Card) || property.PropertyType == typeof(Card?))
+            .ToList();
+
+        Assert.Empty(carried);
+        Assert.Equal(
+            ["Player", "Round", "Turn"],
+            typeof(TableEvent.TurnBegan).GetProperties()
+                .Where(property => property.DeclaringType == typeof(TableEvent.TurnBegan))
+                .Select(property => property.Name)
+                .Order());
+    }
+
     /// <summary>The strictest case: a watcher may see the public game and nothing else.</summary>
     [Fact]
     public void AWatcherIsSentNothingButThePublicGame()

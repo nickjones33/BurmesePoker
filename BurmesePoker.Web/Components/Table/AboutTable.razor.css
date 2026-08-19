@@ -1,0 +1,48 @@
+.about {
+    border: 1px solid var(--edge-raised);
+    border-radius: 8px;
+    background: var(--raised);
+}
+
+summary {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 40px;
+    padding: 0.4rem 0.75rem;
+    color: var(--on-raised-muted);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 50%;
+    font-weight: 700;
+    font-style: italic;
+}
+
+p {
+    margin: 0 0 0.6rem;
+    padding: 0 0.75rem;
+    max-width: 46rem;
+    color: var(--on-raised-muted);
+    font-size: 0.9rem;
+}
+
+p:last-child {
+    padding-bottom: 0.75rem;
+}
+
+.seed {
+    font-variant-numeric: tabular-nums;
+}
+
+a {
+    color: var(--on-raised-link);
+}

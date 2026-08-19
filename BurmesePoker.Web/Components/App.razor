@@ -17,6 +17,97 @@
 
 <body>
     <Routes />
+
+    @*
+        🔥 OUR RECONNECT OVERLAY, NOT THE FRAMEWORK'S (§3.11 C16, BUILD-PLAN P13.5).
+
+        Blazor ships one if you do not, and it is the ugliest screen in the app: a hard-coded
+        light-theme modal that ignores prefers-color-scheme, and — the real problem — it leaves
+        the page underneath live. `main` is not inert, every button stays focusable and
+        pressable, and focus never enters the dialog. So during an outage a player can tab to a
+        card and press it, and nothing happens, and nothing says why.
+
+        §3.11 C16 says reconnection is UX and not an error path. This is that, taken seriously:
+        the themed palette, a real dialog that focus moves into, the page behind it made inert,
+        and a plain <a href=""> to reload — which needs no circuit, because there isn't one.
+
+        ⚠️ It is NOT a live region. The round log is the only one on the page (§3.11 B8), and a
+        second one competing with it during an outage is exactly the wrong moment for two voices.
+        Focus moving into the dialog is what announces it.
+
+        The element id and the four class names are Blazor's contract; the markup inside is ours.
+    *@
+    <div id="components-reconnect-modal"
+         class="reconnect"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="reconnect-heading"
+         tabindex="-1">
+        <div class="panel">
+            <h2 id="reconnect-heading">
+                <span class="glyph" aria-hidden="true">⚡</span>
+                The table is still there
+            </h2>
+
+            <p class="rejoining">
+                Your connection dropped. Rejoining —
+                attempt <span id="components-reconnect-current-attempt"></span>
+                of <span id="components-reconnect-max-retries"></span>.
+            </p>
+
+            <p class="failed">
+                Could not get back to the table. The seat is still yours and the computer has
+                been playing it (RULES.md §7.2 — nothing ends a match).
+            </p>
+
+            <p class="rejected">
+                The table moved on without this page. Reload to pick it up again.
+            </p>
+
+            <p class="controls">
+                <a href="" class="reload">Reload the page</a>
+            </p>
+        </div>
+    </div>
+
+    @*
+        The half a dialog cannot do in CSS: take the page behind it out of reach, and put the
+        caret inside it. Blazor toggles the classes; this watches for that and does the rest.
+        ⚠️ Vanilla, at the end of the body, and deliberately not a component — a circuit that has
+        dropped cannot render the thing that says the circuit has dropped.
+    *@
+    <script>
+        (function () {
+            var modal = document.getElementById('components-reconnect-modal');
+
+            if (!modal) {
+                return;
+            }
+
+            var showing = ['components-reconnect-show', 'components-reconnect-failed', 'components-reconnect-rejected'];
+            var was = false;
+
+            function settle() {
+                var up = showing.some(function (name) { return modal.classList.contains(name); });
+
+                Array.prototype.forEach.call(document.body.children, function (child) {
+                    if (child !== modal && child.tagName !== 'SCRIPT') {
+                        child.inert = up;
+                    }
+                });
+
+                if (up && !was) {
+                    modal.focus();
+                }
+
+                was = up;
+            }
+
+            new MutationObserver(settle).observe(modal, { attributes: true, attributeFilter: ['class'] });
+            settle();
+        })();
+    </script>
+
     <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 

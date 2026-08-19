@@ -1,0 +1,80 @@
+@*
+    Every marker on the table, once, in one place, closed until somebody wants it.
+
+    🔥 This is where the sentences went (BUILD-PLAN P13.5). The table used to explain its own
+    markers three times over — under the turned-up cards, under the hand, under the settlement —
+    and the explanations were the largest block of text on the page. Prose leaves the screen; it
+    does not leave the page. A disclosure is one of the three places it is allowed to go, and it
+    is the right one for a thing you read once and then never again.
+
+    ⚠️ Never a tooltip and never a title= (§3.11 B9). A marker whose meaning lives in hover has
+    no meaning on a touch screen and none at all to a keyboard.
+
+    ⚠️ It iterates DisplayTokens.States rather than listing the markers, so a display state
+    added later turns up here without anybody remembering to come back — the same reason the
+    token list is an enum and has a test over it (§3.11 A2).
+*@
+
+<details class="legend">
+    <summary>
+        <span class="glyph" aria-hidden="true">?</span>
+        <span class="what">What the markers mean</span>
+    </summary>
+
+    <dl>
+        @foreach (var state in DisplayTokens.States)
+        {
+            <div class="entry" @key="state">
+                <dt><span class="token">@DisplayTokens.For(state)</span></dt>
+                <dd>@Means(state)</dd>
+            </div>
+        }
+        <div class="entry" @key="@("turn")">
+            <dt><span class="token">▶</span></dt>
+            <dd>The table is waiting on that seat. ♛ won the round and ✓ has declared.</dd>
+        </div>
+        <div class="entry" @key="@("discard")">
+            <dt><span class="token">▾</span></dt>
+            <dd>The top of a seat's discard pile — the card the seat after them may take.</dd>
+        </div>
+        <div class="entry" @key="@("cost")">
+            <dt><span class="token">−3</span></dt>
+            <dd>
+                What throwing that card would cost you: how many melded cards it gives up.
+                Cards that give up nothing carry no number.
+            </dd>
+        </div>
+    </dl>
+
+    <p class="rule">
+        <strong>Only the deck confers ownership</strong> — being dealt a money card or drawing
+        one blind makes it yours for the rest of the round, and taking one from a discard or off
+        the table never does (RULES.md §4.4). Ownership does not move and does not lapse: its
+        owner is paid by every other player at settlement whatever became of the card, which is
+        why throwing a money card away costs you nothing. 7♦ and A♠ always pay; the turned-up
+        cards say which other values do this round, both copies of each.
+    </p>
+</details>
+
+@code {
+    /// <summary>
+    /// What a display state means, in the words the ear was already being given. Exhaustive
+    /// over the enum, so a state added later stops compiling here rather than appearing in the
+    /// legend with nothing beside it.
+    /// </summary>
+    private static string Means(CardDisplayState state) => state switch
+    {
+        CardDisplayState.Melded => "That card is in one of the melds your hand nearly is.",
+        CardDisplayState.Loose => "Left over by the best melding of your hand — the cards worth throwing.",
+        CardDisplayState.PaysOnce => "A money card: it pays whoever owns it, once, this round.",
+        CardDisplayState.PaysDouble => "Designated twice over, so it pays its owner double.",
+        // ⚠️ Holding is not owning, and this marker is the difference. The old wording explained
+        // the mechanism — "the deck gave that one to you" — and left the reader to work out why
+        // that was worth a glyph. It is worth a glyph because it is the only thing that decides
+        // who gets paid (RULES.md §4.4), and because it outlives the card leaving your hand.
+        CardDisplayState.Owned => "Yours: it pays you at settlement even after you throw it away. "
+            + "A money card without a star is one you are only holding — it pays somebody else.",
+        CardDisplayState.SuggestedThrow => "The card the computer would throw. Turn the hints off to stop being told.",
+        _ => throw new ArgumentOutOfRangeException(nameof(state), state, "No display state means nothing.")
+    };
+}

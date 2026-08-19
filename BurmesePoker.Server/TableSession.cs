@@ -69,7 +69,7 @@ public sealed class TableSession
 
             // Every seat is bounded, bots included: what the clock catches is a table nobody
             // is left at, and a bot at such a table would play on for ever quite happily.
-            agents[seat.Player] = new BoundedAgent(agent, _clock);
+            agents[seat.Player] = new BoundedAgent(agent, _clock, _fanOut);
         }
 
         // One Random per table, from the seed and from nothing else (P14).

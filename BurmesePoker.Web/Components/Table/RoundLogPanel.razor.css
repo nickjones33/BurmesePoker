@@ -2,18 +2,64 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    padding: 0.85rem 1rem 1rem;
     border: 1px solid var(--edge-raised);
     border-radius: 8px;
     background: var(--raised);
 }
 
 h2 {
-    margin: 0 0 0.6rem;
-    font-size: 0.95rem;
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 400;
+}
+
+/*
+    The disclosure. A real <button> with aria-expanded, never a clickable heading (§3.11 A4),
+    and 40 px tall because Board Game Arena asks 32 and recommends 40–44.
+*/
+.toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: 100%;
+    min-height: 40px;
+    padding: 0.4rem 0.75rem;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: var(--on-raised-muted);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.glyph {
+    width: 0.8rem;
+}
+
+.what {
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--on-raised-muted);
+    font-size: 0.8rem;
+}
+
+.count {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+}
+
+/* The newest line, for the eye, while the panel is closed. aria-hidden — see the component. */
+.latest {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0 0.75rem 0.6rem;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 0.85rem;
 }
 
 /* Pinned to the latest line: see the note in the component. */
@@ -21,7 +67,31 @@ h2 {
     display: flex;
     flex-direction: column-reverse;
     overflow-y: auto;
-    max-height: 26rem;
+    max-height: 22rem;
+    padding: 0 0.75rem 0.75rem;
+}
+
+/*
+    🔥 CLIPPED, NEVER HIDDEN. The same recipe .said uses, and for the same reason one layer up:
+    the element stays laid out and stays in the accessibility tree, so the aria-live region
+    inside it goes on announcing while the panel is closed (§3.11 B8, WCAG 4.1.3).
+    display:none or [hidden] here would silently take the whole narration away.
+*/
+.log.shut .scroller {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    border: 0;
+}
+
+/* Containing block for the clipped scroller — a hidden box measured from the page stretches
+   the document, which is how P13.3 got a 10,295 px page out of a 1,814 px one. */
+.log {
+    position: relative;
 }
 
 ol {
@@ -54,6 +124,7 @@ ol {
     flex-wrap: wrap;
     align-items: center;
     gap: 0.35rem;
+    font-size: 0.9rem;
 }
 
 .normal {
@@ -76,4 +147,16 @@ ol {
 .bad {
     color: var(--on-raised-bad);
     font-weight: 700;
+}
+
+.said {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
 }

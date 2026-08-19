@@ -1,57 +1,86 @@
 @*
-    One seat: who is in it, what it has banked, and the card on top of its discard pile.
-    Nothing about its hand — a hand is concealed until a declaration (RULES.md §7.1), and a
-    watcher is not sent one at all (TableFanOut).
+    One seat: who is in it, what it has banked, the card on top of its discard pile, and
+    whether the table is waiting on it. Nothing about its hand — a hand is concealed until a
+    declaration (RULES.md §7.1), and a watcher is not sent one at all (TableFanOut).
+
+    🔥 Compact on purpose. A player panel carries identity, money and turn order and nothing
+    else, so that the felt can be big — Board Game Arena's rule, and the reason there is no
+    prose in here at all. Every marker below is a glyph for the eye with a word beside it for
+    the ear (§3.11 A2), which is how the panel says four things in the space of one sentence.
+
+    ⚠️ The ▶ means "it is their turn", and it only started meaning that in P13.5. Before the
+    server broadcast TurnBegan the nearest the public game had was "moved last", and a glyph
+    pointing at the seat that had just finished is worse than no glyph at all.
 *@
 
-<li class="seat @(Seat.IsActing ? "acting" : null)">
+<li class="seat @Place @(Seat.IsTheirTurn ? "turn" : null) @(Yours ? "yours" : null)">
     <p class="who">
         <span class="marker" aria-hidden="true">@Marker</span>
         <span class="name">@Seat.Name</span>
-        <span class="said">@State</span>
+        <span class="said">@State(Seat)</span>
     </p>
 
     <p class="bank">
-        <span class="label">Bank</span>
-        <span class="amount @Direction">@Amount</span>
+        <span class="amount @Direction" aria-hidden="true">@Amount</span>
+        <span class="said">banked @Amount</span>
     </p>
 
     <p class="discard">
-        <span class="label" id="@($"discard-{Seat.Player.Value}")">Discarded</span>
         @if (Seat.LastDiscard is { } card)
         {
-            <CardChip Card="card" />
+            <CardChip Card="card" Token="@Threw" TokenWords="on their discard pile" />
         }
         else
         {
-            <span class="nothing">nothing yet</span>
+            <span class="empty" aria-hidden="true">@Threw</span>
+            <span class="said">Nothing on their discard pile yet.</span>
         }
     </p>
 </li>
 
 @code {
+    /// <summary>What the discard pile is marked with when it is empty, and beside a card when it is not.</summary>
+    private const string Threw = "▾";
+
     /// <summary>The seat, as the board has it.</summary>
     [Parameter, EditorRequired]
     public SeatLine Seat { get; set; } = default!;
 
+    /// <summary>Where on the felt this seat sits, once the table has been turned to face you.</summary>
+    [Parameter, EditorRequired]
+    public RingSeat Seated { get; set; }
+
+    /// <summary>Whether this is your own seat, which is the one at the front.</summary>
+    [Parameter]
+    public bool Yours { get; set; }
+
+    /// <summary>The grid area this seat is drawn in — a name, never a coordinate (TableRing).</summary>
+    private string Place => Seated.ToString().ToLowerInvariant();
+
     /// <summary>
-    /// The non-colour half of every marker on this panel (§3.11 A2): the highlight on the
-    /// seat that moved last is a glyph and a border as well as a background.
+    /// The non-colour half of every marker on this panel (§3.11 A2): a seat's state is a glyph
+    /// and an edge and a tint, so that none of the three is carrying it alone.
     /// </summary>
     private string Marker => Seat switch
     {
         { Won: true } => "♛",
         { HasDeclared: true } => "✓",
-        { IsActing: true } => "▶",
+        { IsTheirTurn: true } => "▶",
         _ => "·"
     };
 
-    private string State => Seat switch
+    /// <remarks>
+    /// ⚠️ <b>The state, and not the name with it.</b> The name is right there in the same
+    /// paragraph and is read first, so a sentence that repeats it makes a screen reader say
+    /// <em>"Cobra, Cobra is waiting"</em>. Found by reading the panel's own text back out of the
+    /// browser, which is the only way any of these ever turn up.
+    /// </remarks>
+    private static string State(SeatLine seat) => seat switch
     {
-        { Won: true } => "won the round",
-        { HasDeclared: true } => "declared",
-        { IsActing: true } => "moved last",
-        _ => "waiting"
+        { Won: true } => "won the round.",
+        { HasDeclared: true } => "has declared.",
+        { IsTheirTurn: true } => "— it is their turn.",
+        _ => "is waiting."
     };
 
     private string Amount => Seat.Bank switch
