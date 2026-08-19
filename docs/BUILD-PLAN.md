@@ -25,6 +25,11 @@ are wanted.
    playing. **P12 — ✅ done 2026-08-18.**
 4. **A multiplayer app**, where a lobby host fills empty seats with AI players. **P13.**
 
+**Goal 3 grew a tail rather than ending.** Simulation at scale is delivered, but having a
+harness is what makes a *programme* of measurement worth running — hence **P14 (game journals,
+✅ done 2026-08-19), P15 (a skill ladder) and P16 (does the player before you decide your
+game?)**, all hanging off P12. They serve the third goal; none of them is a fifth one.
+
 **What they demand of the architecture, and what already satisfies it.** These are stated
 here because they change decisions taken *before* the packets that need them.
 
@@ -34,6 +39,7 @@ here because they change decisions taken *before* the packets that need them.
 | Console UX | Nothing structural | ✅ **Delivered by P11.** And it needed nothing structural in the end: five presentation files in `BurmesePoker.Console` and **not one line of Domain or Sim changed** |
 | Simulation | Determinism, no ambient randomness, no I/O, no static state, and **speed** | ✅ **Delivered by P12.** `BurmesePoker.Sim` runs seeded games in parallel with byte-identical results; ~20 ms a round, 50–90 rounds a second. No static state, and now a test that says so |
 | Simulation, cont. | **Observability** — meaningful stats must be *derivable*, without the domain knowing what a statistic is | ✅ §3.8 held. Win rate, money split into flat and side bet, turns, how close the losers were, take and claim rates — **all derived by the harness, with no domain change whatever** |
+| Simulation, cont. | **Durability** — a game worth keeping must survive the build that played it (§3.9) | ✅ **Delivered by P14.** Two decorators over `IPlayerAgent` and a JSON Lines format; the engine is unchanged, and a replayed run's CSV is byte-identical to the played one's |
 | Multiplayer | A decision on whether agents block | §3.6, taken now rather than discovered later |
 
 **Three of the four are done, and P12 was the one that could have demanded architecture.** It
@@ -193,7 +199,14 @@ is a decorator over `IPlayerAgent` in the console** (`PacedAgent`) and not a sle
 `GreedyBotAgent`, which would have put a wait inside the simulation's hot loop. The test project
 gained `LayeringTests` — Domain references neither Spectre nor `System.Console`, Sim references
 no Spectre — which is the only mechanical check available to a packet whose subject is
-unreachable from the test project.
+unreachable from the test project. **By P14:** `Play/{GameJournal, JournalFormat}.cs` and
+`Agents/{JournalingAgent, JournalPlayerAgent}.cs` in Domain, `Replay.cs` in Sim (which is both
+`Replay` and `JournalReport`), and **no engine change at all** — `RoundEngine` and `MatchEngine`
+are byte-for-byte what P9 left. ⚠️ **`System.Text.Json` is now referenced by Domain**, which is
+the first framework assembly beyond the base library in there; it is a *string* API and the
+layering rule it must not break is I/O, which it does not — `JournalFormat` returns
+`IEnumerable<string>` and the two front ends own the `File` calls, exactly as `CsvReport` and
+`CsvReport.WriteTo` already split.
 
 ---
 
@@ -504,8 +517,30 @@ durable record**, and neither replaces the other. What follows from that:
   §3.7 measured this work to be **allocation-bound rather than compute-bound**. So the rich
   form is **opt-in and off in a throughput run**, and the packet that builds it measures the
   cost the way P12 did rather than guessing.
+
+  ✅ **Measured by P14, and the guess above was wrong in an interesting way.** Serially — the
+  only regime quiet enough to measure on this machine — 400 games ran at **46–49 rounds/s with
+  no journal, 48–49 thin and 48–50 rich**: three interleaved repetitions, and the difference is
+  inside the noise at *both* levels. The arithmetic says why. A thirteen-`CardId` copy is tens
+  of nanoseconds against a `PartialCover.Best` that §3.7 clocked at **140 µs**, so the rich
+  snapshot is about one part in a thousand of the decision it is recording. **The expensive
+  axis turned out to be bytes, not time** — rich is 2× the file (9.6 KB a round against 5.0 KB)
+  — so it stays opt-in for what it costs to *keep*, not for what it costs to *take*.
 - **A journal joins to the CSV or it is an island.** Every record carries the same keys a CSV
-  row does — master seed, game, game seed, round, seat, strategy (§3.8 item 4).
+  row does — master seed, game, game seed, round, seat, strategy (§3.8 item 4). ✅ **P14 made
+  that literal:** a replayed run is summarised by the same code a played one is, so "it replays
+  identically" is a `diff` of two CSV files rather than an impression.
+- ⚠️ **A journal records the deal by seed, so nothing else may draw from the match's generator.**
+  Discovered while building P14. The header carries the seed the match's `Random` was
+  constructed with — that alone reproduces every shuffle *and* every mid-round reshuffle — but
+  it only works if the first thing that generator is asked for is the first round's deal. **The
+  console used to seat its table from the same generator**, so a replay would have dealt a
+  different game; it now runs two generators out of the one seed, one for setup and one for the
+  match. A consequence worth stating plainly: **a `--seed` from a build before P14 no longer
+  plays the same console match**, which is this very section's point 2 happening to the front
+  end rather than to a bot. The alternative — recording all 108 cards per round — was rejected
+  because the reshuffle would still need the generator, and injecting a shuffle source into
+  `RoundEngine` is the engine change this design exists to avoid.
 
 **This is P14.** It is independent of P13 and can be taken first; §0's goal 3 is the one it
 serves.
@@ -517,7 +552,7 @@ serves.
 ```
 P0 ─► P1 ─┬─► P2 ──────────┐                        ┌─► P11  console UX ☑
           ├─► P3 ─┐        │                        │
-          └─► P4 ─┴─► P5 ──┴─► P7 ─► P8 ─► P9 ─► P10┼─► P12  simulation ☑ ─┬─► P14  game journals
+          └─► P4 ─┴─► P5 ──┴─► P7 ─► P8 ─► P9 ─► P10┼─► P12  simulation ☑ ─┬─► P14  game journals ☑
                             P6 ─────┘               │                      └─► P15  skill ladder ─► P16  seating-order analysis
                                                     └─► P13  multiplayer app
 ```
@@ -531,8 +566,10 @@ is bots playing each other, and a network timeout is a bot taking over a seat (�
 P10, **P11, P12 and P13 are independent of one another** and can be taken in any order — or
 not at all. **P11 and P12 are both done (2026-08-18).** ⚠️ **P12 opened a second branch rather
 than closing one:** having a harness makes journals (P14) and a strategy-comparison programme
-(P15 → P16) worth building, and all three hang off P12 rather than off P13. **P13 is now the
-only packet that would change the architecture, and the only one that is purely optional.**
+(P15 → P16) worth building, and all three hang off P12 rather than off P13. **P14 is done
+(2026-08-19) and closed its branch without opening another** — it needed nothing from the engine
+and asked nothing of the plan. **P13 is now the only packet that would change the architecture,
+and the only one that is purely optional.**
 
 | Packet | Title | Depends on | Size |
 |---|---|---|---|
@@ -550,9 +587,9 @@ only packet that would change the architecture, and the only one that is purely 
 | P11 | Console UX pass | P10 | M — ☑ done 2026-08-18 |
 | P12 | Simulation at scale | P10 | L — ☑ done 2026-08-18 |
 | P13 | Multiplayer app | P10 | XL — **split into P13.1–P13.3** below |
-| P14 | Game journals — record and replay | P12 | L |
+| P14 | Game journals — record and replay | P12 | L — ☑ done 2026-08-19 |
 | P15 | A skill ladder | P12 | M |
-| P16 | Does the player before you decide your game? | P15 (P14 helps) | M |
+| P16 | Does the player before you decide your game? | P15 (**P14 ☑, so rich journals are available**) | M |
 
 ---
 
@@ -1614,7 +1651,7 @@ its own P13.x list at the point it is next rather than pretended to be one sessi
 
 ---
 
-### P14 — Game journals: record and replay
+### P14 — Game journals: record and replay ☑ done 2026-08-19
 
 **Goal.** A game can be written down completely enough to be played back later — every
 decision, by every seat, human or bot — so that a strategy analysis reads a file instead of
@@ -1688,6 +1725,41 @@ console match played by a person can be replayed the same way.
 > analysis reads, and a journal is what you go to when the CSV raises a question it cannot
 > answer. If a store is ever wanted, it wants this format to exist first.
 
+**What it found.**
+
+- **Every acceptance criterion is met, and the headline one is a `diff`.** `--games 20 --rounds
+  2 --journal run.jsonl --csv run.csv` then `replay run.jsonl --csv replay.csv` produces
+  **byte-identical CSV files** — 20 games, 40 rounds, every winner, payout, turn count, take,
+  draw and claim. `Replay.Run` reuses `Simulator.Summarise`, so a replayed run and a played one
+  are added up by the same arithmetic rather than by two implementations that agree until they
+  do not.
+- ⚠️ **The generator split described in §3.9 is the one thing a cold context must not undo.**
+  `BurmesePoker.Console` now draws two `Random`s from `--seed`: `setup` seats the table, and the
+  match's own is constructed from `setup.Next()`. Putting the seating back on the match's
+  generator would break replay silently — the deal would be right and every card different.
+- **Rich fidelity costs nothing measurable** (see §3.9): 48–50 rounds/s against a 46–49
+  baseline, serially, three interleaved repetitions. It stays off by default because a journal
+  is *kept*, not because it is slow.
+- **Replaying is not re-running.** `Replay.OptionsOf` builds each strategy as one that throws
+  if anybody tries to seat it, and the seats answer from the file. A journal whose strategies
+  are renamed to something that has never existed replays unchanged —
+  `AReplaySeatsNoStrategyAtAll` — which is §3.9 point 2 stated as a test rather than an
+  argument.
+- **A console match replays under the harness.** Played four bot seats at `--seed 4242 --pace 0
+  --journal match.jsonl` through a pty; `Sim -- replay match.jsonl` reports the same two rounds
+  the console printed — Sable out both times, +$16 in 29 turns then +$13 in 29 turns. Two runs
+  at the same seed also produce byte-identical journals, so P11's determinism survived the
+  split.
+- **The format is the identity, not the object graph.** `GameJournal` and friends are plain
+  records whose list members compare by reference, so the round-trip test compares *lines*.
+  That is the right notion for a journal — it is only worth having because it survives being
+  written down — but a later packet that wants to deduplicate decisions should know it, and add
+  structural equality rather than assume it.
+- **20 tests, 239 → 259.** Fourteen in `Play/GameJournalTests` — eleven facts and a three-case
+  theory, covering replay, the format, both fidelities and four separate ways of failing loudly
+  — and six in `Sim/JournalReplayTests`: identical rows, journalling being transparent to the
+  game, nothing kept unless asked for, and the whole file round trip.
+
 ---
 
 ### P15 — A skill ladder
@@ -1697,7 +1769,8 @@ dial with more than two settings. Everything in P16 needs one, and today there a
 strategies whose only difference is a tie-break.
 
 **Read first.** §3.7 (determinism, and no ambient randomness), P12's measured baseline in
-`STATUS.md`, `Agents/GreedyBotAgent` and `Agents/CoverScore`.
+`STATUS.md`, `Agents/GreedyBotAgent` and `Agents/CoverScore`. **P14 is done, so `--journal` is
+available to every rung** — see the amendment under Acceptance 2.
 
 **Build.** Four rungs at least, each a `Domain/Agents/` type behind `IPlayerAgent`:
 
@@ -1722,10 +1795,21 @@ thing** against the rung below it, or a difference in results attributes to noth
 1. Win rates **measured, separated and ordered**, with an interval — not asserted. State the
    games each number came from.
 2. **Every rung is deterministic**: the same seed gives the same game, byte-identical, including
-   the random one.
+   the random one. ⚠️ **Still required, and P14 does not excuse it.** A journal reproduces a
+   game a seed cannot — including a game played by a strategy that reached for
+   `Random.Shared` — which makes it tempting to treat determinism as optional for the random
+   rung. It is not: the harness's whole comparison rests on a run being a pure function of its
+   master seed, and a journal is the record of one game, not a substitute for reproducing
+   thousands. **What P14 does buy the random rung is that a surprising game of it can be kept
+   and studied**, which is worth having and is not the same thing.
 3. Every rung **terminates or is reported as abandoned**; no rung hangs the harness.
 4. `MoneyCardsDoNotChangeWhatABotThrowsAway` holds for every rung — money is not a strategy
    input (RULES.md §4.4), and a new bot is the likeliest place for that to be got wrong.
+5. **Every rung journals and replays**, which is one line of test each now that P14 exists
+   (`AJournalledRunReplaysToTheSameRows` with `--strategies` pointed at the new rung). It is
+   cheap and it catches the one thing a new strategy can break here: an agent that answers a
+   question the four `IPlayerAgent` methods do not cover cannot be journalled at all, and this
+   is where that would be discovered rather than in P16's analysis.
 
 **Done when.** `--strategies random,simple,greedy,cautious` runs, and the four win rates are
 separated by more than their intervals.
@@ -1786,7 +1870,21 @@ it does not go in `RULES.md`.**
   round is ~20 ms and a run does 50–90 rounds a second (§3.7), so **state the detectable effect
   size before running**, and report the interval next to every number.
 - **Journals make the surprises answerable** (§3.9/P14): when a cell comes out strange, the CSV
-  says *that* it did and a journal says *why*. Take P14 first if it is not already done.
+  says *that* it did and a journal says *why*. ✅ **P14 is done, and it came out cheaper than
+  §3.9 expected** — rich journalling costs nothing measurable in time (2× the bytes), so the
+  cells worth understanding can be re-run at `--fidelity rich` and the hand behind every take
+  or refusal is on disk. The mechanism variable this packet turns on is `takes`, and *rich* is
+  what turns "it took 41% of the time" into "here is what it was holding when it did not".
+- ⚠️ **Two P14 facts that constrain how this packet adds its columns.**
+  1. **A journal header already records the seating**, strategy by seat, in turn order — so an
+     enumerated-assignment scheme journals correctly with no change to P14's code, and
+     `upstream_strategy` / `downstream_strategy` are derivable from a journal alone.
+  2. ⚠️ **But `Replay.OptionsOf` reconstructs a run from the headers and reads only the master
+     seed, the table size, the stakes and the strategy names.** Any new CSV column that comes
+     from `SimulationOptions` rather than from the seating or the rows will make a replayed CSV
+     stop matching a played one, and `AJournalledRunReplaysToTheSameRows` will fail. That test
+     failing is the *correct* signal — the fix is to derive the column from the journal too,
+     not to weaken the test.
 
 **Acceptance.**
 

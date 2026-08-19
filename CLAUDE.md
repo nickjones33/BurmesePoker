@@ -11,7 +11,7 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-This project is **all but finished**. **P0–P12 are done**: the 2023 implementation has been
+This project is **all but finished**. **P0–P12 and P14 are done**: the 2023 implementation has been
 deleted, the whole rules core is built and tested, `dotnet run --project BurmesePoker.Console`
 fills the empty seats with paced, named bots and plays round after round with the banks carrying
 over — showing a hand as the melds it nearly is, keeping a round log across the concealment
@@ -19,9 +19,14 @@ clear, hinting what the computer would do, and replaying any match from `--seed`
 `dotnet run -c Release --project BurmesePoker.Sim` plays thousands of seeded games in parallel
 to compare strategies. **Three of the four §0 goals are delivered — solo play (P10), console UX
 (P11) and simulation (P12).** **P13 (multiplayer) remains and is droppable** — BUILD-PLAN §5
-splits it into P13.1–P13.3 — and **P14–P16 were added on 2026-08-19**: game journals (§3.9 — the
-tree has *no* persistence layer today, and a seed is a pointer rather than a record), a skill
-ladder, and an experiment on whether the player before you decides your game. Whether or not you
+splits it into P13.1–P13.3 — and **P14–P16 were added on 2026-08-19**: game journals, a skill
+ladder, and an experiment on whether the player before you decides your game. **P14 shipped on
+2026-08-19**: `--journal <path>` on both front ends writes every decision every seat made as JSON
+Lines, and `BurmesePoker.Sim -- replay <path>` plays it back — to a byte-identical CSV. A seed is
+a pointer into the build that produced it; a journal is the record (§3.9). **P15 is the next
+useful packet**, since P16 needs it.
+
+Whether or not you
 use the skill, read these first:
 
 1. **`docs/STATUS.md`** — which work packet is next, and the state of the tree. Update it at
@@ -34,11 +39,12 @@ use the skill, read these first:
 
 `BUILD-PLAN.md` **§0** records where this is heading beyond a playable game — solo play against
 the computer, a console worth sitting at, strategy simulation at scale, and a multiplayer app
-with AI seats. **§3.6, §3.7 and §3.8 are the design constraints those goals impose**, taken in
-advance: agents stay synchronous, simulation is a first-class consumer, and statistics are
-collected by consumers rather than computed by the domain. All three have now been paid off by
-packets that needed nothing from the domain — **P11 shipped a whole UX pass without changing a
-line of it.**
+with AI seats. **§3.6, §3.7, §3.8 and §3.9 are the design constraints those goals impose**, taken
+in advance: agents stay synchronous, simulation is a first-class consumer, statistics are
+collected by consumers rather than computed by the domain, and a seed is a pointer while a
+journal is the artifact. All four have now been paid off by packets that needed nothing from the
+engine — **P11 shipped a whole UX pass without changing a line of the domain, and P14 added
+record-and-replay without changing `RoundEngine` or `MatchEngine` at all.**
 
 **The abandoned 2023 implementation is gone.** P0 deleted it; it survives only at the git tag
 `pre-rewrite`. Roughly 180 lines of enums and lookup tables from `Common.cs` were salvaged into
@@ -49,6 +55,7 @@ The solution is:
 
 ```
 BurmesePoker.Domain/     pure rules. no I/O, no Spectre. everything new goes here.
+                         (System.Text.Json is in here for the journal format — strings, not files.)
 BurmesePoker.Console/    Spectre.Console front end. the only project that prints. P8, reworked in P11.
 BurmesePoker.Sim/        batch play: seeded, parallel, CSV out. Domain only. built in P12.
 BurmesePoker.Tests/      xunit against Domain and Sim. never references Console.
@@ -76,6 +83,8 @@ dotnet test --filter-class "*CardTextTests*"     # single test class
 dotnet run --project BurmesePoker.Console       # play a round (needs a real terminal)
 dotnet run -c Release --project BurmesePoker.Sim -- --games 2000   # compare strategies
 dotnet run -c Release --project BurmesePoker.Sim -- bench          # time the cover searches
+dotnet run -c Release --project BurmesePoker.Sim -- --games 100 --journal run.jsonl   # keep every decision
+dotnet run -c Release --project BurmesePoker.Sim -- replay run.jsonl                  # play them back
 ```
 
 All four projects target **`net10.0`**, matching the installed SDK (10.0.111). Tests are

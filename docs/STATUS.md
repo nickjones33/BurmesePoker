@@ -10,14 +10,16 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P14, P15 or P13 — independent of each other, take any.** No blockers.
+**Next packet: P15 or P13 — independent of each other, take either.** No blockers.
+**P15 is the more useful of the two**: P16 cannot start without it, and P13 is the only packet
+that changes the architecture and the only one that is genuinely optional.
 
-⚠️ **The plan grew on 2026-08-19 and P13 is no longer the last packet.** Three new ones hang off
-P12: **P14** (game journals — record and replay), **P15** (a skill ladder) and **P16** (the
+⚠️ **The plan grew on 2026-08-19 and P13 is no longer the last packet.** Three hang off P12:
+**P14** (game journals — ☑ **done 2026-08-19**), **P15** (a skill ladder) and **P16** (the
 upstream-neighbour experiment, which needs P15). See `BUILD-PLAN.md` **§3.9** for the decision
 behind P14 and **P16** for the hypothesis behind the other two.
 
-**P0 through P12 are done. The game is playable alone, pleasant to sit at, and measurable in
+**P0 through P12 and P14 are done. The game is playable alone, pleasant to sit at, and measurable in
 bulk:** `dotnet run --project BurmesePoker.Console` fills the empty seats with bots, paces them
 so a person can follow, shows a hand as the melds it nearly is, keeps a round log across the
 concealment clear, and replays any match from `--seed`; `dotnet run -c Release --project
@@ -26,11 +28,14 @@ compare. **Three of §0's four goals are delivered — solo play (P10), console 
 simulation (P12). The multiplayer app (P13) remains, and P14–P16 were added on 2026-08-19 to
 carry the simulation goal further.**
 
-⚠️ **There is no persistence layer.** The entire tree contains **one** write to disk —
-`CsvReport.WriteTo` in `BurmesePoker.Sim`, which writes an *outcome* table, one row per seat per
-round. Nothing else persists: `MatchEngine` keeps no history by design (§3.8), the console's
-standings die with the process, and a game played at the keyboard leaves no trace. **That was
-fine while a bot game was a pure function of its seed** — and P14 is where it stops being fine.
+✅ **There is a persistence layer now, and it is a file format rather than a store.** P14 built
+**game journals**: `Play/{GameJournal, JournalFormat}` and `Agents/{JournalingAgent,
+JournalPlayerAgent}` in Domain, `Replay`/`JournalReport` in Sim, `--journal <path>` on both front
+ends and a `replay` verb on the harness. A journal is a header plus every answer every seat gave;
+replaying is **playing the game with different seats**, so the engine did not change by a line.
+**A journalled run and its replay produce byte-identical CSV.** `MatchEngine` still keeps no
+history (§3.8) and the console's standings still die with the process — a journal is a
+consumer's artifact, which is the point.
 
 The 2023 implementation is gone from the tree and lives only at the `pre-rewrite` tag. The
 solution is **four** projects — `BurmesePoker.Domain` (pure rules), `BurmesePoker.Console`
@@ -49,10 +54,15 @@ MatchEngine}`, `Abstractions/{IPlayerAgent,IGameObserver}` and
 `Agents/{CoverScore,GreedyBotAgent,SimpleBotAgent}`. Console holds `{Program,CardFormatting,
 SpectrePlayerAgent,ConsoleObserver}`. Sim holds `{Program,Simulator,GameRunner,
 SimulationOptions,SimulationReport,StrategySummary,Strategy,SeedSequence,SeatRecorder,
-SimObserver,RoundAbandonedException,Results,CsvReport}`. **Console gained five files in P11**:
-`{Options,Palette,RoundLog,HandView,PacedAgent}`.
+SimObserver,RoundAbandonedException,Results,CsvReport,Replay}`. **Console gained five files in
+P11**: `{Options,Palette,RoundLog,HandView,PacedAgent}`. **P14 added `Play/{GameJournal,
+JournalFormat}` and `Agents/{JournalingAgent,JournalPlayerAgent}` to Domain and `Replay.cs`
+(which holds both `Replay` and `JournalReport`) to Sim.** ⚠️ **Domain now references
+`System.Text.Json`** — the first framework assembly in there beyond the base library. It is a
+string API, not an I/O one: `JournalFormat` hands back `IEnumerable<string>` and the two front
+ends own every `File` call, the same split `CsvReport` already had.
 
-✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **239 passed,
+✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **259 passed,
 0 failed**. **Any red tree is a real problem.**
 
 ⚠️ **One hazard a cold context must know before writing a test or a strategy:** with the
@@ -84,9 +94,12 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P11** Console UX pass | P10 | done 2026-08-18 — round log, meld-grouped hand, hints, pacing, `--seed` |
 | ☑ | **P12** Simulation at scale | P10 | done 2026-08-18 — `BurmesePoker.Sim`; the tie-break wins 30.7% to 19.3% |
 | ☐ | **P13** Multiplayer app | P10 | XL, and §5 now says how to split it — the only one that changes the architecture |
-| ☐ | **P14** Game journals — record and replay | P12 | **new 2026-08-19** — see §3.9; a seed is a pointer, a journal is the artifact |
+| ☑ | **P14** Game journals — record and replay | P12 | done 2026-08-19 — a run and its replay produce byte-identical CSV |
 | ☐ | **P15** A skill ladder | P12 | **new 2026-08-19** — ≥4 separated strategies; P16 needs one |
 | ☐ | **P16** Does the player before you decide your game? | P15 | **new 2026-08-19** — ⚠️ the current seating scheme cannot answer it |
+
+**P14 is done and closed its branch without opening another.** It needed nothing from the
+engine, raised no rules question, and cost nothing measurable in throughput at either fidelity.
 
 **P10 was the fork; P11 and P12 have both been taken through it.** ⚠️ **P12 opened a branch
 rather than closing one** — having a harness is what makes journals and a strategy-comparison
@@ -122,6 +135,48 @@ a debt.
 ## Notes for the next session
 
 *Anything a cold context would need: decisions taken, surprises, deliberate leftovers.*
+
+**From P14:**
+
+- ⚠️ **The one thing not to undo: `BurmesePoker.Console` now draws two `Random`s from
+  `--seed`.** `setup` seats the table, and the match's generator is `new Random(setup.Next())`.
+  A journal reproduces the deal by re-seeding the *match's* generator, so anything that draws
+  from it before round 1 makes a replay deal a different game — which is exactly what the old
+  single-generator arrangement did. **A consequence, stated plainly: a `--seed` from a build
+  before P14 no longer plays the same console match.** Verified afterwards that two runs at
+  `--seed 4242` are still byte-identical to each other, so P11's determinism survived.
+- **The strongest acceptance the tree has: a replayed run's CSV is byte-identical to the played
+  one's.** `Replay.Run` reuses `Simulator.Summarise` and `GameRunner`'s row-building, so it is a
+  `diff` rather than a judgement. `dotnet run -c Release --project BurmesePoker.Sim -- --games 20
+  --rounds 2 --journal run.jsonl --csv run.csv` then `-- replay run.jsonl --csv replay.csv`
+  produces identical files.
+- ⚠️ **Rich fidelity turned out to cost nothing measurable, which §3.9 did not expect.** Serial
+  (the only quiet regime on this machine), three interleaved repetitions of 400 games:
+  **46–49 rounds/s with no journal, 48–49 thin, 48–50 rich.** The arithmetic is why — a
+  thirteen-`CardId` copy is tens of nanoseconds against a `PartialCover.Best` that P12 clocked at
+  140 µs. **The expensive axis is bytes, not time**: rich is 9.6 KB a round against thin's
+  5.0 KB. It stays off by default for what it costs to keep. ⚠️ **Parallel throughput could not
+  be measured here** — the baseline itself swung 68–98 rounds/s run to run — so the serial figures
+  are the honest ones.
+- **`GameRunner` was refactored, not duplicated.** `Play` and `Replay` share one private `Run`,
+  so a replayed game and a played one build their rows through the same code. The row builder now
+  takes the players list rather than assuming seats are `PlayerId(0..n-1)` — **which is what lets
+  a console match, whose seats are `PlayerId(1..n)`, replay under the harness at all.**
+- **The journal is data, and its equality is its text.** `GameJournal`, `JournalHeader` and
+  `DecisionSnapshot` are plain records whose list members compare by reference, so the round-trip
+  tests compare *lines*. That is the right notion here — a journal is worth having because it
+  survives being written down — but a later packet that wants to deduplicate or group decisions
+  should add structural equality rather than assume it.
+- **Answers are `CardId`s, never values** (§3.1), and `JournalPlayerAgent` fails loudly three
+  ways: the journal running out, the next entry not being the question asked, and a discard the
+  seat is not holding. All three are tested, and all three print a clean message at the CLI
+  rather than a stack trace.
+- **A console match replays under the harness.** Verified through a pty: four bot seats at
+  `--seed 4242 --pace 0 --journal match.jsonl`, then `Sim -- replay match.jsonl` reporting the
+  same two rounds the console printed (Sable out both times, +$16 in 29 turns then +$13 in 29).
+- **Deliberately not built:** anything that indexes, queries or aggregates journals. The CSV is
+  still what analysis reads; a journal is where you go when the CSV raises a question it cannot
+  answer.
 
 **Planning session, 2026-08-19 (docs only — no code, still 239 passed / 0 failed):**
 
@@ -739,6 +794,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-19 | P14 | ☑ Done. **Game journals — record and replay.** The tree's first persistence layer, and it is a *format* rather than a store. Domain gained `Play/{GameJournal, JournalFormat}` — pure record types plus JSON Lines in and out, `IEnumerable<string>` exactly as `CsvReport.Rows` already did — and `Agents/{JournalingAgent, JournalPlayerAgent}`, a decorator that writes down every answer and a seat that answers from a file. **`RoundEngine` and `MatchEngine` are byte-for-byte unchanged**: replaying is playing the game with different seats, so no second engine and no resumable state machine. Sim gained `Replay` (which reuses `Simulator.Summarise` and `GameRunner`'s row builder) and `JournalReport`; both front ends gained `--journal <path>` and `--fidelity thin|rich`, and the harness a `replay` verb. **The headline acceptance is a `diff`: a 20-game, 40-round journalled run and its replay produce byte-identical CSV.** ⚠️ **The console now draws two `Random`s from `--seed`** — one to seat the table, one for the match — because a journal reproduces the deal by re-seeding the match's generator, and the old single generator had the seating consuming from it first; **a pre-P14 `--seed` no longer plays the same console match**, and two runs at the same seed are still byte-identical to each other. ⚠️ **Rich fidelity costs nothing measurable, which §3.9 expected to be false**: 400 games serially, three interleaved repetitions, **46–49 rounds/s with no journal, 48–49 thin, 48–50 rich** — a thirteen-`CardId` copy is tens of nanoseconds against a 140 µs cover search. **The expensive axis is bytes** (9.6 KB a round against 5.0), so rich stays opt-in for what it costs to keep. Divergence is loud three ways — journal exhausted, wrong question, card not in hand — each with a clean CLI message. Build clean, **259 passed / 0 failed** (20 new: 14 in `Play/GameJournalTests`, 6 in `Sim/JournalReplayTests`). Verified a console match through a pty and replayed it under the harness to the same two rounds. **No new rules question — `RULES.md` stays at rev 13.** Amended BUILD-PLAN §0, §2, §3.9, §4, P14, **P15 (a new acceptance: every rung journals and replays) and P16 (rich journals are now affordable; ⚠️ a new CSV column derived from `SimulationOptions` rather than from the seating would break replay identity)**. |
 | 2026-08-19 | — | **Persistence answered and three packets added** (docs only, no code — still 239 passed / 0 failed). The tree has **no persistence layer**: `CsvReport.WriteTo` is its only write to disk, and that is an outcome table. `BUILD-PLAN.md` **§3.9** records why that has been fine (a bot game is a pure function of its seed — P12 proved it byte-identical) and why it stops being fine: **a person is not a function of a seed, and a seed only replays against the code that produced it.** **P14** — game journals, as record types plus a journalling decorator and a replaying agent over `IPlayerAgent`, with the format in one place and file writing left to the consumers; replay is *a seat that answers from a file*, not a resumable engine, and the rich fidelity level is opt-in because §3.7 measured this work allocation-bound. **P15** — a skill ladder, ≥4 separated strategies including a `RandomBotAgent` (⚠️ must take a seeded `Random`, never `Random.Shared`) and a `CautiousBotAgent` that throws what least helps the seat it feeds. **P16** — the upstream-neighbour hypothesis, raised by Nick's friend: *the skill of the player before you is what decides your game.* Well-posed, because `RULES.md` §5 makes a table a directed cycle; **a strategy question, not a rules question, so `RULES.md` is untouched at rev 13.** ⚠️ **The finding of the session: `SimulationOptions.Seating` cannot answer it** — it rotates one fixed pattern, so at two strategies and four seats *(me, upstream)* is perfectly confounded, every greedy fed by a simple. That also puts a caveat on P12's 30.7%-vs-19.3% headline, which P16 owns separating. Also added `docs/PLAYING.md`, a player-facing guide to solo play, and listed it in CLAUDE.md's documentation map. Amended BUILD-PLAN §3.9 (new), §4, P12, P14–P16 (new) and §7 (two risk rows). |
 | 2026-08-18 | P11 | ☑ Done. **Console UX pass — the terminal is the UI, so this is the UI (§0).** Five new presentation files and **not one line of Domain or Sim changed**. `RoundLog` fixes the sorest thing in the console: the per-turn concealment clear used to destroy every public thing said while a player was away, and with bots those turns pass in milliseconds — `ConsoleObserver` now says each line *and* files the same markup, and the panel is drawn above the table and the hand. `HandView` shows a hand as the melds it nearly is plus its deadwood, off one `PartialCover.Best` call, and prices every card by `covered(13) − covered(12)`. **The discard hint is `GreedyBotAgent`'s own answer**, asked of the very `TurnContext` in hand, so it cannot drift from how the table actually plays; `--no-hints` turns it off. `PacedAgent` — a decorator, **deliberately not a sleep in the bot**, which would have sat inside P12's hot loop — makes computer seats wait once per `(Round, TurnNumber)`. `Palette` gathers P8's three files' worth of ad-hoc colour into one language. A difficulty prompt (`SimpleBotAgent` vs `GreedyBotAgent`) came free out of P12. **Every match is seeded and says so**: one is drawn if `--seed` is absent, and the seating is taken from the match's own `Random` — two runs at `--seed 99` are byte-identical, `--seed 100` is not. ⚠️ **Found by playing, not by building:** `Palette.Legend` shipped with an unbalanced markup tag, compiled clean, passed every test, and threw on the first hand drawn. Build clean, **239 passed / 0 failed** (4 new — `LayeringTests`, the one mechanical check a console packet allows: Domain references neither Spectre nor `System.Console`, Sim references no Spectre). Verified through a pty: **13+ rounds at four seats**, a six-seat table for the reshuffle narration, and seed 1 for the opening turn, which is the only one that offers the money-card claim. No new rules question — `RULES.md` stays at **rev 13**. Amended BUILD-PLAN §0, §2, §3.5, P11 and **P13 (split into three sub-packets, with what P11 proved about the seams)**. |
 | 2026-08-18 | P12 | ☑ Done. **Simulation at scale.** A fourth project, `BurmesePoker.Sim` (Domain only): seeded games run in parallel, a strategy per seat rotated by game, per-round rows carrying their own join keys, and a CSV writer. Per-game seeds are `SplitMix64(master, index)` so a game is the same game however the run was scheduled — **serial, parallel and two-thread runs are byte-identical**. The turn cap lives in a `SeatRecorder` decorator over `IPlayerAgent` and **reports** abandonment rather than dropping it, because the domain will not invent a rule the game does not have. Domain gained only `Agents/CoverScore` (extracted, so the bots' scoring cannot drift) and **`Agents/SimpleBotAgent`** — the greedy bot with the discard tie-break removed and nothing else changed. **The measured answer: greedy takes 30.7% of 2,000 four-seat rounds against simple's 19.3%, +$1.24 a round against −$1.24** — P10's claim about the tie-break, measured. Build clean, **235 passed / 0 failed** (10 new), including determinism, per-round money conservation, a reflection pin on mutable static state, and the abandonment path. ⚠️ Measurement pass first, as the packet required: `PartialCover.Best` **140 µs**, `TryFindCover` **91 µs**, a round **~20 ms**, **51 rounds/s serial and 85–92 parallel**; **nothing was optimised**, but the work turns out to be **allocation-bound** — the server GC took eight-thread scaling from 25% to 70%. ⚠️ Two findings: **the reshuffle is a six-player phenomenon** (0/3/67 reshuffles per 300 rounds at 4/5/6 seats), and the **turn cap has never fired in a real run**. `RULES.md` → **rev 13**: §4.3's `DERIVED` 40% side-bet estimate measured at 42% over 600 five-player rounds — a confirmation, not a rule change, and no new question raised. Amended BUILD-PLAN §0, §2, §3.7, §4, P11, P12, P13 and §7 (two risk rows retired). |

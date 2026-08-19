@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
+using BurmesePoker.Domain.Play;
 using BurmesePoker.Sim;
 
 // Batch play, seeded and parallel (BUILD-PLAN P12). Domain only: this project cannot print a
@@ -9,13 +10,25 @@ using BurmesePoker.Sim;
 
 try
 {
-    return args.Length > 0 && args[0] == "bench" ? Bench(args[1..]) : Run(args);
+    if (args.Length > 0 && args[0] == "bench")
+    {
+        return Bench(args[1..]);
+    }
+
+    return args.Length > 0 && args[0] == "replay" ? Replay(args[1..]) : Run(args);
 }
 catch (ArgumentException problem)
 {
     Console.Error.WriteLine(problem.Message);
     Console.Error.WriteLine();
     Console.Error.WriteLine(Usage());
+    return 1;
+}
+catch (Exception problem) when (problem is JournalException or IOException or UnauthorizedAccessException)
+{
+    // A journal that cannot be read is a bad file, not a crash — and it says which line
+    // or which decision it gave up at (BUILD-PLAN P14).
+    Console.Error.WriteLine(problem.Message);
     return 1;
 }
 
@@ -40,6 +53,7 @@ static int Run(string[] args)
         RoundsPerGame = arguments.Number("rounds", 1),
         MasterSeed = arguments.Number("seed", 20260818),
         TurnCap = arguments.Number("turn-cap", 400),
+        Journal = arguments.Has("journal") ? Fidelity(arguments.Value("fidelity", "thin")) : null,
         Parallel = !arguments.Flag("serial"),
         MaxDegreeOfParallelism = arguments.Has("threads") ? arguments.Number("threads", 0) : null
     }.Validated();
@@ -53,6 +67,36 @@ static int Run(string[] args)
 
     Report(report);
 
+    Write(arguments, report);
+    return 0;
+}
+
+// Reading a game back is playing it with different seats (BUILD-PLAN P14), so a replayed run
+// summarises through the same code a played one does — which is what makes "identical" a
+// diff rather than an impression.
+static int Replay(string[] args)
+{
+    var path = args.Length > 0 && !args[0].StartsWith("--", StringComparison.Ordinal)
+        ? args[0]
+        : throw new ArgumentException("replay wants a journal to read, e.g. replay run.jsonl.");
+
+    var arguments = Arguments.Parse(args[1..]);
+    var journals = JournalReport.ReadFrom(path);
+
+    Console.WriteLine(
+        $"{journals.Count} journal(s) from {path}, "
+        + $"{journals.Sum(journal => journal.Header.Rounds)} settled round(s), "
+        + $"rules rev {journals[0].Header.RulesRevision}, {journals[0].Header.Fidelity.ToString().ToLowerInvariant()}");
+
+    var report = BurmesePoker.Sim.Replay.Run(journals);
+
+    Report(report);
+    Write(arguments, report);
+    return 0;
+}
+
+static void Write(Arguments arguments, SimulationReport report)
+{
     if (arguments.Has("csv"))
     {
         var path = arguments.Value("csv", "sim.csv");
@@ -60,8 +104,20 @@ static int Run(string[] args)
         Console.WriteLine($"Rows written to {path}");
     }
 
-    return 0;
+    if (arguments.Has("journal") && report.Games.Any(game => game.Journal is not null))
+    {
+        var path = arguments.Value("journal", "run.jsonl");
+        JournalReport.WriteTo(path, report);
+        Console.WriteLine($"Journals written to {path}");
+    }
 }
+
+static JournalFidelity Fidelity(string name) => name.ToLowerInvariant() switch
+{
+    "thin" => JournalFidelity.Thin,
+    "rich" => JournalFidelity.Rich,
+    _ => throw new ArgumentException($"--fidelity is thin or rich, not '{name}'.")
+};
 
 static void Report(SimulationReport report)
 {
@@ -135,6 +191,7 @@ static string Usage() => """
 
       dotnet run --project BurmesePoker.Sim -- [options]
       dotnet run --project BurmesePoker.Sim -- bench [--hands N] [--seed N]
+      dotnet run --project BurmesePoker.Sim -- replay PATH [--csv PATH]
 
       --strategies a,b   who is playing, rotated through the seats  (greedy,simple)
       --seats N          4 to 6                                     (4)
@@ -145,6 +202,10 @@ static string Usage() => """
       --serial           play the games one at a time
       --threads N        cap the concurrency
       --csv PATH         write a row per seat per round
+      --journal PATH     write every decision every seat made, as JSON Lines
+      --fidelity F       how much of each decision to journal: thin, rich (thin)
+
+    A journal replays against any build; a seed only replays against the one that wrote it.
     """;
 
 /// <summary>The little that a batch runner needs of a command line.</summary>

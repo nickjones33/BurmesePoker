@@ -1,3 +1,5 @@
+using BurmesePoker.Domain.Play;
+
 namespace BurmesePoker.Sim;
 
 /// <summary>
@@ -55,9 +57,16 @@ public sealed record RoundRow(int Round, int Turns, int Reshuffles, IReadOnlyLis
 /// Whether a round hit the turn cap, which ends the game where it stands. A result, not an
 /// error: a strategy that stalls is telling you something.
 /// </param>
+/// <param name="Journal">
+/// Every decision every seat made, when the run asked for one (BUILD-PLAN P14) — and null when
+/// it did not, which is the default. <b>The seed above is a pointer and this is the record</b>
+/// (§3.9): the seed replays this game only against today's strategies, while the journal
+/// replays it against any.
+/// </param>
 public sealed record GameResult(
     int Game,
     int Seed,
     IReadOnlyList<string> Seating,
     IReadOnlyList<RoundRow> Rounds,
-    bool Abandoned);
+    bool Abandoned,
+    GameJournal? Journal = null);

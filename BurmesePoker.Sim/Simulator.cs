@@ -50,7 +50,11 @@ public static class Simulator
         return Summarise(options, games, clock.Elapsed);
     }
 
-    private static SimulationReport Summarise(
+    /// <summary>
+    /// Adds a set of played games up. <b>Shared with <see cref="Replay"/></b> so a replayed run
+    /// is summarised by the same arithmetic as the run it came from (BUILD-PLAN P14).
+    /// </summary>
+    internal static SimulationReport Summarise(
         SimulationOptions options,
         IReadOnlyList<GameResult> games,
         TimeSpan elapsed)

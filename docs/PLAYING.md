@@ -37,7 +37,28 @@ dotnet run --project BurmesePoker.Console -- --seed 4242 --pace 250
 | `--seed <n>` | Plays a particular match. One is drawn and printed even when you do not pass it, so **any match can be replayed exactly** — same deals, same seating, same bots. Useful for showing somebody a strange round, or for reporting a bug. |
 | `--pace <ms>` | How long a computer seat pauses before it moves. Default 450; `0` for none, which makes the bots' turns instantaneous. |
 | `--no-hints` | Stops the console telling you what the computer would do. |
+| `--journal <file>` | Writes the whole match down — every decision, yours included — so it can be played back later. See below. |
+| `--fidelity <thin\|rich>` | How much of each decision to write down. `thin` (the default) records what was decided; `rich` also records the hand it was decided from. |
 | `--help` | The same table, shorter. |
+
+### Keeping a match
+
+`--seed` replays a match **only against the version of the game that played it**. Change how the
+bots think and the same seed deals the same cards to different players; and a seed cannot replay
+*you* at all — it reproduces the deal and the computer, not what you decided.
+
+`--journal` writes down the decisions themselves, which fixes both:
+
+```bash
+dotnet run --project BurmesePoker.Console -- --journal last-night.jsonl
+dotnet run -c Release --project BurmesePoker.Sim -- replay last-night.jsonl
+```
+
+The replay reports the rounds exactly as they went — same winners, same money, same turn counts
+— and it will keep doing so however the game changes underneath it. It is one JSON object a
+line, so it is also readable with anything that reads text. **Use it for the hand you want to
+show somebody**, and `--fidelity rich` when you want to be able to see what everyone was holding
+when they threw what they threw.
 
 ---
 

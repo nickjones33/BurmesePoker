@@ -40,6 +40,18 @@ public sealed record SimulationOptions
     public int? MaxDegreeOfParallelism { get; init; }
 
     /// <summary>
+    /// Whether every game keeps a journal, and how much of one (BUILD-PLAN §3.9). Null is off,
+    /// which is the default.
+    /// </summary>
+    /// <remarks>
+    /// <b>Off by default, and <see cref="JournalFidelity.Rich"/> off harder.</b> A journal is
+    /// held in memory until the run ends, and the rich form copies a hand at every decision —
+    /// §3.7 measured this work to be allocation-bound, so that is the expensive axis, not the
+    /// cheap one. A throughput run wants neither; an analysis run asks for what it needs.
+    /// </remarks>
+    public JournalFidelity? Journal { get; init; }
+
+    /// <summary>
     /// Which strategy sits in which seat for a given game.
     /// </summary>
     /// <remarks>

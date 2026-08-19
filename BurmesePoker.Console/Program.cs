@@ -30,11 +30,20 @@ namespace BurmesePoker.Console;
 /// <see cref="MatchEngine"/>'s to keep and this file's to draw.
 /// </para>
 /// <para>
-/// <b>Every match is seeded, and says so</b> (BUILD-PLAN P11). One <see cref="Random"/> drives
-/// the seating and every shuffle, so <c>--seed</c> replays a strange match exactly; when none
-/// is given one is drawn and printed, which means the match just played can always be asked
-/// for again. This is the same determinism the simulation harness is built on (P12) — the
-/// console simply has to refrain from reaching for <see cref="Random.Shared"/> twice.
+/// <b>Every match is seeded, and says so</b> (BUILD-PLAN P11). <c>--seed</c> replays a strange
+/// match exactly; when none is given one is drawn and printed, which means the match just
+/// played can always be asked for again. This is the same determinism the simulation harness
+/// is built on (P12) — the console simply has to refrain from reaching for
+/// <see cref="Random.Shared"/> twice.
+/// </para>
+/// <para>
+/// ⚠️ <b>The seed drives two generators, not one</b> (BUILD-PLAN P14). One seats the table and
+/// draws the match's seed; the other is the match's own and deals every round. They were a
+/// single generator until journals arrived, and had to be split: a journal replays a match by
+/// re-seeding the <em>match's</em> generator, so anything else drawing from it before the
+/// first round would deal a replay a different game. A consequence worth stating plainly —
+/// <b>a seed from a build before P14 no longer plays the same match</b>, which is §3.9 point 2
+/// happening to the console rather than to a bot.
 /// </para>
 /// </remarks>
 internal static class Program
@@ -73,11 +82,16 @@ internal static class Program
             return 1;
         }
 
-        var random = new Random(options.Seed);
+        // Two generators out of the one seed, and the split is load-bearing (BUILD-PLAN P14):
+        // a journal replays a match by re-seeding the *match's* generator, so nothing else may
+        // draw from it before the first round or the replay would deal a different game.
+        var setup = new Random(options.Seed);
+        var matchSeed = setup.Next();
+
         var (names, bots) = AskWhoIsPlaying();
         var difficulty = bots.Count > 0 ? AskDifficulty() : Difficulty.Hard;
         var stakes = AskStakes();
-        var seating = Seat(names, random);
+        var seating = Seat(names, setup);
 
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine(
@@ -90,15 +104,21 @@ internal static class Program
 
         var log = new RoundLog();
 
+        var seats = seating.ToDictionary(
+            player => player,
+            IPlayerAgent (player) => bots.Contains(player)
+                ? PacedAgent.Wrap(Bot(difficulty), options.Pace)
+                : new SpectrePlayerAgent(names, log, options.Hints));
+
+        // The one kind of game a seed cannot recover is the one with a person in it
+        // (BUILD-PLAN §3.9), so this is the only way a human match becomes reproducible.
+        var journal = options.Journal is null ? null : new GameJournalBuilder(options.Fidelity);
+
         var match = new MatchEngine(
             seating,
-            seating.ToDictionary(
-                player => player,
-                IPlayerAgent (player) => bots.Contains(player)
-                    ? PacedAgent.Wrap(Bot(difficulty), options.Pace)
-                    : new SpectrePlayerAgent(names, log, options.Hints)),
+            journal is null ? seats : JournalingAgent.Wrap(seats, journal),
             stakes,
-            random,
+            new Random(matchSeed),
             new ConsoleObserver(names, log));
 
         var history = new List<RoundResult>();
@@ -120,6 +140,7 @@ internal static class Program
                 $"[{Palette.Quiet}]{match.RoundsPlayed} round{(match.RoundsPlayed == 1 ? string.Empty : "s")} played, "
                 + $"seed {options.Seed}. Nothing ends a game but the players (RULES.md §7.2).[/]");
 
+            WriteJournal(options, journal, matchSeed, seating, names, bots, difficulty, stakes, match.RoundsPlayed);
             return 0;
         }
         catch (DeckExhaustedException)
@@ -132,7 +153,63 @@ internal static class Program
                 + "a discard pile — so the round cannot go on. The standings stand as they were.");
 
             ReportStandings(match, history, names);
+            WriteJournal(options, journal, matchSeed, seating, names, bots, difficulty, stakes, match.RoundsPlayed);
             return 1;
+        }
+    }
+
+    /// <summary>
+    /// Writes the match down, if the command line asked for it.
+    /// </summary>
+    /// <remarks>
+    /// <b>The format is the domain's and the file is this file's</b> (BUILD-PLAN §2, P14):
+    /// <c>JournalFormat</c> hands over lines and the console writes them, exactly as the
+    /// harness's <c>JournalReport</c> does. The two front ends therefore write the same format
+    /// without either of them defining it, and a match played here replays under
+    /// <c>BurmesePoker.Sim -- replay</c>.
+    /// </remarks>
+    private static void WriteJournal(
+        Options options,
+        GameJournalBuilder? journal,
+        int matchSeed,
+        IReadOnlyList<PlayerId> seating,
+        IReadOnlyDictionary<PlayerId, string> names,
+        IReadOnlySet<PlayerId> bots,
+        Difficulty difficulty,
+        Stakes stakes,
+        int rounds)
+    {
+        if (options.Journal is not { } path || journal is null)
+        {
+            return;
+        }
+
+        var header = new JournalHeader(
+            Seed: matchSeed,
+            Seats: [.. seating.Select(player => new JournalSeat(
+                player,
+                bots.Contains(player) ? (difficulty == Difficulty.Easy ? "simple" : "greedy") : "human",
+                names[player]))],
+            Stakes: stakes,
+            Rounds: rounds,
+            Fidelity: options.Fidelity,
+            Game: 0);
+
+        try
+        {
+            File.WriteAllLines(path, JournalFormat.Lines(journal.Build(header)));
+
+            AnsiConsole.MarkupLine(
+                $"[{Palette.Quiet}]Written to[/] [bold]{Markup.Escape(path)}[/][{Palette.Quiet}] — "
+                + $"replay it with [/][bold]dotnet run -c Release --project BurmesePoker.Sim -- replay {Markup.Escape(path)}[/][{Palette.Quiet}].[/]");
+        }
+        catch (IOException problem)
+        {
+            AnsiConsole.MarkupLine($"[{Palette.Bad}]The journal could not be written:[/] {Markup.Escape(problem.Message)}");
+        }
+        catch (UnauthorizedAccessException problem)
+        {
+            AnsiConsole.MarkupLine($"[{Palette.Bad}]The journal could not be written:[/] {Markup.Escape(problem.Message)}");
         }
     }
 

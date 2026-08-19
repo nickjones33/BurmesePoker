@@ -1,5 +1,7 @@
 using System.Globalization;
 
+using BurmesePoker.Domain.Play;
+
 using Spectre.Console;
 
 namespace BurmesePoker.Console;
@@ -20,7 +22,7 @@ namespace BurmesePoker.Console;
 /// match is worth much less than one that always does.
 /// </para>
 /// </remarks>
-internal sealed record Options(int Seed, TimeSpan Pace, bool Hints, bool Help)
+internal sealed record Options(int Seed, TimeSpan Pace, bool Hints, bool Help, string? Journal, JournalFidelity Fidelity)
 {
     /// <summary>How long the computer appears to think, when nothing says otherwise.</summary>
     public static readonly TimeSpan DefaultPace = TimeSpan.FromMilliseconds(450);
@@ -31,9 +33,11 @@ internal sealed record Options(int Seed, TimeSpan Pace, bool Hints, bool Help)
         var pace = DefaultPace;
         var hints = true;
         var help = false;
+        string? journal = null;
+        var fidelity = JournalFidelity.Thin;
 
         complaint = string.Empty;
-        options = new Options(seed, pace, hints, help);
+        options = new Options(seed, pace, hints, help, journal, fidelity);
 
         for (var index = 0; index < args.Length; index++)
         {
@@ -60,6 +64,26 @@ internal sealed record Options(int Seed, TimeSpan Pace, bool Hints, bool Help)
                     pace = TimeSpan.FromMilliseconds(milliseconds);
                     break;
 
+                case "--journal":
+                    if (!TryValue(args, ref index, out var journalPath) || journalPath.Length == 0)
+                    {
+                        complaint = "--journal wants a file to write the match to, e.g. --journal match.jsonl.";
+                        return false;
+                    }
+
+                    journal = journalPath;
+                    break;
+
+                case "--fidelity":
+                    if (!TryValue(args, ref index, out var fidelityText)
+                        || !Enum.TryParse(fidelityText, ignoreCase: true, out fidelity))
+                    {
+                        complaint = "--fidelity is thin or rich.";
+                        return false;
+                    }
+
+                    break;
+
                 case "--no-hints":
                     hints = false;
                     break;
@@ -74,7 +98,7 @@ internal sealed record Options(int Seed, TimeSpan Pace, bool Hints, bool Help)
             }
         }
 
-        options = new Options(seed, pace, hints, help);
+        options = new Options(seed, pace, hints, help, journal, fidelity);
         return true;
     }
 
@@ -85,6 +109,8 @@ internal sealed record Options(int Seed, TimeSpan Pace, bool Hints, bool Help)
         grid.AddRow("[bold]--seed <n>[/]", "Play a particular match. One is drawn and printed if you do not give one.");
         grid.AddRow("[bold]--pace <ms>[/]", $"How long a computer seat pauses before it moves. Default {DefaultPace.TotalMilliseconds:0}; 0 for none.");
         grid.AddRow("[bold]--no-hints[/]", "Stop the console telling you what the computer would do.");
+        grid.AddRow("[bold]--journal <file>[/]", "Write down every decision, so this match can be replayed against any later build.");
+        grid.AddRow("[bold]--fidelity <thin|rich>[/]", "How much of each decision to write down. Rich adds the hand it was holding.");
         grid.AddRow("[bold]--help[/]", "This.");
 
         AnsiConsole.WriteLine();
