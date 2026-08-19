@@ -22,7 +22,7 @@ are wanted.
    that is fine, *provided* the UX gets deliberate attention rather than being tolerated.
    **P11.**
 3. **Strategy simulation at scale** — thousands of games run in parallel to compare ways of
-   playing. **P12.**
+   playing. **P12 — ✅ done 2026-08-18.**
 4. **A multiplayer app**, where a lobby host fills empty seats with AI players. **P13.**
 
 **What they demand of the architecture, and what already satisfies it.** These are stated
@@ -32,9 +32,12 @@ here because they change decisions taken *before* the packets that need them.
 |---|---|---|
 | Solo play | A bot behind `IPlayerAgent` | ✅ **Delivered by P10.** `GreedyBotAgent` fills any seat the people do not; the console asks how many of them are breathing |
 | Console UX | Nothing structural | ✅ The gap is closed: `PartialCover` (P10) is the scored cover both the hint and the meld-grouped hand read from |
-| Simulation | Determinism, no ambient randomness, no I/O, no static state, and **speed** | §3.7. Determinism and purity hold today; **speed has its first measurement** — a bot-only round costs ~40 ms (P10) |
-| Simulation, cont. | **Observability** — meaningful stats must be *derivable*, without the domain knowing what a statistic is | §3.8. Three of the five things a strategy comparison wants already have a seam; **one of them dies if P9 hands back banks alone** |
+| Simulation | Determinism, no ambient randomness, no I/O, no static state, and **speed** | ✅ **Delivered by P12.** `BurmesePoker.Sim` runs seeded games in parallel with byte-identical results; ~20 ms a round, 50–90 rounds a second. No static state, and now a test that says so |
+| Simulation, cont. | **Observability** — meaningful stats must be *derivable*, without the domain knowing what a statistic is | ✅ §3.8 held. Win rate, money split into flat and side bet, turns, how close the losers were, take and claim rates — **all derived by the harness, with no domain change whatever** |
 | Multiplayer | A decision on whether agents block | §3.6, taken now rather than discovered later |
+
+**Two of the four are done, and P12 was the one that could have demanded architecture.** It
+did not: the harness is a fourth project that references Domain and asks it for nothing new.
 
 **The through-line: the domain never learns that any of this happened.** A bot, a simulation
 harness and a network server are all the same shape — something that answers
@@ -170,8 +173,15 @@ unit-tested**, by the same reference rule; P8 was verified by driving the binary
 above**. **By P10:** `Melds/MeldIndex.cs` and `Melds/PartialCover.cs`, and the first folder beyond the
 sketch — `Agents/GreedyBotAgent.cs`. `MeldIndex` is an extraction rather than an addition: the
 candidate index `HandEvaluator` already built, now shared with the partial cover so the two
-searches cannot drift apart. Everything from here adds another new project
-(`BurmesePoker.Sim` in P12).
+searches cannot drift apart. **By P12:** a fourth project,
+**`BurmesePoker.Sim`** — `{Program, Simulator, GameRunner, SimulationOptions, SimulationReport,
+StrategySummary, Strategy, SeedSequence, SeatRecorder, SimObserver, RoundAbandonedException,
+Results, CsvReport}` — referencing Domain only, plus `Agents/{CoverScore, SimpleBotAgent}` in
+Domain. ⚠️ **`BurmesePoker.Tests` now references Domain *and* Sim.** The rule that matters is
+unchanged and is worth restating in its true form: **the test project never references
+`BurmesePoker.Console`**, so nothing is tested through the front end. The harness is a headless
+consumer whose determinism is itself an acceptance criterion, and a fifth project existing only
+to test the fourth would buy nothing.
 
 ---
 
@@ -359,18 +369,38 @@ the domain, and **three of them already hold**:
 2. **No I/O.** The observer is optional and defaults to a silent one. ✅
 3. **No mutable static state**, so that games in parallel cannot interfere. ✅ today — the only
    statics are immutable tables (`CardText`, `MoneyCardRegistry.Permanent`, `Stakes.Standard`).
-   **P12 should pin this with a test**, because it is the kind of invariant a later convenience
-   cache would quietly break.
-4. ⚠️ **Speed — measured once, by P10, and the number moved.** `RoundEngine` calls
+   ✅ **Pinned by a test in P12** —
+   `NeitherTheDomainNorTheHarnessHoldsMutableStaticState` walks both assemblies by reflection
+   and fails on any static field that is not `readonly` or `const`. It pins the *reference*,
+   not the object graph behind it: a `static readonly Card[]` passes and would still be shared,
+   so an array that starts being written to is the one thing it will not catch.
+4. ✅ **Speed — measured by P12, and it is not a problem.** `RoundEngine` calls
    `HandEvaluator.TryFindCover` after *every* discard by *every* player — it is how a
    declaration is offered only on a genuine win (P7). P5 measured three deliberately awful
    stress hands at ~100 ms *in total*. **P10 took the first end-to-end measurement: a
    bot-only round costs about 40 ms and runs 21–30 turns**, so a thousand rounds is under a
    minute on one core and the goal is not in danger. But it also **moved where the cost is**:
    a bot asks `PartialCover.Best` up to fifteen times per decision, so a strategy comparison's
-   inner loop is the *partial* cover, not the evaluator. **P12 still measures before it
-   optimises**, and any optimisation goes behind the existing evaluator rather than into it:
-   `IsWinning` is the win authority (§3.4) and its answers may not change.
+   inner loop is the *partial* cover, not the evaluator.
+
+   **P12's measurement pass, on an i7-1165G7 (4 cores, 8 threads), Release build:**
+   `PartialCover.Best` is **140 µs** on a random thirteen-card hand and
+   `HandEvaluator.TryFindCover` is **91 µs**, so a bot decision — a dozen-odd partial covers —
+   is a couple of milliseconds and a whole round is **~20 ms**. A run does **~50 rounds a
+   second serially and ~90 in parallel**; 2,000 rounds took 34 s. **Nothing was optimised, and
+   nothing needs to be**: the goal in §0 is comparing strategies over thousands of games, and
+   thousands of games is a coffee break. Should that change, the optimisation goes *around* the
+   evaluator, never into it — `IsWinning` is the win authority (§3.4) and its answers may not
+   change.
+
+   ⚠️ **One measured surprise worth keeping: the work is allocation-bound, not compute-bound.**
+   Both searches allocate a meld index, a memo and a candidate list per call, and under the
+   default workstation GC eight threads bought only **25%** more throughput than one. The
+   server GC — one line in `BurmesePoker.Sim.csproj`, a harness knob rather than a domain
+   change — took that to **70%**, and the rest is a 4-core laptop that cannot hold its turbo
+   clock across eight threads. **If throughput ever does matter, allocation is the thing to
+   attack**, and the first candidate is a per-turn cache in the bot rather than anything in
+   `Melds/`.
 
 ### 3.8 Statistics are *collected*, never computed by the domain
 
@@ -436,7 +466,7 @@ order. P6 needs P1 and P2 only.
 bots: solo play *is* bots, a discard hint is the same scored search a bot uses, a simulation
 is bots playing each other, and a network timeout is a bot taking over a seat (§3.6). After
 P10, **P11, P12 and P13 are independent of one another** and can be taken in any order — or
-not at all.
+not at all. **P12 is done (2026-08-18); P11 and P13 remain, still independent.**
 
 | Packet | Title | Depends on | Size |
 |---|---|---|---|
@@ -1252,6 +1282,19 @@ a non-interactive terminal with an explanation rather than a stack trace.
 >   deliberate pause is a UX decision and belongs here, not in `GreedyBotAgent` — a domain type
 >   that slept would ruin P12.
 
+> **Amended after the P12 session (2026-08-18) — three things the simulation hands P11.**
+> - **A difficulty setting exists for free.** `SimpleBotAgent` is a measurably weaker seat —
+>   19.3% of rounds against the greedy bot's 30.7% over 2,000 of them — so *"easy or hard?"* at
+>   the table-setup prompt is a strategy name, not a packet. Both live in `Domain/Agents/`, so
+>   the console can already reach them.
+> - ⚠️ **The reshuffle needs narrating at six seats, and only there.** 300 bot rounds produced
+>   no reshuffle at four players, three at five and 67 at six, so a full table sees it every
+>   few rounds while a small one never does. `ConsoleObserver` already receives
+>   `DiscardsReshuffled(cards)`; a player who is not told will simply see the deck grow back.
+> - **`--seed` is a one-liner and worth having.** `MatchEngine` takes the one `Random` and the
+>   sim now proves a match replays exactly from it; the console needs only to pass
+>   `new Random(seed)` instead of `Random.Shared` and print the seed it used.
+
 ---
 
 ### P12 — Simulation at scale
@@ -1330,6 +1373,38 @@ the winner is reproducible from a seed.
 >   `TurnContext` is the engine's to make and a bot's decisions are only testable from inside a
 >   real round. P12 wants the same shape; lift it rather than re-inventing it.
 
+> **As built (2026-08-18). ☑ Done** — `BurmesePoker.Sim`, a fourth project referencing Domain
+> only, plus a second strategy to compare against.
+> - **Two strategies that differ in exactly one thing.** `SimpleBotAgent` is `GreedyBotAgent`
+>   with the discard tie-break removed and nothing else changed — same take rule, same claim
+>   rule, same dedup, so a difference in results is attributable to the tie-break alone. The
+>   shared question moved into `Agents/CoverScore` for the reason `MeldIndex` is shared: two
+>   copies of *"does this card improve my hand"* would be two places for it to drift.
+> - **The answer: the tie-break is worth 1.6× the wins.** Over **2,000 four-seat rounds**,
+>   greedy won **30.7%** and simple **19.3%**, for **+$1.24** and **−$1.24** a round. P10's
+>   claim — that the cover count alone cannot separate early discards, and the tie-break is
+>   what makes progress — is now measured rather than argued.
+> - **Seats are rotated between games, and they had to be.** Seat 0 opens every round and is
+>   the only seat ever offered the turned-up money card (RULES.md §4.5), so a fixed seating
+>   would measure the seat as much as the strategy. Strategy *i* sits in seat *(i + game) mod
+>   n*.
+> - **Determinism is per game, not per run.** A game's seed is `SplitMix64(master, index)`, so
+>   game 417 is the same game whether it ran first, last, alone, or on a different number of
+>   cores — which is what makes a surprising result investigable. Serial, parallel and
+>   two-thread runs produce byte-identical rows.
+> - **The turn cap fires from the agent**, because that is the only seam that sees a turn
+>   number without the domain inventing a rule. `SeatRecorder` throws `RoundAbandonedException`
+>   past the cap; the game stops there and the run reports how many it abandoned. ⚠️ **It has
+>   never fired in a real run** — even an all-`SimpleBotAgent` table finished all 300 rounds
+>   tried, in 28.3 turns on average. It exists for a strategy that genuinely plateaus, and the
+>   test uses one written for the purpose.
+> - **Money conservation is checked per round, not per run** — every round's nets sum to zero,
+>   and the flat/side-bet split (derived by subtraction, as the console does it) sums to zero
+>   twice over.
+> - ⚠️ **The reshuffle is a six-player phenomenon.** P10 never saw a bot round exhaust the draw
+>   pile; at 300 rounds it happens **0 times at four seats, 3 at five, and 67 at six**. P9's
+>   rule is exercised by real play after all — but only at a full table.
+
 ---
 
 ### P13 — Multiplayer app
@@ -1360,6 +1435,20 @@ its own P13.x list at the point it is next rather than pretended to be one sessi
   all decided before `RoundEngine` is constructed — as `Program` already does today.
 
 **Done when.** Two people and two bots play a round over a network.
+
+> **Amended after the P12 session (2026-08-18) — the timeout wrapper is already written, twice.**
+> - **`BurmesePoker.Sim/SeatRecorder.cs` is the shape P13's remote seat wants**: a decorator
+>   over `IPlayerAgent` that watches every question the engine asks, and can refuse to answer
+>   normally. The simulation uses it to give up on a stalled round; P13 uses the same seam to
+>   say *"this player has not answered in thirty seconds, a bot takes the turn"* — no domain
+>   change either time, which is §3.6's bet paying off before P13 is even started.
+> - **Abandoning a table has to be somebody's job, and it is not the engine's.** A round ends
+>   only on a declaration (RULES.md §7.1), so a table whose people all walk away never ends.
+>   P12 bounds a round by turn count from the outside and *reports* the abandonment rather than
+>   throwing it away; a host wants the same, bounded by wall-clock instead.
+> - **The simulation is the load test.** Four to six players a table, ~20 ms of compute a round
+>   with the whole search in it — a host can run many tables per core, so the parked-task cost
+>   §3.6 accepted is not the thing to worry about.
 
 ---
 
@@ -1392,8 +1481,8 @@ For picking up in a fresh session with no memory of this conversation.
 | ~~**P3 is the hard packet**~~ — **done 2026-08-18.** Window-based generation with joker substitution was fiddly, and everything downstream depends on it. | The candidate-count tests were an exact, pre-existing spec (5, not the 2023 test's 8 — see `docs/spec/RUN-CANDIDATES.md` §4), and they were written first. P5 may now proceed. |
 | ~~Candidate explosion on joker-heavy hands~~ — **contained, measured 2026-08-18.** | Deduplicate by `CardId` set at generation, and choose joker instances as combinations rather than permutations. **Measured worst case: 4,032 run candidates in milliseconds** — thousands, not the hundreds this row assumed, and nowhere near millions. **Sets add almost nothing**: a set holds at most four cards, so no hand can produce many. P4's measured worst case is **639** — nine cards of one rank split (3,2,2,2) across the suits plus all four jokers. The risk is P3's alone. P5 does index candidates by `CardId` — by the *lowest* one in each meld — and evaluates three thirteen-card stress hands in about 100 ms in total. |
 | The rewrite stalls half-finished, as in 2023. | Packets are individually shippable and each ends green. P1–P6 are pure domain with no UI dependency, so progress is real even if the console never gets built. **As of 2026-08-18 P0–P6 are all done**, so the entire rules core — cards, melds, the win authority, and money — exists and is tested; what remains is the engine and the front end. |
-| ⚠️ **The evaluator in the simulation hot loop** (new 2026-08-18) — **downgraded and re-aimed 2026-08-18 by P10.** `RoundEngine` calls `TryFindCover` after every discard by every player; P5's ~100 ms for three stress hands is nothing to a human and possibly ruinous across a million rounds. | **Measured end to end at last: a bot-only round costs ~40 ms over 21–30 turns**, so a thousand rounds is under a minute on one core — the goal is not in danger. The live cost has **moved to `PartialCover.Best`**, which a bot calls up to fifteen times a decision against the engine's one. Still **measure before optimising** (§3.7, P12), and still put any speed-up *around* the evaluator rather than inside it — `IsWinning` is the win authority (§3.4) and its answers may not change. A per-turn cache inside the bot is the free win, and touches neither. |
-| ~~**A strategy that never improves plays for ever**~~ (new 2026-08-18, **retired the same day**). With the P9 reshuffle, only a declaration ends a round (RULES.md §7.1), so a table of bots that never improve never finishes. | `GreedyBotAgent`'s score is **monotone by construction** — throwing back the card just taken restores the hand exactly, so the best-keep score can never fall — and every round of every seed tried terminated in 21–30 turns. The property is a test (`ABotOnlyMatchTerminatesAndConservesMoney`), not a hope. It remains a real hazard for *future* strategies, which is why P12 owns a turn cap. |
+| ~~**The evaluator in the simulation hot loop**~~ (new 2026-08-18) — **retired 2026-08-18 by P12's measurement pass.** `RoundEngine` calls `TryFindCover` after every discard by every player; P5's ~100 ms for three stress hands is nothing to a human and possibly ruinous across a million rounds. | **Measured end to end at last: a bot-only round costs ~40 ms over 21–30 turns**, so a thousand rounds is under a minute on one core — the goal is not in danger. The live cost has **moved to `PartialCover.Best`**, which a bot calls up to fifteen times a decision against the engine's one. Still **measure before optimising** (§3.7, P12), and still put any speed-up *around* the evaluator rather than inside it — `IsWinning` is the win authority (§3.4) and its answers may not change. A per-turn cache inside the bot is the free win, and touches neither. **P12 measured it and closed the row:** `PartialCover.Best` is 140 µs a hand and `TryFindCover` 91 µs, a round is ~20 ms, and a run does 50–90 rounds a second — 2,000 rounds in 34 s, with nothing optimised. What the measurement did find is that the work is **allocation-bound rather than compute-bound**: eight threads bought 25% under the workstation GC and 70% under the server GC (§3.7 item 4). If throughput ever matters again, attack allocation, and still not inside the evaluator. |
+| ~~**A strategy that never improves plays for ever**~~ (new 2026-08-18, **retired the same day**). With the P9 reshuffle, only a declaration ends a round (RULES.md §7.1), so a table of bots that never improve never finishes. | `GreedyBotAgent`'s score is **monotone by construction** — throwing back the card just taken restores the hand exactly, so the best-keep score can never fall — and every round of every seed tried terminated in 21–30 turns. The property is a test (`ABotOnlyMatchTerminatesAndConservesMoney`), not a hope. It remains a real hazard for *future* strategies, which is why P12 owns a turn cap. **P12 built the cap and it has never fired** — even a table of four `SimpleBotAgent`s, which has no tie-break to push it off a plateau, finished all 300 rounds tried in 28.3 turns on average. The cap is insurance, and the only thing that has ever tripped it is an agent written to stall. |
 | **Scope growth beyond a playable game** (new 2026-08-18). §0 adds three further goals, and the 2023 failure was a half-finished thing nobody could play. | P9, P10 and P11 each ship something *more playable than before*; P12 and P13 are independent of one another after P10 (§4) and can be dropped without stranding anything. The game staying playable at every step is the mitigation. |
 | **The synchronous-agent bet is wrong at scale** (new 2026-08-18). §3.6 parks a task per table rather than making the engine resumable. | At four to six players and a handful of tables the cost is a parked task, not a thread. If it is ever wrong, the fix is a resumable engine *behind the same interface* — the agents, tests and simulation loop do not change. Revisit only with a measured problem. |
 | Rules drift as more is recalled. | `RULES.md` provenance tags make revisiting cheap; §9 tracks what is still unrecorded. |

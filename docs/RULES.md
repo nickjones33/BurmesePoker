@@ -4,9 +4,10 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-18 (rev 12 — adds §9 #14, raised while building the match engine: whether
-seating moves between rounds. §9 #4 and #5 also gain the defaults P9 took, and §5's reshuffle
-is now implemented rather than pending).
+Last revised: 2026-08-18 (rev 13 — §4.3's `DERIVED` balance argument is now measured rather
+than estimated: 600 simulated five-player rounds put the side-bet at 42% of the round prize,
+against the 40% the derivation guessed. No rule changed; rev 12 added §9 #14, raised while
+building the match engine, and the P9 defaults for §9 #4 and #5).
 
 ---
 
@@ -183,6 +184,13 @@ takes part in it too, both collecting and paying. It resolves **independently of
 rule (§4.2), ~6 money cards circulate beyond the two face-up. In a 5-player round the
 winner takes $20, while a player owning two money cards takes $8 — roughly 40% of the
 round prize. Significant without dominating: exactly what a side-bet should be.
+
+> **Measured, and the estimate holds** (packet P12, 2026-08-18). Over **600 simulated
+> five-player rounds** the money cards moved **$8.43 a round** against the flat prize of
+> $20 — **42% of it**, and 30% of all the money that changed hands. The derivation above
+> guessed 40% from two owned cards, so the recalled 5:1 ratio really does produce the
+> balance it was justified by. This is a measurement of the *game*, not a rule: it says
+> nothing new about what the rule is, only that the rule is a sensible one.
 
 This also **strengthens the case for exact-match over rank-match** in §4.2. Rank-matching
 would put ~12 money cards in play, and the side-bet would routinely outweigh the round

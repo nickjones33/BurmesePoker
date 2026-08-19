@@ -56,7 +56,7 @@ public sealed class GreedyBotAgent : IPlayerAgent
         var discard = context.AvailableDiscard
             ?? throw new InvalidOperationException("Asked how to take a card with no discard available.");
 
-        return Improves(context.Hand, discard) ? TurnAction.TakeDiscard : TurnAction.DrawFromDeck;
+        return CoverScore.Improves(context.Hand, discard) ? TurnAction.TakeDiscard : TurnAction.DrawFromDeck;
     }
 
     /// <summary>
@@ -92,7 +92,7 @@ public sealed class GreedyBotAgent : IPlayerAgent
 
             judged.Add(card);
 
-            var score = PartialCover.Best(Without(hand, card)).CoveredCount;
+            var score = CoverScore.Covered(CoverScore.Without(hand, card));
             var potential = Potential(card, hand);
 
             if (best is null
@@ -124,7 +124,7 @@ public sealed class GreedyBotAgent : IPlayerAgent
         // The two turned-up cards lie bottom-first, so the last is the claimable one off the
         // top of the deck (RULES.md §3 step 4, §4.5).
         return context.TurnedUpMoneyCards.Count > 0
-            && Improves(context.Hand, context.TurnedUpMoneyCards[^1]);
+            && CoverScore.Improves(context.Hand, context.TurnedUpMoneyCards[^1]);
     }
 
     /// <summary>Always. The engine only asks when the hand genuinely wins (RULES.md §7.1).</summary>
@@ -139,35 +139,6 @@ public sealed class GreedyBotAgent : IPlayerAgent
     /// card, and whatever it leaves loose is then the card to throw. Every arrangement of
     /// fourteen has a meld of four or more in it, so the thirteen kept are always covered to
     /// at least the score the fourteen scored, minus the one thrown.
-    /// </remarks>
-    private static bool Improves(IReadOnlyList<Card> hand, Card card) =>
-        PartialCover.Best([.. hand, card]).CoveredCount > PartialCover.Best(hand).CoveredCount;
-
-    private static List<Card> Without(IReadOnlyList<Card> hand, Card card)
-    {
-        var kept = new List<Card>(hand.Count - 1);
-
-        foreach (var held in hand)
-        {
-            if (held != card)
-            {
-                kept.Add(held);
-            }
-        }
-
-        return kept;
-    }
-
-    /// <summary>
-    /// How much of a meld this card is part-way towards, counting the other cards in the hand
-    /// that could join it.
-    /// </summary>
-    /// <remarks>
-    /// Rough on purpose — this only ever separates cards the cover search has already scored
-    /// equally. A second copy of a card counts for nothing, because a set may not repeat a
-    /// suit (RULES.md §6.2) and a run may not repeat a rank; the ace is a neighbour of both
-    /// the two and the king, since a run may start or end on it but not pass through
-    /// (RULES.md §6.1). A joker scores the maximum and so is thrown last of all.
     /// </remarks>
     private static int Potential(Card card, IReadOnlyList<Card> hand)
     {

@@ -11,13 +11,14 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-This project is **mid-rewrite, and the game is playable alone**. **P0–P10 are done**: the 2023
-implementation has been deleted, the solution is three projects, the whole rules core is built
-and tested, and `dotnet run --project BurmesePoker.Console` asks how many are at the table and
-how many of them are people, fills the rest with bots, plays rounds to settlement, and goes
-round again with the banks carrying over. **P10 was the fan-out point and it is behind us** —
-**P11 (console UX), P12 (simulation at scale) and P13 (multiplayer) are independent and can be
-taken in any order.** Whether or not you use the skill, read these first:
+This project is **mid-rewrite, and the game is playable alone and measurable in bulk**. **P0–P12
+are done**: the 2023 implementation has been deleted, the whole rules core is built and tested,
+`dotnet run --project BurmesePoker.Console` fills the empty seats with bots and plays round
+after round with the banks carrying over, and `dotnet run -c Release --project BurmesePoker.Sim`
+plays thousands of seeded games in parallel to compare strategies. **P10 was the fan-out point
+and it is behind us; P12 has been taken** — **P11 (console UX) and P13 (multiplayer) remain,
+independent of each other and either droppable.** Whether or not you use the skill, read these
+first:
 
 1. **`docs/STATUS.md`** — which work packet is next, and the state of the tree. Update it at
    the end of every session.
@@ -43,7 +44,8 @@ The solution is:
 ```
 BurmesePoker.Domain/     pure rules. no I/O, no Spectre. everything new goes here.
 BurmesePoker.Console/    Spectre.Console front end. the only project that prints. built in P8.
-BurmesePoker.Tests/      xunit against Domain's public API. references Domain only.
+BurmesePoker.Sim/        batch play: seeded, parallel, CSV out. Domain only. built in P12.
+BurmesePoker.Tests/      xunit against Domain and Sim. never references Console.
 ```
 
 ## Rules of engagement
@@ -66,9 +68,11 @@ dotnet test                                     # run all tests
 dotnet test --filter-method "*SomeTestName*"     # single test (xunit v3 / MTP syntax)
 dotnet test --filter-class "*CardTextTests*"     # single test class
 dotnet run --project BurmesePoker.Console       # play a round (needs a real terminal)
+dotnet run -c Release --project BurmesePoker.Sim -- --games 2000   # compare strategies
+dotnet run -c Release --project BurmesePoker.Sim -- bench          # time the cover searches
 ```
 
-All three projects target **`net10.0`**, matching the installed SDK (10.0.111). Tests are
+All four projects target **`net10.0`**, matching the installed SDK (10.0.111). Tests are
 **xunit v3** running on **Microsoft.Testing.Platform**, not VSTest — `global.json` opts
 `dotnet test` into MTP mode, which the .NET 10 SDK requires for MTP test projects. The test
 project is therefore an `Exe`, and **test filtering uses `--filter-method` / `--filter-class`,
