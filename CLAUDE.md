@@ -11,8 +11,11 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-This project is **mid-rewrite**. **P0 is done** — the 2023 implementation has been deleted and
-the solution is now three projects. Whether or not you use the skill, read these first:
+This project is **mid-rewrite, and the game is playable**. **P0–P8 are done**: the 2023
+implementation has been deleted, the solution is three projects, the whole rules core is built
+and tested, and `dotnet run --project BurmesePoker.Console` deals a hotseat round for 4–6
+people and plays it to settlement. **P9 (repeated rounds) is next**, then P10 (bots — solo
+play). Whether or not you use the skill, read these first:
 
 1. **`docs/STATUS.md`** — which work packet is next, and the state of the tree. Update it at
    the end of every session.
@@ -21,6 +24,12 @@ the solution is now three projects. Whether or not you use the skill, read these
    cold-start protocol.
 3. **`docs/RULES.md`** — **the only rules authority.** Every rule is tagged with provenance
    and confidence.
+
+`BUILD-PLAN.md` **§0** records where this is heading beyond a playable game — solo play against
+the computer, a console worth sitting at, strategy simulation at scale, and a multiplayer app
+with AI seats. **§3.6, §3.7 and §3.8 are the design constraints those goals impose**, taken in
+advance: agents stay synchronous, simulation is a first-class consumer, and statistics are
+collected by consumers rather than computed by the domain.
 
 **The abandoned 2023 implementation is gone.** P0 deleted it; it survives only at the git tag
 `pre-rewrite`. Roughly 180 lines of enums and lookup tables from `Common.cs` were salvaged into

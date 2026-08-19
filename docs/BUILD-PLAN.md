@@ -32,6 +32,7 @@ here because they change decisions taken *before* the packets that need them.
 | Solo play | A bot behind `IPlayerAgent` | The seam exists; the domain is drivable with no console at all (P7) |
 | Console UX | Nothing structural | `Melds/` gives the vocabulary; the only gap is a *scored* cover (§3.4, P10) |
 | Simulation | Determinism, no ambient randomness, no I/O, no static state, and **speed** | §3.7. Determinism and purity hold today; **speed is unmeasured and is the one live risk** |
+| Simulation, cont. | **Observability** — meaningful stats must be *derivable*, without the domain knowing what a statistic is | §3.8. Three of the five things a strategy comparison wants already have a seam; **one of them dies if P9 hands back banks alone** |
 | Multiplayer | A decision on whether agents block | §3.6, taken now rather than discovered later |
 
 **The through-line: the domain never learns that any of this happened.** A bot, a simulation
@@ -305,6 +306,11 @@ project drives whole rounds deterministically.
 > no-op body**, so a front end implements only what it draws. The engine narrates
 > *everything*, private information included: filtering per viewer is presentation, and
 > pushing it into the domain would be the same mistake this rewrite exists to undo.
+>
+> **The event set is deliberately not closed** (§3.8): a later consumer may need an event that
+> is not there yet, and adding one costs nothing because every method has a default no-op body.
+> What it must not cost is *allocation* — an observer runs in the simulation hot loop, so an
+> event passes what the engine already holds and never builds a list or a string to do it.
 
 ### 3.6 Agents are synchronous, and stay that way
 
@@ -355,6 +361,51 @@ the domain, and **three of them already hold**:
    across a million rounds. **P12 measures before it optimises**, and any optimisation goes
    behind the existing evaluator rather than into it: `IsWinning` is the win authority
    (§3.4) and its answers may not change.
+
+### 3.8 Statistics are *collected*, never computed by the domain
+
+Taken **2026-08-18**, alongside §3.7 and for the same reason: a simulation that runs a million
+games is worthless if the interesting questions cannot be answered afterwards, and what makes
+them answerable is decided long before P12.
+
+**The domain gains no notion of a statistic.** No counters on `RoundEngine`, no `Stats` type in
+`Domain`, no "record this for later" parameter anywhere. Everything a strategy comparison wants
+is *derived* by the consumer from three seams that already exist — and the point of writing
+this down is that **all three must survive the packets between here and P12**.
+
+| What a strategy comparison wants to know | Where it comes from | State |
+|---|---|---|
+| Who won, how often, and for how much | `RoundResult` | ✅ |
+| How long a round ran; how often the discard was taken over a blind draw; how often the turned-up money card was claimed; how often the deck was exhausted | the `IGameObserver` event stream | ✅ |
+| How *close* the losers were when it ended | each loser's hand at round end, through the round's `TableState.Seats` | ✅ **only if the round's table is kept** — see P9 |
+| What the money side-bet contributed against the flat round payment | `Ownership` + `Shoe` + the registry, exactly as P8's settlement report splits it | ✅ same condition |
+| **Why a strategy chose what it chose** | *nothing today* — no seam carries the alternatives that were offered | ⚠️ see below |
+
+**The four constraints that follow.**
+
+1. ⚠️ **The round's `TableState` must remain reachable after the round ends.** Two of the five
+   rows above die if `MatchEngine` hands back banks and nothing else. P8 already needs this for
+   the settlement report, so **one mechanism serves both** — see the P9 amendment. This is the
+   single most likely way to make the simulation goal expensive by accident.
+2. **Per-decision introspection belongs in a decorator over `IPlayerAgent`, not in the
+   observer.** A recording agent wraps a strategy, sees the exact `TurnContext` it was given
+   and the answer it gave, and needs **no domain change whatever**. That is the seam for "why
+   did it throw that away" — and it works for a human seat too, which is where P11's hints and
+   a replay would come from. Do not grow `IGameObserver` an event per decision.
+3. **The observer's event set is not closed — but it is hot.** Adding an event is cheap
+   (every method has a default no-op, so nothing existing breaks). *Allocating* in one is not:
+   a million rounds times fifty-odd turns means an event that copies a hand or formats a string
+   costs real time. **Events pass what the engine already holds, by reference, and nothing
+   more.** Presentation formats; the observer does not.
+4. **A statistic is only meaningful with its seed and its seating.** Which strategy sat in
+   which seat, and which seed produced the game, are the join keys for every result — and both
+   are the harness's bookkeeping (§3.7), never the domain's.
+
+> **One thing worth adding at the source rather than deriving.** Turn count is the most-wanted
+> round statistic and the engine has it exactly, in the loop variable it already keeps;
+> counting `PlayerDiscarded` events reconstructs it only for a consumer that attached an
+> observer. **P9 should put `Turns` on `RoundResult`** — it is one field, it is not a
+> statistic in the sense forbidden above, and it spares every future consumer a private tally.
 
 ---
 
@@ -935,7 +986,8 @@ settlement. No domain type references Spectre.
 
 **Goal.** A complete multi-round game. **No open rulings — fully unblocked.**
 
-**Read first.** `RULES.md` §5, §7.2.
+**Read first.** `RULES.md` §5, §7.2. Here: **§3.8**, which adds two requirements to this
+packet — surface each round's `TableState`, and put `Turns` on `RoundResult`.
 
 **Build.**
 - **Deck exhaustion (settled, `RULES.md` §5):** when the draw pile empties, gather **all**
@@ -1003,6 +1055,18 @@ settlement. No domain type references Spectre.
 >    zero and each round's deltas are added; conservation is then a property of the addition
 >    (see the P6 note below). The settlement report's two columns already reconcile per round,
 >    so a standings table only needs the running total.
+>
+> **Amended again after the 2026-08-18 roadmap session — the same seam carries the statistics.**
+> Point 1 above is no longer only the console's need: §3.8 shows that **two of the five things
+> a strategy comparison wants** — how close the losers were, and how much of the money was the
+> side bet — are reachable *only* through the round's `TableState`. So a `MatchEngine` that
+> returns banks alone quietly forecloses on P12. Surface the pair, and both consumers are done
+> at once. Two small additions follow:
+> - **Put `Turns` on `RoundResult`.** The engine has the count in the loop variable it already
+>   keeps; without it, every consumer that wants the most obvious round statistic has to attach
+>   an observer and tally `PlayerDiscarded` (§3.8). One field, added where it is free.
+> - **A match must be playable with no observer at all** — it already is, and P12 depends on
+>   it. Do not let `MatchEngine` require one.
 >
 > **Amended after the P6 session (2026-08-18) — conservation is already half-proved.**
 > Settlement's deltas **sum to zero for any configuration**, which a property test pins over
@@ -1107,8 +1171,8 @@ a non-interactive terminal with an explanation rather than a stack trace.
 
 **Goal.** Run thousands of games in parallel and compare ways of playing.
 
-**Read first.** §3.7, which is the contract this packet cashes in. §3.4 for why the evaluator
-may not be "optimised" into a different answer.
+**Read first.** §3.7 and **§3.8**, which are the contracts this packet cashes in. §3.4 for why
+the evaluator may not be "optimised" into a different answer.
 
 **Build.**
 - **A separate project, `BurmesePoker.Sim`** (recommended) referencing Domain only. Batch runs,
@@ -1119,9 +1183,15 @@ may not be "optimised" into a different answer.
 - **Seeding**: one master seed, per-game seeds derived from it, recorded with every result. A
   run must be **exactly reproducible from its seed**, which is what makes a surprising result
   investigable rather than folklore.
-- **Parallel execution** over games, with per-strategy stats: win rate, money per round, turns
-  to a declaration, how often the deck is exhausted (P9's reshuffle), how often the turned-up
-  money card is claimed.
+- **Parallel execution** over games, with per-strategy stats. **§3.8 is the contract for how
+  they are gathered** — the domain knows nothing about any of them; the harness derives them
+  from the event stream, the per-round `(RoundResult, TableState)` pair, and a recording
+  decorator over `IPlayerAgent` for anything decision-level. Worth having from the first run:
+  win rate, money per round split into the flat payment and the side bet, turns to a
+  declaration, how close the losers were when it ended, take-the-discard rate, claim rate, and
+  how often the deck is exhausted (P9's reshuffle).
+- **Results carry their join keys** — seed and seat→strategy map on every row (§3.8 item 4),
+  or a surprising result cannot be reproduced or attributed.
 - ⚠️ **A measurement pass first.** `RoundEngine` calls `TryFindCover` after every discard by
   every player, so it is the inner loop of the whole harness (§3.7 item 4). **Measure it,
   record the number in the packet notes, and only then decide whether anything needs doing.**

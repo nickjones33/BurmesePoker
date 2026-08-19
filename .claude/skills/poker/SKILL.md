@@ -38,11 +38,13 @@ dotnet build && dotnet test
 
 Must be green **before** changing anything.
 
-- **Known exception:** until packet P0 runs, the two 2023 tests still exist and
-  `CardPlays_Runs_HappyPath_Jokers` **fails by design** (it asserts a count the rewrite has
-  since corrected — see `docs/spec/RUN-CANDIDATES.md`). Expected. Note it and continue.
-- **Any other failure: stop.** Report what is broken and ask. Never start a packet on a tree
-  that is unexpectedly red.
+- **There is no longer a known exception.** P0 retired the 2023 tests in 2026-08. `STATUS.md`
+  records the count the tree should be green at; **any failure at all is a real problem.**
+- **Any failure: stop.** Report what is broken and ask. Never start a packet on a tree that is
+  unexpectedly red.
+- **A packet with no new tests is possible but rare** — P8's front end could not be tested,
+  because the test project references Domain only. If a packet ends with the test count
+  unchanged, say so explicitly and say how it *was* verified.
 
 ## Phase 3 — Execute the packet
 

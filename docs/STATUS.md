@@ -14,7 +14,8 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 **The roadmap was extended on 2026-08-18** with the four goals now recorded in
 **`BUILD-PLAN.md` §0** — solo play against the computer, a console worth sitting at,
-strategy simulation at scale, and a multiplayer app with AI seats. P9 is unchanged by it.
+strategy simulation at scale, and a multiplayer app with AI seats. **P9 picks up two
+requirements from it** (§3.8, below) but is otherwise unchanged.
 **P10 (bots) is the fan-out point**: solo play *is* bots, a discard hint is the same scored
 search, a simulation is bots playing each other, and a network timeout is a bot taking over a
 seat. After P10, **P11, P12 and P13 are independent** and can be taken in any order.
@@ -54,7 +55,7 @@ Domain**.
 | ☑ | **P6** Stakes and settlement | P1, P2 | done 2026-08-18 — settlement takes the *unshuffled* shoe |
 | ☑ | **P7** Round and turn engine | P5, P6 | done 2026-08-18 — deals from a draw order, not a shuffle |
 | ☑ | **P8** Console front end | P7 | done 2026-08-18 — hotseat; verified by driving a pty |
-| ☐ | **P9** End-to-end play | P8 | **next** |
+| ☐ | **P9** End-to-end play | P8 | **next** — read §3.8 first: it adds two requirements |
 | ☐ | **P10** Bot opponents — solo play | P9 | **promoted out of "optional" 2026-08-18** |
 | ☐ | **P11** Console UX pass | P10 | the terminal *is* the UI (§0) |
 | ☐ | **P12** Simulation at scale | P10 | thousands of games, seeded and parallel |
@@ -63,7 +64,7 @@ Domain**.
 **P9 → P10 is a chain; after that it forks.** P11, P12 and P13 depend on P10 and on nothing
 else, so any of them can be picked up in any order — or dropped.
 
-⚠️ **Three things the extension changed for work that is already planned**, all recorded in
+⚠️ **Four things the extension changed for work that is already planned**, all recorded in
 `BUILD-PLAN.md`:
 1. **P10's stated heuristic was wrong.** "Never discard an owned money card" contradicts
    `RULES.md` §4.4 — ownership never transfers, so a money card pays you after you throw it.
@@ -73,6 +74,12 @@ else, so any of them can be picked up in any order — or dropped.
 3. **§3.7 makes simulation a first-class consumer.** Determinism, no I/O and no mutable
    statics already hold; **speed is the one unmeasured thing**, and `TryFindCover` runs after
    every discard by every player.
+4. **§3.8 makes the *statistics* a constraint on P9, not a P12 problem.** A strategy
+   comparison wants five kinds of thing; two of them — how close the losers were, and how much
+   of the money was the side bet — are reachable **only through the round's `TableState`**. So
+   a `MatchEngine` that hands back banks alone would quietly foreclose on the simulation goal.
+   It is the same surfacing the console already needs, so **one mechanism serves both**.
+   P9 also gains one field: **`Turns` on `RoundResult`**, free where the engine already counts.
 
 ---
 
@@ -430,6 +437,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-18 | — | **Statistics added as a design constraint** (doc-only, no code). `BUILD-PLAN.md` **§3.8**: the domain gains no notion of a statistic, and everything a strategy comparison wants is derived by the consumer from three seams — the observer stream, the per-round `(RoundResult, TableState)` pair, and a **recording decorator over `IPlayerAgent`** for anything decision-level (which needs no domain change and serves human replay too). Four constraints recorded, the sharpest being that ⚠️ **P9 must surface each round's table or two of the five stat families become unreachable**. P9 also gains `Turns` on `RoundResult`. §3.5 now says the observer event set is open but **hot** — events pass what the engine holds and never allocate. P12's build list rewritten against §3.8; §0, CLAUDE.md and the `/poker` skill's stale P0 baseline exception brought current. Build clean, **192 passed / 0 failed** — unchanged. |
 | 2026-08-18 | — | **Roadmap extended** (doc-only, no code). Nick named four goals beyond a playable game; written up as `BUILD-PLAN.md` **§0**, with **§3.6** (agents stay synchronous — a remote player blocks in the agent, one table is one task) and **§3.7** (simulation is a first-class consumer: determinism ✅, no I/O ✅, no mutable statics ✅, speed ⚠️ unmeasured) taken now rather than discovered later. **P10 promoted out of "optional" and rewritten** — its "never discard an owned money card" heuristic contradicted §4.4 and is corrected, bots move to `Domain/Agents/` so they are testable and reusable, and the scored partial cover P5 left unbuilt is specified here. Added **P11** (console UX), **P12** (simulation at scale), **P13** (multiplayer). §4 graph and §7 risks updated. Build clean, **192 passed / 0 failed** — unchanged, nothing was built. |
 | 2026-08-18 | P8 | ☑ Done. `CardFormatting`, `SpectrePlayerAgent`, `ConsoleObserver` and a `Program` that asks for players and stakes, randomises the seating, plays a round and reports the settlement split into its round and money-card halves. Hotseat concealment: clear and hand over the keyboard once a turn; blind draws are narrated without the card. Spectre.Console 0.57.2 added back. **No Domain change, so no new tests — 192 passed / 0 failed**, build clean; verified manually by driving the real binary and a rigged winning deal through a pty. Amended BUILD-PLAN P9 (the console's settlement report needs each round's `TableState`, so `MatchEngine` must surface it; between-round "stop playing" is the console's to ask) and P10. |
 | 2026-08-18 | P7 | ☑ Done. `TurnAction`, `PlayerState`, `TableState`, `TurnContext`, `RoundResult`, `RoundEngine`, `IPlayerAgent`, `IGameObserver`. A round deals from a validated draw order (so it is scriptable), turns up bottom-then-top, offers the claim on the opening turn only, records ownership on deals and blind draws alone, discards before revealing, and settles on a declaration. Build clean, **192 passed / 0 failed** (18 new), including the four acceptance tests — expected settlement, 13/14 hand sizes, 108 distinct cards at every event, and a claim that grants no ownership. Raised `RULES.md` §9 #12 and #13 (rev 11), both defaulted. Amended BUILD-PLAN §2, §3.5, P8 (what the engine asks the console) and **P9 (the reshuffle must go inside the engine — catching `Play()` cannot resume a round)**. |
