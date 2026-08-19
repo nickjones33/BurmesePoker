@@ -15,17 +15,20 @@ namespace BurmesePoker.Domain.Melds;
 /// the retired 2023 <c>CardPlaysFactory</c> was replaced rather than repaired.
 /// </para>
 /// <para>
-/// The search is recursive backtracking pinned to the <b>lowest uncovered card</b>. Since
-/// every card below it is already covered, any meld that covers it consists entirely of cards
-/// at or above it — so indexing the candidates by their lowest card is both a filter and the
-/// thing that stops the search re-exploring permutations of a cover it has already tried.
-/// A hand of nine consecutive cards in one suit plus four jokers produces over four thousand
-/// candidates, so the index is not a nicety.
+/// The search is recursive backtracking pinned to the <b>lowest uncovered card</b>, over the
+/// <see cref="MeldIndex"/> — since every card below it is already covered, any meld that
+/// covers it consists entirely of cards at or above it.
 /// </para>
 /// <para>
 /// Coverage is tracked as a bit per card rather than a set of <see cref="CardId"/>s, which
 /// makes a dead end memoisable: a covered-set that has been proved unfinishable is never
 /// explored again, bounding the search at 2^n states.
+/// </para>
+/// <para>
+/// <b>A hand that cannot be covered exactly comes back with nothing at all</b>, which is every
+/// hand a player actually holds. Asking how <em>close</em> a hand is — what a bot needs on
+/// every turn — is <see cref="PartialCover"/>, deliberately a separate type: this one is the
+/// win authority and its answers may not change (BUILD-PLAN §3.4).
 /// </para>
 /// </remarks>
 public static class HandEvaluator
@@ -34,7 +37,7 @@ public static class HandEvaluator
     /// The largest hand the evaluator accepts — one bit per card in a <see cref="ulong"/>.
     /// The game deals 13 and never holds more than 14, so this is a guard, not a limit.
     /// </summary>
-    public const int MaximumHandSize = 64;
+    public const int MaximumHandSize = MeldIndex.MaximumHandSize;
 
     /// <summary>
     /// Whether the hand can be laid down: every card melded, no card used twice
@@ -52,45 +55,7 @@ public static class HandEvaluator
     /// <returns>Whether a cover exists. An empty hand is covered by no melds at all.</returns>
     public static bool TryFindCover(IReadOnlyList<Card> hand, out IReadOnlyList<Meld> melds)
     {
-        ArgumentNullException.ThrowIfNull(hand);
-        if (hand.Count > MaximumHandSize)
-        {
-            throw new ArgumentException(
-                $"A hand of more than {MaximumHandSize} cards cannot be evaluated.", nameof(hand));
-        }
-
-        // Ascending CardId order, so "the lowest uncovered card" is bit index order.
-        var ordered = hand.OrderBy(card => card.Id.Value).ToArray();
-        var position = new Dictionary<CardId, int>(ordered.Length);
-        for (var index = 0; index < ordered.Length; index++)
-        {
-            if (!position.TryAdd(ordered[index].Id, index))
-            {
-                throw new ArgumentException(
-                    "A hand cannot hold the same card instance twice.", nameof(hand));
-            }
-        }
-
-        var full = ordered.Length == MaximumHandSize
-            ? ulong.MaxValue
-            : (1UL << ordered.Length) - 1;
-
-        var byLowestCard = new List<(Meld Meld, ulong Mask)>[ordered.Length];
-        for (var index = 0; index < byLowestCard.Length; index++)
-        {
-            byLowestCard[index] = [];
-        }
-
-        foreach (var meld in MeldCandidates.For(hand))
-        {
-            var mask = 0UL;
-            foreach (var id in meld.CardIds)
-            {
-                mask |= 1UL << position[id];
-            }
-
-            byLowestCard[BitOperations.TrailingZeroCount(mask)].Add((meld, mask));
-        }
+        var index = MeldIndex.Build(hand);
 
         var chosen = new List<Meld>();
         var exhausted = new HashSet<ulong>();
@@ -106,7 +71,7 @@ public static class HandEvaluator
 
         bool Search(ulong covered)
         {
-            if (covered == full)
+            if (covered == index.Full)
             {
                 return true;
             }
@@ -118,8 +83,8 @@ public static class HandEvaluator
 
             // Pin to the lowest uncovered card: it has to be melded somehow, and only melds
             // whose lowest card it is can still do it.
-            var lowest = BitOperations.TrailingZeroCount(~covered & full);
-            foreach (var (meld, mask) in byLowestCard[lowest])
+            var lowest = BitOperations.TrailingZeroCount(~covered & index.Full);
+            foreach (var (meld, mask) in index.ByLowestCard[lowest])
             {
                 if ((covered & mask) != 0)
                 {

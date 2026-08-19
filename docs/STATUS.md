@@ -10,15 +10,16 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P10 (bot opponents — solo play).** No blockers.
+**Next packet: any of P11, P12 or P13 — they are independent.** No blockers.
 
-**P0 through P9 are done, so the game is a *game*:** `dotnet run --project
-BurmesePoker.Console` deals for 4–6 people at one keyboard, plays a round to settlement, asks
-*"another round?"*, carries the banks over, and reshuffles the discards if the draw pile runs
-dry. What is missing is somebody to play against — **P10 is the fan-out point**: solo play *is*
-bots, a discard hint is the same scored search, a simulation is bots playing each other, and a
-network timeout is a bot taking over a seat. After P10, **P11, P12 and P13 are independent** and
-can be taken in any order.
+**P0 through P10 are done, so the game can be played alone:** `dotnet run --project
+BurmesePoker.Console` asks how many are at the table and how many of them are people, fills the
+rest with bots, plays rounds to settlement, carries the banks over, and reshuffles the discards
+if the draw pile runs dry. **P10 was the fan-out point and it is behind us** — solo play is
+bots, a discard hint is the same scored search (`PartialCover`), a simulation is bots playing
+each other, and a network timeout is a bot taking over a seat. **P11 (console UX), P12
+(simulation) and P13 (multiplayer) now depend only on P10**, so pick any of them — or none;
+the game is finished as a game.
 
 The 2023 implementation is gone from the tree and lives only at the `pre-rewrite` tag. The
 solution is three projects — `BurmesePoker.Domain` (pure rules), `BurmesePoker.Console`
@@ -27,19 +28,23 @@ solution is three projects — `BurmesePoker.Domain` (pure rules), `BurmesePoker
 
 Domain holds `Cards/{Rank,Suit,CardColor,CardText,CardId,Card,Deck,DeckBuilder,
 DeckExhaustedException}`, `Melds/{MeldKind,MeldSlot,Meld,RunGenerator,SetGenerator,
-MeldCandidates,HandEvaluator}`, `Money/{MoneyCardRegistry,CardOwnership,Stakes,Settlement}`,
+MeldCandidates,MeldIndex,HandEvaluator,PartialCover}`,
+`Money/{MoneyCardRegistry,CardOwnership,Stakes,Settlement}`,
 `Play/{PlayerId,TurnAction,PlayerState,TableState,TurnContext,RoundResult,RoundEngine,
-MatchEngine}` and `Abstractions/{IPlayerAgent,IGameObserver}`. **Every folder in BUILD-PLAN §2's
-sketch is now complete** — P10 adds a new one, `Domain/Agents/`. Console holds
-`{Program,CardFormatting,SpectrePlayerAgent,ConsoleObserver}`.
+MatchEngine}`, `Abstractions/{IPlayerAgent,IGameObserver}` and — new in P10 —
+`Agents/{GreedyBotAgent}`. **Every folder in BUILD-PLAN §2's sketch is complete, and P10's is
+the first beyond it.** Console holds `{Program,CardFormatting,SpectrePlayerAgent,
+ConsoleObserver}`.
 
-✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **208 passed,
+✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **225 passed,
 0 failed**. **Any red tree is a real problem.**
 
-⚠️ **One hazard a cold context must know before writing a test or a bot:** with the reshuffle
-built, **a round in which nobody's hand ever improves never ends.** Only a declaration ends a
-round (RULES.md §7.1) and the cards now circulate for ever, so a table of passive agents loops
-until it is killed. Every round-level test needs a seat that eventually declares.
+⚠️ **One hazard a cold context must know before writing a test or a strategy:** with the
+reshuffle built, **a round in which nobody's hand ever improves never ends.** Only a
+declaration ends a round (RULES.md §7.1) and the cards now circulate for ever, so a table of
+passive agents loops until it is killed. Every round-level test needs a seat that eventually
+declares. `GreedyBotAgent` is safe — its score cannot fall, and every seed tried finished in
+21–30 turns — but the next strategy is not safe by default.
 
 ---
 
@@ -57,29 +62,33 @@ until it is killed. Every round-level test needs a seat that eventually declares
 | ☑ | **P7** Round and turn engine | P5, P6 | done 2026-08-18 — deals from a draw order, not a shuffle |
 | ☑ | **P8** Console front end | P7 | done 2026-08-18 — hotseat; verified by driving a pty |
 | ☑ | **P9** End-to-end play | P8 | done 2026-08-18 — the reshuffle lives inside `RoundEngine.TakeCard` |
-| ☐ | **P10** Bot opponents — solo play | P9 | **next** — a strategy that never improves never ends a round |
-| ☐ | **P11** Console UX pass | P10 | the terminal *is* the UI (§0) |
-| ☐ | **P12** Simulation at scale | P10 | thousands of games, seeded and parallel |
-| ☐ | **P13** Multiplayer app | P10 | XL — split it when it is next |
+| ☑ | **P10** Bot opponents — solo play | P9 | done 2026-08-18 — `PartialCover` + `GreedyBotAgent`; every seed terminates |
+| ☐ | **P11** Console UX pass | P10 | **candidate** — the terminal *is* the UI (§0); the round log is now the sorest spot |
+| ☐ | **P12** Simulation at scale | P10 | **candidate** — thousands of games, seeded and parallel |
+| ☐ | **P13** Multiplayer app | P10 | **candidate** — XL, split it when it is next |
 
-**P10 is the fork.** P11, P12 and P13 depend on P10 and on nothing else, so any of them can be
-picked up in any order — or dropped.
+**P10 was the fork and it is done.** P11, P12 and P13 depend on P10 and on nothing else, so any
+of them can be picked up in any order — or dropped.
 
-⚠️ **Four things the extension changed for work that is already planned**, all recorded in
-`BUILD-PLAN.md`:
-1. **P10's stated heuristic was wrong.** "Never discard an owned money card" contradicts
-   `RULES.md` §4.4 — ownership never transfers, so a money card pays you after you throw it.
-   Holding one gains nothing. The packet now says so and has a test for it.
+⚠️ **Four things the roadmap changed for work that was already planned**, all recorded in
+`BUILD-PLAN.md` — **three of the four are now discharged**:
+1. ✅ **P10's stated heuristic was wrong, and the correction shipped.** "Never discard an owned
+   money card" contradicts `RULES.md` §4.4 — ownership never transfers, so a money card pays
+   you after you throw it. `GreedyBotAgent` consults neither ownership nor the registry
+   anywhere, and `MoneyCardsDoNotChangeWhatABotThrowsAway` is the test that says so.
 2. **§3.6 settles that agents stay synchronous**, taken *before* P10 and P13 add callers to
-   `IPlayerAgent`. A remote player blocks in the agent; one table is one task.
-3. **§3.7 makes simulation a first-class consumer.** Determinism, no I/O and no mutable
-   statics already hold; **speed is the one unmeasured thing**, and `TryFindCover` runs after
-   every discard by every player.
+   `IPlayerAgent`. A remote player blocks in the agent; one table is one task. **P10 added its
+   caller and needed nothing** — a bot answers the same four questions a person does.
+3. ✅ **§3.7's one unmeasured thing has a number.** A bot-only round costs **~40 ms over 21–30
+   turns**, so the simulation goal is not in danger — but the hot loop has **moved to
+   `PartialCover.Best`**, which a bot calls up to fifteen times a decision against the engine's
+   one `TryFindCover`. P12 measures that first.
 4. ✅ **§3.8's statistics constraint — delivered by P9.** `MatchEngine.PlayRound` returns a
    `RoundRecord(RoundResult, TableState)`, so how close the losers were and how much of the
    money was the side bet both stay reachable, and `RoundResult.Turns` is carried at the
    source. The engine keeps **no** per-round history: a consumer derives what it wants and
-   drops the table.
+   drops the table. **P10 built the third seam too** — `RecordingAgent`, a decorator over
+   `IPlayerAgent`, in the test project.
 
 ---
 
@@ -87,7 +96,62 @@ picked up in any order — or dropped.
 
 *Anything a cold context would need: decisions taken, surprises, deliberate leftovers.*
 
-**From P9 (most recent):**
+**From P10 (most recent):**
+
+- **`PartialCover.Best(hand)` → `{ Melds, Uncovered, CoveredCount, IsComplete }`** is the
+  scored cover P5 deliberately did not build. It is `HandEvaluator`'s own search **plus one
+  branch**: at the lowest card not yet settled it may take a meld covering it *or give the card
+  up and move on*. Memoised on `(position, covered)`; a complete cover stops the search where
+  it stands, so a winning hand is no dearer than it is in the evaluator. `IsComplete` and
+  `HandEvaluator.IsWinning` are pinned as the same claim across 320 randomly dealt hands.
+- ⚠️ **`Melds/MeldIndex` is an extraction, not an addition.** Both searches need the same
+  candidate index — cards in `CardId` order, one bit each, candidates filed under the lowest
+  card they consume — and keeping two copies of that would be two places for it to drift.
+  `HandEvaluator` was rewritten over it in a separate step and the **208-test baseline
+  re-run before anything else was touched**; it is the only proof its answers did not move.
+  Do this again if either search is ever changed.
+- **The whole strategy is one question asked three ways:** *of the thirteen I would be left
+  holding, how many meld?* Take the discard iff it raises that count, claim the turned-up money
+  card iff it raises that count, throw whichever card leaves it highest. **The take decision is
+  deliberately asked of the fourteen rather than of the thirteen kept** — same answer, a
+  fourteenth of the work, because any improvement must use the new card and every fourteen-card
+  arrangement has a meld of four or more to give one back.
+- **The tie-break is what actually makes progress**, since early on most discards score alike:
+  prefer keeping cards with partners (another suit of the same rank, a neighbour in the same
+  suit — with the ace a neighbour of both the two and the king, never through), and keep jokers
+  over everything. **A tie on *taking* goes to the deck**, which is the only place money enters
+  a decision at all: a blind draw confers ownership and a pickup does not (RULES.md §4.4).
+- ⚠️ **Termination is a property, not a hope.** The score can never fall — throwing back the
+  card just taken restores the hand exactly — so a bot's hand climbs monotonically to thirteen.
+  Measured over twelve seeds and every table size: **every round terminated, 21–30 turns, ~40 ms
+  a round, ~1.5 ms a turn**. No bot round has ever run the draw pile out, so **P9's reshuffle
+  is unexercised by bots** — the tests that cover it are still `RoundEngineTests`'.
+- **Two findings worth keeping for P12.** A freshly dealt hand covers **4 of 13 on average**
+  (154 of 800 dealt hands cover nothing at all), and a bot reaches thirteen in seven or eight of
+  its *own* turns — mostly by **taking discards**, because with two decks the card somebody
+  throws away is very often somebody else's third of a rank. The take-the-discard rate is going
+  to be the interesting statistic.
+- **`RecordingAgent` (test project) is how a bot is tested at all.** `TurnContext` has an
+  `internal` constructor, so a test cannot fabricate one — a strategy is only observable from
+  inside a real round. The decorator wraps a bot, plays a scripted `DealBuilder` deal, and
+  reads back what it was asked and what it answered. This is exactly BUILD-PLAN §3.8's item 2
+  seam, and P12 should lift it rather than reinvent it.
+- **The console asks two questions now** — *"how many at the table?"* then *"how many of you
+  are people?"* (0 is allowed, and leaves the computer playing itself). Bots are named from a
+  roster and marked: *Ruby (bot)*, *Sable (bot)*, … so narration reads as a table of players.
+  **No Console tests, still by construction.** Verification was again a pty:
+  `script -qec "dotnet run --project BurmesePoker.Console --no-build" /dev/null < keys` with a
+  file of newlines — **20 full rounds** against three bots, every settlement summing to zero,
+  bots declaring covers including joker substitutions.
+- ⚠️ **A bot's turn is instantaneous, and that is a UX problem P11 inherits.** Three bot turns
+  now flash past and are wiped by the human's screen clear, so the round-log panel P11 already
+  wanted is the sorest thing in the console. **Do not put a sleep in `GreedyBotAgent`** — a
+  domain type that waited would ruin P12.
+- **No new rules question.** Everything the strategy needed was already settled: §4.4, §4.5,
+  §5, §6, §7.1. `RULES.md` is unchanged at rev 12.
+- P10 shipped 17 tests (225 total).
+
+**Still current, from P9:**
 
 - **`MatchEngine(players, agents, stakes, random, observer = null)`** holds the seating, the
   stakes, the banks and the one `Random`. **`PlayRound()`** shuffles a fresh shoe;
@@ -498,6 +562,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-18 | P10 | ☑ Done. **Solo play.** `Melds/PartialCover` — the evaluator's search with one extra branch (give a card up and move on), memoised on `(position, covered)` and short-circuited on a complete cover — and `Agents/GreedyBotAgent`, whose entire strategy is *of the thirteen I would keep, how many meld?* asked of the discard, the claim and every candidate throw. `Melds/MeldIndex` extracted so both searches share one candidate index; `HandEvaluator` rewritten over it and the 208-test baseline re-run before anything else changed. **Money is absent from every decision** (RULES.md §4.4) except the take tie-break, which favours the deck because a blind draw confers ownership. `Program` asks *"how many of you are people?"* and fills the rest with named bots. Build clean, **225 passed / 0 failed** (17 new). ⚠️ **Termination measured, not assumed**: twelve seeds × 4–6 players, every round finished in 21–30 turns at ~40 ms a round. Verified the console by playing **20 rounds** against bots through a pty. No new rules question — `RULES.md` stays at rev 12. Amended BUILD-PLAN §0, §2, §3.7, P11, P12, P13, §4 and §7 (the "never-improving strategy" risk retired; the hot loop re-aimed at `PartialCover`). |
 | 2026-08-18 | P9 | ☑ Done. `MatchEngine` — repeated rounds, banks carrying over, no automatic end — returning a `RoundRecord(RoundResult, TableState)` per round and keeping no history. Deck exhaustion now **reshuffles inside `RoundEngine.TakeCard`**: every discard pile gathered and shuffled into a new draw pile, the turned-up cards left alone, ownership held by whoever acquired the card first (`CardOwnership.TryRecordFromDeck`). `RoundResult.Turns` added; `IGameObserver.DiscardsReshuffled` added; `RoundEngine` now **requires** a `Random`. ⚠️ Found and fixed a real concealment bug the match loop exposed — `SpectrePlayerAgent` compared turn numbers alone and so skipped its screen clear on turn 1 of every round after the first; `TurnContext` gained `Round`. `Program` now loops rounds, asks *"another round?"* and prints standings. Build clean, **208 passed / 0 failed** (16 new, 1 removed — a passive round no longer terminates, so the old exhaustion test would hang). Verified the console by driving two full rounds through a pty. Rules defaults taken for `RULES.md` §9 #4 and #5, and new #14 raised (rev 12). Amended BUILD-PLAN §2, P10, P11 and P12. |
 | 2026-08-18 | — | **Statistics added as a design constraint** (doc-only, no code). `BUILD-PLAN.md` **§3.8**: the domain gains no notion of a statistic, and everything a strategy comparison wants is derived by the consumer from three seams — the observer stream, the per-round `(RoundResult, TableState)` pair, and a **recording decorator over `IPlayerAgent`** for anything decision-level (which needs no domain change and serves human replay too). Four constraints recorded, the sharpest being that ⚠️ **P9 must surface each round's table or two of the five stat families become unreachable**. P9 also gains `Turns` on `RoundResult`. §3.5 now says the observer event set is open but **hot** — events pass what the engine holds and never allocate. P12's build list rewritten against §3.8; §0, CLAUDE.md and the `/poker` skill's stale P0 baseline exception brought current. Build clean, **192 passed / 0 failed** — unchanged. |
 | 2026-08-18 | — | **Roadmap extended** (doc-only, no code). Nick named four goals beyond a playable game; written up as `BUILD-PLAN.md` **§0**, with **§3.6** (agents stay synchronous — a remote player blocks in the agent, one table is one task) and **§3.7** (simulation is a first-class consumer: determinism ✅, no I/O ✅, no mutable statics ✅, speed ⚠️ unmeasured) taken now rather than discovered later. **P10 promoted out of "optional" and rewritten** — its "never discard an owned money card" heuristic contradicted §4.4 and is corrected, bots move to `Domain/Agents/` so they are testable and reusable, and the scored partial cover P5 left unbuilt is specified here. Added **P11** (console UX), **P12** (simulation at scale), **P13** (multiplayer). §4 graph and §7 risks updated. Build clean, **192 passed / 0 failed** — unchanged, nothing was built. |

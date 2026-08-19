@@ -1,4 +1,5 @@
 using BurmesePoker.Domain.Abstractions;
+using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Money;
 using BurmesePoker.Domain.Play;
@@ -17,6 +18,12 @@ namespace BurmesePoker.Console;
 /// which is also the order settlement is handed.
 /// </para>
 /// <para>
+/// <b>Any seat the people do not fill is played by the computer.</b> A bot is just another
+/// <see cref="IPlayerAgent"/> (BUILD-PLAN P10), so the engine cannot tell which seats are
+/// which and neither can this file past the point where the agents are built — the whole of
+/// solo play is one line in the dictionary below.
+/// </para>
+/// <para>
 /// <b>Round after round, until the table says stop.</b> Nothing ends a match on its own
 /// (RULES.md §7.2), so <em>"another round?"</em> is asked here rather than in the domain — it
 /// is not a move, so it is not a question for an agent either. The banks are the
@@ -25,6 +32,12 @@ namespace BurmesePoker.Console;
 /// </remarks>
 internal static class Program
 {
+    /// <summary>
+    /// What the computer's seats are called. One per seat, because a table can be all bots — and
+    /// named rather than numbered, since the narration reads as a table of players either way.
+    /// </summary>
+    private static readonly string[] BotNames = ["Ruby", "Sable", "Onyx", "Jade", "Coral", "Amber"];
+
     private static int Main()
     {
         AnsiConsole.Write(new Rule("[bold]Burmese Poker[/]").LeftJustified());
@@ -37,7 +50,7 @@ internal static class Program
             return 1;
         }
 
-        var names = AskWhoIsPlaying();
+        var (names, bots) = AskWhoIsPlaying();
         var stakes = AskStakes();
         var seating = Seat(names);
 
@@ -49,7 +62,11 @@ internal static class Program
 
         var match = new MatchEngine(
             seating,
-            seating.ToDictionary(player => player, IPlayerAgent (_) => new SpectrePlayerAgent(names)),
+            seating.ToDictionary(
+                player => player,
+                IPlayerAgent (player) => bots.Contains(player)
+                    ? new GreedyBotAgent()
+                    : new SpectrePlayerAgent(names)),
             stakes,
             Random.Shared,
             new ConsoleObserver(names));
@@ -112,20 +129,51 @@ internal static class Program
         AnsiConsole.WriteLine();
     }
 
-    private static Dictionary<PlayerId, string> AskWhoIsPlaying()
+    /// <summary>
+    /// Who is at the table, and which of them are people.
+    /// </summary>
+    /// <remarks>
+    /// A round is for four to six (RULES.md §2.1) however many of them are breathing, so the
+    /// table is sized first and the people are counted out of it. None is allowed: it leaves
+    /// the computer playing itself, which is worth watching once.
+    /// </remarks>
+    private static (Dictionary<PlayerId, string> Names, HashSet<PlayerId> Bots) AskWhoIsPlaying()
     {
         var count = AnsiConsole.Prompt(
-            new TextPrompt<int>($"How many players? [grey]({RoundEngine.MinimumPlayers}–{RoundEngine.MaximumPlayers})[/]")
+            new TextPrompt<int>($"How many at the table? [grey]({RoundEngine.MinimumPlayers}–{RoundEngine.MaximumPlayers})[/]")
                 .DefaultValue(RoundEngine.MinimumPlayers)
                 .Validate(value => value is >= RoundEngine.MinimumPlayers and <= RoundEngine.MaximumPlayers
                     ? ValidationResult.Success()
                     : ValidationResult.Error(
                         $"[red]A round is for {RoundEngine.MinimumPlayers} to {RoundEngine.MaximumPlayers} players (RULES.md §2.1).[/]")));
 
-        return Enumerable.Range(1, count).ToDictionary(
-            seat => new PlayerId(seat),
-            seat => AnsiConsole.Prompt(
-                new TextPrompt<string>($"Name for player {seat}?").DefaultValue($"Player {seat}")));
+        var people = AnsiConsole.Prompt(
+            new TextPrompt<int>($"How many of you are people? [grey](0–{count}; the rest are played by the computer)[/]")
+                .DefaultValue(1)
+                .Validate(value => value >= 0 && value <= count
+                    ? ValidationResult.Success()
+                    : ValidationResult.Error($"[red]There are only {count} seats.[/]")));
+
+        var names = new Dictionary<PlayerId, string>(count);
+        var bots = new HashSet<PlayerId>();
+
+        for (var seat = 1; seat <= count; seat++)
+        {
+            var player = new PlayerId(seat);
+
+            if (seat <= people)
+            {
+                names[player] = AnsiConsole.Prompt(
+                    new TextPrompt<string>($"Name for player {seat}?").DefaultValue($"Player {seat}"));
+            }
+            else
+            {
+                names[player] = $"{BotNames[seat - people - 1]} (bot)";
+                bots.Add(player);
+            }
+        }
+
+        return (names, bots);
     }
 
     private static Stakes AskStakes()
