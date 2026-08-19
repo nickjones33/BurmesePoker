@@ -1,0 +1,87 @@
+.seat {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--edge-raised);
+    border-left-width: 4px;
+    border-radius: 8px;
+    background: var(--raised);
+}
+
+/* The seat that moved last is marked three ways — a glyph, a heavier edge and a tint — so
+   none of them is carrying it alone (§3.11 A2). */
+.acting {
+    border-left-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--edge-raised);
+}
+
+.who {
+    /* Containing block for .said — see CardChip.razor.css. */
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    margin: 0;
+}
+
+.marker {
+    width: 1rem;
+    text-align: center;
+    color: var(--on-raised-muted);
+}
+
+.acting .marker {
+    color: var(--on-raised);
+}
+
+.name {
+    font-weight: 700;
+}
+
+.bank,
+.discard {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.label {
+    color: var(--on-raised-muted);
+    font-size: 0.85rem;
+    min-width: 5rem;
+}
+
+.amount {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+
+.up {
+    color: var(--on-raised-good);
+}
+
+.down {
+    color: var(--on-raised-bad);
+}
+
+.level {
+    color: var(--on-raised-muted);
+}
+
+.nothing {
+    color: var(--on-raised-muted);
+    font-size: 0.9rem;
+}
+
+.said {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}

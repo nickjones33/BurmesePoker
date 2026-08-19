@@ -17,6 +17,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The browser client's components are reflected over rather than rendered (§3.11 A5),
+         which needs the framework their base class comes from. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Domain and the simulation harness, and never BurmesePoker.Console: the rule that
          matters is that nothing is tested through the front end (BUILD-PLAN §2). The harness
          is a headless consumer whose determinism is itself an acceptance test (P12), and
@@ -26,6 +32,13 @@
     <ProjectReference Include="..\BurmesePoker.Presentation\BurmesePoker.Presentation.csproj" />
     <ProjectReference Include="..\BurmesePoker.Server\BurmesePoker.Server.csproj" />
     <ProjectReference Include="..\BurmesePoker.Sim\BurmesePoker.Sim.csproj" />
+    <!-- ⚠️ BurmesePoker.Web *is* referenced, and BurmesePoker.Console still is not. The rule
+         was never "no front end": it is that nothing is tested *through* a front end. A
+         Spectre console is an interactive loop that needs a terminal, and its verification is
+         a pty (scripts/drive-console.py). A component tree is data — §3.11 A5 asks for a
+         reflection test over it by name, and the table's projection is a plain class a test
+         can fold events into. -->
+    <ProjectReference Include="..\BurmesePoker.Web\BurmesePoker.Web.csproj" />
   </ItemGroup>
 
 </Project>

@@ -2,7 +2,7 @@ using BurmesePoker.Domain.Abstractions;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Play;
 
-namespace BurmesePoker.Console;
+namespace BurmesePoker.Presentation;
 
 /// <summary>
 /// Another agent, answering at a speed a person can read.
@@ -17,8 +17,20 @@ namespace BurmesePoker.Console;
 /// <b>The pause belongs here and nowhere near <c>GreedyBotAgent</c>.</b> A domain type that
 /// slept would put a wait inside the simulation harness's hot loop, where two thousand games
 /// run in parallel and take about twenty milliseconds a round — it would ruin P12 outright.
-/// Waiting is a thing a console does; a decorator is how a console does it without the domain
+/// Waiting is a thing a front end does; a decorator is how it does it without the domain
 /// learning that anybody is watching (BUILD-PLAN §0).
+/// </para>
+/// <para>
+/// ⚠️ <b>It lives here, and not in the console, because two front ends now need it</b>
+/// (BUILD-PLAN P13.3). P13.2 left the table server's stand-in deliberately unpaced — a sleep
+/// belongs to whatever is <em>drawing</em> a table and never to a server that may be hosting
+/// many of them, so <c>TableOptions.StandIn</c> is a factory and a host hands over an agent
+/// that is already wrapped. That host is <c>BurmesePoker.Web</c>, which may not reference
+/// <c>BurmesePoker.Console</c>, so the decorator moved to the project both front ends already
+/// share. <b>The alternative was <c>BurmesePoker.Domain/Agents/</c></b>, which the plan named
+/// first; it is rejected because the domain is the pure rules and a wall-clock sleep is not
+/// one of them — and because <c>BurmesePoker.Sim</c> references Domain and must never be able
+/// to reach a sleep at all, which was the exact mistake P11 wrote a layering test about.
 /// </para>
 /// <para>
 /// <b>Once a turn, not once a question.</b> A turn asks a varying number of questions — the

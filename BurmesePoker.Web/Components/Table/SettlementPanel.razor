@@ -1,0 +1,103 @@
+@*
+    The money that moved. Net deltas only — splitting them into the round payment and the
+    money-card side bet needs the ownership record, which is on the table and not in the
+    result (BUILD-PLAN P8). The console has the table; a watcher has what it was told, and it
+    is told the nets.
+*@
+
+<section class="settled" aria-labelledby="settled-heading">
+    <h2 id="settled-heading">Round @Result.Round settled</h2>
+
+    <p class="won">
+        <strong>@Winner</strong> laid down all thirteen and went out in @Result.Turns turns.
+    </p>
+
+    <ol class="melds">
+        @foreach (var meld in Result.Melds)
+        {
+            <li @key="Key(meld)">
+                <span class="kind">@DisplayTokens.For(meld.Kind)</span>
+                @foreach (var slot in meld.Slots)
+                {
+                    <CardChip @key="slot.Card.Id.Value"
+                              Card="slot.Card"
+                              Token="@StandsFor(slot)"
+                              TokenWords="@StandsForWords(slot)" />
+                }
+            </li>
+        }
+    </ol>
+
+    <table>
+        <caption>What each seat took home</caption>
+        <thead>
+            <tr>
+                <th scope="col">Player</th>
+                <th scope="col">Net</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var seat in Seats)
+            {
+                <tr @key="seat.Player.Value">
+                    <th scope="row">@seat.Name@(seat.Won ? " (out)" : null)</th>
+                    <td class="@Direction(Net(seat))">@Amount(Net(seat))</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p class="note">
+        A money card pays its owner — whoever the deck gave it to — whether they still hold it
+        or threw it away (RULES.md §4.4). Nothing ends a match, so the next round is dealt on
+        top of these banks (RULES.md §7.2).
+    </p>
+</section>
+
+@code {
+    /// <summary>What the round settled at.</summary>
+    [Parameter, EditorRequired]
+    public RoundResult Result { get; set; } = default!;
+
+    /// <summary>The seats, in seating order.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<SeatLine> Seats { get; set; } = [];
+
+    private string Winner => Seats.FirstOrDefault(seat => seat.Player == Result.Winner)?.Name
+        ?? $"Seat {Result.Winner.Value}";
+
+    private int Net(SeatLine seat) => Result.Payouts.TryGetValue(seat.Player, out var money) ? money : 0;
+
+    /// <summary>
+    /// What a joker is standing in for, written after its face exactly as the console writes
+    /// it — <c>🃏(4♦)</c>.
+    /// </summary>
+    /// <remarks>
+    /// <b>The interpretation is display only, never identity</b> (<c>MeldSlot</c>): the joker
+    /// is still a joker, and it is the meld that decides what it is playing as here.
+    /// </remarks>
+    private static string? StandsFor(MeldSlot slot) => slot.IsSubstitute
+        ? $"({CardText.DisplayCode(slot.PlaysAs)}{CardText.DisplaySuit(slot.InSuit)})"
+        : null;
+
+    private static string? StandsForWords(MeldSlot slot) => slot.IsSubstitute
+        ? $"standing in for the {CardWords.For(Card.Ranked(slot.Card.Id, slot.PlaysAs, slot.InSuit))}"
+        : null;
+
+    /// <summary>A stable key per meld: the cards it is made of, which no other meld holds (§3.1).</summary>
+    private static string Key(Meld meld) => string.Join('-', meld.CardIds.Select(id => id.Value));
+
+    private static string Amount(int money) => money switch
+    {
+        > 0 => $"+${money}",
+        < 0 => $"−${-money}",
+        _ => "$0"
+    };
+
+    private static string Direction(int money) => money switch
+    {
+        > 0 => "up",
+        < 0 => "down",
+        _ => "level"
+    };
+}

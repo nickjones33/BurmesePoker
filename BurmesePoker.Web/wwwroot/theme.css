@@ -1,0 +1,67 @@
+/*
+    The whole palette, and nothing else in this file.
+
+    ⚠️ Contrast is computed, never eyeballed (BUILD-PLAN §3.11 A3, WCAG 1.4.3 and 1.4.11), and
+    the test that computes it reads *this file* rather than a copy of these values in C# — a
+    palette a stylesheet does not use is not the palette.
+
+    The naming is the test's contract, so it is a rule and not a style:
+
+      --x                  a background.
+      --on-x…              something drawn on --x. Must reach 4.5:1 against it.
+      --edge-x…            a line or an interactive component's boundary drawn on --x.
+                           Must reach 3:1 against it.
+
+    A token's base is the longest existing token name its own name starts with, so
+    --on-raised-muted is measured against --raised. Add a token and it is measured; add one
+    whose base does not exist and the test says so.
+
+    Both themes are complete. `prefers-color-scheme` is honoured rather than guessed at
+    (§3.11 B10), and every pair is computed in both.
+*/
+
+:root {
+    --surface: #f4f1ea;
+    --on-surface: #1d1b16;
+    --on-surface-muted: #55504a;
+    --on-surface-link: #17457f;
+    --edge-surface: #8c857a;
+
+    --raised: #fffdf8;
+    --on-raised: #1d1b16;
+    --on-raised-muted: #5a544c;
+    --on-raised-money: #7a5300;
+    --on-raised-good: #1a6b3c;
+    --on-raised-bad: #a81f22;
+    --on-raised-red: #b3121f;
+    --on-raised-link: #17457f;
+    --edge-raised: #8a8378;
+    --edge-raised-focus: #17457f;
+
+    --accent: #17457f;
+    --on-accent: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --surface: #14161a;
+        --on-surface: #eceae4;
+        --on-surface-muted: #a7a49c;
+        --on-surface-link: #8fbcff;
+        --edge-surface: #6c6f75;
+
+        --raised: #1e2127;
+        --on-raised: #eceae4;
+        --on-raised-muted: #a9a69e;
+        --on-raised-money: #e8b34a;
+        --on-raised-good: #6bcf8e;
+        --on-raised-bad: #ff8f8a;
+        --on-raised-red: #ff8a8a;
+        --on-raised-link: #8fbcff;
+        --edge-raised: #71767e;
+        --edge-raised-focus: #8fbcff;
+
+        --accent: #3d7ddb;
+        --on-accent: #08111f;
+    }
+}

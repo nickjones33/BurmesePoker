@@ -1,0 +1,77 @@
+/* CSS isolation, so nothing in the shell can leak into the table (§3.11 C17). */
+
+.skip {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    padding: 0.6rem 1rem;
+    background: var(--raised);
+    color: var(--on-raised-link);
+    border: 1px solid var(--edge-raised);
+    z-index: 10;
+}
+
+/* The one thing that must appear on focus and nowhere else. */
+.skip:focus {
+    left: 0.5rem;
+    top: 0.5rem;
+}
+
+.masthead {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--edge-surface);
+}
+
+.wordmark {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.masthead nav ul {
+    display: flex;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.masthead nav ::deep a {
+    display: inline-block;
+    min-height: 24px;
+    min-width: 24px;
+    padding: 0.35rem 0.25rem;
+    color: var(--on-surface-link);
+}
+
+/* Colour is never alone: the current page is underlined as well as coloured (§3.11 A2). */
+.masthead nav ::deep a.active {
+    color: var(--on-surface);
+    font-weight: 700;
+    text-decoration-thickness: 3px;
+    text-underline-offset: 4px;
+}
+
+main {
+    padding: 1.25rem;
+    max-width: 78rem;
+    margin: 0 auto;
+}
+
+main:focus {
+    outline: none;
+}
+
+.colophon {
+    padding: 1.5rem 1.25rem 2.5rem;
+    max-width: 78rem;
+    margin: 0 auto;
+    color: var(--on-surface-muted);
+    font-size: 0.9rem;
+}

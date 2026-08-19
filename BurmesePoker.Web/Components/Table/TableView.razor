@@ -1,0 +1,123 @@
+@*
+    The one interactive island on the page (§3.11 C12). Everything around it is static SSR;
+    the render mode is named where this component is *used*, never here and never at the root.
+
+    It subscribes to the host's board — which is folded from a watcher's connection and from
+    nothing else — and re-renders when the table says something. There is no second route to
+    the session: what cannot reach this component cannot be drawn by it (P13.3 acceptance 2).
+*@
+@implements IDisposable
+@inject TableHost Host
+
+<section class="table" aria-labelledby="table-heading">
+    <header class="board">
+        <h2 id="table-heading">
+            @if (_board.Round == 0)
+            {
+                <text>Dealing…</text>
+            }
+            else
+            {
+                <text>Round @_board.Round</text>
+            }
+        </h2>
+        <p class="seed">
+            Seed <strong>@Host.Seed</strong> — every card in this match comes out of it.
+        </p>
+    </header>
+
+    <div class="felt">
+        <section class="turned-up" aria-labelledby="turned-up-heading">
+            <h3 id="turned-up-heading">Turned up on the table</h3>
+            @if (_board.TurnedUp.Count == 0)
+            {
+                <p class="nothing">
+                    @(_board.Round == 0
+                        ? "Nothing yet — the first hand is being dealt."
+                        : "Nothing left: the opening player claimed it (RULES.md §4.5).")
+                </p>
+            }
+            else
+            {
+                <ul class="cards">
+                    @foreach (var card in _board.TurnedUp)
+                    {
+                        <li @key="card.Id.Value">
+                            <CardChip Card="card"
+                                      Token="@DisplayTokens.For(CardDisplayState.PaysOnce)"
+                                      TokenWords="pays its owner this round" />
+                        </li>
+                    }
+                </ul>
+            }
+            <p class="note">
+                Both copies of each of these pay their owner, and 7♦ and A♠ always do
+                (RULES.md §4.1, §4.2).
+            </p>
+        </section>
+
+        <section class="seating" aria-labelledby="seating-heading">
+            <h3 id="seating-heading">The seats</h3>
+            <ul class="seats">
+                @foreach (var seat in _seats)
+                {
+                    <SeatPanel @key="seat.Player.Value" Seat="seat" />
+                }
+            </ul>
+            <p class="note">
+                Every hand is concealed until somebody declares (RULES.md §7.1), and a watcher
+                is sent no hand at all — not a hidden one.
+            </p>
+        </section>
+    </div>
+
+    <RoundLogPanel Lines="_board.Log" />
+
+    @if (_board.Settlement is { } settled)
+    {
+        <SettlementPanel Result="settled" Seats="_seats" />
+    }
+</section>
+
+@code {
+    private TableBoard _board = default!;
+    private IReadOnlyList<SeatLine> _seats = [];
+
+    /// <remarks>
+    /// ⚠️ <b>Runs twice</b> — once while the page is prerendered on the request, and again when
+    /// the circuit starts (§3.11 C13). <see cref="TableHost.Start"/> is idempotent for exactly
+    /// that reason: joining a table twice is a real bug, not a theoretical one.
+    /// </remarks>
+    protected override void OnInitialized()
+    {
+        Host.Start();
+        Take();
+        Host.Changed += OnTableSaidSomething;
+    }
+
+    /// <remarks>
+    /// <b>The board arrives on the round's own thread</b>, which is not the renderer's, so the
+    /// re-render goes through <c>InvokeAsync</c> (§3.11 C15). Nothing calls
+    /// <c>StateHasChanged</c> from an event handler of its own — <c>ComponentBase</c> already
+    /// re-renders after one.
+    /// </remarks>
+    private void OnTableSaidSomething()
+    {
+        Take();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void Take()
+    {
+        _board = Host.Board;
+        _seats = [.. _board.Seats];
+    }
+
+    /// <remarks>
+    /// ⚠️ <b>Unhooking, and nothing else.</b> A circuit that dropped without this would keep a
+    /// dead component subscribed to a live table (§3.11 A5) — and
+    /// <c>StateHasChanged</c> must never be called from here, because disposal can run during
+    /// renderer teardown where asking for a render is explicitly unsupported.
+    /// </remarks>
+    public void Dispose() => Host.Changed -= OnTableSaidSomething;
+}

@@ -1,0 +1,70 @@
+@*
+    One seat: who is in it, what it has banked, and the card on top of its discard pile.
+    Nothing about its hand — a hand is concealed until a declaration (RULES.md §7.1), and a
+    watcher is not sent one at all (TableFanOut).
+*@
+
+<li class="seat @(Seat.IsActing ? "acting" : null)">
+    <p class="who">
+        <span class="marker" aria-hidden="true">@Marker</span>
+        <span class="name">@Seat.Name</span>
+        <span class="said">@State</span>
+    </p>
+
+    <p class="bank">
+        <span class="label">Bank</span>
+        <span class="amount @Direction">@Amount</span>
+    </p>
+
+    <p class="discard">
+        <span class="label" id="@($"discard-{Seat.Player.Value}")">Discarded</span>
+        @if (Seat.LastDiscard is { } card)
+        {
+            <CardChip Card="card" />
+        }
+        else
+        {
+            <span class="nothing">nothing yet</span>
+        }
+    </p>
+</li>
+
+@code {
+    /// <summary>The seat, as the board has it.</summary>
+    [Parameter, EditorRequired]
+    public SeatLine Seat { get; set; } = default!;
+
+    /// <summary>
+    /// The non-colour half of every marker on this panel (§3.11 A2): the highlight on the
+    /// seat that moved last is a glyph and a border as well as a background.
+    /// </summary>
+    private string Marker => Seat switch
+    {
+        { Won: true } => "♛",
+        { HasDeclared: true } => "✓",
+        { IsActing: true } => "▶",
+        _ => "·"
+    };
+
+    private string State => Seat switch
+    {
+        { Won: true } => "won the round",
+        { HasDeclared: true } => "declared",
+        { IsActing: true } => "moved last",
+        _ => "waiting"
+    };
+
+    private string Amount => Seat.Bank switch
+    {
+        > 0 => $"+${Seat.Bank}",
+        < 0 => $"−${-Seat.Bank}",
+        _ => "$0"
+    };
+
+    private string Direction => Seat.Bank switch
+    {
+        > 0 => "up",
+        < 0 => "down",
+        _ => "level"
+    };
+}

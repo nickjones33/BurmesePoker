@@ -1,0 +1,45 @@
+@*
+    One card. The glyph is for the eye and hidden from the accessibility tree; the words
+    beside it are for the ear (CardWords). A screen reader reading "7♦" says whatever its
+    symbol table happens to say, which is not a card.
+*@
+
+<span class="chip @Shade">
+    <span class="face" aria-hidden="true">@Code<span class="pip">@Pip</span></span>
+    @if (Token is not null)
+    {
+        <span class="token" aria-hidden="true">@Token</span>
+    }
+    <span class="said">@Said</span>
+</span>
+
+@code {
+    /// <summary>The card to draw.</summary>
+    [Parameter, EditorRequired]
+    public Card Card { get; set; }
+
+    /// <summary>
+    /// A non-colour marker drawn beside it — <c>DisplayTokens</c>' <c>($)</c> and the rest
+    /// (§3.11 A2). Null for a card with nothing to say about it.
+    /// </summary>
+    [Parameter]
+    public string? Token { get; set; }
+
+    /// <summary>What the marker means, said in words for whoever is listening rather than looking.</summary>
+    [Parameter]
+    public string? TokenWords { get; set; }
+
+    private string Code => CardText.DisplayCode(Card.Rank);
+
+    private string Pip => CardText.DisplaySuit(Card.Suit);
+
+    /// <summary>
+    /// The card's own red or black (RULES.md §2.2) — the card's colour, saying nothing else.
+    /// The word is in <see cref="Said"/> either way, so nothing here is carried by colour.
+    /// </summary>
+    private string Shade => Card.Color == CardColor.Red ? "red" : "black";
+
+    private string Said => TokenWords is null
+        ? CardWords.For(Card)
+        : $"{CardWords.For(Card)}, {TokenWords}";
+}

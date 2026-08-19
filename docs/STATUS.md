@@ -10,8 +10,57 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P13.3 — a browser table you can watch.** No blockers. **It is the first UI in
-this project's history**, and everything under it is already tested.
+**Next packet: P13.4 — a seat you can play.** No blockers. **Everything under it is built and
+asserted over**: the page, the palette, the card, the log, the settlement, the fan-out and the
+prompt type all exist, and what P13.4 adds is the four questions as controls.
+
+✅ **P13.3 is done (2026-08-19), and this project has a UI.** `BurmesePoker.Web` is a **seventh**
+project — Blazor Server, Domain + Presentation + Server — and
+`dotnet run --project BurmesePoker.Web` deals round after round at a table you can watch in a
+browser: seats and banks, the turned-up money cards, each seat's top discard, the narration as a
+polite live region, and the settlement with the winner's melds and what each seat took home.
+**Three of the four §0 goals were already delivered; this is the first half of the fourth.**
+
+🔥 **Four findings a cold context needs.**
+
+1. **The framework's own files are static web assets, and `UseStaticFiles` does not serve them.**
+   The page rendered, looked finished, and was **dead** — `_framework/blazor.web.js` 404'd, so no
+   circuit ever started. ⚠️ **A prerendered Blazor Server page is a perfect photograph of a
+   broken one**: ask the server for every URL the page references. `MapStaticAssets` is the fix,
+   and `Properties/launchSettings.json` is checked in because a build's endpoints manifest is a
+   *Development* one.
+2. **A trimmed log must not take its `@key` from the length of the log.** `TableBoard` keeps the
+   last 240 lines; a sequence taken from `Log.Count` repeats the moment it trims, and a repeated
+   `@key` is Blazor reusing the wrong DOM node. `TableBoard.Narrated` counts every line ever
+   said.
+3. **240 visually-hidden spans made the document 10,295px tall** for a page whose body was 1,814.
+   The standard `position: absolute` recipe needs a positioned ancestor, or a hidden span inside
+   a scrolled box is measured from the page. ⚠️ **Found by measuring, not by looking** — the
+   screenshot was correct.
+4. **A source scan must read the markup, not the prose about it.** Four of six scans failed on
+   their first run, each on a comment in the file that was obeying the standard.
+   `Sources.Markup` strips commentary first. And **a `@key` check that looks *nearby* is not a
+   `@key` check** — the first version let a nested `<CardChip @key>` cover for an unkeyed `<li>`,
+   and the mutation survived. **Eleven mutations now, eleven red.**
+
+⚠️ **Two decisions P13.3 took that differ from what the plan named.**
+
+- **`PacedAgent` moved to `BurmesePoker.Presentation`, not to `Domain/Agents/`.** The domain is
+  the pure rules and a wall-clock sleep is not one — and, deciding it, **`BurmesePoker.Sim`
+  references Domain**, so a sleep in there would be reachable from the hot loop P11 wrote a
+  layering test to protect. Presentation is reachable from both front ends and neither harness.
+  **The console is byte-identical after the move** (two pty captures, two seeds, `cmp`).
+- **`BurmesePoker.Tests` now references `BurmesePoker.Web`** — and still never
+  `BurmesePoker.Console`. The rule was never *"no front end"*; it is that nothing is tested
+  **through** one. A Spectre console is an interactive loop needing a terminal, verified by a
+  pty; a component tree is data, and §3.11 A5 asks for a reflection test over it by name.
+
+✅ **The §3.11 A list is finished.** A1 shipped in P13.2, A2 in P13.1, and **A3 (computed
+contrast, both themes), A4 (real controls) and A5 (disposal) shipped here** — plus C12, C14, C15
+and B8 as scans. ⚠️ **The contrast test reads `wwwroot/theme.css`, the file the browser loads**,
+and **discovers its own pairs**: `--on-x` needs 4.5:1 against `--x`, `--edge-x` needs 3:1, and a
+token's base is the longest declared name it begins with. A token added later is measured
+without anybody listing it.
 
 ✅ **P13.2 is done (2026-08-19).** `BurmesePoker.Server` exists — a **sixth** project, Domain +
 Presentation, **and no transport at all** — and a round is played by two scripted remote seats
@@ -128,13 +177,13 @@ history (§3.8) and the console's standings still die with the process — a jou
 consumer's artifact, which is the point.
 
 The 2023 implementation is gone from the tree and lives only at the `pre-rewrite` tag. The
-solution is **six** projects — `BurmesePoker.Domain` (pure rules), **`BurmesePoker.Presentation`**
+solution is **seven** projects — `BurmesePoker.Domain` (pure rules), **`BurmesePoker.Presentation`**
 (what a hand looks like, as data; Domain only, **and no rendering technology at all**),
 **`BurmesePoker.Server`** (one table, hosted: a remote seat and a filtered fan-out; Domain +
 Presentation, **and no transport at all**), `BurmesePoker.Console` (Spectre.Console 0.57.2, the
-only project that prints), **`BurmesePoker.Sim`** (batch play, Domain only) and
-`BurmesePoker.Tests`. ⚠️ **The test project now references Domain, Presentation, Server *and*
-Sim.**
+only project that prints), **`BurmesePoker.Sim`** (batch play, Domain only), **`BurmesePoker.Web`** (Blazor Server — the
+second project that draws; Domain + Presentation + Server) and `BurmesePoker.Tests`.
+⚠️ **The test project references Domain, Presentation, Server, Sim *and* Web.**
 The rule that matters is unchanged in substance and worth restating in its true form: **tests
 never reference `BurmesePoker.Console`**, so nothing is tested through the front end. The
 harness's determinism is itself an acceptance criterion, so it has to be reachable from a test.
@@ -153,7 +202,12 @@ SimObserver,RoundAbandonedException,Results,CsvReport,Replay}` **plus P16's
 P11**: `{Options,Palette,RoundLog,HandView,PacedAgent}` — ⚠️ **`HandView` is gone as of P13.1**,
 replaced by `HandPanel`, which draws a view model rather than building one. **P13.1 added
 `BurmesePoker.Presentation/{CardDisplayState, DisplayTokens, CardOrder, CardView, MeldView,
-HandView, ComputerAdvice}` and `scripts/drive-console.py`. P13.2 added
+HandView, ComputerAdvice}` and `scripts/drive-console.py`; ⚠️ **P13.3 moved `PacedAgent` in
+beside them, out of the console.** **P13.3 added `BurmesePoker.Web/{Program, TableHost,
+TableBoard, CardWords}`, `Components/{App, Routes, _Imports, Layout/MainLayout,
+Pages/{Watch, Rules, Error}, Table/{TableView, SeatPanel, CardChip, RoundLogPanel,
+SettlementPanel}}` — each table component with its own `.razor.css` — `wwwroot/{theme.css,
+app.css}` and `Properties/launchSettings.json`. P13.2 added
 `BurmesePoker.Server/{TableSession, TableSeat, TableOptions, TableFanOut, TableEvent,
 SeatConnection, SeatPrompt, SeatQuestion, SeatAnswer, RemotePlayerAgent, BoundedAgent,
 TableAbandonedException}` — and nothing anywhere else at all.** **P14 added `Play/{GameJournal,
@@ -166,8 +220,8 @@ how to seat one. ⚠️ **Domain now references
 string API, not an I/O one: `JournalFormat` hands back `IEnumerable<string>` and the two front
 ends own every `File` call, the same split `CsvReport` already had.
 
-✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **342 passed,
-0 failed**, in eighteen seconds. **Any red tree is a real problem.**
+✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **371 passed,
+0 failed**, in twenty seconds. **Any red tree is a real problem.**
 
 ⚠️ **One hazard a cold context must know before writing a test or a strategy:** with the
 reshuffle built, **a round in which nobody's hand ever improves never ends.** Only a
@@ -200,8 +254,8 @@ test that plays a round outside the harness has no such protection.
 | ☐ | **P13** The browser client and multiplayer | P10 | XL — **re-split 2026-08-19 into the five below**; the only packet left, and the only one that changes the architecture |
 | ☑ | **P13.1** A presentation view model, rendered two ways | P10 | done 2026-08-19 — a fifth project; the console is byte-identical, and a view model must be a **snapshot** |
 | ☑ | **P13.2** The table server | P13.1 | done 2026-08-19 — a sixth project, no transport; **the concealment leak test shipped, and it fails when broken** |
-| ☐ | **P13.3** A browser table you can watch | P13.2 | **next.** The first UI. Blazor Server, bots in every seat |
-| ☐ | **P13.4** A seat you can play | P13.3 | **Solo browser play, complete — a legitimate stopping point** |
+| ☑ | **P13.3** A browser table you can watch | P13.2 | done 2026-08-19 — a seventh project; **the first UI**, and the rest of the §3.11 A list shipped with it |
+| ☐ | **P13.4** A seat you can play | P13.3 | **next. Solo browser play, complete — a legitimate stopping point** |
 | ☐ | **P13.5** The lobby, and a second person | P13.4 | §0's goal 4 |
 | ☑ | **P14** Game journals — record and replay | P12 | done 2026-08-19 — a run and its replay produce byte-identical CSV |
 | ☑ | **P15** A skill ladder | P12 | done 2026-08-19 — four rungs, **three** separated skill levels |
@@ -262,6 +316,46 @@ and a cold context following the `/poker` baseline rule — *any failure at all 
 should re-run on a quiet machine before believing either of them. Nothing has been changed about
 them; loosening a performance guard is a decision for whoever owns it, not a tidy-up.
 
+**From P13.3 — read these before P13.4:**
+
+- 🔥 **Run it: `dotnet run --project BurmesePoker.Web`.** It uses `Properties/launchSettings.json`,
+  which sets `ASPNETCORE_ENVIRONMENT=Development`. ⚠️ **Running it with `--no-launch-profile` and
+  no environment gives you Production, where `MapStaticAssets` cannot resolve the build's
+  development endpoints manifest and `blazor.web.js` 500s** — the page still renders, because a
+  Blazor Server page prerenders, and then never moves again. A *published* output is fine.
+  Options are plain configuration: `--seed`, `--pace`, `--between`, `--seats`.
+- 🔥 **The page draws from `TableBoard`, which is folded from `TableEvent`s and nothing else.**
+  `TableHost` holds one `TableSession`, one watcher connection from `TableSession.Watch()`, and
+  the board it folds. ⚠️ **Do not give a component the session.** The banks, the seating and the
+  turned-up cards are all on the board *because they arrived as events* — a component that asked
+  `TableSession` for its banks would be the second route round the fan-out that P13.3's
+  acceptance calls "the thing to refuse", and `ConcealmentTests` would stop standing in front of
+  the page.
+- ⚠️ **Seating a person is `TableSeat.Person` plus that circuit's own connection.** Today every
+  seat is `TableSeat.Computer(..., PacedAgent.Wrap(new GreedyBotAgent(), pace))`. A seated page
+  gets its `SeatConnection` from `TableSession.ConnectionFor(player)` — **never the watcher's** —
+  and draws its hand from `SeatPrompt.Hand`, which is a `HandView` and already carries the
+  computer's suggestion when the table offers hints.
+- ⚠️ **`TableHost.Start()` is idempotent because prerendering runs `OnInitialized` twice** (C13)
+  and because every browser that opens the page runs it too. Keep it that way when it becomes a
+  lobby.
+- ⚠️ **`MarkupStandardsTests.EveryHandlerIsOnARealControl` passes vacuously today** — there is
+  not one control on the table. P13.4 is where it starts earning its keep: **a card you click is
+  a `<button>`.**
+- ⚠️ **`@key` comes from `LogLine.Sequence`, which is `TableBoard.Narrated` and not
+  `Log.Count`** — the log trims at 240 lines and a key from the length would repeat. Cards are
+  keyed on `CardView.Card.Id.Value` and seats on `PlayerId.Value`.
+- ⚠️ **The visually-hidden spans (`.said`) need a positioned ancestor.** `.chip` and `.who` are
+  `position: relative` for exactly that reason; a new one without it stretches the document by
+  however far down the page its static position falls.
+- **How the UI was verified, so the next packet can do the same.** Headless Chromium over the
+  DevTools protocol, driven from `node` with the built-in `WebSocket` — open the page, wait,
+  read the DOM twice, `Page.captureScreenshot`, and walk the tab order with
+  `Input.dispatchKeyEvent`. It is the browser's equivalent of `scripts/drive-console.py` and it
+  is how "the circuit really pushes updates" stopped being an assumption. **It was not checked
+  in** — it is four short scripts in a scratch directory — and it is worth writing properly if
+  P13.4 wants a regression test rather than a one-off.
+
 **From P13.2:**
 
 - 🔥 **Read this before P13.3. The concealment is done and it is one `if`.** Exactly one event
@@ -284,12 +378,12 @@ them; loosening a performance guard is a decision for whoever owns it, not a tid
   why eighteen tests that play real rounds run in about four seconds with no sleeps, no polling
   and no flakiness. **A Blazor component is the other shape** — it answers later, from a circuit
   — and `AnAnswerFromAnotherThreadIsWaitedFor` covers that one deliberately.
-- ⚠️ **`PacedAgent` has to move, and P13.3 is where.** P13.2 left the stand-in unpaced on
-  purpose: a sleep belongs to whatever draws the table, not to a server that may host many of
-  them, so `TableOptions.StandIn` is a `Func<IPlayerAgent>` a host can wrap. But the decorator
-  lives in `BurmesePoker.Console`, which `BurmesePoker.Web` may not reference. **Move it to
-  `BurmesePoker.Domain/Agents/`** — it has no console dependency and never did — **or write the
-  browser's own. Do not add the reference.**
+- ✅ **`PacedAgent` moved in P13.3 — to `BurmesePoker.Presentation`, not to Domain.** P13.2 left
+  the stand-in unpaced on purpose: a sleep belongs to whatever draws the table, not to a server
+  that may host many of them, so `TableOptions.StandIn` is a `Func<IPlayerAgent>` a host wraps —
+  and `TableHost` now does. **Domain was rejected because `BurmesePoker.Sim` references it**, so
+  a sleep there is reachable from P12's hot loop. The console plays byte-identically after the
+  move.
 - ⚠️ **A client bug must not end a round.** `SeatConnection.Answer` returns **false** for an
   answer that does not fit the question or names a card the seat is not holding, and **the
   prompt stands** so the client may correct itself. `RoundEngine` throws in the same situation,
@@ -1139,6 +1233,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-19 | P13.3 | ☑ Done. **The first UI in this project's history — a seventh project, and a browser table you can watch.** `BurmesePoker.Web` (Blazor Server; Domain + Presentation + Server): `TableHost` (one table, dealing itself round after round, one watcher connection, idempotent `Start`), `TableBoard` (the public game folded out of `TableEvent`s and **nothing else**), `CardWords` (a card said out loud, for a screen reader), and eleven components — a static SSR shell and rules page, and one interactive island: `TableView`, `SeatPanel`, `CardChip`, `RoundLogPanel`, `SettlementPanel`, each with its own `.razor.css`. **All three acceptance criteria met.** ✅ **1:** bot-only rounds play out in a browser start to settlement — verified in headless Chromium over the DevTools protocol, which watched the page go from Round 8 to Round 10 with no reload, no console errors and no reconnect modal, and screenshotted both themes at a settlement. ✅ **2 — the rest of the §3.11 A list shipped as tests:** `PaletteContrastTests` (A3 — computed contrast in **both themes**, read from `wwwroot/theme.css`, **pairs discovered by naming convention** rather than listed, plus a check that every `var(--…)` names a declared token), `MarkupStandardsTests` (A4 real controls, C12 no render mode at the root, C14 `@key`, C15 `InvokeAsync`, B8 one polite live region, and no `StateHasChanged` in a `Dispose`), `ComponentDisposalTests` (A5 — reflection over every `ComponentBase` for a table member, private ones included, plus that the subscription is actually unhooked). ✅ **3 — the B list reviewed by driving it:** tab order walked with `Input.dispatchKeyEvent` (skip link → nav, every stop visible and outlined 3px), the log made keyboard-reachable and named, `prefers-reduced-motion` and `prefers-color-scheme` honoured, 24px minimum targets, and every card carrying words as well as a glyph. 🔥 **Finding 1: `UseStaticFiles` does not serve the framework's own files.** `_framework/blazor.web.js` 404'd and the page looked perfect — **a prerendered Blazor Server page is a photograph of a broken one.** `MapStaticAssets`, and `launchSettings.json` because a build's endpoints manifest is a Development one. 🔥 **Finding 2: a trimmed log must not key on the length of the log** — `TableBoard.Narrated` counts every line ever said; `Log.Count` repeats the moment it trims, and a repeated `@key` is Blazor reusing the wrong DOM node. 🔥 **Finding 3: 240 visually-hidden spans made the document 10,295px tall** for a body of 1,814 — the absolute-positioning recipe needs a positioned ancestor. **Measured, not seen.** 🔥 **Finding 4: a source scan must read markup, not the prose about it** — four of six scans failed on comments in the files obeying the standard; and a `@key` check that looks *nearby* let a nested key cover for a missing one. **Eleven mutations applied, eleven red.** ⚠️ **`PacedAgent` moved to Presentation, not Domain** — Sim references Domain and must not be able to reach a sleep; **console byte-identical after the move** (two pty captures, two seeds, `cmp`). ⚠️ **`BurmesePoker.Tests` now references `BurmesePoker.Web`** and still never the console: the rule is that nothing is tested *through* a front end, and a component tree is data. **Build clean and warning-free, 371 passed / 0 failed** (29 new). **Domain, Server and Sim untouched** — the engine now stands unaltered across five consecutive packets. No new rules question — `RULES.md` stays at **rev 13**. Amended BUILD-PLAN §2, §3.11 (A3, A4, A5, B8, C12–C15, C17 all marked), P13.3 (a "What P13.3 found" section) and **P13.4 and P13.5, each of which inherits something now built.** |
 | 2026-08-19 | P13.2 | ☑ Done. **The table server — a sixth project, and no transport anywhere in it.** `BurmesePoker.Server` (Domain + Presentation): `TableSession` (one hosted table: seats, connections, rounds, banks, its own seed), `TableSeat`/`TableOptions`, `SeatConnection` (a mailbox — the events a connection may hear and the question it is being asked), `SeatPrompt`/`SeatQuestion`/`SeatAnswer`, `TableFanOut` (the `IGameObserver` that applies the concealment), `TableEvent` (narration as a closed record hierarchy), `RemotePlayerAgent` (blocks on the connection, stands in with a bot when nobody answers), `BoundedAgent`/`TableClock`/`TableAbandonedException`. **All three acceptance criteria met.** ✅ **1:** two scripted remote seats and two `GreedyBotAgent`s play a full round through the server's own plumbing, in a test, with no sockets. ✅ **2 — the packet's most important test:** `ConcealmentTests` plays one round with **four connected seats and a watcher** and asserts pairwise-disjoint hands, no seat told what anybody else drew blind, a sweep over every card in every event against what that seat may see, and a watcher sent nothing but the public game. ⚠️ **Mutation-tested rather than assumed** — broadcasting the drawn card to everyone turns **three of the five red**. ✅ **3:** a seat that stops answering is played by the computer, the round finishes, and the takeover is broadcast (once a turn, keyed on `(Round, TurnNumber)` exactly as P11's pacing decorator is); a player who misses one prompt and comes back for the next one is simply back. 🔥 **Finding 1: exactly one event in the whole narration is private — the blind draw.** A discard, a taken discard, a claimed money card and a declaration all happen in front of the table, so the security boundary is one `if` and everything else in `TableFanOut` is care about lists. 🔥 **Finding 2: P13.1's snapshot rule generalised and caught two more live lists** — `TableState.TurnedUpOnTable` is aliased by *both* `TurnContext.TurnedUpMoneyCards` and `IGameObserver.RoundStarted`, and the opening player's claim removes a card from it; `EverythingASeatWasSentStaysWhatItWasWhenItWasSent` forces the claim and fails if either copy is removed. 🔥 **Finding 3: answering inside `SeatConnection.Updated` makes a whole round deterministic** — the event is raised on the round's thread before the seat waits, so eighteen tests that play real rounds cost four seconds and no flakiness; one test drives the genuinely cross-thread path because that is the shape a circuit has. ⚠️ **A client bug must not end a round:** `SeatConnection.Answer` **refuses** an answer that does not fit the question or names a card the seat is not holding — returns false, the prompt stands — where the engine would throw. ⚠️ **Deliberate deviation, and P13.3 inherits it: the stand-in is not paced.** A sleep belongs to whatever draws the table, so `TableOptions.StandIn` is a factory; **`PacedAgent` lives in `BurmesePoker.Console` and must move (Domain's `Agents/` is the obvious home) rather than be reached by a reference.** **The wall clock bounds the table, and every seat is wrapped including the bots** — what goes wrong at a hosted table is the people, not the play; the round is announced abandoned before the exception leaves and the session survives it. **Build clean and warning-free, 342 passed / 0 failed** (18 new: 12 `TableSessionTests`, 5 `ConcealmentTests`, 1 new `LayeringTests` row forbidding Spectre, ASP.NET, `System.Console` and `System.Net` in the server). **Domain, Presentation, Console and Sim were not touched at all** — the only edits outside the new project are one line of `BurmesePoker.slnx`, one `ProjectReference` and the layering row. No new rules question — `RULES.md` stays at **rev 13**, unchanged across six packets. Amended BUILD-PLAN §2, §3.10 (items 2 and 4 cashed), §3.11 A1, P13.2 (a "What P13.2 found" section) and **P13.3 and P13.4 — each inherits something already built, and P13.4's leak acceptance is narrowed because P13.2 already covers the seated case.** |
 | 2026-08-19 | P13.1 | ☑ Done. **A presentation view model — a fifth project, and the first presentation code this project can test.** `BurmesePoker.Presentation` (Domain only): `CardDisplayState` (flags, not colours), `DisplayTokens` (a non-colour token for every one of them — §3.11 **A2, shipped a packet early**), `CardOrder` (the display sort, moved out of the console and now proved *total*), `CardView`, `MeldView`, `HandView` and `ComputerAdvice`. The console was rewritten *onto* it: its own `HandView` is gone, replaced by `HandPanel`, which draws and decides nothing; `CardFormatting` takes its ordering and its glyphs from Presentation, and `Palette.OwnedMark`/`AdviceMark` are now aliases of `DisplayTokens`, so the two front ends cannot drift to two stars. Secondary item done: the console takes `IAnsiConsole` everywhere and reaches for the static one **exactly once**, in `Main`. 🔥 **The test caught a real defect on its first run: a view model that aliases the engine's list is not a view model.** `TurnContext.Hand` is the seat's *own live list* and `RoundEngine` discards from it as soon as the answer comes back, so a view built at the discard reported fourteen cards and then held thirteen. The console never showed it — it renders and drops the view in one breath — and **a Blazor component holding a view across a render is exactly the case that does.** `HandView.Of` now copies; **P13.2 inherits the rule for everything the fan-out hands a seat.** ⚠️ **Two copies of the same card cost the same to throw, and that is correct** — a spare is a standing replacement for the one the cover used — so a browser must not imply otherwise; what makes them two cards is the `CardId` key, not the price. ⚠️ **The `IAnsiConsole` benefit is still unreachable and should not be chased**: "drivable from a test" cannot follow while §2 forbids the test project referencing `BurmesePoker.Console`, and that rule is worth more. **So the pty is the console's verification, and `scripts/drive-console.py` is checked in to make it repeatable.** Build clean and warning-free, **324 passed / 0 failed** (30 new: 13 `HandViewTests`, 6 `DisplayTokensTests`, 5 `CardOrderTests`, 4 `ComputerAdviceTests`, 2 new `LayeringTests` rows). **Acceptance 3 met the hard way: five scripted pty matches across three seeds, one under `--no-hints`, every one `cmp`-identical to the same match at `HEAD`.** No new rules question — `RULES.md` stays at **rev 13**, unchanged across five packets. Amended BUILD-PLAN §2, §3.11 A2, P13.1 (a "What P13.1 found" section) and **P13.2, P13.3 and P13.4 — each inherits something already built or already closed.** |
 | 2026-08-19 | — | **P13 re-planned; the browser UI and multiplayer are one track** (docs only, no code — still **294 passed / 0 failed**, `RULES.md` at rev 13). Nick asked whether a rich JS browser UI or multiplayer made more sense first, and whether they were related. **They are related through exactly one variable — where the engine runs — and concealment decides it in advance.** `BUILD-PLAN.md` **§3.10**: a hand is fully concealed with money on it, so an engine in the browser holds every player's hand in every player's client; that is a security property, not a courtesy, and it is not retrofittable. **Engine server-side, Blazor Server, no WASM engine ever**; a browser client is a `RemotePlayerAgent` (§3.6 finally cashed), and **solo browser play is multiplayer with one connection** — there is no single-player client to build and replace. ✅ **The framework choice buys one concrete thing: P13.2 has no protocol to design**, so the "server" is a seat and a fan-out, testable in-process with no sockets. **§3.11** is new too — **seventeen UX standards taken before a single component exists**, split by how each is *checked*: **five are mechanical tests** (the concealment leak; colour never alone; contrast computed in both themes; real controls, no clickable divs; subscriptions disposed — and never `StateHasChanged` in `Dispose`) and land in P13.2/P13.3 before anything can be retrofitted; the rest are reviewed by playing, as P11 was. ⚠️ **The irreversible item is C12** — static SSR by default, `@rendermode InteractiveServer` per component and never at the root. ⚠️ **P13.1 was replaced rather than renumbered:** the old one ("lift the front end off `AnsiConsole`") was right for a second *Spectre* front end and a Razor client is not one — the cut line is **decision versus drawing**, so P13.1 is now an extraction into a fifth project, **`BurmesePoker.Presentation`** (Domain only, no rendering technology, one new `LayeringTests` row). Alternatives to the fifth project are recorded in §2 so it can be argued with. **P13 re-split three ways → five, strictly sequential**, each ending green and more playable than the last: P13.1 view model → P13.2 table server → **P13.3 a table you can watch** (first UI) → **P13.4 a seat you can play** (solo browser play, a legitimate stopping point) → P13.5 the lobby. Amended BUILD-PLAN §0, §2, §3.10 (new), §3.11 (new), §4 (graph + six table rows) and §7 (three new risk rows, and the scope-growth row updated for the longest sequential chain in the plan). |

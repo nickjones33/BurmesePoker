@@ -1,0 +1,24 @@
+@inherits LayoutComponentBase
+
+<a class="skip" href="#main">Skip to the table</a>
+
+<header class="masthead">
+    <p class="wordmark">Burmese Poker</p>
+    <nav aria-label="Pages">
+        <ul>
+            <li><NavLink href="" Match="NavLinkMatch.All">The table</NavLink></li>
+            <li><NavLink href="rules">How it is played</NavLink></li>
+        </ul>
+    </nav>
+</header>
+
+<main id="main" tabindex="-1">
+    @Body
+</main>
+
+<footer class="colophon">
+    <p>
+        A Burmese rummy played for money. The rules are a reconstruction — see
+        <a href="rules">how it is played</a>.
+    </p>
+</footer>

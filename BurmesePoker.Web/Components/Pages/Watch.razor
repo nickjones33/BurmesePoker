@@ -1,0 +1,17 @@
+@page "/"
+
+<PageTitle>Burmese Poker — the table</PageTitle>
+
+<h1>Watch the table</h1>
+
+<p class="lede">
+    Four computer players, one round after another, at a pace you can follow. Every hand is
+    concealed until somebody lays down all thirteen — including from you, watching, which is
+    the strictest case there is: there is no hand here that anybody may legitimately be shown.
+</p>
+
+@*
+    ⚠️ The render mode is named here and nowhere else. The page around it is static SSR, which
+    is the default and the thing that cannot be walked back cheaply (§3.11 C12).
+*@
+<TableView @rendermode="InteractiveServer" />

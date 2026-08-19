@@ -1,0 +1,83 @@
+.settled {
+    padding: 1rem 1.1rem 1.2rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 8px;
+    background: var(--raised);
+}
+
+h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.05rem;
+}
+
+.won {
+    margin: 0 0 0.9rem;
+}
+
+.melds {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+}
+
+.melds li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.kind {
+    min-width: 3rem;
+    color: var(--on-raised-muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 28rem;
+}
+
+caption {
+    text-align: left;
+    padding-bottom: 0.4rem;
+    color: var(--on-raised-muted);
+    font-size: 0.85rem;
+}
+
+th,
+td {
+    text-align: left;
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid var(--edge-raised);
+}
+
+td {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+
+.up {
+    color: var(--on-raised-good);
+}
+
+.down {
+    color: var(--on-raised-bad);
+}
+
+.level {
+    color: var(--on-raised-muted);
+}
+
+.note {
+    margin: 0.9rem 0 0;
+    color: var(--on-raised-muted);
+    font-size: 0.9rem;
+}

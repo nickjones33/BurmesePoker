@@ -4,6 +4,7 @@ using BurmesePoker.Domain.Cards;
 using BurmesePoker.Presentation;
 using BurmesePoker.Server;
 using BurmesePoker.Sim;
+using BurmesePoker.Web;
 
 namespace BurmesePoker.Tests;
 
@@ -121,6 +122,40 @@ public class LayeringTests
     }
 
     /// <remarks>
+    /// <para>
+    /// <b>The one new rule of P13.3</b> (BUILD-PLAN §2, P13.3). The browser client is the
+    /// second project that may draw, and the one thing it may not do is draw with the first
+    /// one's paint: <c>BurmesePoker.Console</c> is Spectre markup, none of which survives a
+    /// wire, and the whole of P13.1 was extracting the half that does into
+    /// <c>BurmesePoker.Presentation</c>.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>This is the row that closes P13.2's leftover.</b> The pacing decorator a bot seat
+    /// needs lived in the console, and the cheap way to reach it from here would have been a
+    /// project reference. It moved instead — and this is what says so out loud.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheBrowserClientDoesNotReachForTheConsole()
+    {
+        var referenced = typeof(TableHost).Assembly.GetReferencedAssemblies()
+            .Select(reference => reference.Name ?? string.Empty)
+            .ToList();
+
+        Assert.NotEmpty(referenced);
+        Assert.DoesNotContain(referenced, name => name is "BurmesePoker.Console");
+        Assert.DoesNotContain(
+            referenced,
+            name => name.StartsWith("Spectre", StringComparison.OrdinalIgnoreCase));
+
+        // And it does reach for the three it is built on, so the list above is not empty by
+        // accident.
+        Assert.Contains(referenced, name => name is "BurmesePoker.Domain");
+        Assert.Contains(referenced, name => name is "BurmesePoker.Presentation");
+        Assert.Contains(referenced, name => name is "BurmesePoker.Server");
+    }
+
+    /// <remarks>
     /// The direction, stated the other way round: the domain does not know the presentation
     /// layer exists. Rules first, a view of them second — the same shape as
     /// <see cref="TheDomainDoesNotReferenceSpectre"/> one layer out.
@@ -149,5 +184,6 @@ public class LayeringTests
         Assert.NotEmpty(typeof(HandView).Assembly.GetReferencedAssemblies());
         Assert.NotEmpty(typeof(Simulator).Assembly.GetReferencedAssemblies());
         Assert.NotEmpty(typeof(TableSession).Assembly.GetReferencedAssemblies());
+        Assert.NotEmpty(typeof(TableHost).Assembly.GetReferencedAssemblies());
     }
 }

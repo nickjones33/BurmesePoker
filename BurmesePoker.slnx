@@ -5,4 +5,5 @@
   <Project Path="BurmesePoker.Server/BurmesePoker.Server.csproj" />
   <Project Path="BurmesePoker.Sim/BurmesePoker.Sim.csproj" />
   <Project Path="BurmesePoker.Tests/BurmesePoker.Tests.csproj" />
+  <Project Path="BurmesePoker.Web/BurmesePoker.Web.csproj" />
 </Solution>

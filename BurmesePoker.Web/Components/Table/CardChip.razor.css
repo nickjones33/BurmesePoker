@@ -1,0 +1,53 @@
+.chip {
+    /* The containing block for the words below. Without it their absolute position is measured
+       from the page, and 240 hidden spans inside a scrolled log stretch the document to ten
+       thousand pixels — found by measuring the page, not by looking at it. */
+    position: relative;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.15rem;
+    min-height: 28px;
+    min-width: 28px;
+    padding: 0.2rem 0.45rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 6px;
+    background: var(--raised);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.face {
+    font-weight: 700;
+}
+
+.pip {
+    margin-left: 0.05rem;
+}
+
+.black .face {
+    color: var(--on-raised);
+}
+
+.red .face {
+    color: var(--on-raised-red);
+}
+
+.token {
+    color: var(--on-raised-money);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* Said, not shown: the words a screen reader reads in place of the glyph. */
+.said {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}

@@ -11,7 +11,7 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-This project is **all but finished**. **P0–P12, P13.1, P13.2 and P14–P16 are done**: the 2023 implementation has been
+This project is **all but finished**. **P0–P12, P13.1–P13.3 and P14–P16 are done**: the 2023 implementation has been
 deleted, the whole rules core is built and tested, `dotnet run --project BurmesePoker.Console`
 fills the empty seats with paced, named bots and plays round after round with the banks carrying
 over — showing a hand as the melds it nearly is, keeping a round log across the concealment
@@ -37,9 +37,20 @@ assertions over one round played by four connected seats and a watcher. 🔥 **I
 exactly one event in the whole narration is private (the blind draw), so the security boundary
 is one `if`; and the snapshot rule caught two more live lists — `TableState.TurnedUpOnTable` is
 aliased by both `TurnContext.TurnedUpMoneyCards` and `IGameObserver.RoundStarted`, and the
-opening player's claim removes a card from it.** **Next packet: P13.3**, the first UI.
-⚠️ **It inherits one thing to fix: `PacedAgent` lives in `BurmesePoker.Console`, which
-`BurmesePoker.Web` may not reference — move it, don't reference it.** **P14–P16 were added on 2026-08-19 and
+opening player's claim removes a card from it.** ✅ **P13.3 shipped the same day, and this project has a UI.** `BurmesePoker.Web` is a **seventh**
+project — Blazor Server — and `dotnet run --project BurmesePoker.Web` deals round after round at
+a table you can watch: seats and banks, the turned-up money cards, each seat's top discard, the
+narration as a polite live region, and the settlement with the winner's melds. **The rest of
+§3.11's A list shipped with it** — computed contrast in both themes, real controls, disposal —
+plus C12, C14, C15 and B8 as source scans, **eleven mutations applied and eleven red.**
+🔥 **Its findings: `UseStaticFiles` does not serve `_framework/blazor.web.js`, so the page
+rendered perfectly and was dead — a prerendered Blazor Server page is a photograph of a broken
+one, so ask the server for every URL the page names**; a trimmed log must not take its `@key`
+from the length of the log; 240 visually-hidden spans made the document 10,295px tall; and a
+source scan must read the markup rather than the prose about it. ⚠️ **`PacedAgent` moved to
+`BurmesePoker.Presentation`, not Domain — `BurmesePoker.Sim` references Domain and must never be
+able to reach a sleep.** ⚠️ **`BurmesePoker.Tests` now references `BurmesePoker.Web`, and still
+never `BurmesePoker.Console`.** **Next packet: P13.4**, a seat you can play. **P14–P16 were added on 2026-08-19 and
 all three shipped the same day.** P14: `--journal <path>` on both front ends writes every
 decision every seat made as JSON Lines, and `BurmesePoker.Sim -- replay <path>` plays it back —
 to a byte-identical CSV. A seed is a pointer into the build that produced it; a journal is the
@@ -94,14 +105,17 @@ BurmesePoker.Server/        one table, hosted: a seat played from elsewhere, a b
 BurmesePoker.Console/       Spectre.Console front end. the only project that prints. P8, reworked
                             in P11 and rewritten onto the view model in P13.1.
 BurmesePoker.Sim/           batch play: seeded, parallel, CSV out. Domain only. built in P12, P16.
-BurmesePoker.Tests/         xunit against Domain, Presentation, Server and Sim. never references
-                            Console.
+BurmesePoker.Web/           Blazor Server. the second project that draws: a table you can watch,
+                            folded out of the event stream and nothing else. Domain +
+                            Presentation + Server. built in P13.3.
+BurmesePoker.Tests/         xunit against Domain, Presentation, Server, Sim and Web. never
+                            references Console.
 scripts/drive-console.py    drives the console under a pty and writes down every byte, so a
                             front-end refactor can be proved with `cmp`. built in P13.1.
 ```
 
-**Planned by P13, not built yet:** `BurmesePoker.Web/` (Blazor Server, Domain + Presentation +
-Server), in P13.3. See BUILD-PLAN §2.
+**Planned by P13, not built yet:** a seat you can play (P13.4) and a lobby with a second person
+(P13.5). See BUILD-PLAN §2.
 
 ## Rules of engagement
 
@@ -123,6 +137,8 @@ dotnet test                                     # run all tests
 dotnet test --filter-method "*SomeTestName*"     # single test (xunit v3 / MTP syntax)
 dotnet test --filter-class "*CardTextTests*"     # single test class
 dotnet run --project BurmesePoker.Console       # play a round (needs a real terminal)
+dotnet run --project BurmesePoker.Web           # watch a table in a browser (bots in every seat)
+dotnet run --project BurmesePoker.Web -- --seed 20260819 --pace 400   # …the same table, faster
 dotnet run -c Release --project BurmesePoker.Sim -- --games 2000   # compare strategies
 dotnet run -c Release --project BurmesePoker.Sim -- bench          # time the cover searches
 dotnet run -c Release --project BurmesePoker.Sim -- --games 100 --journal run.jsonl   # keep every decision
@@ -135,7 +151,7 @@ python3 scripts/drive-console.py --out after.raw  --seed 20260819   # …after a
 cmp before.raw after.raw                                            # prove it was a refactor
 ```
 
-All five projects target **`net10.0`**, matching the installed SDK (10.0.111). Tests are
+All seven projects target **`net10.0`**, matching the installed SDK (10.0.111). Tests are
 **xunit v3** running on **Microsoft.Testing.Platform**, not VSTest — `global.json` opts
 `dotnet test` into MTP mode, which the .NET 10 SDK requires for MTP test projects. The test
 project is therefore an `Exe`, and **test filtering uses `--filter-method` / `--filter-class`,

@@ -238,8 +238,25 @@ BurmesePoker.Server/        one table, hosted: a seat somebody plays from elsewh
                             TableFanOut, TableEvent, SeatConnection, SeatPrompt, SeatQuestion,
                             SeatAnswer, RemotePlayerAgent, BoundedAgent, TableAbandonedException}.
 BurmesePoker.Web/           Blazor Server. the second project that draws.
-                            Domain + Presentation + Server. Still to come, in P13.3.
+                            Domain + Presentation + Server.
+                            ✅ BUILT (P13.3): {Program, TableHost, TableBoard, CardWords} and
+                            Components/{App, Routes, _Imports, Layout/MainLayout,
+                            Pages/{Watch, Rules, Error},
+                            Table/{TableView, SeatPanel, CardChip, RoundLogPanel,
+                            SettlementPanel}} — every one of the five table components with its
+                            own .razor.css (§3.11 C17), plus wwwroot/{theme.css, app.css}.
 ```
+
+**By P13.3:** the seventh project above, `BurmesePoker.Presentation/PacedAgent.cs` **moved out of
+`BurmesePoker.Console`**, and one row in `LayeringTests`. ⚠️ **The test project now references
+`BurmesePoker.Web`, and still never `BurmesePoker.Console`** — the rule was never *"no front
+end"*, it is that nothing is tested **through** a front end. A Spectre console is an interactive
+loop that needs a terminal and its verification is a pty; a component tree is data, and §3.11 A5
+asks for a reflection test over it *by name*. ⚠️ **`PacedAgent` went to Presentation and not to
+`Domain/Agents/`**, which P13.3 named first: the domain is the pure rules and a wall-clock sleep
+is not one of them, and — the deciding argument — **`BurmesePoker.Sim` references Domain**, so a
+sleep in there would be reachable from the hot loop P11 wrote a layering test to protect.
+Presentation is reachable from both front ends and from neither harness.
 
 ⚠️ **Why the server is a project and not a folder in `BurmesePoker.Web`.** It has to be
 reachable from `BurmesePoker.Tests`, and P13.2's whole claim is that the concealment is
@@ -697,20 +714,31 @@ are split by how they are checked, because a standard nobody can verify is a wis
    asserts over. ⚠️ **`Palette.OwnedMark` and `Palette.AdviceMark` are now aliases of
    `DisplayTokens`**, so the console and the browser cannot drift to two stars. **Three of these
    five items are left, all for P13.3** — items 3, 4 and 5 — now that P13.2 has taken item 1.
-3. **Contrast is computed, never eyeballed** (WCAG 1.4.3 and 1.4.11): ≥4.5:1 for body text,
-   ≥3:1 for large text and for the boundaries of interactive components. **The test:** compute
-   the ratio for every foreground/background pair the palette defines, **in both themes**, and
-   fail below the threshold. Tedious by hand, trivial in code, and the single most commonly
-   skipped item in the standard.
-4. **Every action is a real control.** No `<div @onclick>`: buttons are `<button>` and
-   navigation is `<a>`/`NavLink`, so keyboard, screen readers and Blazor's own enhanced
-   navigation all work without special cases. **The check** is a source scan, in the same spirit
-   as `LayeringTests`.
-5. **Anything holding a subscription disposes it.** A table component subscribes to the observer
-   stream, and a circuit that drops without unhooking leaks a game. **The test:** reflect over
-   the client's components and assert every one that takes the table session implements
-   `IDisposable` or `IAsyncDisposable`. ⚠️ **And never call `StateHasChanged` from `Dispose`** —
-   it can run during renderer teardown, where requesting a render is explicitly unsupported.
+3. ✅ **DONE IN P13.3 — contrast is computed, never eyeballed** (WCAG 1.4.3 and 1.4.11): ≥4.5:1
+   for body text, ≥3:1 for large text and for the boundaries of interactive components.
+   **Shipped as `PaletteContrastTests`, and it reads `wwwroot/theme.css` — the file the browser
+   loads — rather than a copy of the values in C#**, because a palette a stylesheet does not use
+   is not the palette. 🔥 **The pairs are discovered rather than listed**: `--on-x` is drawn on
+   `--x` and `--edge-x` is a line on it, and a token's base is the longest declared name its own
+   name begins with, so `--on-raised-muted` is measured against `--raised`. **A token added later
+   is measured without anybody remembering to add it to a list**, and one whose base does not
+   exist fails rather than being skipped. Both themes are computed, and a third test asserts
+   every `var(--…)` in every stylesheet names a token that exists — a typo in a custom property
+   is silent in CSS.
+4. ✅ **DONE IN P13.3 — every action is a real control.** No `<div @onclick>`: buttons are
+   `<button>` and navigation is `<a>`/`NavLink`. **Shipped as a source scan in
+   `MarkupStandardsTests`**, which walks back from every `@on…` to the tag it sits on.
+   ⚠️ **The scan reads markup with the commentary stripped out** — every component in this client
+   explains the standard it obeys in a comment, and a scan that read the prose would fail on the
+   files that were most careful. Found by writing the scan and watching it fail on four of its
+   own subjects.
+5. ✅ **DONE IN P13.3 — anything holding a subscription disposes it.** **Shipped as
+   `ComponentDisposalTests`**, reflecting over every `ComponentBase` in the client for a
+   `TableHost`, `SeatConnection` or `TableSession` member — ⚠️ **including private ones, because
+   that is what `@inject` generates** — and asserting `IDisposable`/`IAsyncDisposable`. A second
+   test asserts the subscription is actually *unhooked*, since a `Dispose` that does nothing
+   passes the first one and leaks exactly as much as no `Dispose` at all. ⚠️ **And never call
+   `StateHasChanged` from `Dispose`** — scanned for, as well as stated.
 
 #### B. Only playing it finds these — reviewed the way P11 was reviewed
 
@@ -720,7 +748,8 @@ are split by how they are checked, because a standard nobody can verify is a wis
 7. **Focus moves when the turn does.** When it becomes your turn, focus lands on the first
    control of the prompt; when a dialog opens focus enters it, and on close it returns to what
    opened it.
-8. **The round log is an ARIA live region** (`aria-live="polite"`) — it is the browser's
+8. ✅ **DONE IN P13.3, and asserted — it is the only live region on the page.** **The round log
+    is an ARIA live region** (`aria-live="polite"`) — it is the browser's
    `ConsoleObserver.Say`, and this is WCAG 4.1.3 Status Messages. ⚠️ **Polite, never
    assertive**: a bot table emits a line every few hundred milliseconds and `assertive` would
    interrupt a screen reader continuously. **The hand is not a live region**; only the log is.
@@ -734,24 +763,27 @@ are split by how they are checked, because a standard nobody can verify is a wis
 
 #### C. Blazor mechanics that are UX decisions in disguise
 
-12. ⚠️ **Static SSR is the default; interactivity is opted into per component. Do not put
-    `@rendermode InteractiveServer` at the root.** The table and the prompts are interactive
+12. ✅ **TAKEN IN P13.3, and asserted.** ⚠️ **Static SSR is the default; interactivity is opted
+    into per component. Do not put `@rendermode InteractiveServer` at the root.** The table and the prompts are interactive
     islands; the shell, the rules help and the settlement report are static. **This is the one
     decision on the list that cannot be walked back cheaply.**
-13. **Prerendering runs a component twice.** `OnInitializedAsync` executes during prerender and
+13. ✅ **HANDLED IN P13.3 — `TableHost.Start()` is idempotent and locked.** **Prerendering runs a
+    component twice.** `OnInitializedAsync` executes during prerender and
     again when the circuit starts, so anything that joins a table must be idempotent — or carry
     the prerendered result across with `PersistentComponentState`. Joining a table twice is a
     real bug, not a theoretical one.
-14. **`@key` on every card and every seat.** Without it the diff reorders DOM nodes and drags
+14. ✅ **ASSERTED IN P13.3, and it caught something the plan did not predict** — see P13.3's
+    findings. **`@key` on every card and every seat.** Without it the diff reorders DOM nodes and drags
     focus with them — and it shows up exactly when a hand is re-sorted after a draw, which this
     game does constantly.
-15. **Do not call `StateHasChanged` inside an event handler** — `ComponentBase` already
+15. ✅ **ASSERTED IN P13.3.** **Do not call `StateHasChanged` inside an event handler** — `ComponentBase` already
     re-renders after one. **Do call it, through `InvokeAsync`, when the observer stream pushes
     from a non-UI thread**, which is how every opponent's move will arrive.
 16. **Reconnection is part of the UX, not an error path.** A dropped circuit must not look like a
     dropped game. P13 already decides that a timeout is a bot move; the client has to *say* so —
     *"Sable is playing your seat"* — rather than freeze and hope.
-17. **CSS isolation (`.razor.css`) over one global stylesheet**, so a component's styling cannot
+17. ✅ **DONE IN P13.3** — every one of the five table components has its own `.razor.css`.
+    **CSS isolation (`.razor.css`) over one global stylesheet**, so a component's styling cannot
     leak into the table.
 
 ⚠️ **One thing deliberately not carried over: `RoundLog`.** It exists because the hotseat console
@@ -2000,7 +2032,7 @@ Sim were not touched at all, so the engine now stands unaltered across four cons
 
 ---
 
-#### P13.3 — A browser table you can watch *(the first UI, and no seat yet)*
+#### P13.3 — A browser table you can watch ☑ done 2026-08-19 *(the first UI, and no seat yet)*
 
 **Build.** `BurmesePoker.Web` — a Blazor Web App, **Blazor Server** (§3.10).
 
@@ -2050,7 +2082,84 @@ layout, the palette and every accessibility decision **before** interaction comp
 
 ---
 
+##### What P13.3 found
+
+**All three acceptance criteria met.** 342 tests before, **371 after** — twenty-nine of them,
+in five new classes, and the suite still runs in twenty seconds. `BurmesePoker.Web` is a
+**seventh** project; **Domain, Server and Sim were not touched at all**, so the engine now
+stands unaltered across five consecutive packets, and the only edits outside the new project are
+one moved file, one `ProjectReference`, one `FrameworkReference` and one `LayeringTests` row.
+
+1. 🔥 **The framework's own files are static web assets, and `UseStaticFiles` does not serve
+   them.** The page rendered, looked finished, and was **dead**: `_framework/blazor.web.js` and
+   the CSS-isolation bundle both 404'd, so no circuit ever started and the table would have sat
+   at whatever the prerender said for ever. `MapStaticAssets` is the fix and it is what the .NET
+   10 template uses. ⚠️ **It was found by asking the server for every URL the page references,
+   not by looking at the page** — a prerendered Blazor Server page is a perfect photograph of a
+   broken one. **Ask for the assets.** ⚠️ **And run from source in `Development`**: the
+   endpoints manifest a build writes is a development one, so `Properties/launchSettings.json`
+   is checked in and sets it. A published output is fine in Production.
+2. 🔥 **A trimmed log must not take its `@key` from the length of the log.** The board keeps the
+   last 240 lines because a match is unbounded; a sequence taken from `Log.Count` starts
+   repeating the moment it trims, and **a repeated `@key` is Blazor reusing the wrong DOM node**
+   — which is the exact failure C14 exists to prevent, arriving from the direction the standard
+   did not name. `TableBoard.Narrated` counts every line ever said and the key comes from that.
+3. 🔥 **Two hundred and forty visually-hidden spans made the document ten thousand pixels
+   tall.** The `position: absolute` in the standard visually-hidden recipe needs a positioned
+   ancestor; without one, a hidden span on log line 240 has its static position measured from
+   the page rather than from the scrolled box it lives in, and `document.scrollHeight` went to
+   **10,295px** for a page whose body was 1,814. ⚠️ **Measured, not seen** — every element was
+   in the right place and the screenshot looked correct. `position: relative` on the chip and
+   the seat name closes it.
+4. ⚠️ **A source scan must read the markup and not the prose about it.** Four of the six scans
+   failed on their first run, every one of them on a comment in the very file that was obeying
+   the standard — *"there is deliberately no `@rendermode` here"*, *"polite, never assertive"*.
+   `Sources.Markup` strips Razor comments, block comments and whole-line `//` comments before
+   anything is scanned, and leaves a `//` inside a URL alone.
+5. ⚠️ **A `@key` check that looks *nearby* is not a `@key` check.** The first version searched
+   600 characters after each `@foreach`; removing the key from the log's `<li>` left the nested
+   `<CardChip @key>` to cover for it and **the mutation survived**. It now reads the first
+   element the loop opens and looks in that tag alone. **Eleven mutations, eleven red** — the
+   root going interactive, the live region turning assertive, a clickable `div`, two different
+   loops losing their keys, a render outside `InvokeAsync`, the table not unhooking, body text
+   losing contrast, a dark token being forgotten, a stylesheet naming an undeclared colour, and
+   the log key repeating.
+6. 🔥 **The board is folded from the event stream, and that is what keeps the concealment
+   test in front of the page.** `TableSession` was right there and could have been asked for its
+   banks and its seating directly; a component that did so would be *a second route to the table
+   that bypasses the fan-out* — acceptance 2's *"the thing to refuse"*. `TableBoard` takes
+   nothing but `TableEvent`s, so **the page can draw nothing the fan-out did not send**, and
+   `ConcealmentTests` (P13.2) stands in front of all of it. A watcher's banks are accumulated
+   from the settlements it was told about, which is also true of somebody pulling up a chair at
+   round three.
+7. ⚠️ **`PacedAgent` went to `BurmesePoker.Presentation`, not to `Domain/Agents/`.** The plan
+   named the domain first; the deciding argument against it is that **`BurmesePoker.Sim`
+   references Domain**, so a sleep in there is reachable from the hot loop P11 wrote a layering
+   test to protect. Presentation is reachable from both front ends and from neither harness.
+   **The console plays byte-identically after the move** — two pty captures at two seeds,
+   `cmp`-identical, which is what `scripts/drive-console.py` was checked in for.
+8. **A CSS-only log that stays on its latest line.** A `column-reverse` flex box wrapping a
+   normally-ordered `<ol>`: the DOM order stays oldest-first, which is the reading order and
+   what the live region announces, while the box's scroll origin is the bottom. **No JavaScript
+   and no interop.** ⚠️ The scroller is `tabindex="0"` with a name, because an overflowing box
+   the keyboard cannot reach hides its own history (WCAG 2.1.1).
+9. **No rules question arose.** `RULES.md` stays at **rev 13**, unchanged across seven
+   consecutive packets.
+
+---
+
 #### P13.4 — A seat you can play *(solo play in the browser, complete)*
+
+> **⚠️ Amended after P13.3, and every amendment is something already built.** The page, the
+> palette, the card, the log and the settlement all exist and are asserted over; what this
+> packet adds is the seat. In particular: **`TableHost` opens the table with every seat a bot
+> and one shared watcher connection** — seating a person means giving one seat no agent
+> (`TableSeat.Person`) and handing that circuit its *own* `SeatConnection` from
+> `TableSession.ConnectionFor`, **not the watcher's**. 🔥 **The board must stay folded from
+> events**: a seated page draws its own hand from the `SeatPrompt` it was sent and from no
+> other source, which is exactly what keeps `ConcealmentTests` in front of it (P13.3 finding 6).
+> ⚠️ **And `TableBoard.After` already reads `Drew.Card` rather than assuming it null** — a
+> watcher is never told, a seat is, and the line is written for both.
 
 **Build.** The four questions `IPlayerAgent` asks, as interactive components pushing answers
 into P13.2's channel: take the discard or draw blind, claim the turned-up money card, choose a
@@ -2066,7 +2175,12 @@ half-built component cannot end somebody's round (P13.2).
   re-derive a recommendation in a component** — that is the one thing P13.1 wrote a type to
   prevent.
 - **Focus lands on the first control of the prompt when the turn arrives** (B7); the whole turn
-  is answerable from the keyboard (B6).
+  is answerable from the keyboard (B6). ✅ **The focus ring and the tab order are already
+  right** — P13.3 walked the page with `Tab` through the DevTools protocol and every stop was
+  visible and outlined; what this packet adds is *moving* focus when the turn does.
+- ⚠️ **This packet is where `MarkupStandardsTests.EveryHandlerIsOnARealControl` starts earning
+  its keep.** P13.3 has no controls on the table at all, so the scan passes vacuously today. A
+  discard is a card you click — **and a card you click is a `<button>`**, never a styled `div`.
 - ⚠️ **Prerender-safe joining** (C13): `OnInitializedAsync` runs twice, and joining a table
   twice is a real bug.
 
@@ -2091,7 +2205,14 @@ domain concept** — it decides seating and names and then constructs what `Prog
 today.
 
 - **Reconnection is UX, not an error path** (C16): a dropped circuit says *"Sable is playing
-  your seat"* and lets the player back in.
+  your seat"* and lets the player back in. ✅ **The event already exists and the board already
+  says it**: `TableEvent.SeatPlayedByTheComputer` is broadcast once a turn (P13.2) and
+  `TableBoard` turns it into a line of narration (P13.3). What is left is saying it *in the
+  seat* rather than only in the log.
+- ⚠️ **`TableHost` becomes a lobby and stops being a singleton with one table in it.** It opens
+  one table from configuration today, which is the whole of what P13.3 needed; a second table
+  means a dictionary of them and a route that names one. **Nothing else in the client knows how
+  many tables there are** — `TableView` takes a board and a connection.
 
 **Acceptance.** **Two people and two bots play a round over a network** — P13's original "done
 when", finally reached with everything under it already tested.

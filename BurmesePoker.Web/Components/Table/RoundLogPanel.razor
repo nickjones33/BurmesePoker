@@ -1,0 +1,62 @@
+@*
+    The observer stream, ported — not RoundLog's panel. The console keeps a log because it
+    clears the screen between turns for concealment; a browser never loses its scrollback
+    (§3.11).
+
+    ⚠️ aria-live="polite", never assertive: a bot table says something every second or so, and
+    an assertive region would interrupt a screen reader continuously (§3.11 B8, WCAG 4.1.3).
+    The hand and the seats are NOT live regions; only this is.
+*@
+
+<section class="log" aria-labelledby="log-heading">
+    <h2 id="log-heading">What has been said</h2>
+
+    @*
+        ⚠️ The scroller is a column-reverse flex box wrapping a normally-ordered list, which is
+        the one way to keep a growing log pinned to its latest line without JavaScript. The DOM
+        order stays oldest-first — which is the reading order, and what a screen reader is
+        given — while the box's scroll origin is the bottom, so the newest line is the one on
+        screen. A log that showed its oldest line for ever would be a log nobody watches.
+    *@
+    @*
+        Focusable and named: a scrolling region has to be reachable by keyboard or its older
+        lines are unreachable without a pointer (WCAG 2.1.1, §3.11 B6). The browser makes an
+        overflowing box focusable on its own; what it cannot invent is the name.
+    *@
+    <div class="scroller" tabindex="0" aria-label="What has been said — scroll for earlier lines">
+        <ol aria-live="polite" aria-relevant="additions" aria-atomic="false">
+            @foreach (var line in Lines)
+            {
+                <li @key="line.Sequence" class="line @Tone(line)">
+                    <span class="round" aria-hidden="true">@line.Round</span>
+                    <span class="text">
+                        @line.Text
+                        @foreach (var card in line.Cards)
+                        {
+                            <CardChip @key="card.Id.Value" Card="card" />
+                        }
+                    </span>
+                </li>
+            }
+        </ol>
+    </div>
+</section>
+
+@code {
+    /// <summary>Everything said so far, oldest first.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<LogLine> Lines { get; set; } = [];
+
+    /// <summary>
+    /// A class name per tone. <b>Nothing here is understood by colour</b> — every line is a
+    /// whole sentence, and the tone only tints it (§3.11 A2).
+    /// </summary>
+    private static string Tone(LogLine line) => line.Tone switch
+    {
+        LogTone.Money => "money",
+        LogTone.Good => "good",
+        LogTone.Quiet => "quiet",
+        LogTone.Bad => "bad",
+        _ => "normal"
+    };
+}

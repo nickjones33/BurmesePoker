@@ -1,0 +1,23 @@
+@*
+    The shell. ⚠️ There is deliberately no @rendermode anywhere in this file or in Routes:
+    static SSR is the default and interactivity is opted into per component (§3.11 C12).
+*@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="@Assets["theme.css"]" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["BurmesePoker.Web.styles.css"]" />
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+
+</html>

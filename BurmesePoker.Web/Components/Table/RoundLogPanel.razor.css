@@ -1,0 +1,79 @@
+.log {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 0.85rem 1rem 1rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 8px;
+    background: var(--raised);
+}
+
+h2 {
+    margin: 0 0 0.6rem;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--on-raised-muted);
+}
+
+/* Pinned to the latest line: see the note in the component. */
+.scroller {
+    display: flex;
+    flex-direction: column-reverse;
+    overflow-y: auto;
+    max-height: 26rem;
+}
+
+ol {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.line {
+    display: flex;
+    gap: 0.6rem;
+    align-items: baseline;
+    padding: 0.2rem 0;
+    border-bottom: 1px solid transparent;
+}
+
+.round {
+    min-width: 1.5rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+    color: var(--on-raised-muted);
+}
+
+.text {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.normal {
+    color: var(--on-raised);
+}
+
+.quiet {
+    color: var(--on-raised-muted);
+}
+
+.money {
+    color: var(--on-raised-money);
+}
+
+.good {
+    color: var(--on-raised-good);
+    font-weight: 700;
+}
+
+.bad {
+    color: var(--on-raised-bad);
+    font-weight: 700;
+}
