@@ -42,6 +42,34 @@ public abstract record TableEvent
     public sealed record RoundStarted(int Round, IReadOnlyList<Card> TurnedUp) : TableEvent;
 
     /// <summary>
+    /// Somebody sat down in a seat that was waiting for a player, and this is what they are
+    /// called from now on (BUILD-PLAN P13.6).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Public, and it has to be.</b> Who is at a table is the most public fact there is —
+    /// everybody in the room can see the chair fill. It carries a name and a seat and nothing
+    /// else, so there is no hand anywhere near it.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>A seat is named when somebody sits in it, not when the table is opened.</b> A lobby
+    /// opens a table before it knows who is coming, so the name arrives later — which is why
+    /// this event exists at all rather than the name being settled by <c>TableSeat</c>.
+    /// </para>
+    /// </remarks>
+    public sealed record SeatTaken(PlayerId Player, string Name) : TableEvent;
+
+    /// <summary>
+    /// Whoever was in a seat has gone, and the computer will be playing it (BUILD-PLAN P13.6).
+    /// </summary>
+    /// <remarks>
+    /// <b>The seat keeps their name</b>, because <em>"Nick's seat is being played by the
+    /// computer"</em> is the true thing to say and <em>"Seat 2"</em> is not. §3.11 C16: a
+    /// dropped circuit must not look like a dropped game.
+    /// </remarks>
+    public sealed record SeatLeft(PlayerId Player, string Name) : TableEvent;
+
+    /// <summary>
     /// The table has turned to a seat and is waiting on it. <b>Whose turn it is, and nothing
     /// else about the turn</b> (BUILD-PLAN P13.5).
     /// </summary>

@@ -237,6 +237,9 @@ BurmesePoker.Server/        one table, hosted: a seat somebody plays from elsewh
                             ✅ BUILT (P13.2): {TableSession, TableSeat, TableOptions,
                             TableFanOut, TableEvent, SeatConnection, SeatPrompt, SeatQuestion,
                             SeatAnswer, RemotePlayerAgent, BoundedAgent, TableAbandonedException}.
+                            ✅ EXTENDED (P13.6): TableSession learned who is sitting where —
+                            SitDown/StandUp/WaitingFor/IsFull — and TableEvent gained
+                            SeatTaken/SeatLeft. **The claim is the table's, not the lobby's.**
 BurmesePoker.Web/           Blazor Server. the second project that draws.
                             Domain + Presentation + Server.
                             ✅ BUILT (P13.3): {Program, TableHost, TableBoard, CardWords} and
@@ -254,6 +257,10 @@ BurmesePoker.Web/           Blazor Server. the second project that draws.
                             grid areas, seats at positions, one action bar, and a round log you
                             open. **No new route to anything**: TableView still takes the board
                             and YourSeat still takes the seat.
+                            ✅ BUILT (P13.6): {Lobby, HostedTable, TablePlan} replacing
+                            TableHost, and Pages/Tables.razor. A lobby holds tables by id;
+                            /table/{Id} names one. **A SeatBoard belongs to a viewer**, so
+                            TableView sits down, holds it, and stands up in Dispose.
 ```
 
 **By P13.3:** the seventh project above, `BurmesePoker.Presentation/PacedAgent.cs` **moved out of
@@ -817,7 +824,12 @@ are split by how they are checked, because a standard nobody can verify is a wis
 15. ✅ **ASSERTED IN P13.3.** **Do not call `StateHasChanged` inside an event handler** — `ComponentBase` already
     re-renders after one. **Do call it, through `InvokeAsync`, when the observer stream pushes
     from a non-UI thread**, which is how every opponent's move will arrive.
-16. ✅ **DONE IN P13.5 — reconnection is part of the UX, not an error path.** A dropped circuit
+16. ✅ **DONE IN P13.5 AND FINISHED IN P13.6 — reconnection is part of the UX, not an error
+    path.** P13.5 owned the outage overlay; **P13.6 says it in the seat** — the felt marks a seat
+    the computer is standing in at, and sitting down under a name already at the table takes that
+    seat back, which is what makes a browser refresh put you in your own chair. ⚠️ **The marker
+    is per turn** and is cleared at that seat's next `TurnBegan`: a player who timed out once and
+    came back is not still away. A dropped circuit
     must not look like a dropped game. P13 already decides that a timeout is a bot move; the
     client has to *say* so rather than freeze and hope.
     🔥 **Blazor ships an overlay if you do not, and it is the ugliest screen in the app**: a
@@ -2445,7 +2457,7 @@ soaked with the banks summing to zero on every tick and no horizontal overflow a
 
 ---
 
-#### P13.6 — The lobby, and a second person
+#### P13.6 — The lobby, and a second person ☑ done 2026-08-19 *(§0's goal 4, delivered)*
 
 **Build.** Open a table, join it, the host fills the rest with bots, play. **The lobby is not a
 domain concept** — it decides seating and names and then constructs what `Program` constructs
@@ -2480,6 +2492,70 @@ today.
 when", finally reached with everything under it already tested.
 
 **Done when.** §0's goal 4 is delivered.
+
+##### What P13.6 found
+
+1. 🔥 **A test that a stood-up seat refuses an answer is vacuous unless a question is standing
+   in front of it.** The first version sat two people down at a table that was not dealing,
+   evicted one, and asserted the ghost refused — which it did, because there was nothing to
+   refuse. ⚠️ **Found by mutating `SeatBoard.Dispose` and watching the test stay green**, not by
+   reading it. `TwoPeopleTests.AGhostCannotAnswerTheQuestionItWasLookingAt` runs a live round,
+   waits until the seat really is being asked something, and only then reconnects. **The pair
+   `_left` + `Asking = null` is red when both are removed**; either alone is redundant, which is
+   deliberate — the flag is what closes the in-flight-notification race a test cannot schedule.
+2. 🔥 **Two `<AntiforgeryToken />`s is worse than none, and the page renders perfectly either
+   way.** `EditForm` emits one itself for a static SSR post; adding a second put two inputs of
+   the same name in the form, the two arrived comma-joined, and every post was rejected with a
+   bare error page. ⚠️ **Found by pressing the button** — P13.3's rule generalises from URLs to
+   verbs: *ask the server for everything the page says it will do*, not only for everything it
+   names.
+3. 🔥 **A marker that means "away" has to stop meaning it.** `SeatPlayedByTheComputer` is
+   broadcast once per turn, and marking the seat for the rest of the *round* told a player who
+   had timed out once and come back that he was still away — in his own seat, while he was
+   answering it. **Cleared at that seat's next `TurnBegan`**, which is the only moment the table
+   has that means *we are about to find out*. ⚠️ **And a seat somebody walked away from is a
+   different fact**: `TableBoard.Vacated` survives the deal, because a player who left is still
+   gone, while a seat that was always the computer's is marked by neither — **nobody has gone
+   anywhere at a bot's seat.**
+4. ⚠️ **The lobby's sit-down form must not hide itself when the table is full.** Blazor keeps a
+   dropped circuit for minutes before disposing it, so somebody who reloaded finds their own
+   seat occupied by their own ghost — and a form that vanished would lock them out of the table
+   they are sitting at. It is always shown; sitting down under a name already here takes that
+   seat back. ⚠️ **A name is not a credential and the code says so out loud**: two people who
+   type the same name take each other's seat. A lobby with accounts is beyond this plan.
+5. ⚠️ **A claim on a table must not be made while the page is only being prerendered** (§3.11
+   C13, which had been a warning about *joining* and is now about two things). Being counted as
+   present and taking a seat are both claims, and a claim made twice is a bug rather than a
+   wasted call — so both sit behind `RendererInfo.IsInteractive`, asserted by
+   `ComponentDisposalTests.NothingIsClaimedWhileThePageIsOnlyBeingPrerendered`.
+6. ⚠️ **A parameter handed to an interactive root component is serialised**, so `Table.razor`
+   passes the table's **id** and the island looks it up in the lobby it is injected with. A
+   `HostedTable` is not serialisable and must not be; asserted by
+   `MarkupStandardsTests.OnlyTheTableIsInteractive`.
+7. ⚠️ **A settlement is not a resting state.** With a one-millisecond gap between rounds the
+   acceptance test caught round *seventeen* rather than round one, by which time the 240 lines
+   the log keeps had trimmed away the two lines saying who had sat down. A table that stops
+   between rounds is also what a person actually sees.
+8. ⚠️ **`FocusOnNavigate` wins the race against §3.11 B7 on a reconnect, and that is left
+   alone.** Landing on the table mid-turn puts focus on the `<h1>` rather than on the question
+   standing in front of you — because a fresh page load is navigation, and focus belongs at the
+   top of a document you have just arrived at. B7 is about the turn *moving*; the prompt is four
+   tab stops away. **Written down so it is not rediscovered as a defect.**
+
+##### What P13.6 changed rather than added to
+
+- **`TableHost` is gone.** `Lobby` (a singleton) holds `HostedTable`s by id; `TablePlan` is what
+  one is opened with. `TableView` injects the lobby and finds its table; every other component
+  still takes a board or a seat, and **nothing else in the client counts tables**.
+- **`SeatBoard` belongs to a viewer.** `TableView` sits down, holds it, hands it to `YourSeat`
+  as a parameter, and stands up in `Dispose`. `YourSeat` no longer injects anything at all.
+- **`TableSession` learned who is sitting where** — `SitDown`, `StandUp`, `RemoteSeats`,
+  `WaitingFor`, `IsFull`, and the two events `SeatTaken`/`SeatLeft`. ⚠️ **The claim is the
+  table's and not the lobby's**, because two viewers handed the same `SeatConnection` are two
+  people answering one question, and a seat is a property of a table.
+- **The table deals while somebody is at it** — at least one viewer attending *and* every seat
+  either the computer's or somebody's. **The patience was not shortened**, which is what P13.4
+  asked for.
 
 ---
 

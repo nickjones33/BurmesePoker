@@ -1,0 +1,183 @@
+@page "/"
+@inject Lobby Lobby
+@inject NavigationManager Navigation
+
+@*
+    The lobby: what is open, who is still waiting, and how to open another one.
+
+    ⚠️ Static SSR, by default and deliberately (§3.11 C12). The table is the one interactive
+    island in this client; a list of tables and two forms is a page, and a page whose every
+    control is a real one — a <form>, a <button>, an <a> — needs no circuit to work at all
+    (§3.11 A4). Sitting down is a GET, because it navigates; opening a table is a POST,
+    because it makes one.
+
+    🔥 Your name is typed here rather than configured, because a lobby is where a table learns
+    who is coming. It travels in the URL. ⚠️ A name is not a credential and this page does not
+    pretend it is one: whoever types a name that is already at a table takes that seat back,
+    which is exactly what makes a browser refresh put you back in your own chair (§3.11 C16).
+*@
+
+<PageTitle>Burmese Poker — the tables</PageTitle>
+
+<section class="lobby">
+    <h1>The tables</h1>
+
+    @if (_problem is { } wrong)
+    {
+        <p class="problem" role="alert">@wrong</p>
+    }
+
+    <ul class="tables">
+        @foreach (var table in _tables)
+        {
+            <li @key="table.Id" class="open">
+                <h2>@table.Title</h2>
+
+                <p class="shape">
+                    <span class="glyph" aria-hidden="true">🪑</span>
+                    <span>@Shape(table)</span>
+                </p>
+
+                <p class="state">@State(table)</p>
+
+                @*
+                    🔥 Shown even when every seat is held, and that is not an oversight. Blazor
+                    keeps a dropped circuit alive for minutes before disposing it, so somebody
+                    who reloaded finds their own seat still occupied — by their own ghost — and
+                    a form that hid itself would lock them out of the table they are sitting at.
+                    Sitting down under a name already here takes that seat back (§3.11 C16).
+                *@
+                <form class="sit" method="get" action="@($"/table/{table.Id}")">
+                    <label for="@($"you-{table.Id}")">Your name</label>
+                    <input id="@($"you-{table.Id}")" name="you" type="text"
+                           maxlength="24" value="@Lobby.You" autocomplete="nickname" />
+                    <button type="submit">Sit down</button>
+                </form>
+
+                <p class="watch">
+                    <a href="@($"/table/{table.Id}")">Watch this table</a>
+                </p>
+            </li>
+        }
+    </ul>
+
+    <details class="opening">
+        <summary>Open another table</summary>
+
+        @*
+            🔥 No <AntiforgeryToken /> here, and that is the fix rather than the omission.
+            EditForm renders one itself for a static SSR post; adding a second put two inputs
+            of the same name in the form, the two arrived as one comma-joined value, and the
+            post was rejected — with a page that had rendered perfectly. Found by pressing the
+            button, which is the only thing that was ever going to find it (P13.3's rule: ask
+            the server for what the page says it will do).
+        *@
+        <EditForm FormName="open" Model="Wanted!" OnValidSubmit="Open" method="post">
+            <p>
+                <label for="new-title">Called</label>
+                <InputText id="new-title" @bind-Value="Wanted!.Title" maxlength="40" />
+            </p>
+
+            <p>
+                <label for="new-seats">Seats</label>
+                <InputNumber id="new-seats" @bind-Value="Wanted!.Seats"
+                             min="@RoundEngine.MinimumPlayers" max="@RoundEngine.MaximumPlayers" />
+            </p>
+
+            <p>
+                <label for="new-people">Of those, people</label>
+                <InputNumber id="new-people" @bind-Value="Wanted!.People" min="0" max="@RoundEngine.MaximumPlayers" />
+            </p>
+
+            <p class="note">
+                The rest are played by the computer. A table with no people at it still deals,
+                and is worth watching.
+            </p>
+
+            <p>
+                <button type="submit">Open it</button>
+            </p>
+        </EditForm>
+    </details>
+</section>
+
+@code {
+    private IReadOnlyList<HostedTable> _tables = [];
+    private string? _problem;
+
+    /// <remarks>
+    /// ⚠️ <b>Bound from the form, so it survives the post</b> — a static SSR page is built again
+    /// from scratch on the way back, and a model held only in a field would come back empty.
+    /// </remarks>
+    [SupplyParameterFromForm(FormName = "open")]
+    private NewTable? Wanted { get; set; }
+
+    /// <remarks>
+    /// ⚠️ <b>The model is filled in here and never by an initialiser</b> (BL0008): a form post
+    /// binds this property, and a property with an initialiser can be overwritten with null on
+    /// the way through.
+    /// </remarks>
+    protected override void OnInitialized()
+    {
+        Wanted ??= new NewTable
+        {
+            Seats = Lobby.Opening.Seats,
+            People = Lobby.Opening.People
+        };
+
+        _tables = Lobby.Tables;
+    }
+
+    private void Open()
+    {
+        var wanted = Wanted ?? new NewTable();
+        var seats = Math.Clamp(wanted.Seats, RoundEngine.MinimumPlayers, RoundEngine.MaximumPlayers);
+        var people = Math.Clamp(wanted.People, 0, seats);
+
+        try
+        {
+            var table = Lobby.Open(Lobby.Opening with
+            {
+                Title = string.IsNullOrWhiteSpace(wanted.Title) ? "A table" : wanted.Title.Trim(),
+                Seats = seats,
+                People = people,
+                Seed = Lobby.NextSeed()
+            });
+
+            Navigation.NavigateTo($"/table/{table.Id}");
+        }
+        catch (InvalidOperationException full)
+        {
+            _problem = full.Message;
+            _tables = Lobby.Tables;
+        }
+    }
+
+    private static string Shape(HostedTable table) =>
+        $"{table.Seats} seats, {table.Plan.People} for people";
+
+    /// <remarks>
+    /// <b>What the table is doing, and why.</b> A table waits for the seats it was opened with —
+    /// P13.4's finding, that an unanswered seat spends its whole patience on every question, is
+    /// only fixable by something that knows whether anybody is there (BUILD-PLAN P13.6).
+    /// </remarks>
+    private static string State(HostedTable table) => table switch
+    {
+        { WaitingFor.Count: > 0 } waiting =>
+            $"Waiting for {waiting.WaitingFor.Count} more.",
+        { IsDealing: true } dealing when dealing.Board.Round > 0 =>
+            $"Playing round {dealing.Board.Round}. Every seat is taken; your own name takes yours back.",
+        { IsDealing: true } => "Dealing.",
+        _ => "Nobody here. It deals again when somebody arrives."
+    };
+
+    /// <summary>A table somebody is asking for, as the form has it.</summary>
+    public sealed class NewTable
+    {
+        public string Title { get; set; } = "A table";
+
+        public int Seats { get; set; } = RoundEngine.MinimumPlayers;
+
+        public int People { get; set; } = 1;
+    }
+}

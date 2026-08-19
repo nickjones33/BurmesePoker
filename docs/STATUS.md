@@ -10,17 +10,84 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P13.6 — the lobby, and a second person.** No blockers, and it is the last packet
-in the plan. **Stopping here is a legitimate end state**: three of §0's four goals were already
-delivered, and the fourth now has a finished — and good-looking — single-player half.
+**Every packet in the plan is done.** P0–P12, P13.1–P13.6 and P14–P16. **All four of §0's goals
+are delivered**: solo play against the computer (P10), a console worth sitting at (P11),
+simulation at scale (P12), and — as of P13.6 — **a multiplayer browser app with AI seats.**
+There is no next packet. Anything further is new work rather than a debt.
+
+✅ **P13.6 is done (2026-08-19): the lobby, a second person, and §0's goal 4.** `dotnet run
+--project BurmesePoker.Web` opens a lobby at `/`, a table at `/table/{id}`, and **two people and
+two bots play a round over a network** — P13's original "done when", reached with everything
+under it already tested. **Verified twice: in a test (`TwoPeopleTests`) and in the real browser,
+two tabs, two seats, each shown its own hand and neither shown the other's.**
+
+**What it changed rather than added to.**
+
+- **`TableHost` is gone.** `Lobby` is the singleton and holds `HostedTable`s by id; `TablePlan`
+  is what one is opened with. `TableView` injects the lobby and finds its table by the id its
+  URL carries; **nothing else in the client counts tables.**
+- 🔥 **A `SeatBoard` belongs to a viewer, which is the thing P13.4 said had to change.**
+  `TableView` sits down, holds its own seat, hands it to `YourSeat` as a parameter, and stands
+  up in `Dispose`. `YourSeat` no longer injects anything at all.
+- **`TableSession` learned who is sitting where** — `SitDown`, `StandUp`, `RemoteSeats`,
+  `WaitingFor`, `IsFull`, plus `TableEvent.SeatTaken` and `SeatLeft`. ⚠️ **The claim is the
+  table's and not the lobby's**: two viewers handed the same `SeatConnection` are two people
+  answering one question, and a seat is a property of a table.
+- 🔥 **The table deals while somebody is at it** — at least one viewer attending *and* every seat
+  either the computer's or somebody's. That is P13.4's leftover finally answerable, because a
+  lobby knows whether anybody is connected. **The patience was not shortened**, which is what
+  P13.4 asked for.
+
+🔥 **Eight findings a cold context needs.**
+
+1. 🔥 **A test that a stood-up seat refuses an answer is vacuous unless a question is standing in
+   front of it.** The first version evicted a ghost at a table that was not dealing and asserted
+   the ghost refused — which it did, because there was nothing to refuse. ⚠️ **Found by mutating
+   `SeatBoard.Dispose` and watching the test stay green**, not by reading it.
+   `AGhostCannotAnswerTheQuestionItWasLookingAt` runs a live round now and waits until the seat
+   really is being asked something. **`_left` + `Asking = null` is red when both are removed**;
+   either alone is redundant, deliberately — the flag closes an in-flight-notification race a
+   test cannot schedule.
+2. 🔥 **Two `<AntiforgeryToken />`s is worse than none, and the page renders perfectly either
+   way.** `EditForm` emits one itself for a static SSR post; a second put two inputs of the same
+   name in the form, the two arrived comma-joined, and every post was rejected with a bare error
+   page. ⚠️ **Found by pressing the button.** P13.3's rule generalises from URLs to verbs: *ask
+   the server for everything the page says it will do*, not only for everything it names.
+3. 🔥 **A marker that means "away" has to stop meaning it.** `SeatPlayedByTheComputer` is
+   broadcast once per turn, and marking the seat for the rest of the *round* told a player who
+   had timed out once and come back that he was still away — in his own seat, while he was
+   answering. **Cleared at that seat's next `TurnBegan`**, the only moment that means *we are
+   about to find out*. ⚠️ **A seat somebody walked away from is a different fact**:
+   `TableBoard.Vacated` survives the deal, and a seat that was always the computer's is marked by
+   neither — **nobody has gone anywhere at a bot's seat.**
+4. ⚠️ **The lobby's sit-down form must not hide itself when the table is full.** Blazor keeps a
+   dropped circuit for minutes before disposing it, so somebody who reloaded finds their own seat
+   occupied by their own ghost, and a form that vanished would lock them out of the table they
+   are sitting at. **Sitting down under a name already here takes that seat back.** ⚠️ **A name
+   is not a credential and the code says so out loud** — two people who type the same name take
+   each other's seat. A lobby with accounts is beyond this plan.
+5. ⚠️ **A claim on a table must not be made while the page is only being prerendered** (§3.11
+   C13, which was a warning about *joining* and is now about two things). Being counted as
+   present and taking a seat are both claims; both sit behind `RendererInfo.IsInteractive`, and
+   `ComponentDisposalTests.NothingIsClaimedWhileThePageIsOnlyBeingPrerendered` asserts the order.
+6. ⚠️ **A parameter handed to an interactive root component is serialised**, so `Table.razor`
+   passes the table's **id** and the island looks it up. A `HostedTable` is not serialisable and
+   must not be.
+7. ⚠️ **A settlement is not a resting state.** With a one-millisecond gap between rounds the
+   acceptance test caught round *seventeen*, by which time the 240 lines the log keeps had
+   trimmed away the two lines saying who sat down. A table that stops between rounds is also what
+   a person actually sees.
+8. ⚠️ **`FocusOnNavigate` beats §3.11 B7 on a reconnect, and that is left alone.** Landing on the
+   table mid-turn puts focus on the `<h1>` rather than the question in front of you, because a
+   fresh page load is navigation and focus belongs at the top of a document you have just arrived
+   at. B7 is about the turn *moving*; the prompt is four tab stops away. **Written down so it is
+   not rediscovered as a defect.**
 
 ✅ **P13.5 is done (2026-08-19), and the browser client is a table rather than a document about
 one.** Every seat sits at a position on a felt, **you are at the front of it whichever seat you
 were dealt**, the shared things — the deck, the money cards, the discard on offer — are in the
 middle, your hand is the big pressable thing at the bottom, the four questions are one action
-bar, and the narration is a round log you open. ⚠️ **Renumbered on the owner's call**: this was
-going to be P13.6 and the lobby was P13.5. They are close to orthogonal, and doing the layout
-first means **the lobby arrives at a table worth joining**.
+bar, and the narration is a round log you open.
 
 **What it added.** `BurmesePoker.Presentation/TableRing.cs` — the rotation, as a pure function
 with thirteen tests, because *an expression buried in Razor is unreachable from a test*. Three
@@ -60,11 +127,11 @@ rewritten. **420 tests, up from 389, none removed.**
    a watcher could do the same arithmetic, and the alternative was changing `IGameObserver` for a
    decoration. And a discard **pile** rather than a top card, because a card leaves it again.
 
-⚠️ **One thing P13.5 left, and it is a server change rather than a layout one.** The legend now
-promises that a money card you own pays you *even after you throw it away* (RULES.md §4.4) — and
-the felt cannot show those cards, because `SeatPrompt` carries ownership only for the cards
-currently in your hand. A running **"★ 4 owned"** tally on your seat would need the server to
-send it.
+⚠️ **One thing P13.5 left, and P13.6 did not take it either.** The legend promises that a money
+card you own pays you *even after you throw it away* (RULES.md §4.4) — and the felt cannot show
+those cards, because `SeatPrompt` carries ownership only for the cards currently in your hand. A
+running **"★ 4 owned"** tally on your seat would need the server to send it. **Still the one
+named piece of unfinished business in the browser client.**
 
 ✅ **P13.4 is done (2026-08-19), and this project has a game you can sit down and play in a
 browser.** `dotnet run --project BurmesePoker.Web` deals you into seat 1 against three bots, and
@@ -354,12 +421,13 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P10** Bot opponents — solo play | P9 | done 2026-08-18 — `PartialCover` + `GreedyBotAgent`; every seed terminates |
 | ☑ | **P11** Console UX pass | P10 | done 2026-08-18 — round log, meld-grouped hand, hints, pacing, `--seed` |
 | ☑ | **P12** Simulation at scale | P10 | done 2026-08-18 — `BurmesePoker.Sim`; the tie-break wins 30.7% to 19.3% |
-| ☐ | **P13** The browser client and multiplayer | P10 | XL — **re-split 2026-08-19 into the five below**; the only packet left, and the only one that changes the architecture |
+| ☑ | **P13** The browser client and multiplayer | P10 | XL — **re-split 2026-08-19 into the six below**; done 2026-08-19, and the only one that changed the architecture |
 | ☑ | **P13.1** A presentation view model, rendered two ways | P10 | done 2026-08-19 — a fifth project; the console is byte-identical, and a view model must be a **snapshot** |
 | ☑ | **P13.2** The table server | P13.1 | done 2026-08-19 — a sixth project, no transport; **the concealment leak test shipped, and it fails when broken** |
 | ☑ | **P13.3** A browser table you can watch | P13.2 | done 2026-08-19 — a seventh project; **the first UI**, and the rest of the §3.11 A list shipped with it |
 | ☑ | **P13.4** A seat you can play | P13.3 | done 2026-08-19 — **solo browser play, complete**; 86 questions answered with no pointer at all |
-| ☐ | **P13.5** The lobby, and a second person | P13.4 | **next**, and the last one. §0's goal 4 |
+| ☑ | **P13.5** A table, not a document | P13.4 | done 2026-08-19 — the layout pass; **a focus call can kill the circuit**, and whose turn it is was made public on purpose |
+| ☑ | **P13.6** The lobby, and a second person | P13.5 | done 2026-08-19 — **§0's goal 4**: two people and two bots play a round over a network |
 | ☑ | **P14** Game journals — record and replay | P12 | done 2026-08-19 — a run and its replay produce byte-identical CSV |
 | ☑ | **P15** A skill ladder | P12 | done 2026-08-19 — four rungs, **three** separated skill levels |
 | ☑ | **P16** Does the player before you decide your game? | P15 | done 2026-08-19 — **no**, not between thinking players: −1.0 ± 2.1 pts |
@@ -419,7 +487,32 @@ and a cold context following the `/poker` baseline rule — *any failure at all 
 should re-run on a quiet machine before believing either of them. Nothing has been changed about
 them; loosening a performance guard is a decision for whoever owns it, not a tidy-up.
 
-**From P13.4 — read these before P13.5:**
+**From P13.6 — the state of the finished thing:**
+
+- 🔥 **Run it: `dotnet run --project BurmesePoker.Web`, then open `http://localhost:5188/`.**
+  That is the **lobby**. Type a name, press **Sit down**, and you are at `/table/1?you=<name>`.
+  **The table does not deal until every person seat is filled** — open a second browser (or a
+  second profile) and sit down again to start it, or open a table with `--people 1`. `--people 0`
+  is P13.3's room with nobody in it, which deals as soon as anybody watches.
+- **The command line names the table opened at boot**: `--table`, `--seats`, `--people`,
+  `--seed`, `--pace`, `--between`, `--patience`, `--name` (what the lobby's form suggests calling
+  you), `--hints false`. ⚠️ **`--seat` is gone** — a lobby seats you.
+- ⚠️ **`Properties/launchSettings.json` fixes the port at 5188 and beats `ASPNETCORE_URLS`.**
+  Setting the environment variable and then curling the port you set is a wasted five minutes;
+  read the startup line.
+- ⚠️ **Do not `pkill -f BurmesePoker.Web` from a bash tool call** — the pattern matches the shell
+  running the command and kills the tool call itself (exit 144, twice in this session). Kill by
+  port: `ss -lptn 'sport = :5188'`.
+- 🔥 **`Lobby` → `HostedTable` → `TableSession`, and that is the whole stack above the engine.**
+  A component may reach the lobby and the table it names; `MarkupStandardsTests` still forbids
+  every route round the fan-out, `ConnectionFor` included.
+- ⚠️ **`SeatBoard` is per viewer now.** A component that wants one takes it as a parameter. The
+  only thing that builds one is `HostedTable.SitDown`, and the only thing that disposes one is
+  `HostedTable.StandUp` — which is why `TableView.Dispose` calls it.
+- ⚠️ **`ClickingPlayer` is the tool for anything multi-seat.** It drives a `SeatBoard`, so
+  everything it writes down is something a page would have drawn.
+
+**From P13.4 — still true, and read them before touching the seat:**
 
 - 🔥 **Run it: `dotnet run --project BurmesePoker.Web`.** You are seat 1. The options are plain
   configuration: `--seed`, `--pace`, `--between`, `--seats`, and now **`--seat` (which seat is
@@ -1369,6 +1462,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-19 | P13.6 | ☑ Done. **The lobby, a second person, and §0's goal 4 — the plan is finished.** `Lobby` (singleton) holds `HostedTable`s by id, opened from a `TablePlan`; `Pages/Tables.razor` is the lobby at `/` (static SSR, two real forms) and `/table/{Id}` names one table. **`TableHost` is gone.** 🔥 **A `SeatBoard` belongs to a viewer**: `TableView` sits down, holds it, hands it to `YourSeat` as a parameter and stands up in `Dispose` — the one thing P13.4 said had to change rather than be added to. **`TableSession` learned who is sitting where** (`SitDown`, `StandUp`, `RemoteSeats`, `WaitingFor`, `IsFull`, `SeatTaken`/`SeatLeft`), because two viewers handed one `SeatConnection` are two people answering one question and a seat is a property of a table. 🔥 **The table deals while somebody is at it** — a viewer attending *and* every seat accounted for — which is P13.4's leftover, answerable at last, **without shortening the patience**. **Acceptance met:** `TwoPeopleTests.TwoPeopleAndTwoBotsPlayARound` settles round 1 with both people asked their own questions, hands pairwise disjoint a round at a time, banks summing to zero; **and it was played for real in two browser tabs**, Nick and Mya Lay, a whole round each answering their own prompts with `Tab`/`Enter`. §3.11 C16 finished: the felt marks a seat the computer is standing in at, and a reload takes your own seat back off your own ghost. **18 new tests, 438 passed / 0 failed, 0 warnings; five mutations applied, five red.** 🔥 **Findings: a test that a stood-up seat refuses is vacuous unless a question is standing — found by mutating `Dispose` and watching it stay green; two `<AntiforgeryToken />`s are worse than none and the page renders perfectly either way, found by pressing the button; a marker that means "away" has to stop meaning it, so standing-in is per turn and cleared at the next `TurnBegan`; the sit-down form must not hide itself when the table is full, because the person locked out is the one who just reloaded; a claim on a table must not be made while prerendering, and there are two of them now; a parameter to an interactive root is serialised, so the page passes an id; a settlement is not a resting state; and `FocusOnNavigate` beats §3.11 B7 on a reconnect, deliberately left alone.** |
 | 2026-08-19 | P13.4 | ☑ Done. **A seat you can play — solo browser play, complete, and a legitimate stopping point.** `BurmesePoker.Web` gains `SeatBoard` (your seat, folded out of **your own** `SeatConnection`: the question standing, the hand it is about, and the hand you kept between turns) and three components — `YourSeat`, `TurnPrompt`, `HandPanel` — **all inside P13.3's single interactive island**, so §3.11 C12 is untouched. `TableHost` seats you: `--seat` (1 by default, 0 to only watch), `--name`, `--hints`, `--patience`. **All three acceptance criteria met.** ✅ **1:** a match played from the seats themselves — three rounds, four connected seats, banks carrying over and summing to zero, asserted in `SeatBoardTests` through `ClickingPlayer` (the browser's `ScriptedSeat`, which drives a `SeatBoard` so everything it sees is something a page would draw); and five rounds played for real in headless Chromium. ✅ **2 — a round played end to end with no pointer at all:** 86 questions answered with `Tab` and `Enter` over five rounds, **393 tab presses walking the hand**, and focus was already on a `<button>` at every prompt before a key was pressed (§3.11 B7); a second run on the final build played three rounds, **went out from the seat**, and so exercised all four branches of `TurnPrompt` in a browser. ✅ **3:** `NoSeatEverHeldACardFromAnotherSeatsHand` asserts every hand that was ever on any of four pages pairwise disjoint **a round at a time**, and `MarkupStandardsTests.NoComponentFindsASecondRouteToTheTable` forbids any component naming `TableSession`, `MatchEngine`, `TableState`, `TurnContext`, `PartialCover`, `HandEvaluator` or `ConnectionFor`. **§3.11 B6, B7 and B11 shipped**, and **A4 stopped passing vacuously** — it counts what it scanned now (eight handlers). **18 new tests, 389 passed / 0 failed**, and **eight mutations applied, eight red.** 🔥 **Findings: a `CardId` names a card in a *round's* shoe, which is rebuilt every deal, so hands are compared across seats a round at a time; your hand between turns is not stale and is worth rebuilding, with ownership read back off the `CardView`s you were sent rather than recomputed; a refusal must not raise "something changed", or a client answering on the change event answers the same refused question for ever; and only the first control may capture a `@ref`, because Blazor captures on insertion and not on every diff.** ⚠️ **A seated table no longer deals from boot** — an unanswered seat spends its whole patience on every question — and `TableHost.Yours` is one `SeatBoard` shared by every circuit, which P13.5 must change. 🔥 **And one thing only reading a control's accessible name out of the browser found: `CardChip`'s hidden words needed a full stop.** A card sits next to whatever else is said about it, and without one a screen reader ran the two together into *"five of clubs melds nothing"* — a sentence that means the opposite of itself. `docs/PLAYING.md` gained a browser section; `BUILD-PLAN.md` P13.4, P13.5, §2 and §3.11 (A4, B6, B7, B11) amended. |
 | 2026-08-19 | P13.3 | ☑ Done. **The first UI in this project's history — a seventh project, and a browser table you can watch.** `BurmesePoker.Web` (Blazor Server; Domain + Presentation + Server): `TableHost` (one table, dealing itself round after round, one watcher connection, idempotent `Start`), `TableBoard` (the public game folded out of `TableEvent`s and **nothing else**), `CardWords` (a card said out loud, for a screen reader), and eleven components — a static SSR shell and rules page, and one interactive island: `TableView`, `SeatPanel`, `CardChip`, `RoundLogPanel`, `SettlementPanel`, each with its own `.razor.css`. **All three acceptance criteria met.** ✅ **1:** bot-only rounds play out in a browser start to settlement — verified in headless Chromium over the DevTools protocol, which watched the page go from Round 8 to Round 10 with no reload, no console errors and no reconnect modal, and screenshotted both themes at a settlement. ✅ **2 — the rest of the §3.11 A list shipped as tests:** `PaletteContrastTests` (A3 — computed contrast in **both themes**, read from `wwwroot/theme.css`, **pairs discovered by naming convention** rather than listed, plus a check that every `var(--…)` names a declared token), `MarkupStandardsTests` (A4 real controls, C12 no render mode at the root, C14 `@key`, C15 `InvokeAsync`, B8 one polite live region, and no `StateHasChanged` in a `Dispose`), `ComponentDisposalTests` (A5 — reflection over every `ComponentBase` for a table member, private ones included, plus that the subscription is actually unhooked). ✅ **3 — the B list reviewed by driving it:** tab order walked with `Input.dispatchKeyEvent` (skip link → nav, every stop visible and outlined 3px), the log made keyboard-reachable and named, `prefers-reduced-motion` and `prefers-color-scheme` honoured, 24px minimum targets, and every card carrying words as well as a glyph. 🔥 **Finding 1: `UseStaticFiles` does not serve the framework's own files.** `_framework/blazor.web.js` 404'd and the page looked perfect — **a prerendered Blazor Server page is a photograph of a broken one.** `MapStaticAssets`, and `launchSettings.json` because a build's endpoints manifest is a Development one. 🔥 **Finding 2: a trimmed log must not key on the length of the log** — `TableBoard.Narrated` counts every line ever said; `Log.Count` repeats the moment it trims, and a repeated `@key` is Blazor reusing the wrong DOM node. 🔥 **Finding 3: 240 visually-hidden spans made the document 10,295px tall** for a body of 1,814 — the absolute-positioning recipe needs a positioned ancestor. **Measured, not seen.** 🔥 **Finding 4: a source scan must read markup, not the prose about it** — four of six scans failed on comments in the files obeying the standard; and a `@key` check that looks *nearby* let a nested key cover for a missing one. **Eleven mutations applied, eleven red.** ⚠️ **`PacedAgent` moved to Presentation, not Domain** — Sim references Domain and must not be able to reach a sleep; **console byte-identical after the move** (two pty captures, two seeds, `cmp`). ⚠️ **`BurmesePoker.Tests` now references `BurmesePoker.Web`** and still never the console: the rule is that nothing is tested *through* a front end, and a component tree is data. **Build clean and warning-free, 371 passed / 0 failed** (29 new). **Domain, Server and Sim untouched** — the engine now stands unaltered across five consecutive packets. No new rules question — `RULES.md` stays at **rev 13**. Amended BUILD-PLAN §2, §3.11 (A3, A4, A5, B8, C12–C15, C17 all marked), P13.3 (a "What P13.3 found" section) and **P13.4 and P13.5, each of which inherits something now built.** |
 | 2026-08-19 | P13.2 | ☑ Done. **The table server — a sixth project, and no transport anywhere in it.** `BurmesePoker.Server` (Domain + Presentation): `TableSession` (one hosted table: seats, connections, rounds, banks, its own seed), `TableSeat`/`TableOptions`, `SeatConnection` (a mailbox — the events a connection may hear and the question it is being asked), `SeatPrompt`/`SeatQuestion`/`SeatAnswer`, `TableFanOut` (the `IGameObserver` that applies the concealment), `TableEvent` (narration as a closed record hierarchy), `RemotePlayerAgent` (blocks on the connection, stands in with a bot when nobody answers), `BoundedAgent`/`TableClock`/`TableAbandonedException`. **All three acceptance criteria met.** ✅ **1:** two scripted remote seats and two `GreedyBotAgent`s play a full round through the server's own plumbing, in a test, with no sockets. ✅ **2 — the packet's most important test:** `ConcealmentTests` plays one round with **four connected seats and a watcher** and asserts pairwise-disjoint hands, no seat told what anybody else drew blind, a sweep over every card in every event against what that seat may see, and a watcher sent nothing but the public game. ⚠️ **Mutation-tested rather than assumed** — broadcasting the drawn card to everyone turns **three of the five red**. ✅ **3:** a seat that stops answering is played by the computer, the round finishes, and the takeover is broadcast (once a turn, keyed on `(Round, TurnNumber)` exactly as P11's pacing decorator is); a player who misses one prompt and comes back for the next one is simply back. 🔥 **Finding 1: exactly one event in the whole narration is private — the blind draw.** A discard, a taken discard, a claimed money card and a declaration all happen in front of the table, so the security boundary is one `if` and everything else in `TableFanOut` is care about lists. 🔥 **Finding 2: P13.1's snapshot rule generalised and caught two more live lists** — `TableState.TurnedUpOnTable` is aliased by *both* `TurnContext.TurnedUpMoneyCards` and `IGameObserver.RoundStarted`, and the opening player's claim removes a card from it; `EverythingASeatWasSentStaysWhatItWasWhenItWasSent` forces the claim and fails if either copy is removed. 🔥 **Finding 3: answering inside `SeatConnection.Updated` makes a whole round deterministic** — the event is raised on the round's thread before the seat waits, so eighteen tests that play real rounds cost four seconds and no flakiness; one test drives the genuinely cross-thread path because that is the shape a circuit has. ⚠️ **A client bug must not end a round:** `SeatConnection.Answer` **refuses** an answer that does not fit the question or names a card the seat is not holding — returns false, the prompt stands — where the engine would throw. ⚠️ **Deliberate deviation, and P13.3 inherits it: the stand-in is not paced.** A sleep belongs to whatever draws the table, so `TableOptions.StandIn` is a factory; **`PacedAgent` lives in `BurmesePoker.Console` and must move (Domain's `Agents/` is the obvious home) rather than be reached by a reference.** **The wall clock bounds the table, and every seat is wrapped including the bots** — what goes wrong at a hosted table is the people, not the play; the round is announced abandoned before the exception leaves and the session survives it. **Build clean and warning-free, 342 passed / 0 failed** (18 new: 12 `TableSessionTests`, 5 `ConcealmentTests`, 1 new `LayeringTests` row forbidding Spectre, ASP.NET, `System.Console` and `System.Net` in the server). **Domain, Presentation, Console and Sim were not touched at all** — the only edits outside the new project are one line of `BurmesePoker.slnx`, one `ProjectReference` and the layering row. No new rules question — `RULES.md` stays at **rev 13**, unchanged across six packets. Amended BUILD-PLAN §2, §3.10 (items 2 and 4 cashed), §3.11 A1, P13.2 (a "What P13.2 found" section) and **P13.3 and P13.4 — each inherits something already built, and P13.4's leak acceptance is narrowed because P13.2 already covers the seated case.** |

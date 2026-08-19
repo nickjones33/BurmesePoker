@@ -110,11 +110,31 @@ public class MarkupStandardsTests
     {
         Assert.Contains("SeatPrompt", Sources.Read("Components/Table/TurnPrompt.razor"), StringComparison.Ordinal);
         Assert.Contains("HandView", Sources.Read("Components/Table/HandPanel.razor"), StringComparison.Ordinal);
-        Assert.Contains("Host.Yours", Sources.Read("Components/Table/YourSeat.razor"), StringComparison.Ordinal);
+
+        // 🔥 The seat is handed down rather than fetched (BUILD-PLAN P13.6): a SeatBoard belongs
+        // to the viewer who sat down, so the island that sat down owns it and this draws
+        // whichever one it was given. It used to be injected, which is one seat for everybody.
+        var seat = Sources.Read("Components/Table/YourSeat.razor");
+
+        Assert.Contains("public SeatBoard? Seat { get; set; }", seat, StringComparison.Ordinal);
+        Assert.DoesNotContain("@inject", seat, StringComparison.Ordinal);
 
         // The hand is passed down, never fetched: neither leaf component injects anything.
         Assert.DoesNotContain("@inject", Sources.Read("Components/Table/HandPanel.razor"), StringComparison.Ordinal);
         Assert.DoesNotContain("@inject", Sources.Read("Components/Table/TurnPrompt.razor"), StringComparison.Ordinal);
+
+        // The one thing the island is injected with is the lobby, which is how it finds the
+        // table its URL names — and it is the only component in the client that knows there is
+        // more than one table (BUILD-PLAN P13.6).
+        var lobbied = Sources.Components
+            .Where(file => file.Text.Contains("@inject Lobby", StringComparison.Ordinal))
+            .Select(file => file.Path)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        Assert.Equal(2, lobbied.Count);
+        Assert.EndsWith("Tables.razor", lobbied[0].Replace('\\', '/'), StringComparison.Ordinal);
+        Assert.EndsWith("TableView.razor", lobbied[1].Replace('\\', '/'), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -144,7 +164,12 @@ public class MarkupStandardsTests
 
         Assert.Single(interactive);
         Assert.EndsWith("Table.razor", interactive[0], StringComparison.Ordinal);
-        Assert.Contains("<TableView @rendermode=\"InteractiveServer\" />", Sources.Read("Components/Pages/Table.razor"));
+        Assert.Contains("<TableView @rendermode=\"InteractiveServer\"", Sources.Read("Components/Pages/Table.razor"));
+
+        // ⚠️ And what crosses the boundary is serialisable (BUILD-PLAN P13.6): a parameter
+        // handed to an interactive root component is serialised to the circuit, so the page
+        // passes the table's *id* and the island looks the table up.
+        Assert.DoesNotContain("HostedTable", Sources.Read("Components/Pages/Table.razor"), StringComparison.Ordinal);
     }
 
     /// <summary>

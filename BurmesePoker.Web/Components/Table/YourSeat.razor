@@ -3,9 +3,14 @@
     to have an opinion.
 
     🔥 Everything drawn here came out of the SeatPrompt this seat was sent, through SeatBoard,
-    and out of nothing else. There is no route from a component to the TableSession, which is
+    and out of nothing else. There is no route from a component to the table session, which is
     what keeps ConcealmentTests standing in front of the page rather than beside it
     (BUILD-PLAN P13.4 acceptance 3).
+
+    🔥 THE SEAT IS HANDED DOWN, NOT FETCHED (BUILD-PLAN P13.6). It used to be injected — one
+    seat built when the table opened and shared by every circuit, which is right for solo play
+    and wrong the moment two people are here. A SeatBoard belongs to a viewer, so the island
+    that sat down owns it and this draws whichever one it was given.
 
     ⚠️ The hand comes first and the action bar last, which is the order they are on screen and
     the order they are read in (§3.11 B6). The question is answered by pressing a card as often
@@ -15,7 +20,6 @@
     InvokeAsync because the table speaks on the round's thread (§3.11 C15).
 *@
 @implements IDisposable
-@inject TableHost Host
 
 @if (_seat is not null)
 {
@@ -47,17 +51,40 @@
     private TurnPrompt? _prompt;
     private HandPanel? _hand;
     private bool _hints = true;
+    private bool _asked;
     private (int Round, int Turn, SeatQuestion Question)? _focused;
 
+    /// <summary>
+    /// Your own seat, or null when you came to watch.
+    /// </summary>
     /// <remarks>
-    /// ⚠️ <b>Runs twice</b> — once while the page is prerendered and again when the circuit
-    /// starts (§3.11 C13). Nothing here joins anything: the seat was taken when the table was
-    /// opened, and this only starts listening to it.
+    /// ⚠️ <b>It may change while this component lives</b> — a viewer who stood up and sat down
+    /// again is handed a different one — so the subscription is made where the parameter is set
+    /// and taken off the previous one first.
     /// </remarks>
-    protected override void OnInitialized()
+    [Parameter]
+    public SeatBoard? Seat { get; set; }
+
+    /// <summary>Whether the computer's suggestions start switched on (the table's own setting).</summary>
+    [Parameter]
+    public bool Hints { get; set; } = true;
+
+    protected override void OnParametersSet()
     {
-        _seat = Host.Yours;
-        _hints = Host.Hints;
+        if (!_asked)
+        {
+            _hints = Hints;
+            _asked = true;
+        }
+
+        if (ReferenceEquals(_seat, Seat))
+        {
+            return;
+        }
+
+        Unhook();
+        _seat = Seat;
+        _focused = null;
 
         if (_seat is not null)
         {
@@ -113,9 +140,12 @@
 
     /// <remarks>
     /// ⚠️ Unhooking, and nothing else — <c>StateHasChanged</c> must never be called from here,
-    /// because disposal can run during renderer teardown.
+    /// because disposal can run during renderer teardown. <b>The seat itself is not disposed
+    /// here</b>: it belongs to whoever sat down, which is the island above this one (P13.6).
     /// </remarks>
-    public void Dispose()
+    public void Dispose() => Unhook();
+
+    private void Unhook()
     {
         if (_seat is not null)
         {

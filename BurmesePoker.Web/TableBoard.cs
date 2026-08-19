@@ -44,6 +44,9 @@ public sealed record TableBoard
         TurnedUp = [];
         Log = [];
         Declaration = [];
+        Seated = new HashSet<PlayerId>();
+        Vacated = new HashSet<PlayerId>();
+        StoodInFor = new HashSet<PlayerId>();
     }
 
     /// <summary>An empty table, before the first deal.</summary>
@@ -62,6 +65,36 @@ public sealed record TableBoard
 
     /// <summary>What each seat is called.</summary>
     public IReadOnlyDictionary<PlayerId, string> Names { get; private init; }
+
+    /// <summary>
+    /// The seats somebody is actually sitting in (BUILD-PLAN P13.6).
+    /// </summary>
+    /// <remarks>
+    /// Folded from <see cref="TableEvent.SeatTaken"/> and <see cref="TableEvent.SeatLeft"/>,
+    /// like everything else here — <b>a board never asks the table anything</b>. A seat the
+    /// computer was always playing is in neither this set nor <see cref="StoodInFor"/>, and it
+    /// is right that it is not: nobody has gone anywhere.
+    /// </remarks>
+    public IReadOnlySet<PlayerId> Seated { get; private init; }
+
+    /// <summary>The seats somebody sat down in and then left.</summary>
+    /// <remarks>
+    /// Distinct from <see cref="Seated"/>'s complement, which also holds every seat that was
+    /// always the computer's: <b>nobody has gone anywhere at a bot's seat.</b>
+    /// </remarks>
+    public IReadOnlySet<PlayerId> Vacated { get; private init; }
+
+    /// <summary>
+    /// The seats the computer played the current turn for, because nobody answered in time.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Per turn, not per round, and that is a correction found by playing it.</b> A
+    /// player who times out once and then comes back is <em>not</em> still away, and a marker
+    /// that stuck for the rest of the round said he was — in front of him, while he was
+    /// answering. It is cleared at the seat's next <see cref="TableEvent.TurnBegan"/>, which is
+    /// the only moment the table has that means <em>we are about to find out</em>.
+    /// </remarks>
+    public IReadOnlySet<PlayerId> StoodInFor { get; private init; }
 
     /// <summary>Which round is being played, or 0 before the first deal.</summary>
     public int Round { get; private init; }
@@ -160,7 +193,8 @@ public sealed record TableBoard
         IsActing: Acting == player && InPlay,
         IsTheirTurn: Turn == player && InPlay,
         HasDeclared: Declarer == player,
-        Won: Settlement?.Winner == player);
+        Won: Settlement?.Winner == player,
+        PlayedByTheComputer: StoodInFor.Contains(player) || Vacated.Contains(player));
 
     /// <summary>
     /// The one discard the seat being waited on may take instead of drawing (RULES.md §5) —
@@ -239,7 +273,9 @@ public sealed record TableBoard
                 Declarer = null,
                 Declaration = [],
                 Settlement = null,
-                Abandoned = false
+                Abandoned = false,
+                // A player who came back is not still away, so the standing-in is per round.
+                StoodInFor = new HashSet<PlayerId>()
             }).Say(
                 started.Round,
                 "The deal is done. Turned up on the table:",
@@ -252,7 +288,10 @@ public sealed record TableBoard
             TableEvent.TurnBegan began => this with
             {
                 Turn = began.Player,
-                TurnNumber = began.Turn
+                TurnNumber = began.Turn,
+                // ⚠️ The one moment that means "we are about to find out". A seat that was
+                // played for last turn is not being played for this one until it is.
+                StoodInFor = Without(StoodInFor, began.Player)
             },
 
             // A watcher is told that somebody drew and never what (TableFanOut). The card is
@@ -338,7 +377,32 @@ public sealed record TableBoard
                 [],
                 LogTone.Good),
 
-            TableEvent.SeatPlayedByTheComputer taken => Say(
+            TableEvent.SeatTaken sat => (this with
+            {
+                Names = Renamed(Names, sat.Player, sat.Name),
+                Seated = With(Seated, sat.Player),
+                Vacated = Without(Vacated, sat.Player),
+                StoodInFor = Without(StoodInFor, sat.Player)
+            }).Say(
+                Round,
+                $"{sat.Name} sat down.",
+                [],
+                LogTone.Quiet),
+
+            TableEvent.SeatLeft left => (this with
+            {
+                Seated = Without(Seated, left.Player),
+                Vacated = With(Vacated, left.Player)
+            }).Say(
+                Round,
+                $"{left.Name} left the table — the computer is playing that seat.",
+                [],
+                LogTone.Quiet),
+
+            TableEvent.SeatPlayedByTheComputer taken => (this with
+            {
+                StoodInFor = With(StoodInFor, taken.Player)
+            }).Say(
                 taken.Round,
                 $"{Who(taken.Player)} ran out of time — the computer is playing this seat.",
                 [],
@@ -379,6 +443,26 @@ public sealed record TableBoard
         var kept = Log.Count + 1 > LogKept ? Log.Skip(Log.Count + 1 - LogKept) : Log;
 
         return this with { Narrated = Narrated + 1, Log = [.. kept, line] };
+    }
+
+    private static IReadOnlySet<PlayerId> With(IReadOnlySet<PlayerId> seats, PlayerId player) =>
+        new HashSet<PlayerId>(seats) { player };
+
+    private static IReadOnlySet<PlayerId> Without(IReadOnlySet<PlayerId> seats, PlayerId player)
+    {
+        var copy = new HashSet<PlayerId>(seats);
+        copy.Remove(player);
+        return copy;
+    }
+
+    private static IReadOnlyDictionary<PlayerId, string> Renamed(
+        IReadOnlyDictionary<PlayerId, string> names,
+        PlayerId player,
+        string name)
+    {
+        var copy = new Dictionary<PlayerId, string>(names);
+        copy[player] = name;
+        return copy;
     }
 
     private static IReadOnlyList<Card> Without(IReadOnlyList<Card> cards, Card gone) =>
@@ -438,6 +522,11 @@ public sealed record TableBoard
 /// <param name="IsTheirTurn">Whether the table is waiting on them right now (BUILD-PLAN P13.5).</param>
 /// <param name="HasDeclared">Whether they laid down all thirteen and ended the round.</param>
 /// <param name="Won">Whether the settlement names them the winner.</param>
+/// <param name="PlayedByTheComputer">
+/// Whether the computer is playing this seat for somebody who is not answering — a dropped
+/// circuit or a player who walked away (§3.11 C16). <b>False for a seat that was always the
+/// computer's</b>: nobody has gone anywhere.
+/// </param>
 public sealed record SeatLine(
     PlayerId Player,
     string Name,
@@ -446,7 +535,8 @@ public sealed record SeatLine(
     bool IsActing,
     bool IsTheirTurn,
     bool HasDeclared,
-    bool Won);
+    bool Won,
+    bool PlayedByTheComputer = false);
 
 /// <summary>
 /// What a line of narration is about, as a name rather than a colour.

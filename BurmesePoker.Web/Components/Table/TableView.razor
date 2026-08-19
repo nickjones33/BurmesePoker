@@ -2,7 +2,7 @@
     The one interactive island on the page (§3.11 C12). Everything around it is static SSR;
     the render mode is named where this component is *used*, never here and never at the root.
 
-    It subscribes to the host's board — which is folded from a watcher's connection and from
+    It subscribes to one table's board — which is folded from a watcher's connection and from
     nothing else — and re-renders when the table says something. There is no second route to
     the session: what cannot reach this component cannot be drawn by it (P13.3 acceptance 2).
 
@@ -17,91 +17,148 @@
     is exactly how a ring of seats scrambles the tab order (§3.11 B6). There is no focusable
     control in a seat panel at all, so what this really protects is the order a screen reader
     reads the table in — and turn order is the one that means something at a card table.
+
+    🔥 THE SEAT BELONGS TO THIS VIEWER (BUILD-PLAN P13.6). Until this packet the host built one
+    SeatBoard when the table opened and handed the same one to every circuit, which is right for
+    solo play and wrong the moment two people are here. This component sits down, holds its own
+    seat, and stands up in Dispose.
+
+    ⚠️ It sits down only when it is really interactive. Prerendering runs the initialisation on
+    the request and again when the circuit starts (§3.11 C13), and a seat claimed twice is two
+    chairs taken by one person.
 *@
 @implements IDisposable
-@inject TableHost Host
+@inject Lobby Lobby
 
-<section class="table" aria-labelledby="table-heading">
-    <header class="board">
-        @*
-            ⚠️ The page's one <h1>, and it lives here rather than on the page around it. The
-            table used to be introduced by a heading that said "The table" above a heading that
-            said which round it was, which is one heading too many for a page that is a table
-            (BUILD-PLAN P13.5). Everything below it — your seat, the log, the settlement — is an
-            <h2>, so the outline is still an outline.
-        *@
-        <h1 id="table-heading">
-            @if (_board.Round == 0)
-            {
-                <text>Dealing…</text>
-            }
-            else
-            {
-                <text>Round @_board.Round</text>
-            }
-        </h1>
+@if (_table is null)
+{
+    <section class="table gone" aria-labelledby="table-heading">
+        <h1 id="table-heading">No such table</h1>
+        <p>It was closed, or the site was restarted.</p>
+        <p><a href="/">Back to the tables</a></p>
+    </section>
+}
+else
+{
+    <section class="table" aria-labelledby="table-heading">
+        <header class="board">
+            @*
+                ⚠️ The page's one <h1>, and it lives here rather than on the page around it. The
+                table used to be introduced by a heading that said "The table" above a heading
+                that said which round it was, which is one heading too many for a page that is a
+                table (BUILD-PLAN P13.5). Everything below it — your seat, the log, the
+                settlement — is an <h2>, so the outline is still an outline.
+            *@
+            <h1 id="table-heading">
+                @if (_waiting > 0)
+                {
+                    <text>Waiting for @_waiting</text>
+                }
+                else if (_board.Round == 0)
+                {
+                    <text>Dealing…</text>
+                }
+                else
+                {
+                    <text>Round @_board.Round</text>
+                }
+            </h1>
 
-        @if (!_yours)
+            @if (_seat is null)
+            {
+                @* ⚠️ Said out loud: a watcher has no seat, so the front one is not theirs. *@
+                <p class="watching">
+                    <span class="glyph" aria-hidden="true">👁</span>
+                    <span>Watching. No seat here is yours; the front one is the first dealt.</span>
+                </p>
+            }
+        </header>
+
+        <div class="felt seats-@_ring.Count" role="group" aria-label="The table">
+            <TableCentre Board="_board" />
+
+            @*
+                ⚠️ role="list" is belt and braces. The list is display:contents so that its seats
+                become items of the felt's own grid, and an implicit list role has historically
+                been dropped when a list box disappears from layout; naming it keeps the
+                semantics whatever the engine does.
+            *@
+            <ol class="ring" role="list" aria-label="The seats, in turn order, ending with yours">
+                @foreach (var place in _ring)
+                {
+                    <SeatPanel @key="place.Player.Value"
+                               Seat="_board.SeatOf(place.Player)"
+                               Seated="place.Place"
+                               Yours="place.IsYours" />
+                }
+            </ol>
+        </div>
+
+        <YourSeat Seat="_seat" Hints="_table.Hints" />
+
+        <RoundLogPanel Lines="_board.Log" />
+
+        @if (_board.Settlement is { } settled)
         {
-            @* ⚠️ Said out loud: a watcher has no seat, so the front one is not theirs. *@
-            <p class="watching">
-                <span class="glyph" aria-hidden="true">👁</span>
-                <span>Watching. No seat here is yours; the front one is the first dealt.</span>
-            </p>
+            <SettlementPanel Result="settled" Seats="_seats" />
         }
-    </header>
 
-    <div class="felt seats-@_ring.Count" role="group" aria-label="The table">
-        <TableCentre Board="_board" />
-
-        @*
-            ⚠️ role="list" is belt and braces. The list is display:contents so that its seats
-            become items of the felt's own grid, and an implicit list role has historically been
-            dropped when a list box disappears from layout; naming it keeps the semantics
-            whatever the engine does.
-        *@
-        <ol class="ring" role="list" aria-label="The seats, in turn order, ending with yours">
-            @foreach (var place in _ring)
-            {
-                <SeatPanel @key="place.Player.Value"
-                           Seat="_board.SeatOf(place.Player)"
-                           Seated="place.Place"
-                           Yours="place.IsYours" />
-            }
-        </ol>
-    </div>
-
-    <YourSeat />
-
-    <RoundLogPanel Lines="_board.Log" />
-
-    @if (_board.Settlement is { } settled)
-    {
-        <SettlementPanel Result="settled" Seats="_seats" />
-    }
-
-    <div class="asides">
-        <TableLegend />
-        <AboutTable Seed="Host.Seed" />
-    </div>
-</section>
+        <div class="asides">
+            <TableLegend />
+            <AboutTable Seed="_table.Seed" />
+        </div>
+    </section>
+}
 
 @code {
+    private HostedTable? _table;
+    private SeatBoard? _seat;
     private TableBoard _board = default!;
     private IReadOnlyList<SeatLine> _seats = [];
     private IReadOnlyList<RingPlace> _ring = [];
-    private bool _yours;
+    private int _waiting;
+    private bool _arrived;
+
+    /// <summary>Which table this page is showing.</summary>
+    [Parameter, EditorRequired]
+    public string TableId { get; set; } = string.Empty;
+
+    /// <summary>What to call you, from the lobby. Empty means you came to watch.</summary>
+    [Parameter]
+    public string? You { get; set; }
 
     /// <remarks>
     /// ⚠️ <b>Runs twice</b> — once while the page is prerendered on the request, and again when
-    /// the circuit starts (§3.11 C13). <see cref="TableHost.Start"/> is idempotent for exactly
-    /// that reason: joining a table twice is a real bug, not a theoretical one.
+    /// the circuit starts (§3.11 C13). <b>Only the second one sits down or is counted as being
+    /// here</b>, because both of those are claims on the table and a claim made twice is a bug.
+    /// A board can be drawn either time, and is.
     /// </remarks>
     protected override void OnInitialized()
     {
-        Host.Start();
+        _table = Lobby.Find(TableId);
+
+        if (_table is null)
+        {
+            return;
+        }
+
         Take();
-        Host.Changed += OnTableSaidSomething;
+
+        if (!RendererInfo.IsInteractive)
+        {
+            return;
+        }
+
+        _table.Changed += OnTableSaidSomething;
+        _table.Arrive();
+        _arrived = true;
+
+        if (!string.IsNullOrWhiteSpace(You))
+        {
+            _seat = _table.SitDown(You.Trim());
+        }
+
+        Take();
     }
 
     /// <remarks>
@@ -122,17 +179,44 @@
     /// </remarks>
     private void Take()
     {
-        _board = Host.Board;
+        if (_table is null)
+        {
+            return;
+        }
+
+        _board = _table.Board;
         _seats = [.. _board.Seats];
-        _ring = TableRing.Around(_board.Seating, Host.Seat);
-        _yours = Host.Seat is not null;
+        _ring = TableRing.Around(_board.Seating, _seat?.Player);
+        _waiting = _table.WaitingFor.Count;
     }
 
     /// <remarks>
-    /// ⚠️ <b>Unhooking, and nothing else.</b> A circuit that dropped without this would keep a
-    /// dead component subscribed to a live table (§3.11 A5) — and
-    /// <c>StateHasChanged</c> must never be called from here, because disposal can run during
-    /// renderer teardown where asking for a render is explicitly unsupported.
+    /// ⚠️ <b>Standing up, unhooking, and nothing else.</b> A circuit that dropped without this
+    /// would keep a dead component subscribed to a live table (§3.11 A5) <em>and</em> hold a
+    /// seat nobody is in — which is the one that costs somebody a game, because the table will
+    /// not deal while a seat is unaccounted for. <c>StateHasChanged</c> must never be called
+    /// from here: disposal can run during renderer teardown, where asking for a render is
+    /// explicitly unsupported.
     /// </remarks>
-    public void Dispose() => Host.Changed -= OnTableSaidSomething;
+    public void Dispose()
+    {
+        if (_table is null)
+        {
+            return;
+        }
+
+        _table.Changed -= OnTableSaidSomething;
+
+        if (_seat is not null)
+        {
+            _table.StandUp(_seat);
+            _seat = null;
+        }
+
+        if (_arrived)
+        {
+            _table.Leave();
+            _arrived = false;
+        }
+    }
 }

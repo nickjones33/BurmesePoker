@@ -390,6 +390,101 @@ public class TableSessionTests
         Assert.Throws<ArgumentException>(() => TableSession.Open(seats, Options(19)));
     }
 
+    /// <summary>
+    /// 🔥 <b>A seat is claimed exclusively, and that is why the claim lives here</b>
+    /// (BUILD-PLAN P13.6).
+    /// </summary>
+    /// <remarks>
+    /// Two viewers handed the same <see cref="SeatConnection"/> are two people answering one
+    /// question — the first press wins and the second is refused, at random, for ever. A seat is
+    /// a property of a table, so a table is what refuses the second person; a lobby decides
+    /// which table and nothing else.
+    /// </remarks>
+    [Fact]
+    public void ASeatIsTakenByOnePersonAtATime()
+    {
+        var table = TableSession.Open(TwoPeopleAndTwoBots(), Options(20260819));
+
+        Assert.Equal([One, Three], table.RemoteSeats);
+        Assert.Equal([One, Three], table.WaitingFor);
+        Assert.False(table.IsFull);
+
+        var mine = table.SitDown(One, "Nick");
+
+        Assert.NotNull(mine);
+        Assert.Equal(One, mine!.Player);
+        Assert.True(table.IsTaken(One));
+        Assert.Equal([Three], table.WaitingFor);
+
+        // The same seat again is refused rather than shared.
+        Assert.Null(table.SitDown(One, "Somebody else"));
+
+        // A seat the computer plays is not a seat anybody sits in.
+        Assert.Null(table.SitDown(Two, "Nick"));
+
+        // …and the last one fills the table.
+        Assert.NotNull(table.SitDown(Three, "Mya Lay"));
+        Assert.True(table.IsFull);
+        Assert.Empty(table.WaitingFor);
+    }
+
+    /// <remarks>
+    /// ⚠️ <b>A seat is named when somebody sits in it, not when the table is opened.</b> A lobby
+    /// opens a table before it knows who is coming, so <c>TableSeat.Person</c> can only carry a
+    /// placeholder — and the real name reaches every board through the fan-out, like everything
+    /// else at this table.
+    /// </remarks>
+    [Fact]
+    public void SittingDownNamesTheSeatAndTellsTheWholeTable()
+    {
+        var table = TableSession.Open(
+            [
+                TableSeat.Person(One, "Seat 1"),
+                TableSeat.Computer(Two, "Ruby (bot)", new GreedyBotAgent()),
+                TableSeat.Computer(Three, "Sable (bot)", new GreedyBotAgent()),
+                TableSeat.Computer(Four, "Onyx (bot)", new GreedyBotAgent())
+            ],
+            Options(20260819));
+
+        var watcher = table.Watch();
+        var mine = table.SitDown(One, "Nick");
+
+        Assert.Equal("Nick", table.Names[One]);
+        Assert.Equal("Nick", mine!.Name);
+
+        var taken = Assert.IsType<TableEvent.SeatTaken>(Assert.Single(watcher.Events));
+
+        Assert.Equal(One, taken.Player);
+        Assert.Equal("Nick", taken.Name);
+
+        // …and standing up says so, keeping the name: "Nick's seat is being played by the
+        // computer" is the true thing to say and "Seat 1" is not (§3.11 C16).
+        Assert.True(table.StandUp(One));
+        Assert.False(table.StandUp(One));
+
+        var left = Assert.IsType<TableEvent.SeatLeft>(watcher.Events[^1]);
+
+        Assert.Equal(One, left.Player);
+        Assert.Equal("Nick", left.Name);
+        Assert.Equal("Nick", table.Names[One]);
+        Assert.Equal([One], table.WaitingFor);
+    }
+
+    /// <remarks>
+    /// A watcher is not a seat and never becomes one — the strictest concealment case there is
+    /// (P13.2), and nothing P13.6 added may soften it.
+    /// </remarks>
+    [Fact]
+    public void AWatcherIsNeverSeated()
+    {
+        var table = TableSession.Open(OnePersonAndThreeBots(), Options(20260819));
+        var watcher = table.Watch();
+
+        Assert.Null(watcher.Player);
+        Assert.False(watcher.IsSeated);
+        Assert.DoesNotContain(watcher, table.RemoteSeats.Select(table.ConnectionFor));
+    }
+
     internal static TableOptions Options(int seed) => new()
     {
         Seed = seed,

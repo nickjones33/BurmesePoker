@@ -11,8 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// One table for the site, dealing itself round after round. P13.5 makes this a lobby.
-builder.Services.AddSingleton<TableHost>();
+// The tables this site is hosting. ⚠️ A lobby rather than one table (BUILD-PLAN P13.6): a
+// second table is a dictionary of them and a route that names one, and nothing else in the
+// client counts tables.
+builder.Services.AddSingleton<Lobby>();
 
 var app = builder.Build();
 
@@ -33,16 +35,12 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// ⚠️ A table nobody is playing deals from the moment the site is up, so the first person to
-// open the page walks into a round in progress rather than starting one — a table is a place,
-// not a button. A table with a *seat* in it waits, because every question that seat is asked
-// spends the whole of its patience before the stand-in answers, and an unattended round would
-// be over an hour of nothing (P13.4).
-var table = app.Services.GetRequiredService<TableHost>();
-
-if (table.Yours is null)
-{
-    table.Start();
-}
+// One table is open from boot, from the same command line the console takes, so that
+// `dotnet run --project BurmesePoker.Web` is a game rather than an empty room with a form in
+// it. ⚠️ It does not *deal* from boot: a table deals while somebody is at it and every seat is
+// either the computer's or somebody's (BUILD-PLAN P13.6), which is the honest answer P13.4 had
+// no way to give — every question an empty seat is asked spends the whole of its patience
+// before the stand-in plays, and an unattended round is over an hour of nothing.
+app.Services.GetRequiredService<Lobby>().OpenTheHouseTable();
 
 app.Run();

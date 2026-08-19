@@ -174,3 +174,21 @@
         justify-content: flex-start;
     }
 }
+
+/*
+    A seat the computer is standing in at (§3.11 C16). ⚠️ Dimmed *and* labelled: a tint on its
+    own says nothing to a screen reader and nothing at all to somebody who cannot tell it from
+    the felt (§3.11 A2), so the words are in the markup and this only agrees with them.
+*/
+.seat.away .who .name {
+    opacity: 0.75;
+}
+
+.seat.away .away {
+    display: flex;
+    gap: 0.3rem;
+    align-items: baseline;
+    margin: 0;
+    font-size: 0.72rem;
+    color: var(--on-raised-muted);
+}

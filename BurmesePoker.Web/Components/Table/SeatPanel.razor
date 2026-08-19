@@ -13,12 +13,25 @@
     pointing at the seat that had just finished is worse than no glyph at all.
 *@
 
-<li class="seat @Place @(Seat.IsTheirTurn ? "turn" : null) @(Yours ? "yours" : null)">
+<li class="seat @Place @(Seat.IsTheirTurn ? "turn" : null) @(Yours ? "yours" : null) @(Seat.PlayedByTheComputer ? "away" : null)">
     <p class="who">
         <span class="marker" aria-hidden="true">@Marker</span>
         <span class="name">@Seat.Name</span>
         <span class="said">@State(Seat)</span>
     </p>
+
+    @*
+        ✅ §3.11 C16 — a dropped circuit must not look like a dropped game. The event has been
+        broadcast since P13.2 and the log has said it since P13.3; P13.6 says it in the seat,
+        which is where somebody looking for their own name will look.
+    *@
+    @if (Seat.PlayedByTheComputer)
+    {
+        <p class="away">
+            <span class="marker" aria-hidden="true">@StoodIn</span>
+            <span>Played by the computer</span>
+        </p>
+    }
 
     <p class="bank">
         <span class="amount @Direction" aria-hidden="true">@Amount</span>
@@ -41,6 +54,9 @@
 @code {
     /// <summary>What the discard pile is marked with when it is empty, and beside a card when it is not.</summary>
     private const string Threw = "▾";
+
+    /// <summary>What a seat the computer is standing in at is marked with.</summary>
+    private const string StoodIn = "⟳";
 
     /// <summary>The seat, as the board has it.</summary>
     [Parameter, EditorRequired]
@@ -82,6 +98,7 @@
         { IsTheirTurn: true } => "— it is their turn.",
         _ => "is waiting."
     };
+
 
     private string Amount => Seat.Bank switch
     {

@@ -1,4 +1,4 @@
-@page "/"
+@page "/table/{Id}"
 
 @*
     ⚠️ The render mode is named here and nowhere else. The page around it is static SSR, which
@@ -8,7 +8,25 @@
     🔥 There is no lede (BUILD-PLAN P13.5). The three sentences that used to open this page said
     what the table is and how concealment works; they are in AboutTable, one press away, and in
     the rules page. A table is a place, and a place does not introduce itself.
+
+    ⚠️ Which table and who you are cross the render-mode boundary, so both are strings
+    (BUILD-PLAN P13.6). A parameter handed to an interactive root component is serialised to
+    the circuit; a HostedTable is not serialisable and must not be — the island looks it up in
+    the lobby it is injected with, which is also what keeps every table in the site reachable
+    only through the lobby.
 *@
 <PageTitle>Burmese Poker — the table</PageTitle>
 
-<TableView @rendermode="InteractiveServer" />
+<TableView @rendermode="InteractiveServer" TableId="@Id" You="@You" />
+
+@code {
+    /// <summary>Which table this URL names.</summary>
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// What to call you, from the lobby's own form. Absent means you came to watch.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "you")]
+    public string? You { get; set; }
+}

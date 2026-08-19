@@ -138,7 +138,7 @@ public class LayeringTests
     [Fact]
     public void TheBrowserClientDoesNotReachForTheConsole()
     {
-        var referenced = typeof(TableHost).Assembly.GetReferencedAssemblies()
+        var referenced = typeof(HostedTable).Assembly.GetReferencedAssemblies()
             .Select(reference => reference.Name ?? string.Empty)
             .ToList();
 
@@ -184,6 +184,6 @@ public class LayeringTests
         Assert.NotEmpty(typeof(HandView).Assembly.GetReferencedAssemblies());
         Assert.NotEmpty(typeof(Simulator).Assembly.GetReferencedAssemblies());
         Assert.NotEmpty(typeof(TableSession).Assembly.GetReferencedAssemblies());
-        Assert.NotEmpty(typeof(TableHost).Assembly.GetReferencedAssemblies());
+        Assert.NotEmpty(typeof(HostedTable).Assembly.GetReferencedAssemblies());
     }
 }

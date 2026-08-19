@@ -1,0 +1,162 @@
+/*
+    The lobby. ⚠️ CSS isolation, like every other component in this client (§3.11 C17) — and
+    every colour is a token from theme.css, which is the file the contrast test reads (A3).
+
+    Nothing here moves, so §3.11 B10 costs it nothing; the blanket prefers-reduced-motion rule
+    in app.css covers anything added later.
+*/
+
+.lobby {
+    max-width: 46rem;
+    margin: 0 auto;
+}
+
+.lobby h1 {
+    margin: 0 0 1rem;
+}
+
+.problem {
+    padding: 0.6rem 0.8rem;
+    border: 2px solid var(--edge-raised);
+    border-radius: 6px;
+    background: var(--raised);
+    color: var(--on-raised-bad);
+}
+
+.tables {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: 1rem;
+    margin: 0 0 1.5rem;
+    padding: 0;
+    list-style: none;
+}
+
+.open {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 8px;
+    background: var(--raised);
+    color: var(--on-raised);
+}
+
+.open h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.shape {
+    display: flex;
+    gap: 0.4rem;
+    align-items: baseline;
+    margin: 0;
+    color: var(--on-raised-muted);
+    font-size: 0.85rem;
+}
+
+.state {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.sit {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+    margin: 0;
+}
+
+.sit label {
+    flex: 0 0 100%;
+    font-size: 0.8rem;
+    color: var(--on-raised-muted);
+}
+
+.sit input {
+    flex: 1 1 8rem;
+    min-height: 40px;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 5px;
+    background: var(--raised);
+    color: var(--on-raised);
+    font: inherit;
+}
+
+/* ⚠️ §3.11 B11 — 44px, which is Board Game Arena's recommendation rather than WCAG 2.5.8's
+   24px floor. The same height every answer button on the felt is. */
+.sit button,
+.opening button {
+    min-height: 44px;
+    padding: 0 1rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 5px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font: inherit;
+    cursor: pointer;
+}
+
+.watch {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.watch a {
+    color: var(--on-raised-link);
+}
+
+.opening {
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--edge-surface);
+    border-radius: 8px;
+    color: var(--on-surface);
+}
+
+/* §3.11 B11 again: a disclosure is something you press. */
+.opening summary {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.opening p {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin: 0.6rem 0;
+}
+
+.opening label {
+    flex: 0 0 10rem;
+    color: var(--on-surface-muted);
+    font-size: 0.9rem;
+}
+
+.opening input {
+    min-height: 40px;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--edge-surface);
+    border-radius: 5px;
+    background: var(--raised);
+    color: var(--on-raised);
+    font: inherit;
+}
+
+.opening .note {
+    display: block;
+    color: var(--on-surface-muted);
+    font-size: 0.85rem;
+}
+
+:focus-visible {
+    outline: 3px solid var(--edge-raised-focus);
+    outline-offset: 2px;
+}

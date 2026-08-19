@@ -210,10 +210,31 @@ it is common at six seats and essentially never happens at four.
 dotnet run --project BurmesePoker.Web
 ```
 
-Then open the address it prints (`http://localhost:5188` by default). **You are seat 1** and the
-other three are the computer's, at the same pace the console uses.
+Then open the address it prints (`http://localhost:5188` by default). **That is the lobby, not a
+table** — type a name, press **Sit down**, and you are at a table with the computer in the other
+seats, at the same pace the console uses.
 
 **It asks the same four questions**, in the same order. It does not say them the same way.
+
+### The lobby
+
+Each card in the lobby is a table: what it is called, how many seats it has and how many of them
+are for people, and what it is doing. **Sit down** takes a seat; **Watch this table** takes none.
+*Open another table* opens a second one, and you can be at both in two windows.
+
+⚠️ **A table waits for everybody it was opened for.** The one the site starts with has **two**
+seats for people, so it deals nothing until two of you have sat down — open a second browser
+window and sit down again, or start the site with `--people 1` for a solo game. A table with
+`--people 0` is a room full of computer players and deals as soon as anybody watches.
+
+**Your name is how you get your seat back.** If your browser reloads, or you close the tab and
+come back, **sitting down under the same name takes that seat back off whoever was holding it** —
+which, a moment after a reload, is you. ⚠️ **It is a name and not a password**: anybody who types
+your name takes your seat. That is fine for a game with friends and would not be for anything
+else.
+
+⚠️ **The form is there even when the table is full**, because the person most likely to need it
+is the one who has just reloaded and is looking at their own seat with their own ghost in it.
 
 ### The table
 
@@ -234,6 +255,7 @@ That is everything the rules let you know about somebody else (RULES.md §7.1).
 | **✓** | They have laid all thirteen down. |
 | **♛** | They won the round. |
 | **▾** | The top of their discard pile. |
+| **⟳** | **The computer is playing this seat** — they ran out of time, or they left. It clears when they play a turn themselves. |
 
 ### Your hand, and the bar under it
 
@@ -268,7 +290,7 @@ can open for the rule behind it.
   an old one.
 - **Nothing is hidden from you that the console shows you**, and nothing extra is shown. Your
   hand reaches the page because your seat was asked a question about it; nobody else's ever does
-  — and a watcher (`--seat 0`) is shown no hand at all, which the page says out loud.
+  — and a watcher is shown no hand at all, which the page says out loud.
 - **If your connection drops, the table is still there.** It says so, stops you pressing things
   that would go nowhere, and offers to reload.
 
@@ -277,8 +299,9 @@ Useful options — all of them plain configuration, so `--` then the flag:
 
 | Option | What it does |
 |---|---|
-| `--seat 0` | Nobody plays; every seat is the computer's and you only watch. |
-| `--name Nick` | What the table calls you. |
+| `--people 1` | How many of the seats are for people. `0` is a table of computer players you can only watch. |
+| `--table "The kitchen"` | What the table the site opens is called in the lobby. |
+| `--name Nick` | What the lobby's form suggests calling you. |
 | `--seed 20260819` | The same cards again — the browser's `--seed`, same as the console's. |
 | `--hints false` | Start with the computer's suggestions hidden. There is a checkbox for it too. |
 | `--pace 400` | Milliseconds a computer seat pauses before it moves. |
@@ -286,8 +309,11 @@ Useful options — all of them plain configuration, so `--` then the flag:
 | `--patience 120` | Seconds a question waits for you before the computer plays your seat. |
 | `--seats 5` | Four to six players (RULES.md §2.1). |
 
-⚠️ **If you walk away, the computer plays your seat** and the log says so. Come back and the next
-question is yours again.
+⚠️ **If you walk away, the computer plays your seat** — the log says so and so does your seat, with
+a **⟳**. Come back and the next question is yours again.
+
+⚠️ **Landing on a table mid-turn puts the focus at the top of the page**, not on the question, because
+arriving at a page is arriving at a page. Four presses of `Tab` reach the buttons.
 
 ---
 

@@ -42,8 +42,15 @@ public sealed class SeatConnection
     /// <summary>The seat this connection plays, or null for a watcher.</summary>
     public PlayerId? Player { get; }
 
-    /// <summary>What to call this connection. Presentation only; the engine never sees it.</summary>
-    public string Name { get; }
+    /// <summary>
+    /// What to call this connection. Presentation only; the engine never sees it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>It changes when somebody sits down</b> (<see cref="TableSession.SitDown"/>, P13.6).
+    /// A lobby opens a table before it knows who is coming, so a seat waiting for a player is
+    /// called whatever the lobby called it until somebody takes it.
+    /// </remarks>
+    public string Name { get; internal set; }
 
     /// <summary>Whether this connection holds a seat, as opposed to watching.</summary>
     public bool IsSeated => Player is not null;

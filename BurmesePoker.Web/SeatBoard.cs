@@ -42,6 +42,7 @@ public sealed class SeatBoard : IDisposable
     private readonly Lock _gate = new();
     private readonly SeatConnection _connection;
     private int _seen;
+    private bool _left;
 
     public SeatBoard(SeatConnection connection)
     {
@@ -116,7 +117,7 @@ public sealed class SeatBoard : IDisposable
 
         lock (_gate)
         {
-            asked = Asking;
+            asked = _left ? null : Asking;
         }
 
         if (asked is null)
@@ -166,12 +167,36 @@ public sealed class SeatBoard : IDisposable
         return true;
     }
 
-    public void Dispose() => _connection.Updated -= OnTold;
+    /// <summary>
+    /// Stands up out of the seat: this board stops listening and stops answering.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Stops <em>answering</em>, which is the half that is not tidiness</b> (P13.6). A
+    /// browser refresh is a new circuit and Blazor holds the old one for minutes before
+    /// disposing it, so a player who reloaded takes their own seat back off their own ghost —
+    /// and a ghost still holding a live <see cref="SeatConnection"/> could still press a card.
+    /// A seat somebody has stood up from answers nothing, whoever is holding it.
+    /// </remarks>
+    public void Dispose()
+    {
+        _connection.Updated -= OnTold;
+
+        lock (_gate)
+        {
+            _left = true;
+            Asking = null;
+        }
+    }
 
     private void OnTold(SeatConnection connection)
     {
         lock (_gate)
         {
+            if (_left)
+            {
+                return;
+            }
+
             Read();
         }
 

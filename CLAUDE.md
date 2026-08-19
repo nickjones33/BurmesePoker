@@ -11,95 +11,70 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-This project is **all but finished**. **P0–P12, P13.1–P13.3 and P14–P16 are done**: the 2023 implementation has been
-deleted, the whole rules core is built and tested, `dotnet run --project BurmesePoker.Console`
-fills the empty seats with paced, named bots and plays round after round with the banks carrying
-over — showing a hand as the melds it nearly is, keeping a round log across the concealment
-clear, hinting what the computer would do, and replaying any match from `--seed` — and
-`dotnet run -c Release --project BurmesePoker.Sim` plays thousands of seeded games in parallel
-to compare strategies. **Three of the four §0 goals are delivered — solo play (P10), console UX
-(P11) and simulation (P12).** **P13 is the only packet left, and it is
-droppable** — re-planned on 2026-08-19 into **P13.1–P13.5**, and it is now *the browser client
-**and** multiplayer*, because those turned out to be one track. ⚠️ **Read `BUILD-PLAN.md`
-§3.10 and §3.11 before touching it**: the engine runs **server-side, always** (a hand is fully
-concealed with money on it, so a client-side engine cannot be made to honour that, and it is
-not retrofittable), the client is **Blazor Server**, and §3.11 fixes seventeen UX standards —
-five of them mechanical tests — *before* the first component exists. ✅ **P13.1 shipped on
-2026-08-19**: `BurmesePoker.Presentation` exists, the console renders a view model it did not
-build itself (byte-identically at the same `--seed`), and §3.11's colour-token test landed a
-packet early. 🔥 **Its finding, which P13.2 inherited: a view model that aliases the engine's
-hand list is not a view model** — `TurnContext.Hand` is the seat's own live list and the engine
-discards from it the instant the answer comes back, so **everything handed to a seat is a
-snapshot, never a reference.** ✅ **P13.2 shipped the same day**: `BurmesePoker.Server` is a
-sixth project — a hosted table with a remote seat, a bot stand-in and a filtered fan-out, **and
-no transport in it at all** — and **§3.11's concealment leak test shipped with it**, four
-assertions over one round played by four connected seats and a watcher. 🔥 **Its findings:
-exactly one event in the whole narration is private (the blind draw), so the security boundary
-is one `if`; and the snapshot rule caught two more live lists — `TableState.TurnedUpOnTable` is
-aliased by both `TurnContext.TurnedUpMoneyCards` and `IGameObserver.RoundStarted`, and the
-opening player's claim removes a card from it.** ✅ **P13.3 shipped the same day, and this project has a UI.** `BurmesePoker.Web` is a **seventh**
-project — Blazor Server — and `dotnet run --project BurmesePoker.Web` deals round after round at
-a table you can watch: seats and banks, the turned-up money cards, each seat's top discard, the
-narration as a polite live region, and the settlement with the winner's melds. **The rest of
-§3.11's A list shipped with it** — computed contrast in both themes, real controls, disposal —
-plus C12, C14, C15 and B8 as source scans, **eleven mutations applied and eleven red.**
-🔥 **Its findings: `UseStaticFiles` does not serve `_framework/blazor.web.js`, so the page
-rendered perfectly and was dead — a prerendered Blazor Server page is a photograph of a broken
-one, so ask the server for every URL the page names**; a trimmed log must not take its `@key`
-from the length of the log; 240 visually-hidden spans made the document 10,295px tall; and a
-source scan must read the markup rather than the prose about it. ⚠️ **`PacedAgent` moved to
-`BurmesePoker.Presentation`, not Domain — `BurmesePoker.Sim` references Domain and must never be
-able to reach a sleep.** ⚠️ **`BurmesePoker.Tests` now references `BurmesePoker.Web`, and still
-never `BurmesePoker.Console`.** ✅ **P13.4 shipped the same day, and this project has a game you can play.**
-`dotnet run --project BurmesePoker.Web` deals you into seat 1 against three bots and asks you
-all four questions as controls. `SeatBoard` is the private counterpart of `TableBoard` — your
-seat folded out of **your own** connection — and `YourSeat`, `TurnPrompt` and `HandPanel` draw
-it inside P13.3's single interactive island. **§3.11 B6, B7 and B11 shipped with it, reviewed
-the way P11 was: five rounds played in a headless browser with `Tab` and `Enter` and nothing
-else, 86 questions answered.** 🔥 **Its findings: a `CardId` names a card in a *round's* shoe,
-which is rebuilt every deal, so anything comparing hands across seats compares them a round at a
-time; your hand between turns is not stale and is worth rebuilding, because after you discard
-your thirteen are fixed until your next turn; a refusal must not raise "something changed", or a
-client that answers on the change event answers the same refused question for ever; and only the
-first control may capture a `@ref`, because Blazor captures on insertion rather than on every
-diff.** ⚠️ **A seated table no longer deals from boot** — an unanswered seat spends its whole
-patience on every question. ✅ **P13.5 shipped the same day, and the browser client is a table
-rather than a document about one.** Every seat sits at a **position** on a felt of named grid
-areas, **you are at the front of it whichever seat you were dealt** (`TableRing`, in Presentation,
-thirteen tests), the shared things are in the middle — deck, money cards, and **the one discard on
-offer** — your hand is the big pressable thing at the bottom, the four questions are **one action
-bar**, and the narration is a **round log you open**. Three new components (`TableCentre`,
-`TableLegend`, `AboutTable`) and every other one rewritten; **420 tests, up from 389**.
-⚠️ **Renumbered on the owner's call: this is P13.5 and the lobby is P13.6**, because doing the
-layout first means the lobby arrives at a table worth joining. 🔥 **Its findings: a focus call can
-kill the circuit** — an `ElementReference` outlives its element, so §3.11 B7's focus-on-turn races
-the answer, and Blazor turns an unhandled interop exception into a torn-down circuit, **which is a
-page that looks perfect and does nothing** (found by playing 1,429 turns and reading the *server*
-log; 39 rounds clean after the fix); **whose turn it is was made public on purpose** —
-`TableEvent.TurnBegan`, broadcast from `BoundedAgent`, with `ConcealmentTests` **extended to cover
-it** rather than left passing, because *moved last* is a spotlight that lies; **a hidden live
-region announces nothing**, so the closed log is clipped like `.said` rather than hidden; **a
-hidden twin is a duplicate** (three shipped before the accessibility tree was read back); and **a
-glyph is not automatically better than a word** — the joker's jester cap read as a crown, then as
-a blob, and is the letters `JKR`. ⚠️ **The draw count and the discard piles are derived from the
-public game**, not added to the wire. ⚠️ **§3.11 B9 is a number now**: 80 characters of visible
-prose per paragraph on the felt, exempting a `<details>` and a `<span class="said">`. **Next
-packet: P13.6**, the lobby and a second person, and it is the last one. ⚠️ **`TableHost.Yours` is
-one `SeatBoard` shared by every circuit, which is right for solo play and the thing P13.6 must
-change: a `SeatBoard` belongs to a viewer, not to a host.** **P14–P16 were added on 2026-08-19 and
-all three shipped the same day.** P14: `--journal <path>` on both front ends writes every
-decision every seat made as JSON Lines, and `BurmesePoker.Sim -- replay <path>` plays it back —
-to a byte-identical CSV. A seed is a pointer into the build that produced it; a journal is the
-record (§3.9). P15: `--strategies random,simple,greedy,cautious` is a skill ladder with **four
-rungs and three separated skill levels** — `cautious` is indistinguishable from `greedy`,
-because denial and self-interest point the same way. 🔥 **P16 answered the question the other
-two were built for, and the answer is no.** `BurmesePoker.Sim -- neighbours` runs a focal seat
-against a skill dial in the seat before it **and a control arm with the dial in the seat after
-it**: upstream skill is worth **`+9.1 ± 2.1` points** of win rate across the `random`-to-`greedy`
-gulf and **`−1.0 ± 2.1`** across the gap between two thinking players. A weaker player *anywhere*
-at your table is worth 4–5 points to you; **which side of you they sit on is worth nothing.**
-⚠️ P16 also fixed the seating scheme it needed — `--seating balanced` and two new CSV columns —
-and **re-measured P12's headline: 30.7%/19.3% rotated against 29.6%/20.4% balanced.**
+This project is **finished**. **Every packet in the plan is done — P0–P12, P13.1–P13.6 and
+P14–P16** — and **all four of §0's goals are delivered**: the 2023 implementation is deleted, the
+whole rules core is built and tested, `dotnet run --project BurmesePoker.Console` fills the empty
+seats with paced, named bots and plays round after round with the banks carrying over,
+`dotnet run -c Release --project BurmesePoker.Sim` plays thousands of seeded games in parallel to
+compare strategies, and `dotnet run --project BurmesePoker.Web` is **a browser lobby you sit down
+in and play other people at**. There is no next packet; anything further is new work rather than a
+debt.
+
+⚠️ **Before touching the browser client, read `BUILD-PLAN.md` §3.10 and §3.11.** The engine runs
+**server-side, always** (a hand is fully concealed with money on it, so a client-side engine cannot
+honour that, and it is not retrofittable), the client is **Blazor Server**, and §3.11 fixes
+seventeen UX standards — several of them mechanical tests — that a component either obeys or
+breaks a test.
+
+**The P13 sub-packets, in order, and the finding from each that a cold context needs.**
+
+- ✅ **P13.1 — a presentation view model.** `BurmesePoker.Presentation`; the console renders a view
+  model it did not build, byte-identically at the same `--seed`. 🔥 **A view model that aliases the
+  engine's hand list is not a view model** — everything handed to a seat is a **snapshot**.
+- ✅ **P13.2 — the table server.** `BurmesePoker.Server`: a hosted table, a remote seat, a bot
+  stand-in, a filtered fan-out, **and no transport at all**. 🔥 **Exactly one event in the whole
+  narration is private (the blind draw), so the security boundary is one `if`** — and
+  `ConcealmentTests` shipped with it, mutation-tested.
+- ✅ **P13.3 — a table you can watch.** `BurmesePoker.Web`, Blazor Server. 🔥 **`UseStaticFiles`
+  does not serve `_framework/blazor.web.js`, so the page rendered perfectly and was dead** — a
+  prerendered Blazor Server page is a photograph of a broken one, so **ask the server for every URL
+  the page names**. `MapStaticAssets` is the fix.
+- ✅ **P13.4 — a seat you can play.** 🔥 **A `CardId` names a card in a *round's* shoe**, which is
+  rebuilt every deal, so anything comparing hands across seats compares them a round at a time; **a
+  refusal must not raise "something changed"**; and **only the first control may capture a `@ref`**,
+  because Blazor captures on insertion rather than on every diff.
+- ✅ **P13.5 — a table, not a document.** Seats at positions on a felt (`TableRing`), **you at the
+  front whichever seat you were dealt**, one action bar, a round log you open. 🔥 **A focus call can
+  kill the circuit** — an `ElementReference` outlives its element and Blazor turns an unhandled
+  interop exception into a torn-down circuit, **which is a page that looks perfect and does
+  nothing**. Also: **whose turn it is was made public on purpose** (`TableEvent.TurnBegan`), **a
+  hidden live region announces nothing**, and **a glyph is not automatically better than a word**.
+- ✅ **P13.6 — the lobby, and a second person.** `Lobby` holds `HostedTable`s by id; `/` is the
+  lobby and `/table/{id}` is one table; **two people and two bots play a round over a network**.
+  🔥 **A `SeatBoard` belongs to a viewer, not to a host.** 🔥 **The table deals while somebody is at
+  it** — a viewer attending *and* every seat either the computer's or somebody's — which is how
+  P13.4's "an unanswered seat spends its whole patience on every question" got an honest fix
+  **without shortening the patience**. 🔥 **Two `<AntiforgeryToken />`s is worse than none**:
+  `EditForm` emits one itself, the second made every post fail, and the page rendered perfectly
+  either way — **found by pressing the button**. 🔥 **A test that a stood-up seat refuses an answer
+  is vacuous unless a question is standing in front of it** — found by mutating `Dispose` and
+  watching the test stay green. ⚠️ **`--seat` is gone; `--people` replaces it**, because a lobby
+  seats you.
+
+**P14–P16 were added on 2026-08-19 and all three shipped the same day.** P14: `--journal <path>` on
+both front ends writes every decision every seat made as JSON Lines, and
+`BurmesePoker.Sim -- replay <path>` plays it back — to a byte-identical CSV. A seed is a pointer
+into the build that produced it; a journal is the record (§3.9). P15: `--strategies
+random,simple,greedy,cautious` is a skill ladder with **four rungs and three separated skill
+levels** — `cautious` is indistinguishable from `greedy`, because denial and self-interest point
+the same way. 🔥 **P16 answered the question the other two were built for, and the answer is no.**
+`BurmesePoker.Sim -- neighbours` runs a focal seat against a skill dial in the seat before it **and
+a control arm with the dial in the seat after it**: upstream skill is worth **`+9.1 ± 2.1` points**
+of win rate across the `random`-to-`greedy` gulf and **`−1.0 ± 2.1`** across the gap between two
+thinking players. A weaker player *anywhere* at your table is worth 4–5 points to you; **which side
+of you they sit on is worth nothing.** ⚠️ P16 also fixed the seating scheme it needed —
+`--seating balanced` and two new CSV columns — and **re-measured P12's headline: 30.7%/19.3%
+rotated against 29.6%/20.4% balanced.**
 
 Whether or not you
 use the skill, read these first:
@@ -135,23 +110,24 @@ BurmesePoker.Domain/        pure rules. no I/O, no Spectre. everything new goes 
 BurmesePoker.Presentation/  what a hand looks like, as data: near-melds, per-card cost, display
                             state, display order, the computer's hint. Domain only, and no
                             rendering technology at all. built in P13.1.
-BurmesePoker.Server/        one table, hosted: a seat played from elsewhere, a bot that stands in
-                            when nobody answers, and the fan-out that decides what each viewer is
-                            told. Domain + Presentation, and no transport at all. built in P13.2.
+BurmesePoker.Server/        one table, hosted: a seat played from elsewhere, who is sitting in
+                            it, a bot that stands in when nobody answers, and the fan-out that
+                            decides what each viewer is told. Domain + Presentation, and no
+                            transport at all. built in P13.2, extended in P13.6.
 BurmesePoker.Console/       Spectre.Console front end. the only project that prints. P8, reworked
                             in P11 and rewritten onto the view model in P13.1.
 BurmesePoker.Sim/           batch play: seeded, parallel, CSV out. Domain only. built in P12, P16.
-BurmesePoker.Web/           Blazor Server. the second project that draws: a table you can watch
-                            and a seat you can play, folded out of the event stream and the
-                            prompts your own seat was sent, and nothing else. Domain +
-                            Presentation + Server. built in P13.3, P13.4.
+BurmesePoker.Web/           Blazor Server. the second project that draws: a lobby, a table you
+                            can watch and a seat you can play, folded out of the event stream and
+                            the prompts your own seat was sent, and nothing else. Domain +
+                            Presentation + Server. built in P13.3–P13.6.
 BurmesePoker.Tests/         xunit against Domain, Presentation, Server, Sim and Web. never
                             references Console.
 scripts/drive-console.py    drives the console under a pty and writes down every byte, so a
                             front-end refactor can be proved with `cmp`. built in P13.1.
 ```
 
-**Planned by P13, not built yet:** a lobby with a second person (P13.5). See BUILD-PLAN §2.
+**Nothing is planned and unbuilt.** See BUILD-PLAN §2 for how the seven projects fit together.
 
 ## Rules of engagement
 
@@ -173,8 +149,9 @@ dotnet test                                     # run all tests
 dotnet test --filter-method "*SomeTestName*"     # single test (xunit v3 / MTP syntax)
 dotnet test --filter-class "*CardTextTests*"     # single test class
 dotnet run --project BurmesePoker.Console       # play a round (needs a real terminal)
-dotnet run --project BurmesePoker.Web           # play a browser table — you are seat 1, bots take the rest
-dotnet run --project BurmesePoker.Web -- --seat 0                     # …just watch; every seat is a bot
+dotnet run --project BurmesePoker.Web           # a browser lobby at http://localhost:5188 — sit down and play
+dotnet run --project BurmesePoker.Web -- --people 1                   # …a solo table; it deals as soon as you sit
+dotnet run --project BurmesePoker.Web -- --people 0                   # …just watch; every seat is a bot
 dotnet run --project BurmesePoker.Web -- --seed 20260819 --pace 400   # …the same table, faster
 dotnet run -c Release --project BurmesePoker.Sim -- --games 2000   # compare strategies
 dotnet run -c Release --project BurmesePoker.Sim -- bench          # time the cover searches

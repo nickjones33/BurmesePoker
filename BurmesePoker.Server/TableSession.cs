@@ -32,6 +32,8 @@ namespace BurmesePoker.Server;
 public sealed class TableSession
 {
     private readonly Dictionary<PlayerId, SeatConnection> _seats = [];
+    private readonly Dictionary<PlayerId, string> _names;
+    private readonly HashSet<PlayerId> _taken = [];
     private readonly TableFanOut _fanOut = new();
     private readonly TableClock _clock;
     private readonly MatchEngine _match;
@@ -41,7 +43,7 @@ public sealed class TableSession
     private TableSession(IReadOnlyList<TableSeat> seats, TableOptions options)
     {
         Options = options;
-        Names = seats.ToDictionary(seat => seat.Player, seat => seat.Name);
+        _names = seats.ToDictionary(seat => seat.Player, seat => seat.Name);
         _clock = new TableClock(options.RoundTimeLimit);
 
         // One adviser for the whole table: it holds no state between turns, exactly as the
@@ -106,8 +108,58 @@ public sealed class TableSession
     /// <summary>The seating order, which is also the turn order every round.</summary>
     public IReadOnlyList<PlayerId> Players => _match.Players;
 
-    /// <summary>What each seat is called.</summary>
-    public IReadOnlyDictionary<PlayerId, string> Names { get; }
+    /// <summary>
+    /// What each seat is called, right now.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A snapshot, because a name changes when somebody sits down</b> (P13.6). A lobby
+    /// opens a table before it knows who is coming, so a seat waiting for a player is called
+    /// whatever the lobby called it until <see cref="SitDown"/> renames it.
+    /// </remarks>
+    public IReadOnlyDictionary<PlayerId, string> Names
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return new Dictionary<PlayerId, string>(_names);
+            }
+        }
+    }
+
+    /// <summary>The seats waiting for somebody to connect and play them, in seating order.</summary>
+    public IReadOnlyList<PlayerId> RemoteSeats => [.. Players.Where(_seats.ContainsKey)];
+
+    /// <summary>The remote seats nobody is sitting in, in seating order.</summary>
+    /// <remarks>
+    /// 🔥 <b>What makes <em>"deal while somebody is at the table"</em> answerable at all</b>
+    /// (BUILD-PLAN P13.6). Every question an empty seat is asked spends the whole of its
+    /// patience before the stand-in plays, so a host that dealt into one would deal an hour of
+    /// nothing — P13.4 found that and had no honest way to fix it, because nothing knew who was
+    /// connected. Something does now.
+    /// </remarks>
+    public IReadOnlyList<PlayerId> WaitingFor
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return [.. RemoteSeats.Where(seat => !_taken.Contains(seat))];
+            }
+        }
+    }
+
+    /// <summary>Whether every seat at this table is either the computer's or somebody's.</summary>
+    public bool IsFull => WaitingFor.Count == 0;
+
+    /// <summary>Whether somebody is sitting in that seat.</summary>
+    public bool IsTaken(PlayerId player)
+    {
+        lock (_gate)
+        {
+            return _taken.Contains(player);
+        }
+    }
 
     /// <summary>Each seat's running total, carried over from round to round (RULES.md §7.2).</summary>
     public IReadOnlyDictionary<PlayerId, int> Banks => _match.Banks;
@@ -124,6 +176,79 @@ public sealed class TableSession
         _seats.TryGetValue(player, out var connection)
             ? connection
             : throw new ArgumentException($"{player} is not a seat anybody connects to.", nameof(player));
+
+    /// <summary>
+    /// Sits somebody down in a seat that was waiting for a player, and gives them the
+    /// connection it is played through.
+    /// </summary>
+    /// <returns>
+    /// The seat's connection, or null if that seat is the computer's, is not at this table, or
+    /// somebody is already in it.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Exclusive, and that is the whole of why it is here rather than in the lobby.</b>
+    /// Two viewers handed the same <see cref="SeatConnection"/> are two people answering one
+    /// question — the first press wins and the second is refused, at random, for ever. A seat
+    /// is a property of a table, so a table is what refuses the second person.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Sitting down renames the seat and says so to everybody.</b> A lobby opens a table
+    /// before it knows who is coming (P13.6), so <c>TableSeat.Person</c> can only ever carry a
+    /// placeholder; the real name arrives here and reaches every board through the fan-out,
+    /// like everything else.
+    /// </para>
+    /// </remarks>
+    public SeatConnection? SitDown(PlayerId player, string name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+        SeatConnection connection;
+
+        lock (_gate)
+        {
+            if (!_seats.TryGetValue(player, out var seat) || !_taken.Add(player))
+            {
+                return null;
+            }
+
+            _names[player] = name;
+            seat.Name = name;
+            connection = seat;
+        }
+
+        // ⚠️ Outside the lock: a broadcast runs every connection's handlers, and a handler that
+        // asked this table anything would be waiting on the thread that is telling it.
+        _fanOut.Broadcast(new TableEvent.SeatTaken(player, name));
+        return connection;
+    }
+
+    /// <summary>
+    /// Stands somebody up out of a seat, so somebody else may take it and the computer plays it
+    /// meanwhile.
+    /// </summary>
+    /// <remarks>
+    /// <b>The seat keeps their name</b> (§3.11 C16): the honest thing for the table to say is
+    /// that <em>Nick's</em> seat is being played by the computer, and a seat that reverted to
+    /// <em>"Seat 2"</em> mid-round would read as a different player arriving.
+    /// </remarks>
+    public bool StandUp(PlayerId player)
+    {
+        string name;
+
+        lock (_gate)
+        {
+            if (!_taken.Remove(player))
+            {
+                return false;
+            }
+
+            name = _names.TryGetValue(player, out var called) ? called : $"Seat {player.Value}";
+        }
+
+        _fanOut.Broadcast(new TableEvent.SeatLeft(player, name));
+        return true;
+    }
 
     /// <summary>
     /// Attaches a watcher: the public narration, no seat, and never a question.

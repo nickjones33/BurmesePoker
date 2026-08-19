@@ -416,6 +416,98 @@ public class TableBoardTests
         Melds: [],
         Payouts: new Dictionary<PlayerId, int> { [One] = 0, [Two] = 0, [Three] = 0, [Four] = 0 });
 
+    /// <summary>
+    /// ✅ <b>P13.6 — who is at the table is folded, like everything else.</b>
+    /// </summary>
+    /// <remarks>
+    /// A lobby opens a table before it knows who is coming, so a seat is named when somebody
+    /// sits in it — and the board hears that the same way it hears a discard, through the
+    /// fan-out. <b>Nothing here asks the table anything.</b>
+    /// </remarks>
+    [Fact]
+    public void SittingDownNamesTheSeatAndLeavingSaysTheComputerHasIt()
+    {
+        var board = Empty()
+            .After(new TableEvent.SeatTaken(Two, "Nick"))
+            .After(new TableEvent.RoundStarted(1, []));
+
+        Assert.Equal("Nick", board.Names[Two]);
+        Assert.Equal([Two], board.Seated);
+        Assert.False(board.SeatOf(Two).PlayedByTheComputer);
+
+        var away = board.After(new TableEvent.SeatLeft(Two, "Nick"));
+
+        Assert.Empty(away.Seated);
+        Assert.True(away.SeatOf(Two).PlayedByTheComputer);
+
+        // ⚠️ The seat keeps the name: "Nick's seat is being played by the computer" is the true
+        // thing to say and "Seat 2" is not (§3.11 C16).
+        Assert.Equal("Nick", away.Names[Two]);
+        Assert.Contains(away.Log, line => line.Text.Contains("Nick left the table", StringComparison.Ordinal));
+
+        // …and coming back clears it.
+        var back = away.After(new TableEvent.SeatTaken(Two, "Nick"));
+
+        Assert.False(back.SeatOf(Two).PlayedByTheComputer);
+        Assert.Equal([Two], back.Seated);
+    }
+
+    /// <remarks>
+    /// <b>Standing in is per round</b>, because a player who came back is not still away — and
+    /// a seat the computer was always playing is not standing in for anybody.
+    /// </remarks>
+    [Fact]
+    public void TheComputerStandingInLastsOneTurn()
+    {
+        var board = Empty()
+            .After(new TableEvent.RoundStarted(1, []))
+            .After(new TableEvent.TurnBegan(Three, 1, 3))
+            .After(new TableEvent.SeatPlayedByTheComputer(Three, 1, 3));
+
+        Assert.True(board.SeatOf(Three).PlayedByTheComputer);
+        Assert.False(board.SeatOf(One).PlayedByTheComputer);
+
+        // 🔥 Found by playing it: a player who timed out once and then came back is not still
+        // away, and a marker that stuck for the rest of the round said he was — in front of
+        // him, while he was answering.
+        var again = board.After(new TableEvent.TurnBegan(Three, 1, 7));
+
+        Assert.Empty(again.StoodInFor);
+        Assert.False(again.SeatOf(Three).PlayedByTheComputer);
+
+        // …and it does not survive a deal either.
+        Assert.Empty(board.After(new TableEvent.RoundStarted(2, [])).StoodInFor);
+    }
+
+    /// <remarks>
+    /// <b>A seat somebody walked away from stays marked until somebody comes back to it</b>,
+    /// which is a different fact from the stand-in playing one turn: the table knows the chair
+    /// is empty and does not have to wait to find out.
+    /// </remarks>
+    [Fact]
+    public void AnEmptySeatStaysMarkedUntilSomebodySitsInIt()
+    {
+        var board = Empty()
+            .After(new TableEvent.SeatTaken(Two, "Nick"))
+            .After(new TableEvent.RoundStarted(1, []))
+            .After(new TableEvent.SeatLeft(Two, "Nick"))
+            .After(new TableEvent.TurnBegan(Two, 1, 2));
+
+        Assert.True(board.SeatOf(Two).PlayedByTheComputer);
+        Assert.Equal([Two], board.Vacated);
+
+        // A seat that was always the computer's is not marked: nobody has gone anywhere.
+        Assert.False(board.SeatOf(Four).PlayedByTheComputer);
+
+        // …and it survives the next deal, because a player who left is still gone.
+        Assert.True(board.After(new TableEvent.RoundStarted(2, [])).SeatOf(Two).PlayedByTheComputer);
+
+        var back = board.After(new TableEvent.SeatTaken(Two, "Nick"));
+
+        Assert.Empty(back.Vacated);
+        Assert.False(back.SeatOf(Two).PlayedByTheComputer);
+    }
+
     private static TableBoard Empty() => TableBoard.Of(
         [One, Two, Three, Four],
         new Dictionary<PlayerId, string>
