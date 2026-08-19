@@ -12,9 +12,15 @@ namespace BurmesePoker.Web;
 /// <remarks>
 /// <para>
 /// <b>What <c>Program</c> is to the console.</b> The lobby is P13.5's; until then the table is
-/// opened here with every seat played by the computer, which is exactly what the console does
-/// when nobody says they are a person (BUILD-PLAN P13.3 — <em>every seat is a bot, there is
-/// nothing to click yet</em>).
+/// opened here with one seat yours and the rest played by the computer, which is exactly what
+/// the console does for a solo game (BUILD-PLAN P13.4). <c>--seat 0</c> gives back P13.3's
+/// table, where every seat is a bot and there is nothing to click.
+/// </para>
+/// <para>
+/// 🔥 <b>Two connections, and the difference between them is the whole of the concealment.</b>
+/// The watcher is told the public game and folded into <see cref="Board"/>, which every page
+/// draws; your seat is asked questions and folded into <see cref="Yours"/>, which only your
+/// half of the page draws. Nothing goes round either of them to the session.
 /// </para>
 /// <para>
 /// ⚠️ <b>Starting is idempotent, and that is not tidiness</b> (§3.11 C13). Prerendering runs a
@@ -67,17 +73,35 @@ public sealed class TableHost : IAsyncDisposable
         Pace = TimeSpan.FromMilliseconds(configuration.GetValue<int?>("pace") ?? 1100);
         BetweenRounds = TimeSpan.FromSeconds(configuration.GetValue<int?>("between") ?? 12);
         Seats = configuration.GetValue<int?>("seats") ?? RoundEngine.MinimumPlayers;
+        You = configuration.GetValue<string>("name") ?? "You";
+        Hints = configuration.GetValue<bool?>("hints") ?? true;
+
+        // Which seat is yours, one-based, and zero for nobody — a table with no person at it is
+        // still worth watching, which is the whole of P13.3.
+        SeatNumber = configuration.GetValue<int?>("seat") ?? 1;
+
+        if (SeatNumber < 0 || SeatNumber > Seats)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(configuration),
+                SeatNumber,
+                $"--seat names a seat between 1 and {Seats}, or 0 to watch without playing.");
+        }
+
+        // ⚠️ A person is given longer than the server's own default. What the clock is really
+        // catching is a table nobody is left at (P13.2), and forty-five seconds is a short time
+        // to look at fourteen cards and decide which one is worth the least.
+        var patience = TimeSpan.FromSeconds(configuration.GetValue<int?>("patience") ?? 90);
 
         _table = TableSession.Open(
-            [.. Enumerable.Range(1, Seats).Select(seat => TableSeat.Computer(
-                new PlayerId(seat),
-                $"{BotNames[(seat - 1) % BotNames.Length]} (bot)",
-                PacedAgent.Wrap(new GreedyBotAgent(), Pace)))],
+            [.. Enumerable.Range(1, Seats).Select(Seat)],
             new TableOptions
             {
                 Seed = Seed,
-                // A stand-in is paced too, for the day a seat here is somebody's (P13.4). The
-                // factory is why the server never had to know what a pause was.
+                Patience = patience,
+                // A stand-in is paced too, so a seat the computer took over reads as a seat
+                // playing rather than as a stutter (P13.4, §3.11 C16). The factory is why the
+                // server never had to know what a pause was.
                 StandIn = () => PacedAgent.Wrap(new GreedyBotAgent(), Pace)
             });
 
@@ -85,7 +109,19 @@ public sealed class TableHost : IAsyncDisposable
 
         _watcher = _table.Watch("The room");
         _watcher.Updated += Fold;
+
+        // ⚠️ Your own connection, never the watcher's. The watcher is told the public game and
+        // no hand at all; a seat is asked questions, and a question is where a hand lives.
+        Yours = SeatNumber == 0 ? null : new SeatBoard(_table.ConnectionFor(new PlayerId(SeatNumber)));
     }
+
+    /// <summary>One seat: yours if it is the one you asked for, and the computer's otherwise.</summary>
+    private TableSeat Seat(int seat) => seat == SeatNumber
+        ? TableSeat.Person(new PlayerId(seat), You)
+        : TableSeat.Computer(
+            new PlayerId(seat),
+            $"{BotNames[(seat - 1) % BotNames.Length]} (bot)",
+            PacedAgent.Wrap(new GreedyBotAgent(), Pace));
 
     /// <summary>The one seed this whole table is reproducible from.</summary>
     public int Seed { get; }
@@ -98,6 +134,21 @@ public sealed class TableHost : IAsyncDisposable
 
     /// <summary>How many seats are at this table (RULES.md §2.1).</summary>
     public int Seats { get; }
+
+    /// <summary>Which seat is yours, one-based; zero when you are only watching.</summary>
+    public int SeatNumber { get; }
+
+    /// <summary>What the table calls you.</summary>
+    public string You { get; }
+
+    /// <summary>Whether the computer's suggestions are shown to begin with (<c>--hints false</c>).</summary>
+    public bool Hints { get; }
+
+    /// <summary>
+    /// Your seat, or null when nobody is playing this one. <b>Folded from your own connection</b>,
+    /// which is the only place a hand ever comes from.
+    /// </summary>
+    public SeatBoard? Yours { get; }
 
     /// <summary>The public game, as everything that has been said adds up to it.</summary>
     public TableBoard Board { get; private set; }
@@ -203,6 +254,7 @@ public sealed class TableHost : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        Yours?.Dispose();
         _watcher.Updated -= Fold;
         _table.Leave(_watcher);
 

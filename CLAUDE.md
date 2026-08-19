@@ -50,7 +50,22 @@ from the length of the log; 240 visually-hidden spans made the document 10,295px
 source scan must read the markup rather than the prose about it. ⚠️ **`PacedAgent` moved to
 `BurmesePoker.Presentation`, not Domain — `BurmesePoker.Sim` references Domain and must never be
 able to reach a sleep.** ⚠️ **`BurmesePoker.Tests` now references `BurmesePoker.Web`, and still
-never `BurmesePoker.Console`.** **Next packet: P13.4**, a seat you can play. **P14–P16 were added on 2026-08-19 and
+never `BurmesePoker.Console`.** ✅ **P13.4 shipped the same day, and this project has a game you can play.**
+`dotnet run --project BurmesePoker.Web` deals you into seat 1 against three bots and asks you
+all four questions as controls. `SeatBoard` is the private counterpart of `TableBoard` — your
+seat folded out of **your own** connection — and `YourSeat`, `TurnPrompt` and `HandPanel` draw
+it inside P13.3's single interactive island. **§3.11 B6, B7 and B11 shipped with it, reviewed
+the way P11 was: five rounds played in a headless browser with `Tab` and `Enter` and nothing
+else, 86 questions answered.** 🔥 **Its findings: a `CardId` names a card in a *round's* shoe,
+which is rebuilt every deal, so anything comparing hands across seats compares them a round at a
+time; your hand between turns is not stale and is worth rebuilding, because after you discard
+your thirteen are fixed until your next turn; a refusal must not raise "something changed", or a
+client that answers on the change event answers the same refused question for ever; and only the
+first control may capture a `@ref`, because Blazor captures on insertion rather than on every
+diff.** ⚠️ **A seated table no longer deals from boot** — an unanswered seat spends its whole
+patience on every question. **Next packet: P13.5**, the lobby and a second person, and it is the
+last one. ⚠️ **`TableHost.Yours` is one `SeatBoard` shared by every circuit, which is right for
+solo play and the thing P13.5 must change: a `SeatBoard` belongs to a viewer, not to a host.** **P14–P16 were added on 2026-08-19 and
 all three shipped the same day.** P14: `--journal <path>` on both front ends writes every
 decision every seat made as JSON Lines, and `BurmesePoker.Sim -- replay <path>` plays it back —
 to a byte-identical CSV. A seed is a pointer into the build that produced it; a journal is the
@@ -105,17 +120,17 @@ BurmesePoker.Server/        one table, hosted: a seat played from elsewhere, a b
 BurmesePoker.Console/       Spectre.Console front end. the only project that prints. P8, reworked
                             in P11 and rewritten onto the view model in P13.1.
 BurmesePoker.Sim/           batch play: seeded, parallel, CSV out. Domain only. built in P12, P16.
-BurmesePoker.Web/           Blazor Server. the second project that draws: a table you can watch,
-                            folded out of the event stream and nothing else. Domain +
-                            Presentation + Server. built in P13.3.
+BurmesePoker.Web/           Blazor Server. the second project that draws: a table you can watch
+                            and a seat you can play, folded out of the event stream and the
+                            prompts your own seat was sent, and nothing else. Domain +
+                            Presentation + Server. built in P13.3, P13.4.
 BurmesePoker.Tests/         xunit against Domain, Presentation, Server, Sim and Web. never
                             references Console.
 scripts/drive-console.py    drives the console under a pty and writes down every byte, so a
                             front-end refactor can be proved with `cmp`. built in P13.1.
 ```
 
-**Planned by P13, not built yet:** a seat you can play (P13.4) and a lobby with a second person
-(P13.5). See BUILD-PLAN §2.
+**Planned by P13, not built yet:** a lobby with a second person (P13.5). See BUILD-PLAN §2.
 
 ## Rules of engagement
 
@@ -137,7 +152,8 @@ dotnet test                                     # run all tests
 dotnet test --filter-method "*SomeTestName*"     # single test (xunit v3 / MTP syntax)
 dotnet test --filter-class "*CardTextTests*"     # single test class
 dotnet run --project BurmesePoker.Console       # play a round (needs a real terminal)
-dotnet run --project BurmesePoker.Web           # watch a table in a browser (bots in every seat)
+dotnet run --project BurmesePoker.Web           # play a browser table — you are seat 1, bots take the rest
+dotnet run --project BurmesePoker.Web -- --seat 0                     # …just watch; every seat is a bot
 dotnet run --project BurmesePoker.Web -- --seed 20260819 --pace 400   # …the same table, faster
 dotnet run -c Release --project BurmesePoker.Sim -- --games 2000   # compare strategies
 dotnet run -c Release --project BurmesePoker.Sim -- bench          # time the cover searches
@@ -198,7 +214,7 @@ verified bug to show for it.
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
-| `docs/PLAYING.md` | **How to actually play** a solo game in the console — the prompts, the panels, the markers, the flags. Written for a person at the keyboard, not for a build session. |
+| `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it. Written for a person at the keyboard, not for a build session. |
 | `docs/RULES-TECHNICAL.md` | What the **old** code does and where it diverges. Defect list. Historical reference. |
 | `docs/spec/RUN-CANDIDATES.md` | **Worked spec for packet P3**, the hardest one. Read before touching run generation. |
 | `docs/QUESTIONS-FOR-MYA-LAY.md` | Open rules questions phrased for an experienced player. Answers get promoted into `RULES.md` as `EXPERT`. |

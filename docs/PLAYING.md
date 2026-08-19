@@ -1,8 +1,12 @@
-# Playing in the console
+# Playing
 
 A short guide to sitting down alone against the computer. **`RULES.md` is the rules
-authority** — this only explains the game as far as you need it to make the four decisions the
-console asks you for, and points there for everything else.
+authority** — this only explains the game as far as you need it to make the four decisions you
+are asked for, and points there for everything else.
+
+**There are two ways to sit down, and they ask you the same four things.** Most of this guide is
+about the console, which came first; the browser is at the end and is the nicer of the two if
+you have one open.
 
 ---
 
@@ -197,6 +201,51 @@ round limit, so *"Another round?"* is asked until you say no.
 If the draw pile runs out, every discard pile is gathered, shuffled, and becomes the new draw
 pile; the table is told when it happens. In practice you will only see it at a **full table** —
 it is common at six seats and essentially never happens at four.
+
+---
+
+## The same game in a browser
+
+```bash
+dotnet run --project BurmesePoker.Web
+```
+
+Then open the address it prints (`http://localhost:5188` by default). **You are seat 1** and the
+other three are the computer's, at the same pace the console uses.
+
+**It asks the same four questions**, in the same order, and it shows the same things: your hand
+grouped into the melds it nearly is, what each card would cost you to throw, the star on the
+money cards the deck gave you, and the arrow on the card the computer would throw. **The whole
+turn works from the keyboard** — when it becomes your turn the focus lands on the first control
+of the question, `Tab` moves between them, and `Enter` presses one. Choosing a discard means
+tabbing to a card and pressing it: **a card you throw is a button.**
+
+Three differences worth knowing:
+
+- **You can see the whole table.** Every seat, its bank and the top of its discard pile are on
+  screen at once, and the round log runs down the side. The console clears the screen between
+  turns because a hotseat game has to; a browser never does.
+- **Your hand stays on screen while the others play.** It is the hand you kept, not a picture of
+  an old one.
+- **Nothing is hidden from you that the console shows you**, and nothing extra is shown. Your
+  hand reaches the page because your seat was asked a question about it; nobody else's ever
+  does.
+
+Useful options — all of them plain configuration, so `--` then the flag:
+
+| Option | What it does |
+|---|---|
+| `--seat 0` | Nobody plays; every seat is the computer's and you only watch. |
+| `--name Nick` | What the table calls you. |
+| `--seed 20260819` | The same cards again — the browser's `--seed`, same as the console's. |
+| `--hints false` | Start with the computer's suggestions hidden. There is a checkbox for it too. |
+| `--pace 400` | Milliseconds a computer seat pauses before it moves. |
+| `--between 5` | Seconds between the settlement and the next deal. |
+| `--patience 120` | Seconds a question waits for you before the computer plays your seat. |
+| `--seats 5` | Four to six players (RULES.md §2.1). |
+
+⚠️ **If you walk away, the computer plays your seat** and the log says so. Come back and the next
+question is yours again.
 
 ---
 

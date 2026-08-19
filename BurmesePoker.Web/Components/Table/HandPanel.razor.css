@@ -1,0 +1,102 @@
+.none {
+    margin: 0;
+    color: var(--on-raised-muted);
+}
+
+h3 {
+    margin: 0 0 0.6rem;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--on-raised-muted);
+}
+
+.groups {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.group {
+    display: grid;
+    gap: 0.15rem 0.7rem;
+    grid-template-columns: 1fr;
+    align-items: start;
+}
+
+@media (min-width: 48rem) {
+    .group {
+        grid-template-columns: 9rem 1fr;
+    }
+}
+
+.label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    margin: 0;
+    color: var(--on-raised-muted);
+    font-size: 0.85rem;
+}
+
+.group.melded .token {
+    color: var(--on-raised-good);
+    font-weight: 700;
+}
+
+.cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/*
+    A card you press is a <button> (§3.11 A4) and it is drawn as the card, not as a button: the
+    chip inside carries the face and the border, so this only has to be a target big enough to
+    hit (WCAG 2.2 SC 2.5.8) and a place for the focus ring to sit.
+*/
+.throw {
+    display: block;
+    padding: 0.2rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: none;
+    color: inherit;
+    text-align: left;
+}
+
+.throw:hover {
+    border-color: var(--edge-raised-focus);
+}
+
+.held {
+    display: block;
+    padding: 0.2rem;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.cost {
+    color: var(--on-raised-muted);
+    font-size: 0.75rem;
+}
+
+.cost.dear {
+    color: var(--on-raised-bad);
+}
+
+.note {
+    margin: 0.75rem 0 0;
+    color: var(--on-raised-muted);
+    font-size: 0.85rem;
+}

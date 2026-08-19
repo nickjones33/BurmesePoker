@@ -39,7 +39,14 @@
     /// </summary>
     private string Shade => Card.Color == CardColor.Red ? "red" : "black";
 
+    /// <remarks>
+    /// ⚠️ <b>It ends in a full stop, and that is not fussiness</b> (P13.4). A card sits next to
+    /// whatever else is said about it — the per-card cost in a hand, the rest of a line in the
+    /// log — and without the stop a screen reader runs the two together into
+    /// <em>"five of clubs melds nothing"</em>, which is a sentence that means the opposite of
+    /// itself. Found by reading a button's accessible name out of the browser.
+    /// </remarks>
     private string Said => TokenWords is null
-        ? CardWords.For(Card)
-        : $"{CardWords.For(Card)}, {TokenWords}";
+        ? $"{CardWords.For(Card)}."
+        : $"{CardWords.For(Card)}, {TokenWords}.";
 }

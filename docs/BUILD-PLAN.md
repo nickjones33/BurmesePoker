@@ -241,10 +241,14 @@ BurmesePoker.Web/           Blazor Server. the second project that draws.
                             Domain + Presentation + Server.
                             ✅ BUILT (P13.3): {Program, TableHost, TableBoard, CardWords} and
                             Components/{App, Routes, _Imports, Layout/MainLayout,
-                            Pages/{Watch, Rules, Error},
+                            Pages/{Table, Rules, Error},
                             Table/{TableView, SeatPanel, CardChip, RoundLogPanel,
-                            SettlementPanel}} — every one of the five table components with its
+                            SettlementPanel}} — every table component with its
                             own .razor.css (§3.11 C17), plus wwwroot/{theme.css, app.css}.
+                            ✅ BUILT (P13.4): {SeatBoard} and
+                            Table/{YourSeat, TurnPrompt, HandPanel} — the seat, and the four
+                            questions as controls. TableBoard is the public game folded from a
+                            watcher; **SeatBoard is one seat's, folded from its own connection**.
 ```
 
 **By P13.3:** the seventh project above, `BurmesePoker.Presentation/PacedAgent.cs` **moved out of
@@ -725,8 +729,11 @@ are split by how they are checked, because a standard nobody can verify is a wis
    exist fails rather than being skipped. Both themes are computed, and a third test asserts
    every `var(--…)` in every stylesheet names a token that exists — a typo in a custom property
    is silent in CSS.
-4. ✅ **DONE IN P13.3 — every action is a real control.** No `<div @onclick>`: buttons are
-   `<button>` and navigation is `<a>`/`NavLink`. **Shipped as a source scan in
+4. ✅ **DONE IN P13.3, and it started biting in P13.4 — every action is a real control.** No
+   `<div @onclick>`: buttons are `<button>` and navigation is `<a>`/`NavLink`. ⚠️ **Until the
+   seat shipped it passed vacuously, because there was not one control on the table**; it now
+   counts what it scanned and fails if the client goes quiet again. **A card you throw is a
+   `<button>`.** **Shipped as a source scan in
    `MarkupStandardsTests`**, which walks back from every `@on…` to the tag it sits on.
    ⚠️ **The scan reads markup with the commentary stripped out** — every component in this client
    explains the standard it obeys in a comment, and a scan that read the prose would fail on the
@@ -742,12 +749,17 @@ are split by how they are checked, because a standard nobody can verify is a wis
 
 #### B. Only playing it finds these — reviewed the way P11 was reviewed
 
-6. **Fully playable from the keyboard, with no pointer at all.** Tab order matches reading
-   order; every prompt is reachable and answerable. For a turn-based card game this is not a
-   concession — it is how a quick player will want to play anyway.
-7. **Focus moves when the turn does.** When it becomes your turn, focus lands on the first
-   control of the prompt; when a dialog opens focus enters it, and on close it returns to what
-   opened it.
+6. ✅ **DONE IN P13.4 — fully playable from the keyboard, with no pointer at all.** Tab order
+   matches reading order; every prompt is reachable and answerable. For a turn-based card game
+   this is not a concession — it is how a quick player will want to play anyway. **Reviewed the
+   way P11 was: five rounds played in a headless browser with `Tab` and `Enter` and nothing
+   else, 86 questions answered, 393 tab presses walking the hand.**
+7. ✅ **DONE IN P13.4 — focus moves when the turn does.** When it becomes your turn, focus lands
+   on the first control of the prompt; when a dialog opens focus enters it, and on close it
+   returns to what opened it. **There is no dialog in this client and there does not need to
+   be** — a question is a region of the page, not something modal over it. ⚠️ **Only the first
+   control captures an element reference**: Blazor invokes a capture on *insertion*, not on
+   every diff, so a `@ref` inside a loop holds the last card rather than the first.
 8. ✅ **DONE IN P13.3, and asserted — it is the only live region on the page.** **The round log
     is an ARIA live region** (`aria-live="polite"`) — it is the browser's
    `ConsoleObserver.Say`, and this is WCAG 4.1.3 Status Messages. ⚠️ **Polite, never
@@ -758,8 +770,9 @@ are split by how they are checked, because a standard nobody can verify is a wis
 10. **`prefers-reduced-motion` and `prefers-color-scheme` are both honoured.** The pause between
     computer turns is *pacing* and stays (it is what makes a bot seat legible — P11); anything
     that actually moves does not.
-11. **Touch targets at least 24×24 CSS px** (WCAG 2.2 SC 2.5.8), and comfortably larger for a
-    card you are being asked to throw away for money.
+11. ✅ **DONE IN P13.4 — touch targets at least 24×24 CSS px** (WCAG 2.2 SC 2.5.8), and
+    comfortably larger for a card you are being asked to throw away for money. A `CardChip` is
+    28px before its padding and the button around it adds more; the hints checkbox is 24px.
 
 #### C. Blazor mechanics that are UX decisions in disguise
 
@@ -2148,7 +2161,7 @@ one moved file, one `ProjectReference`, one `FrameworkReference` and one `Layeri
 
 ---
 
-#### P13.4 — A seat you can play *(solo play in the browser, complete)*
+#### P13.4 — A seat you can play ☑ done 2026-08-19 *(solo play in the browser, complete)*
 
 > **⚠️ Amended after P13.3, and every amendment is something already built.** The page, the
 > palette, the card, the log and the settlement all exist and are asserted over; what this
@@ -2194,7 +2207,43 @@ half-built component cannot end somebody's round (P13.2).
    `SeatPrompt` it was sent and from no other source.
 
 **Done when.** §0's goal 2 has a second, better answer, and it was reached through the
-multiplayer architecture rather than around it.
+multiplayer architecture rather than around it. ✅ **It has.**
+
+**What it shipped.** `SeatBoard` — *your seat, as you have it* — is the private counterpart of
+`TableBoard`, folded out of **your own** `SeatConnection` and nothing else; `TableHost` opens the
+table with `--seat 1` yours and the rest the computer's (`--seat 0` gives back P13.3's room with
+nobody in it); and three components draw it — `YourSeat`, `TurnPrompt` and `HandPanel`. **All
+four questions are controls, all of them inside P13.3's single interactive island**, so the
+render-mode standard is untouched. **86 questions answered in a real browser with no pointer at
+all, over five rounds, with 393 tab presses walking the hand.**
+
+**🔥 What it found.**
+
+1. **A `CardId` names a card in a round's shoe, and the shoe is rebuilt every deal.** The first
+   version of the cross-seat leak assertion compared whole matches and failed immediately — on
+   the same physical eight of hearts being dealt to two different people in two different
+   rounds. ⚠️ **Anything comparing hands across seats must compare them a round at a time.**
+   `ConcealmentTests` never met this because it plays exactly one round.
+2. **Your hand between turns is not stale, and it is worth rebuilding.** After you discard,
+   your thirteen are fixed until your next turn — nobody draws from your hand, and what another
+   player takes comes off your discard pile. So the resting hand is the prompt's hand minus the
+   card thrown, with the near-melds worked out again over what is left. ⚠️ **The ownership it
+   needs is read back off the `CardView`s you were sent**, never worked out again: a prompt
+   carries the registry but not `TurnContext.YouOwn`.
+3. **A refusal must not raise "something changed".** `SeatBoard.Answer` returning false while
+   the question still stands is the ordinary case, and a client that answers on the change event
+   — which is exactly what a component does — would answer the same refused question for ever.
+   **It says something only if the question really moved on.** Found by writing the test that
+   answers wrongly on purpose.
+4. **Focus lands on the first control, and only the first control may capture a reference.**
+   Blazor invokes an element-reference capture when the element is *inserted*, not on every
+   diff, so a `@ref` inside a loop ends up holding the last card. The first card is rendered
+   through its own branch and that is the one that captures. Verified by walking the page with
+   `Tab`: every prompt in five rounds already had focus on a `<button>` before a key was pressed.
+5. **The unattended seated table is why the deal no longer starts itself.** Every question a
+   seat is asked spends the whole of its patience before the stand-in answers, so an unattended
+   round is over an hour of nothing. A table with nobody in it still deals from boot (P13.3's
+   *a table is a place, not a button*); a table with a seat waits for the first page.
 
 ---
 
@@ -2213,6 +2262,21 @@ today.
   one table from configuration today, which is the whole of what P13.3 needed; a second table
   means a dictionary of them and a route that names one. **Nothing else in the client knows how
   many tables there are** — `TableView` takes a board and a connection.
+- ⚠️ **Amended after P13.4, and this is the one thing that has to change rather than be added
+  to.** `TableHost.Yours` is *one* `SeatBoard`, built when the table is opened, and every circuit
+  that draws the page is handed the same one — which is right for solo play and wrong the moment
+  two people are here. **A `SeatBoard` belongs to a viewer, not to a host**: the lobby decides
+  who a circuit is, and the circuit builds its own `SeatBoard` over
+  `TableSession.ConnectionFor(itsPlayer)` and disposes it. ✅ **The component is already written
+  for that** — `YourSeat` reads its seat once in `OnInitialized` and unhooks in `Dispose`; only
+  where the seat comes from changes.
+- ⚠️ **And it is what makes the deal start itself again.** P13.4 stopped dealing at boot because
+  an unattended seat spends its whole patience on every question. A lobby knows whether anybody
+  is connected, so the honest rule — *deal while somebody is at the table* — becomes available
+  for the first time. **Do not solve it by shortening the patience.**
+- **Two people at one table is also the first time the hints toggle is per-viewer for real.** It
+  already is: it lives in the component, and `TableOptions.Hints` decides only whether the
+  server works a suggestion out at all (P13.4).
 
 **Acceptance.** **Two people and two bots play a round over a network** — P13's original "done
 when", finally reached with everything under it already tested.

@@ -28,7 +28,8 @@ namespace BurmesePoker.Tests.Web;
 public class ComponentDisposalTests
 {
     /// <summary>The types a component cannot hold without also being able to let go of it.</summary>
-    private static readonly Type[] Subscribable = [typeof(TableHost), typeof(SeatConnection), typeof(TableSession)];
+    private static readonly Type[] Subscribable =
+        [typeof(TableHost), typeof(SeatBoard), typeof(SeatConnection), typeof(TableSession)];
 
     private static IEnumerable<Type> Components => typeof(TableView).Assembly.GetTypes()
         .Where(type => type is { IsAbstract: false, IsClass: true })
@@ -69,6 +70,20 @@ public class ComponentDisposalTests
 
         Assert.Contains("Host.Changed +=", source, StringComparison.Ordinal);
         Assert.Contains("Host.Changed -=", source, StringComparison.Ordinal);
+    }
+
+    /// <remarks>
+    /// The seat is the second subscription in the client (P13.4), and it is the one that would
+    /// hurt: a dead circuit still holding a live seat is a player who cannot be replaced by the
+    /// stand-in because somebody is still listening for their turn.
+    /// </remarks>
+    [Fact]
+    public void TheSeatUnhooksItselfFromItsOwnConnection()
+    {
+        var source = Sources.Read("Components/Table/YourSeat.razor");
+
+        Assert.Contains("Changed +=", source, StringComparison.Ordinal);
+        Assert.Contains("Changed -=", source, StringComparison.Ordinal);
     }
 
     private static bool Holds(Type component) =>

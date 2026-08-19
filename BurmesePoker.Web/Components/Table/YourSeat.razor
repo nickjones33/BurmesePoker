@@ -1,0 +1,118 @@
+@*
+    Your half of the table: the question, the hand it is about, and whether the computer is
+    allowed to have an opinion about it.
+
+    🔥 Everything drawn here came out of the SeatPrompt this seat was sent, through SeatBoard,
+    and out of nothing else. There is no route from a component to the TableSession, which is
+    what keeps ConcealmentTests standing in front of the page rather than beside it
+    (BUILD-PLAN P13.4 acceptance 3).
+
+    ⚠️ Subscribed here and unhooked in Dispose (§3.11 A5), and the re-render goes through
+    InvokeAsync because the table speaks on the round's thread (§3.11 C15).
+*@
+@implements IDisposable
+@inject TableHost Host
+
+@if (_seat is not null)
+{
+    <section class="you @(_seat.IsYourTurn ? "asking" : null)" aria-labelledby="you-heading">
+        <header class="head">
+            <h2 id="you-heading">Your seat — @_seat.Name</h2>
+
+            <p class="hints">
+                <input type="checkbox" id="show-hints" @bind="_hints" />
+                <label for="show-hints">Show what the computer would do</label>
+            </p>
+        </header>
+
+        <TurnPrompt @ref="_prompt" Asking="_seat.Asking" OnAnswer="Answer" />
+
+        <HandPanel @ref="_hand"
+                   Hand="_seat.Hand"
+                   Hints="_hints"
+                   Throwing="@(_seat.Asking?.Question == SeatQuestion.Discard)"
+                   OnThrow="Throw" />
+    </section>
+}
+
+@code {
+    private SeatBoard? _seat;
+    private TurnPrompt? _prompt;
+    private HandPanel? _hand;
+    private bool _hints = true;
+    private (int Round, int Turn, SeatQuestion Question)? _focused;
+
+    /// <remarks>
+    /// ⚠️ <b>Runs twice</b> — once while the page is prerendered and again when the circuit
+    /// starts (§3.11 C13). Nothing here joins anything: the seat was taken when the table was
+    /// opened, and this only starts listening to it.
+    /// </remarks>
+    protected override void OnInitialized()
+    {
+        _seat = Host.Yours;
+        _hints = Host.Hints;
+
+        if (_seat is not null)
+        {
+            _seat.Changed += OnAsked;
+        }
+    }
+
+    /// <summary>
+    /// ✅ <b>§3.11 B7 — focus moves when the turn does.</b> When the table asks you something,
+    /// focus lands on the first control of the prompt: the first button, or the first card in
+    /// your hand when the question is which one to throw. Keyed on the question rather than on
+    /// the render, so a bot's move somewhere else at the table never steals the caret.
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_seat?.Asking is not { } asking)
+        {
+            _focused = null;
+            return;
+        }
+
+        var now = (asking.Round, asking.TurnNumber, asking.Question);
+
+        if (_focused == now)
+        {
+            return;
+        }
+
+        _focused = now;
+
+        if (asking.Question == SeatQuestion.Discard)
+        {
+            if (_hand is not null)
+            {
+                await _hand.FocusAsync();
+            }
+        }
+        else if (_prompt is not null)
+        {
+            await _prompt.FocusAsync();
+        }
+    }
+
+    private void OnAsked() => _ = InvokeAsync(StateHasChanged);
+
+    /// <remarks>
+    /// A refused answer is not an error: the question stands and the seat has already said so,
+    /// so there is nothing to do but let the next render draw what is really being asked (P13.2).
+    /// </remarks>
+    private void Answer(SeatAnswer answer) => _seat?.Answer(answer);
+
+    private void Throw(Card card) => _seat?.Throw(card);
+
+    /// <remarks>
+    /// ⚠️ Unhooking, and nothing else — <c>StateHasChanged</c> must never be called from here,
+    /// because disposal can run during renderer teardown.
+    /// </remarks>
+    public void Dispose()
+    {
+        if (_seat is not null)
+        {
+            _seat.Changed -= OnAsked;
+        }
+    }
+}

@@ -38,10 +38,14 @@ public class MarkupStandardsTests
     [Fact]
     public void EveryHandlerIsOnARealControl()
     {
+        var handlers = 0;
+
         foreach (var (path, text) in Sources.Components)
         {
             foreach (Match handler in Regex.Matches(text, @"@on[a-z]+\s*=" ))
             {
+                handlers++;
+
                 var open = text.LastIndexOf('<', handler.Index);
 
                 Assert.True(open >= 0, $"{path}: an event handler outside any element.");
@@ -55,6 +59,62 @@ public class MarkupStandardsTests
                     $"{path}: <{tag}> takes a handler, and a handler belongs on a real control (§3.11 A4).");
             }
         }
+
+        // ⚠️ Until P13.4 there was not one control on the table and this passed vacuously, which
+        // is a test that says nothing. The seat asks four questions; the smallest of them puts
+        // two buttons on the page.
+        Assert.True(handlers >= 6, $"only {handlers} handlers scanned, which is fewer than the seat has.");
+    }
+
+    /// <summary>
+    /// ✅ <b>P13.4 acceptance 3 — the component does not widen the concealment.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The leak test guards what is <em>sent</em>; this guards that the page has nothing
+    /// else to draw.</b> Everything on screen came through a <c>SeatConnection</c> — the public
+    /// board out of the watcher's events, your hand out of the <c>SeatPrompt</c> your own seat
+    /// was asked. A component that reached the <c>TableSession</c>, or a <c>TableState</c>, or
+    /// a <c>TurnContext</c>, would be a second route round the fan-out, and
+    /// <c>ConcealmentTests</c> would stop standing in front of the page.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>It also forbids working a hand out again.</b> <c>PartialCover</c> and
+    /// <c>HandEvaluator</c> are how a <c>HandView</c> is built, and the client is given one
+    /// rather than building one (P13.1).
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void NoComponentFindsASecondRouteToTheTable()
+    {
+        string[] forbidden =
+            ["TableSession", "MatchEngine", "TableState", "TurnContext", "PartialCover", "HandEvaluator", "ConnectionFor"];
+
+        foreach (var (path, text) in Sources.Components)
+        {
+            foreach (var route in forbidden)
+            {
+                Assert.False(
+                    text.Contains(route, StringComparison.Ordinal),
+                    $"{path}: names {route}, which is a way round the fan-out (BUILD-PLAN P13.4).");
+            }
+        }
+    }
+
+    /// <remarks>
+    /// And the other half of it, stated positively: the seat's own components draw the hand from
+    /// the prompt they were handed and from the view model in it.
+    /// </remarks>
+    [Fact]
+    public void TheSeatDrawsTheHandItWasSent()
+    {
+        Assert.Contains("SeatPrompt", Sources.Read("Components/Table/TurnPrompt.razor"), StringComparison.Ordinal);
+        Assert.Contains("HandView", Sources.Read("Components/Table/HandPanel.razor"), StringComparison.Ordinal);
+        Assert.Contains("Host.Yours", Sources.Read("Components/Table/YourSeat.razor"), StringComparison.Ordinal);
+
+        // The hand is passed down, never fetched: neither leaf component injects anything.
+        Assert.DoesNotContain("@inject", Sources.Read("Components/Table/HandPanel.razor"), StringComparison.Ordinal);
+        Assert.DoesNotContain("@inject", Sources.Read("Components/Table/TurnPrompt.razor"), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -83,8 +143,8 @@ public class MarkupStandardsTests
             .ToList();
 
         Assert.Single(interactive);
-        Assert.EndsWith("Watch.razor", interactive[0], StringComparison.Ordinal);
-        Assert.Contains("<TableView @rendermode=\"InteractiveServer\" />", Sources.Read("Components/Pages/Watch.razor"));
+        Assert.EndsWith("Table.razor", interactive[0], StringComparison.Ordinal);
+        Assert.Contains("<TableView @rendermode=\"InteractiveServer\" />", Sources.Read("Components/Pages/Table.razor"));
     }
 
     /// <summary>

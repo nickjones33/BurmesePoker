@@ -1,0 +1,200 @@
+@*
+    Your hand, as the melds it nearly is (P11, P13.1) — and, when the table is asking you what
+    to throw, as thirteen or fourteen things you can press.
+
+    ⚠️ A card you click is a <button>, never a styled div (§3.11 A4). This is the component
+    that makes MarkupStandardsTests.EveryHandlerIsOnARealControl stop passing vacuously.
+
+    ⚠️ Nothing here works anything out. The grouping, the per-card cost and the computer's
+    suggestion all arrive already decided in the HandView — re-deriving a recommendation in a
+    component is the one thing P13.1 wrote a type to prevent.
+*@
+
+@if (Hand is null)
+{
+    <p class="none">Your hand is dealt at the start of the round.</p>
+}
+else
+{
+    <section class="hand" aria-labelledby="hand-heading">
+        <h3 id="hand-heading">
+            Your hand — @Hand.Count cards, @Hand.Covered of them melding
+        </h3>
+
+        <ul class="groups">
+            @foreach (var group in Groups)
+            {
+                <li @key="group.Key" class="group @(group.Melded ? "melded" : "loose")">
+                    <p class="label">
+                        <span class="token" aria-hidden="true">@group.Token</span>
+                        <span class="what">@group.Label</span>
+                    </p>
+                    <ul class="cards">
+                        @foreach (var card in group.Cards)
+                        {
+                            <li @key="card.Card.Id.Value">
+                                @if (Throwing && First is { } first && card.Card.Id == first)
+                                {
+                                    <button type="button" class="throw" @ref="_first" @onclick="() => OnThrow.InvokeAsync(card.Card)">
+                                        @Face(card)
+                                    </button>
+                                }
+                                else if (Throwing)
+                                {
+                                    <button type="button" class="throw" @onclick="() => OnThrow.InvokeAsync(card.Card)">
+                                        @Face(card)
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="held">@Face(card)</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                </li>
+            }
+        </ul>
+
+        <p class="note">
+            @DisplayTokens.For(CardDisplayState.PaysOnce) pays its owner once and
+            @DisplayTokens.For(CardDisplayState.PaysDouble) twice;
+            @DisplayTokens.Owned marks the ones the deck gave to you, which pay you whether you
+            keep them or throw them away (RULES.md §4.4).
+        </p>
+    </section>
+}
+
+@code {
+    private ElementReference _first;
+
+    /// <summary>Your hand, or null before the deal.</summary>
+    [Parameter]
+    public HandView? Hand { get; set; }
+
+    /// <summary>Whether the computer's suggestions and the per-card costs are shown.</summary>
+    [Parameter]
+    public bool Hints { get; set; } = true;
+
+    /// <summary>Whether the table is asking which card to throw, which is what makes them controls.</summary>
+    [Parameter]
+    public bool Throwing { get; set; }
+
+    /// <summary>Called with the card pressed.</summary>
+    [Parameter]
+    public EventCallback<Card> OnThrow { get; set; }
+
+    /// <summary>
+    /// The melds first, longest first, and then whatever is left over — every card in the hand
+    /// exactly once, because a cover's melds and its uncovered cards partition it (P5).
+    /// </summary>
+    private IEnumerable<Group> Groups
+    {
+        get
+        {
+            if (Hand is null)
+            {
+                yield break;
+            }
+
+            foreach (var meld in Hand.Melds)
+            {
+                yield return new Group(
+                    string.Join('-', meld.Meld.CardIds.Select(id => id.Value)),
+                    Melded: true,
+                    DisplayTokens.For(CardDisplayState.Melded),
+                    $"{meld.Label} of {meld.Count}",
+                    meld.Cards);
+            }
+
+            if (Hand.Loose.Count > 0)
+            {
+                yield return new Group(
+                    "loose",
+                    Melded: false,
+                    DisplayTokens.For(CardDisplayState.Loose),
+                    // The token beside it already says "loose", so the label finishes the phrase
+                    // rather than repeating it: "loose · 7 cards".
+                    $"{Hand.Loose.Count} cards",
+                    Hand.Loose);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The first card in the hand, in the order the page draws it. Focus lands here when it
+    /// becomes your turn to throw (§3.11 B7), and it is the only card that captures a reference.
+    /// </summary>
+    private CardId? First => Groups.SelectMany(group => group.Cards)
+        .Select(card => (CardId?)card.Card.Id)
+        .FirstOrDefault();
+
+    /// <summary>Focus the first card, for the turn arriving rather than for a render.</summary>
+    public ValueTask FocusAsync() =>
+        string.IsNullOrEmpty(_first.Id) ? ValueTask.CompletedTask : _first.FocusAsync();
+
+    /// <summary>
+    /// One card's face and what it would cost to throw it. <b>Content, not a tooltip</b>
+    /// (§3.11 B9) — the cost and the suggestion are the reason to look at the hand at all.
+    /// </summary>
+    private RenderFragment Face(CardView card) =>
+        @<span class="card">
+            <CardChip Card="card.Card" Token="@Mark(card)" TokenWords="@Words(card)" />
+            @if (Hints)
+            {
+                <span class="cost @(card.CostOfThrowing == 0 ? "free" : "dear")">@Cost(card)</span>
+            }
+        </span>;
+
+    /// <summary>The non-colour marker (§3.11 A2), or none for a card with nothing to say.</summary>
+    private static string? Mark(CardView card)
+    {
+        var tokens = card.Tokens
+            .Where(token => token != DisplayTokens.For(CardDisplayState.Melded))
+            .Where(token => token != DisplayTokens.For(CardDisplayState.Loose))
+            .ToArray();
+
+        return tokens.Length == 0 ? null : string.Concat(tokens);
+    }
+
+    private static string? Words(CardView card)
+    {
+        var said = new List<string>();
+
+        if (card.Multiplier == 1)
+        {
+            said.Add("pays its owner");
+        }
+        else if (card.Multiplier >= 2)
+        {
+            said.Add("pays its owner twice");
+        }
+
+        if (card.IsOwned)
+        {
+            said.Add("and it is yours");
+        }
+
+        if (card.IsSuggestedThrow)
+        {
+            said.Add("the computer would throw this one");
+        }
+
+        return said.Count == 0 ? null : string.Join(", ", said);
+    }
+
+    private static string Cost(CardView card) => card switch
+    {
+        { IsSuggestedThrow: true, CostOfThrowing: 0 } => "melds nothing — the computer would throw this",
+        { IsSuggestedThrow: true } => $"breaks a meld, costs {card.CostOfThrowing} — the computer would still throw this",
+        { CostOfThrowing: 0 } => "melds nothing",
+        _ => $"breaks a meld — costs {card.CostOfThrowing}"
+    };
+
+    private sealed record Group(
+        string Key,
+        bool Melded,
+        string Token,
+        string Label,
+        IReadOnlyList<CardView> Cards);
+}
