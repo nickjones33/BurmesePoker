@@ -122,6 +122,7 @@ verified bug to show for it.
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
+| `docs/PLAYING.md` | **How to actually play** a solo game in the console — the prompts, the panels, the markers, the flags. Written for a person at the keyboard, not for a build session. |
 | `docs/RULES-TECHNICAL.md` | What the **old** code does and where it diverges. Defect list. Historical reference. |
 | `docs/spec/RUN-CANDIDATES.md` | **Worked spec for packet P3**, the hardest one. Read before touching run generation. |
 | `docs/QUESTIONS-FOR-MYA-LAY.md` | Open rules questions phrased for an experienced player. Answers get promoted into `RULES.md` as `EXPERT`. |
