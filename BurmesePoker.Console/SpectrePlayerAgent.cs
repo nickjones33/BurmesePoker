@@ -1,8 +1,8 @@
 using BurmesePoker.Domain.Abstractions;
-using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
 using BurmesePoker.Domain.Play;
+using BurmesePoker.Presentation;
 
 using Spectre.Console;
 
@@ -27,23 +27,39 @@ namespace BurmesePoker.Console;
 /// player was not looking (BUILD-PLAN P11).
 /// </para>
 /// <para>
-/// <b>The hint is the computer's own answer, not a second opinion.</b> Asking
-/// <see cref="GreedyBotAgent"/> what it would throw costs one call and cannot drift from how
-/// the bots at this table actually play; re-deriving a recommendation here would be a second
-/// strategy pretending to be the first. The per-card cost beside it is a reading of
-/// <see cref="PartialCover"/> and agrees with it by construction (see <see cref="HandView"/>).
+/// <b>The hint is the computer's own answer, not a second opinion.</b>
+/// <see cref="ComputerAdvice"/> puts the question to the bot on this very context, which costs
+/// one call and cannot drift from how the bots at this table actually play; re-deriving a
+/// recommendation here would be a second strategy pretending to be the first. The per-card
+/// cost beside it is a reading of the same <see cref="PartialCover"/> and agrees with it by
+/// construction (see <see cref="HandView"/>).
+/// </para>
+/// <para>
+/// <b>Nothing in this file works out what to show; it works out how to show it</b>
+/// (BUILD-PLAN P13.1). The near-melds, the costs and each card's display state all come from
+/// <see cref="HandView"/>, which a browser will read exactly as this does.
 /// </para>
 /// </remarks>
 public sealed class SpectrePlayerAgent : IPlayerAgent
 {
+    private readonly IAnsiConsole _console;
     private readonly IReadOnlyDictionary<PlayerId, string> _names;
     private readonly RoundLog _log;
     private readonly bool _hints;
-    private readonly GreedyBotAgent _adviser = new();
+    private readonly ComputerAdvice _adviser = new();
     private (int Round, int Turn) _turnInProgress;
 
-    public SpectrePlayerAgent(IReadOnlyDictionary<PlayerId, string> names, RoundLog log, bool hints = true)
+    /// <param name="console">
+    /// The terminal to talk to. Taken rather than reached for, so the front end can be driven
+    /// by something other than a real screen (BUILD-PLAN P13.1).
+    /// </param>
+    public SpectrePlayerAgent(
+        IAnsiConsole console,
+        IReadOnlyDictionary<PlayerId, string> names,
+        RoundLog log,
+        bool hints = true)
     {
+        _console = console ?? throw new ArgumentNullException(nameof(console));
         _names = names ?? throw new ArgumentNullException(nameof(names));
         _log = log ?? throw new ArgumentNullException(nameof(log));
         _hints = hints;
@@ -57,19 +73,19 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
         // the deck — the claimable one (RULES.md §3 step 4, §4.5).
         var card = context.TurnedUpMoneyCards[^1];
 
-        AnsiConsole.MarkupLine(
+        _console.MarkupLine(
             $"The top money card is {CardFormatting.Of(card, context.MoneyCards)}. Taking it "
             + $"costs you your draw, and the table — not the deck — gives it, so it [{Palette.Money}]pays nobody[/].");
 
         if (_hints)
         {
-            AnsiConsole.MarkupLine(Advice(
+            _console.MarkupLine(Advice(
                 _adviser.ClaimTurnedUpMoneyCard(context)
                     ? "take it — it melds more of your hand than what you are holding"
                     : "draw instead — it melds no more of your hand than what you are holding, and a blind draw might"));
         }
 
-        return AnsiConsole.Confirm("Take it instead of drawing?", defaultValue: false);
+        return _console.Confirm("Take it instead of drawing?", defaultValue: false);
     }
 
     public TurnAction ChooseAction(TurnContext context)
@@ -81,13 +97,13 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
 
         if (_hints)
         {
-            AnsiConsole.MarkupLine(Advice(
-                _adviser.ChooseAction(context) == TurnAction.TakeDiscard
+            _console.MarkupLine(Advice(
+                _adviser.Take(context) == TurnAction.TakeDiscard
                     ? $"take {CardFormatting.Of(discard, context.MoneyCards)} — it melds more of your hand"
                     : "draw blind — the discard melds no more of your hand, and a drawn money card pays you"));
         }
 
-        return AnsiConsole.Prompt(
+        return _console.Prompt(
             new SelectionPrompt<TurnAction>()
                 .Title($"{Who(context.Player)}, how will you take your card?")
                 .UseConverter(action => action switch
@@ -107,20 +123,21 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
 
         if (context.Taken is { } taken)
         {
-            AnsiConsole.MarkupLine(
+            _console.MarkupLine(
                 $"You took {CardFormatting.Of(taken, context.MoneyCards, context.YouOwn(taken))}.");
         }
 
-        var view = ShowHand(context);
-        var advised = _hints ? _adviser.ChooseDiscard(context) : (Card?)null;
+        // The advice is worked out before the hand is drawn only because the view model wants
+        // it; asking costs one call and prints nothing, so the screen is unchanged by it.
+        var view = ShowHand(context, _hints ? _adviser.Discard(context) : null);
 
-        return AnsiConsole.Prompt(
+        return _console.Prompt(
             new SelectionPrompt<Card>()
                 .Title("Which card will you throw away?")
                 .PageSize(15)
                 .MoreChoicesText($"[{Palette.Quiet}](move up and down for the rest of your hand)[/]")
-                .UseConverter(card => Choice(card, context, view, advised))
-                .AddChoices(CardFormatting.Sorted(context.Hand)));
+                .UseConverter(card => Choice(view.Of(card)))
+                .AddChoices(view.Cards.Select(card => card.Card)));
     }
 
     public bool Declare(TurnContext context)
@@ -129,37 +146,39 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
 
         if (HandEvaluator.TryFindCover(context.Hand, out var cover))
         {
-            AnsiConsole.MarkupLine($"[{Palette.Good}]All thirteen melt.[/] {Who(context.Player)} can go out with:");
+            _console.MarkupLine($"[{Palette.Good}]All thirteen melt.[/] {Who(context.Player)} can go out with:");
 
             foreach (var meld in CardFormatting.Cover(cover))
             {
-                AnsiConsole.MarkupLine($"  {meld}");
+                _console.MarkupLine($"  {meld}");
             }
         }
 
-        return AnsiConsole.Confirm("Declare and end the round?");
+        return _console.Confirm("Declare and end the round?");
     }
 
     /// <summary>
     /// One card as it appears in the discard list: the card, what throwing it costs, and
     /// whether the computer would throw it.
     /// </summary>
-    private string Choice(Card card, TurnContext context, HandView view, Card? advised)
+    /// <remarks>
+    /// All three come off the <see cref="CardView"/>; this only chooses words and colours for
+    /// them.
+    /// </remarks>
+    private string Choice(CardView card)
     {
-        var face = CardFormatting.Of(card, context.MoneyCards, context.YouOwn(card));
+        var face = CardFormatting.Of(card);
 
         if (!_hints)
         {
             return face;
         }
 
-        var cost = view.CostOfThrowing(card);
-
-        var note = cost == 0
+        var note = card.CostOfThrowing == 0
             ? $"[{Palette.Quiet}](melds nothing)[/]"
-            : $"[{Palette.Bad}](breaks a meld — costs {cost})[/]";
+            : $"[{Palette.Bad}](breaks a meld — costs {card.CostOfThrowing})[/]";
 
-        return card == advised
+        return card.IsSuggestedThrow
             ? $"{face} {note} [{Palette.Good}]{Palette.AdviceMark} the computer would throw this[/]"
             : $"{face} {note}";
     }
@@ -185,14 +204,14 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
 
         _turnInProgress = (context.Round, context.TurnNumber);
 
-        AnsiConsole.Clear();
-        AnsiConsole.Write(new Rule($"Turn {context.TurnNumber} — {Who(context.Player)}").LeftJustified());
-        AnsiConsole.MarkupLine($"[{Palette.Quiet}]Nobody else should be looking.[/]");
-        AnsiConsole.Confirm($"{Who(context.Player)}, are you at the keyboard?", defaultValue: true);
+        _console.Clear();
+        _console.Write(new Rule($"Turn {context.TurnNumber} — {Who(context.Player)}").LeftJustified());
+        _console.MarkupLine($"[{Palette.Quiet}]Nobody else should be looking.[/]");
+        _console.Confirm($"{Who(context.Player)}, are you at the keyboard?", defaultValue: true);
 
         // The log first: what happened while this player was away is the thing the clear just
         // destroyed, and it is the context every other panel is read against.
-        AnsiConsole.Write(_log.AsPanel());
+        _console.Write(_log.AsPanel());
         ShowTable(context);
         ShowHand(context);
     }
@@ -213,20 +232,20 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
                 : $"[{Palette.Quiet}]nothing to take[/]");
         table.AddRow($"[{Palette.Quiet}]Stakes[/]", $"${context.Stakes.RoundValue} a round · ${context.Stakes.MoneyCardValue} a money card");
 
-        AnsiConsole.Write(new Panel(table).Header("The table").BorderColor(Palette.Frame));
+        _console.Write(new Panel(table).Header("The table").BorderColor(Palette.Frame));
     }
 
     /// <summary>
     /// Draws the hand as the melds it nearly is, and hands back the cover it worked out so the
     /// discard list can annotate itself without searching the hand a second time.
     /// </summary>
-    private static HandView ShowHand(TurnContext context)
+    private HandView ShowHand(TurnContext context, Card? advised = null)
     {
-        var view = HandView.Of(context.Hand);
+        var view = HandView.Of(context, advised);
 
-        AnsiConsole.Write(view.AsPanel(context.MoneyCards, context.YouOwn));
-        AnsiConsole.MarkupLine(Palette.Legend);
-        AnsiConsole.WriteLine();
+        _console.Write(HandPanel.Of(view));
+        _console.MarkupLine(Palette.Legend);
+        _console.WriteLine();
 
         return view;
     }

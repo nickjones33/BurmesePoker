@@ -10,7 +10,18 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P13.1 — a presentation view model.** No blockers.
+**Next packet: P13.2 — the table server.** No blockers.
+
+✅ **P13.1 is done (2026-08-19).** `BurmesePoker.Presentation` exists — a fifth project, Domain
+only, no rendering technology — and the console renders a view model it did not build itself,
+**byte-identically at the same `--seed`**. It is the first presentation code in this project a
+test can reach at all. 🔥 **Its most useful finding was a defect the first new test caught: a
+view model that aliases the engine's hand list is not a view model.** `TurnContext.Hand` is the
+seat's own live list, and `RoundEngine` discards from it the instant the answer comes back — so
+a view built at the discard said fourteen and then held thirteen. The console never showed it
+(render and drop, one breath); **a Blazor component holding a view across a render is exactly
+the case that does.** ⚠️ **P13.2 inherits the rule: everything the fan-out hands a seat is a
+snapshot, never a reference.**
 
 ⚠️ **P13 was re-planned on 2026-08-19 and is now five sequential sub-packets, P13.1–P13.5.**
 Nick asked whether a rich browser UI or multiplayer made more sense first, and **the answer is
@@ -21,18 +32,23 @@ using it, so **solo browser play is multiplayer with one connection** and there 
 single-player UI to build and then throw away. **Blazor Server** is the choice; it also means
 P13.2 has **no protocol to design**.
 
-⚠️ **The old P13.1 was wrong and has been replaced, not just renumbered.** It said *"lift the
-front end off `AnsiConsole`"*, which is the right refactor for a second **Spectre** front end —
-and a Razor client is not one. The line to cut along is **decision versus drawing**: what a
-browser wants from `BurmesePoker.Console` is the near-meld grouping, the per-card cost and the
-computer's hint, not the markup. **P13.1 is now an extraction into a fifth project,
-`BurmesePoker.Presentation`.**
+✅ **The re-plan's judgement was right, and P13.1 is the evidence.** It said the cut line is
+**decision versus drawing**, not `IAnsiConsole` injection. Both halves shipped, and only one of
+them was worth anything: the extraction gave thirty new tests and a shared vocabulary, while the
+injection — done, and the console reaches for the static console exactly once now — **cannot
+deliver its stated benefit.** "Drivable from a test" needs the test project to reference
+`BurmesePoker.Console`, which §2 forbids and which is the better rule. ⚠️ **Do not resolve that
+by adding the reference.** The console's verification is a pty, and `scripts/drive-console.py`
+is now checked in so a future packet can prove its own refactor the same way — capture, change,
+`cmp`.
 
 ⚠️ **`BUILD-PLAN.md` §3.11 is a seventeen-item UX standard taken before a single component
 exists**, and it is not optional inside a sub-packet. **Five of the seventeen are mechanical
 tests** — the concealment leak, colour-not-alone tokens, computed contrast in both themes, real
-controls rather than clickable divs, and subscription disposal — and they land in **P13.2 and
-P13.3**, before there is anything to retrofit. The rest are reviewed by playing, the way P11
+controls rather than clickable divs, and subscription disposal. ✅ **A2 (colour never alone) is
+already done**, a packet earlier than the list expected: `CardDisplayState` and `DisplayTokens`
+are the enum it asserts over, so **four are left, in P13.2 and P13.3**, before there is anything
+to retrofit. The rest are reviewed by playing, the way P11
 was. **The one item that cannot be walked back cheaply is C12: static SSR by default, with
 `@rendermode InteractiveServer` on the table component and nowhere near the root.**
 
@@ -82,9 +98,11 @@ history (§3.8) and the console's standings still die with the process — a jou
 consumer's artifact, which is the point.
 
 The 2023 implementation is gone from the tree and lives only at the `pre-rewrite` tag. The
-solution is **four** projects — `BurmesePoker.Domain` (pure rules), `BurmesePoker.Console`
-(Spectre.Console 0.57.2, the only project that prints), **`BurmesePoker.Sim`** (batch play,
-Domain only) and `BurmesePoker.Tests`. ⚠️ **The test project now references Domain *and* Sim.**
+solution is **five** projects — `BurmesePoker.Domain` (pure rules), **`BurmesePoker.Presentation`**
+(what a hand looks like, as data; Domain only, **and no rendering technology at all**),
+`BurmesePoker.Console` (Spectre.Console 0.57.2, the only project that prints),
+**`BurmesePoker.Sim`** (batch play, Domain only) and `BurmesePoker.Tests`. ⚠️ **The test project
+now references Domain, Presentation *and* Sim.**
 The rule that matters is unchanged in substance and worth restating in its true form: **tests
 never reference `BurmesePoker.Console`**, so nothing is tested through the front end. The
 harness's determinism is itself an acceptance criterion, so it has to be reachable from a test.
@@ -100,7 +118,10 @@ SpectrePlayerAgent,ConsoleObserver}`. Sim holds `{Program,Simulator,GameRunner,
 SimulationOptions,SimulationReport,StrategySummary,Strategy,SeedSequence,SeatRecorder,
 SimObserver,RoundAbandonedException,Results,CsvReport,Replay}` **plus P16's
 `{SeatingPlan,Measurement,NeighbourExperiment,NeighbourCsv}`**. **Console gained five files in
-P11**: `{Options,Palette,RoundLog,HandView,PacedAgent}`. **P14 added `Play/{GameJournal,
+P11**: `{Options,Palette,RoundLog,HandView,PacedAgent}` — ⚠️ **`HandView` is gone as of P13.1**,
+replaced by `HandPanel`, which draws a view model rather than building one. **P13.1 added
+`BurmesePoker.Presentation/{CardDisplayState, DisplayTokens, CardOrder, CardView, MeldView,
+HandView, ComputerAdvice}` and `scripts/drive-console.py`.** **P14 added `Play/{GameJournal,
 JournalFormat}` and `Agents/{JournalingAgent,JournalPlayerAgent}` to Domain and `Replay.cs`
 (which holds both `Replay` and `JournalReport`) to Sim. P15 added
 `Agents/{RandomBotAgent,CautiousBotAgent}` and moved the discard loop into `CoverScore`, and
@@ -110,8 +131,8 @@ how to seat one. ⚠️ **Domain now references
 string API, not an I/O one: `JournalFormat` hands back `IEnumerable<string>` and the two front
 ends own every `File` call, the same split `CsvReport` already had.
 
-✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **294 passed,
-0 failed**, twice in a row. **Any red tree is a real problem.**
+✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **324 passed,
+0 failed**. **Any red tree is a real problem.**
 
 ⚠️ **One hazard a cold context must know before writing a test or a strategy:** with the
 reshuffle built, **a round in which nobody's hand ever improves never ends.** Only a
@@ -142,8 +163,8 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P11** Console UX pass | P10 | done 2026-08-18 — round log, meld-grouped hand, hints, pacing, `--seed` |
 | ☑ | **P12** Simulation at scale | P10 | done 2026-08-18 — `BurmesePoker.Sim`; the tie-break wins 30.7% to 19.3% |
 | ☐ | **P13** The browser client and multiplayer | P10 | XL — **re-split 2026-08-19 into the five below**; the only packet left, and the only one that changes the architecture |
-| ☐ | **P13.1** A presentation view model, rendered two ways | P10 | **next.** No UI. A fifth project, `BurmesePoker.Presentation` |
-| ☐ | **P13.2** The table server | P13.1 | No UI. ⚠️ the concealment leak test lives here |
+| ☑ | **P13.1** A presentation view model, rendered two ways | P10 | done 2026-08-19 — a fifth project; the console is byte-identical, and a view model must be a **snapshot** |
+| ☐ | **P13.2** The table server | P13.1 | **next.** No UI. ⚠️ the concealment leak test lives here |
 | ☐ | **P13.3** A browser table you can watch | P13.2 | The first UI. Blazor Server, bots in every seat |
 | ☐ | **P13.4** A seat you can play | P13.3 | **Solo browser play, complete — a legitimate stopping point** |
 | ☐ | **P13.5** The lobby, and a second person | P13.4 | §0's goal 4 |
@@ -205,6 +226,48 @@ suite that can fail for a reason other than a defect**, they predate P14 (P5 and
 and a cold context following the `/poker` baseline rule — *any failure at all is a real problem* —
 should re-run on a quiet machine before believing either of them. Nothing has been changed about
 them; loosening a performance guard is a decision for whoever owns it, not a tidy-up.
+
+**From P13.1:**
+
+- 🔥 **Read this before P13.2. A view model that aliases the engine's list is not a view
+  model.** `TurnContext.Hand` returns the seat's **own live list**, and `RoundEngine.TakeTurn`
+  discards from it the moment `ChooseDiscard` returns. The first draft of the extracted
+  `HandView` kept the reference and so reported fourteen cards while holding thirteen. **The
+  console never showed the bug** — it draws the panel and drops the view in the same statement —
+  and it only appeared because a test held the view past the decision. ⚠️ **A browser holds
+  every view past the decision.** `HandView.Of` copies now; **anything P13.2's fan-out hands a
+  seat must copy too.**
+- ⚠️ **The `IAnsiConsole` half of the packet is done and its stated benefit is unreachable.**
+  `Program` reaches for `AnsiConsole.Console` exactly once and hands it to everything below, so
+  the console *is* drivable by any `IAnsiConsole`. But the test project may not reference
+  `BurmesePoker.Console` (§2), so no test can drive it — **and that rule is worth more than the
+  benefit. Do not resolve the tension by adding the reference.**
+- ✅ **`scripts/drive-console.py` is checked in, and it is how a front-end refactor gets
+  proved.** It drives the built console under a pty and writes down every byte. ⚠️ **Keys are fed
+  on *quiescence*, never on a clock** — that is the whole trick; a timed driver races the
+  renderer and produces a different file every run. Capture at `HEAD` (a `git worktree` of the
+  old tree builds in seconds), change, capture again, `cmp`. P13.1 did five runs across three
+  seeds including `--no-hints`; all identical.
+- ⚠️ **Two copies of the same card cost the same to throw, and that is the right answer.** A
+  spare copy is a standing replacement for the one the cover used, so throwing either leaves the
+  same thirteen melding. The instance identity that matters (§3.1) is that they are **two
+  entries keyed on `CardId`** and that exactly one of them is `Melded` — not that they are
+  priced differently. **A browser must not imply the melded copy is dearer than its twin.**
+- **Costs are computed eagerly now, where the console memoised them lazily.** A view model is
+  data a component iterates twice and a test asserts over, not a lazy graph that searches a hand
+  when a renderer touches it. One `PartialCover.Best` per card, a few milliseconds a hand, once
+  a turn per seat.
+- ⚠️ **`DisplayTokens.States` is the enumeration §3.11 A2 asserts over**, and it is public
+  because a legend wants it. A `CardDisplayState` added without a token fails
+  `DisplayTokensTests`, which is the point — the standard keeps itself.
+- **Where the boundary actually fell.** Presentation owns *what to show*: near-melds, per-card
+  cost, display state, display order, the computer's suggestion. The console kept *how*: Spectre
+  markup, colours, panels, label padding. `Palette` stayed in the console and is correct there —
+  but its **glyphs** are now `DisplayTokens`', so a browser marks an owned money card with the
+  same star.
+- ⚠️ **`MoneyCardRegistry.Multiplier` doubles on the *overlap* of the two designations**, not on
+  a repeat. Turning the Q♣ up twice still pays once; turning up the 7♦ — already permanent —
+  pays twice (RULES.md §4.1, §4.3). A test was written on the wrong assumption first.
 
 **From the 2026-08-19 planning session (P13 re-plan — docs only):**
 
@@ -988,6 +1051,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-19 | P13.1 | ☑ Done. **A presentation view model — a fifth project, and the first presentation code this project can test.** `BurmesePoker.Presentation` (Domain only): `CardDisplayState` (flags, not colours), `DisplayTokens` (a non-colour token for every one of them — §3.11 **A2, shipped a packet early**), `CardOrder` (the display sort, moved out of the console and now proved *total*), `CardView`, `MeldView`, `HandView` and `ComputerAdvice`. The console was rewritten *onto* it: its own `HandView` is gone, replaced by `HandPanel`, which draws and decides nothing; `CardFormatting` takes its ordering and its glyphs from Presentation, and `Palette.OwnedMark`/`AdviceMark` are now aliases of `DisplayTokens`, so the two front ends cannot drift to two stars. Secondary item done: the console takes `IAnsiConsole` everywhere and reaches for the static one **exactly once**, in `Main`. 🔥 **The test caught a real defect on its first run: a view model that aliases the engine's list is not a view model.** `TurnContext.Hand` is the seat's *own live list* and `RoundEngine` discards from it as soon as the answer comes back, so a view built at the discard reported fourteen cards and then held thirteen. The console never showed it — it renders and drops the view in one breath — and **a Blazor component holding a view across a render is exactly the case that does.** `HandView.Of` now copies; **P13.2 inherits the rule for everything the fan-out hands a seat.** ⚠️ **Two copies of the same card cost the same to throw, and that is correct** — a spare is a standing replacement for the one the cover used — so a browser must not imply otherwise; what makes them two cards is the `CardId` key, not the price. ⚠️ **The `IAnsiConsole` benefit is still unreachable and should not be chased**: "drivable from a test" cannot follow while §2 forbids the test project referencing `BurmesePoker.Console`, and that rule is worth more. **So the pty is the console's verification, and `scripts/drive-console.py` is checked in to make it repeatable.** Build clean and warning-free, **324 passed / 0 failed** (30 new: 13 `HandViewTests`, 6 `DisplayTokensTests`, 5 `CardOrderTests`, 4 `ComputerAdviceTests`, 2 new `LayeringTests` rows). **Acceptance 3 met the hard way: five scripted pty matches across three seeds, one under `--no-hints`, every one `cmp`-identical to the same match at `HEAD`.** No new rules question — `RULES.md` stays at **rev 13**, unchanged across five packets. Amended BUILD-PLAN §2, §3.11 A2, P13.1 (a "What P13.1 found" section) and **P13.2, P13.3 and P13.4 — each inherits something already built or already closed.** |
 | 2026-08-19 | — | **P13 re-planned; the browser UI and multiplayer are one track** (docs only, no code — still **294 passed / 0 failed**, `RULES.md` at rev 13). Nick asked whether a rich JS browser UI or multiplayer made more sense first, and whether they were related. **They are related through exactly one variable — where the engine runs — and concealment decides it in advance.** `BUILD-PLAN.md` **§3.10**: a hand is fully concealed with money on it, so an engine in the browser holds every player's hand in every player's client; that is a security property, not a courtesy, and it is not retrofittable. **Engine server-side, Blazor Server, no WASM engine ever**; a browser client is a `RemotePlayerAgent` (§3.6 finally cashed), and **solo browser play is multiplayer with one connection** — there is no single-player client to build and replace. ✅ **The framework choice buys one concrete thing: P13.2 has no protocol to design**, so the "server" is a seat and a fan-out, testable in-process with no sockets. **§3.11** is new too — **seventeen UX standards taken before a single component exists**, split by how each is *checked*: **five are mechanical tests** (the concealment leak; colour never alone; contrast computed in both themes; real controls, no clickable divs; subscriptions disposed — and never `StateHasChanged` in `Dispose`) and land in P13.2/P13.3 before anything can be retrofitted; the rest are reviewed by playing, as P11 was. ⚠️ **The irreversible item is C12** — static SSR by default, `@rendermode InteractiveServer` per component and never at the root. ⚠️ **P13.1 was replaced rather than renumbered:** the old one ("lift the front end off `AnsiConsole`") was right for a second *Spectre* front end and a Razor client is not one — the cut line is **decision versus drawing**, so P13.1 is now an extraction into a fifth project, **`BurmesePoker.Presentation`** (Domain only, no rendering technology, one new `LayeringTests` row). Alternatives to the fifth project are recorded in §2 so it can be argued with. **P13 re-split three ways → five, strictly sequential**, each ending green and more playable than the last: P13.1 view model → P13.2 table server → **P13.3 a table you can watch** (first UI) → **P13.4 a seat you can play** (solo browser play, a legitimate stopping point) → P13.5 the lobby. Amended BUILD-PLAN §0, §2, §3.10 (new), §3.11 (new), §4 (graph + six table rows) and §7 (three new risk rows, and the scope-growth row updated for the longest sequential chain in the plan). |
 | 2026-08-19 | P16 | ☑ Done. **Does the player before you decide your game? No — not between players who are both thinking.** 🔥 **The answer, with an interval and a control: upstream skill is worth `+9.1 ± 2.1` points of win rate across the `random`-to-`greedy` gulf and `−1.0 ± 2.1` across the `simple`-to-`greedy` gap.** A weaker player *anywhere* at the table is worth 4–5 points to you; **which side of you they sit on is worth nothing** unless they are not really playing. ⚠️ **The packet had to fix the harness before it could ask the question**: `SimulationOptions.Seating` rotates one pattern, so *(my strategy, the one feeding me)* was **perfectly confounded** — the cell was never played, at any run size. `SimulationOptions.Assignments` (opt-in; null keeps the rotation) plus `SeatingPlan.{Balanced, Rotations}` fixes it, and `CsvReport` gained **`upstream_strategy` and `downstream_strategy`**, derived from the *seating* and never from the options — which is why P14's replay identity survived untouched (one test, `JournalReplayTests.Outcomes`, had to blank three name fields instead of one). **The design:** focal `greedy`, filler `simple`, the ladder in one varied seat, **two arms — varied *before* the focal seat and varied *after* it, seating the identical four strategies** — 4,000 games a cell, 8 cells, two seeds, **64,000 games**; each cell cycles the four rotations of its pattern so the focal seat opens exactly a quarter of the time. ⚠️ **The downstream control moved the answer by a factor of two**: the gross upstream effect of `random` is +19.4 points and the same swap downstream is +10.3, so without the second arm the packet would have reported 19.4 and been wrong. 🔥 **It also corrected P15's own headline**: the 5.4-point ladder gap is a *neighbour* effect, not an *upstream* one — a rotation moves both neighbours at once. ⚠️ **The mechanism barely moves**: across a contrast worth 9.1 points of win rate, `takes` moves **1.6 ± 0.9** — so upstream skill changes *what* is offered, not *how often* something worth taking is, and a rich journal is what would say more. **The intervention, predicted in advance by P15, came back null**: `cautious` upstream costs the focal seat `−0.3 ± 1.4` points and costs `cautious` nothing (31.8% against greedy's 31.3% in the same seat). **P12's headline re-run at 8,000 games: 30.7%/19.3% rotated — reproduced exactly — against 29.6%/20.4% balanced, so the rotation flatters greedy by 1.1 points a seat, about a fifth of the gap.** Four new files in Sim (`SeatingPlan`, `Measurement`, `NeighbourExperiment`, `NeighbourCsv`), a `neighbours` verb and a `--seating balanced` flag; **`BurmesePoker.Domain` unchanged, and so are `Simulator`, `GameRunner` and `Replay`.** Build clean, **294 passed / 0 failed** (16 new: 9 in `Sim/NeighbourExperimentTests` — one of them the interval arithmetic itself — 6 in `Sim/SeatingPlanTests`, and 1 in `Sim/SimulationTests` for the two new columns). No new rules question — who you sit next to is not a rule, so `RULES.md` stays at **rev 13**. Amended BUILD-PLAN §0, §4, P12's caveat, P16 (a "What P16 found" section) and §7 (the seating-artifact risk retired, with its size measured). |
 | 2026-08-19 | P15 | ☑ Done. **A skill ladder — four rungs, and only three skill levels.** Domain gained `Agents/RandomBotAgent` (the floor: legal moves, no thought, ⚠️ **a `Random` handed in and never `Random.Shared`** — `SeedSequence.SeatSeed(gameSeed, seat)` derives it, so a run is still a pure function of its master seed and two random seats do not play in lockstep) and `Agents/CautiousBotAgent` (greedy, plus a last-resort tie-break towards the card least useful to whoever picks it up). `CoverScore` grew the **shared discard loop** every rung throws through, so simple/greedy/cautious now differ in *one function argument* and nothing else — a refactor verified by the 259-test baseline staying byte-identical. `Strategy.Create` became `Func<int, IPlayerAgent>`; `StrategyCatalog` is now `random, simple, greedy, cautious` **in ladder order**. **Sim gained no file.** ⚠️ **The headline is a negative result, and it is the useful part: `cautious` is not distinguishable from `greedy` — +0.48 ± 0.55 points over 32,000 head-to-head games across two seeds.** Head to head at four seats: random 0.1% vs greedy 49.9%; simple 18.5% vs greedy 31.5% (a confirmation of P12's 30.7/19.3 at twice the games); simple 18.4% vs cautious 31.6%. **Why: denial and self-interest coincide.** The partners a hand holds are exactly the ones an opponent cannot hold, so both natural ways of measuring "least use to them" reduce to `Supply(rank) − Potential` to within a point — and ⚠️ **every *pairwise-additive* tie-break is greedy again**, because partnership is symmetric. A rung above greedy has to be combinatorial (live outs), which costs ~100× a decision — a packet, not a tie-break. 🔥 **And an accident worth more than the packet: in the four-way run the rungs came out random 0.1%, simple 27.9%, cautious 33.3%, greedy 38.7% — 5.4 points between two strategies that are level head to head, and the rotation feeds greedy from simple and cautious from greedy in every game. All of it is who fed whom.** Build clean, **278 passed / 0 failed** (19 new: 10 in `Agents/SkillLadderTests`, 9 in `Sim/SkillLadderRunTests`). ⚠️ **Added `WallClockBudgets.cs`** — the two timing-budget tests began failing on a *quiet* machine because the new ladder tests run simulations beside them, so the heavy classes and the budgets now share one xunit collection and never run concurrently; **neither budget was loosened**. No new rules question — `RULES.md` stays at **rev 13**. Amended BUILD-PLAN §0, §4, P15 (a "What P15 found" section) and **P16 (three amendments: the lead, a much weaker intervention than it assumed, and three usable skill levels rather than four)**. |

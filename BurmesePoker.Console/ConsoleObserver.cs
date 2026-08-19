@@ -35,11 +35,16 @@ namespace BurmesePoker.Console;
 /// </remarks>
 public sealed class ConsoleObserver : IGameObserver
 {
+    private readonly IAnsiConsole _console;
     private readonly IReadOnlyDictionary<PlayerId, string> _names;
     private readonly RoundLog _log;
 
-    public ConsoleObserver(IReadOnlyDictionary<PlayerId, string> names, RoundLog log)
+    /// <param name="console">
+    /// The terminal to narrate to. Taken rather than reached for (BUILD-PLAN P13.1).
+    /// </param>
+    public ConsoleObserver(IAnsiConsole console, IReadOnlyDictionary<PlayerId, string> names, RoundLog log)
     {
+        _console = console ?? throw new ArgumentNullException(nameof(console));
         _names = names ?? throw new ArgumentNullException(nameof(names));
         _log = log ?? throw new ArgumentNullException(nameof(log));
     }
@@ -48,11 +53,11 @@ public sealed class ConsoleObserver : IGameObserver
     {
         _log.StartRound(round);
 
-        AnsiConsole.Write(new Rule($"Round {round}").LeftJustified());
+        _console.Write(new Rule($"Round {round}").LeftJustified());
         Say(
             "Turned up: " + string.Join("  ", turnedUp.Select(CardFormatting.Of))
             + $"  [{Palette.Quiet}]— both copies of each pay their owner; 7♦ and A♠ always do[/]");
-        AnsiConsole.WriteLine();
+        _console.WriteLine();
     }
 
     /// <remarks>
@@ -85,22 +90,22 @@ public sealed class ConsoleObserver : IGameObserver
 
     public void PlayerDeclared(PlayerId player, IReadOnlyList<Meld> melds)
     {
-        AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Rule($"{Who(player)} declares").LeftJustified());
+        _console.WriteLine();
+        _console.Write(new Rule($"{Who(player)} declares").LeftJustified());
 
         foreach (var meld in CardFormatting.Cover(melds))
         {
-            AnsiConsole.MarkupLine($"  {meld}");
+            _console.MarkupLine($"  {meld}");
         }
 
         _log.Add($"{Who(player)} [{Palette.Good}]declared[/] and went out.");
-        AnsiConsole.WriteLine();
+        _console.WriteLine();
     }
 
     /// <summary>Says it to the table now, and keeps it for whoever looks after the next clear.</summary>
     private void Say(string markup)
     {
-        AnsiConsole.MarkupLine(markup);
+        _console.MarkupLine(markup);
         _log.Add(markup);
     }
 

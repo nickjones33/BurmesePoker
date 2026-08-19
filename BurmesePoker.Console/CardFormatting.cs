@@ -2,6 +2,7 @@ using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
 using BurmesePoker.Domain.Money;
 using BurmesePoker.Domain.Play;
+using BurmesePoker.Presentation;
 
 using Spectre.Console;
 
@@ -13,24 +14,30 @@ namespace BurmesePoker.Console;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Ordering and glyphs come from the salvaged <see cref="CardText"/>, so the console shows a
-/// hand in the order the 2023 front end did — hearts, spades, clubs, diamonds, low to high,
-/// jokers last.
+/// Ordering and glyphs come from the presentation layer — <see cref="CardOrder"/> and
+/// <see cref="DisplayTokens"/> (BUILD-PLAN P13.1) — which is where they moved so that a second
+/// front end shows a hand in the same order with the same markers. The order itself is the
+/// salvaged <see cref="CardText"/>'s, so the console shows a hand as the 2023 front end did:
+/// hearts, spades, clubs, diamonds, low to high, jokers last.
 /// </para>
 /// <para>
 /// <b>Money markers are computed, never stored</b> (BUILD-PLAN §3.3): a card's multiplier
 /// comes from the round's <see cref="MoneyCardRegistry"/> every time it is drawn, so nothing
 /// here can go stale.
 /// </para>
+/// <para>
+/// <b>Colour is added on top of a token that already says it</b> (§3.11 A2). Every marker below
+/// is a <see cref="DisplayTokens"/> string first and a colour second, so nothing here means
+/// anything only by being yellow.
+/// </para>
 /// </remarks>
 public static class CardFormatting
 {
-    private static readonly Dictionary<Suit, int> SuitOrder = CardText.AllSuits
-        .Select((suit, index) => (suit, index))
-        .ToDictionary(entry => entry.suit, entry => entry.index);
-
     /// <summary>What the markers mean, for a footer under a hand. Defined in <see cref="Palette"/>.</summary>
     public const string Legend = Palette.Legend;
+
+    /// <summary>The deadwood row's label, padded to the width of the widest meld label.</summary>
+    internal static readonly string LooseLabel = Pad(DisplayTokens.For(CardDisplayState.Loose));
 
     /// <summary>A card on its own — rank, suit glyph, and red or black.</summary>
     public static string Of(Card card)
@@ -54,32 +61,21 @@ public static class CardFormatting
     /// with no star was picked up from a discard pile or claimed off the table, and pays
     /// somebody else.
     /// </remarks>
-    public static string Of(Card card, MoneyCardRegistry money, bool owned = false)
-    {
-        var multiplier = money.Multiplier(card);
+    public static string Of(Card card, MoneyCardRegistry money, bool owned = false) =>
+        Decorated(card, money.Multiplier(card), owned);
 
-        var marker = multiplier switch
-        {
-            2 => $" [{Palette.Money}]($$)[/]",
-            1 => $" [{Palette.Money}]($)[/]",
-            _ => string.Empty
-        };
-
-        var star = owned && multiplier > 0 ? $" [{Palette.Good}]{Palette.OwnedMark}[/]" : string.Empty;
-
-        return $"{Of(card)}{marker}{star}";
-    }
+    /// <summary>
+    /// A card the view model has already described — the same face, from state rather than
+    /// from a second registry lookup.
+    /// </summary>
+    public static string Of(CardView card) => Decorated(card.Card, card.Multiplier, card.IsOwned);
 
     /// <summary>A hand in display order, with markers. Ownership is marked from the player's own view.</summary>
     public static string Hand(IReadOnlyList<Card> cards, MoneyCardRegistry money, Func<Card, bool>? owned = null) =>
         string.Join("  ", Sorted(cards).Select(card => Of(card, money, owned?.Invoke(card) ?? false)));
 
-    /// <summary>Cards in display order: by suit as <see cref="CardText.AllSuits"/> lists them, then by rank.</summary>
-    public static IEnumerable<Card> Sorted(IEnumerable<Card> cards) => cards
-        .OrderBy(card => card.Suit is null ? CardText.AllSuits.Count : SuitOrder[card.Suit.Value])
-        .ThenBy(card => CardText.Order(card.Rank))
-        .ThenBy(card => card.Color)
-        .ThenBy(card => card.Id.Value);
+    /// <summary>Cards in display order. The order is <see cref="CardOrder.Display"/>'s.</summary>
+    public static IEnumerable<Card> Sorted(IEnumerable<Card> cards) => CardOrder.Display(cards);
 
     /// <summary>
     /// One meld, with each joker showing what it stands in for — <c>🃏R(4♥)</c>.
@@ -91,20 +87,25 @@ public static class CardFormatting
     /// </remarks>
     public static string Meld(Meld meld, MoneyCardRegistry? money = null, Func<Card, bool>? owned = null)
     {
-        var cards = meld.Slots.Select(slot =>
-        {
-            var face = money is null ? Of(slot.Card) : Of(slot.Card, money, owned?.Invoke(slot.Card) ?? false);
+        ArgumentNullException.ThrowIfNull(meld);
 
-            return slot.IsSubstitute
-                ? $"{face}[{Palette.Quiet}]({CardText.DisplayCode(slot.PlaysAs)}{CardText.DisplaySuit(slot.InSuit)})[/]"
-                : face;
-        });
+        var cards = meld.Slots.Select(slot => Slot(
+            slot,
+            money is null ? Of(slot.Card) : Of(slot.Card, money, owned?.Invoke(slot.Card) ?? false)));
 
-        return $"[{Palette.Quiet}]{Label(meld.Kind)}[/] {string.Join("  ", cards)}";
+        return Row(meld.Kind, cards);
+    }
+
+    /// <summary>One meld of a hand the view model has already described.</summary>
+    public static string Meld(MeldView meld)
+    {
+        ArgumentNullException.ThrowIfNull(meld);
+
+        return Row(meld.Kind, meld.Slots.Select(pair => Slot(pair.Slot, Of(pair.Card))));
     }
 
     /// <summary>A meld kind, padded to the width of the widest label so rows line up.</summary>
-    public static string Label(MeldKind kind) => $"{kind.ToString().ToLowerInvariant(),-5}";
+    public static string Label(MeldKind kind) => Pad(DisplayTokens.For(kind));
 
     /// <summary>
     /// A whole cover, longest meld first.
@@ -128,4 +129,30 @@ public static class CardFormatting
     /// <summary>A player's name unescaped and undecorated, for a narrow column.</summary>
     public static string Plain(IReadOnlyDictionary<PlayerId, string> names, PlayerId player) =>
         names.TryGetValue(player, out var name) ? name : player.ToString();
+
+    /// <summary>The face, its money marker and its ownership star — the three in one place.</summary>
+    private static string Decorated(Card card, int multiplier, bool owned)
+    {
+        var marker = multiplier switch
+        {
+            >= 2 => $" [{Palette.Money}]{DisplayTokens.For(CardDisplayState.PaysDouble)}[/]",
+            1 => $" [{Palette.Money}]{DisplayTokens.For(CardDisplayState.PaysOnce)}[/]",
+            _ => string.Empty
+        };
+
+        var star = owned && multiplier > 0 ? $" [{Palette.Good}]{Palette.OwnedMark}[/]" : string.Empty;
+
+        return $"{Of(card)}{marker}{star}";
+    }
+
+    /// <summary>A slot's face, with what a joker is standing in for written after it.</summary>
+    private static string Slot(MeldSlot slot, string face) => slot.IsSubstitute
+        ? $"{face}[{Palette.Quiet}]({CardText.DisplayCode(slot.PlaysAs)}{CardText.DisplaySuit(slot.InSuit)})[/]"
+        : face;
+
+    private static string Row(MeldKind kind, IEnumerable<string> cards) =>
+        $"[{Palette.Quiet}]{Label(kind)}[/] {string.Join("  ", cards)}";
+
+    /// <summary>Labels are padded to a common width so the rows of a hand line up.</summary>
+    private static string Pad(string label) => $"{label,-5}";
 }

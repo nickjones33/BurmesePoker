@@ -1,3 +1,5 @@
+using BurmesePoker.Presentation;
+
 using Spectre.Console;
 
 namespace BurmesePoker.Console;
@@ -37,11 +39,18 @@ public static class Palette
     /// <summary>Panel and rule borders.</summary>
     public static readonly Color Frame = Color.Grey;
 
-    /// <summary>Marks a money card the deck gave this player, so it pays them whoever holds it.</summary>
-    public const string OwnedMark = "★";
+    /// <summary>
+    /// Marks a money card the deck gave this player, so it pays them whoever holds it.
+    /// </summary>
+    /// <remarks>
+    /// <b>The glyph itself belongs to the presentation layer</b> (BUILD-PLAN P13.1, §3.11 A2):
+    /// it is the non-colour half of the marker, and a second front end must show the same one.
+    /// What the console adds is the green.
+    /// </remarks>
+    public const string OwnedMark = DisplayTokens.Owned;
 
     /// <summary>Marks the card the computer would throw away, when hints are on.</summary>
-    public const string AdviceMark = "←";
+    public const string AdviceMark = DisplayTokens.SuggestedThrow;
 
     /// <summary>What the markers mean, for a footer under a hand.</summary>
     public const string Legend =

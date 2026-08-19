@@ -11,6 +11,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BurmesePoker.Domain\BurmesePoker.Domain.csproj" />
+    <!-- The view model both front ends render their own way (BUILD-PLAN §2, P13.1). This
+         project keeps the Spectre markup and nothing else. -->
+    <ProjectReference Include="..\BurmesePoker.Presentation\BurmesePoker.Presentation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

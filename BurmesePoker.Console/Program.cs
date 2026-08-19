@@ -69,24 +69,29 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        // The one place the static console is reached for. Everything below is handed the
+        // terminal rather than finding it, so the front end can be driven by something other
+        // than a real screen (BUILD-PLAN P13.1).
+        var console = AnsiConsole.Console;
+
         if (!Options.TryParse(args, out var options, out var complaint))
         {
-            AnsiConsole.MarkupLine($"[{Palette.Bad}]{complaint}[/]");
-            Options.Usage();
+            console.MarkupLine($"[{Palette.Bad}]{complaint}[/]");
+            Options.Usage(console);
             return 1;
         }
 
         if (options.Help)
         {
-            Options.Usage();
+            Options.Usage(console);
             return 0;
         }
 
-        AnsiConsole.Write(new Rule("[bold]Burmese Poker[/]").LeftJustified());
+        console.Write(new Rule("[bold]Burmese Poker[/]").LeftJustified());
 
-        if (!AnsiConsole.Profile.Capabilities.Interactive)
+        if (!console.Profile.Capabilities.Interactive)
         {
-            AnsiConsole.MarkupLine(
+            console.MarkupLine(
                 $"[{Palette.Bad}]This game needs a terminal it can read keys from[/] — every seat is a "
                 + "person at the keyboard. Run it directly rather than through a pipe.");
             return 1;
@@ -98,19 +103,19 @@ internal static class Program
         var setup = new Random(options.Seed);
         var matchSeed = setup.Next();
 
-        var (names, bots) = AskWhoIsPlaying();
-        var difficulty = bots.Count > 0 ? AskDifficulty() : Difficulty.Hard;
-        var stakes = AskStakes();
+        var (names, bots) = AskWhoIsPlaying(console);
+        var difficulty = bots.Count > 0 ? AskDifficulty(console) : Difficulty.Hard;
+        var stakes = AskStakes(console);
         var seating = Seat(names, setup);
 
-        AnsiConsole.WriteLine();
-        AnsiConsole.MarkupLine(
+        console.WriteLine();
+        console.MarkupLine(
             "Seating: " + string.Join(" → ", seating.Select(player => CardFormatting.Name(names, player))));
-        AnsiConsole.MarkupLine($"[{Palette.Quiet}]{CardFormatting.Name(names, seating[0])} opens.[/]");
-        AnsiConsole.MarkupLine(
+        console.MarkupLine($"[{Palette.Quiet}]{CardFormatting.Name(names, seating[0])} opens.[/]");
+        console.MarkupLine(
             $"[{Palette.Quiet}]Seed {options.Seed} — [/][bold]--seed {options.Seed}[/]"
             + $"[{Palette.Quiet}] plays this exact match again.[/]");
-        AnsiConsole.WriteLine();
+        console.WriteLine();
 
         var log = new RoundLog();
 
@@ -118,7 +123,7 @@ internal static class Program
             player => player,
             IPlayerAgent (player) => bots.Contains(player)
                 ? PacedAgent.Wrap(Bot(difficulty), options.Pace)
-                : new SpectrePlayerAgent(names, log, options.Hints));
+                : new SpectrePlayerAgent(console, names, log, options.Hints));
 
         // The one kind of game a seed cannot recover is the one with a person in it
         // (BUILD-PLAN §3.9), so this is the only way a human match becomes reproducible.
@@ -129,7 +134,7 @@ internal static class Program
             journal is null ? seats : JournalingAgent.Wrap(seats, journal),
             stakes,
             new Random(matchSeed),
-            new ConsoleObserver(names, log));
+            new ConsoleObserver(console, names, log));
 
         var history = new List<RoundResult>();
 
@@ -140,17 +145,17 @@ internal static class Program
                 var played = match.PlayRound();
                 history.Add(played.Result);
 
-                ReportSettlement(played.Result, played.Table, names);
-                ReportHistory(history, names);
-                ReportStandings(match, history, names);
+                ReportSettlement(console, played.Result, played.Table, names);
+                ReportHistory(console, history, names);
+                ReportStandings(console, match, history, names);
             }
-            while (AnsiConsole.Confirm("Another round?"));
+            while (console.Confirm("Another round?"));
 
-            AnsiConsole.MarkupLine(
+            console.MarkupLine(
                 $"[{Palette.Quiet}]{match.RoundsPlayed} round{(match.RoundsPlayed == 1 ? string.Empty : "s")} played, "
                 + $"seed {options.Seed}. Nothing ends a game but the players (RULES.md §7.2).[/]");
 
-            WriteJournal(options, journal, matchSeed, seating, names, bots, difficulty, stakes, match.RoundsPlayed);
+            WriteJournal(console, options, journal, matchSeed, seating, names, bots, difficulty, stakes, match.RoundsPlayed);
             return 0;
         }
         catch (DeckExhaustedException)
@@ -158,12 +163,12 @@ internal static class Program
             // The reshuffle (RULES.md §5) means this now takes the draw pile *and* every
             // discard pile being empty at once, which is a genuine end state rather than the
             // crash it used to be.
-            AnsiConsole.MarkupLine(
+            console.MarkupLine(
                 $"[{Palette.Money}]There is nothing left to draw anywhere[/] — not in the deck and not in "
                 + "a discard pile — so the round cannot go on. The standings stand as they were.");
 
-            ReportStandings(match, history, names);
-            WriteJournal(options, journal, matchSeed, seating, names, bots, difficulty, stakes, match.RoundsPlayed);
+            ReportStandings(console, match, history, names);
+            WriteJournal(console, options, journal, matchSeed, seating, names, bots, difficulty, stakes, match.RoundsPlayed);
             return 1;
         }
     }
@@ -179,6 +184,7 @@ internal static class Program
     /// <c>BurmesePoker.Sim -- replay</c>.
     /// </remarks>
     private static void WriteJournal(
+        IAnsiConsole console,
         Options options,
         GameJournalBuilder? journal,
         int matchSeed,
@@ -209,17 +215,17 @@ internal static class Program
         {
             File.WriteAllLines(path, JournalFormat.Lines(journal.Build(header)));
 
-            AnsiConsole.MarkupLine(
+            console.MarkupLine(
                 $"[{Palette.Quiet}]Written to[/] [bold]{Markup.Escape(path)}[/][{Palette.Quiet}] — "
                 + $"replay it with [/][bold]dotnet run -c Release --project BurmesePoker.Sim -- replay {Markup.Escape(path)}[/][{Palette.Quiet}].[/]");
         }
         catch (IOException problem)
         {
-            AnsiConsole.MarkupLine($"[{Palette.Bad}]The journal could not be written:[/] {Markup.Escape(problem.Message)}");
+            console.MarkupLine($"[{Palette.Bad}]The journal could not be written:[/] {Markup.Escape(problem.Message)}");
         }
         catch (UnauthorizedAccessException problem)
         {
-            AnsiConsole.MarkupLine($"[{Palette.Bad}]The journal could not be written:[/] {Markup.Escape(problem.Message)}");
+            console.MarkupLine($"[{Palette.Bad}]The journal could not be written:[/] {Markup.Escape(problem.Message)}");
         }
     }
 
@@ -250,6 +256,7 @@ internal static class Program
     /// and no round limit (RULES.md §7.2).
     /// </remarks>
     private static void ReportStandings(
+        IAnsiConsole console,
         MatchEngine match,
         IReadOnlyList<RoundResult> history,
         IReadOnlyDictionary<PlayerId, string> names)
@@ -277,9 +284,9 @@ internal static class Program
                 $"[bold]{Palette.Amount(bank)}[/]");
         }
 
-        AnsiConsole.WriteLine();
-        AnsiConsole.Write(grid);
-        AnsiConsole.WriteLine();
+        console.WriteLine();
+        console.Write(grid);
+        console.WriteLine();
     }
 
     /// <summary>
@@ -293,6 +300,7 @@ internal static class Program
     /// eighty-column terminal.
     /// </remarks>
     private static void ReportHistory(
+        IAnsiConsole console,
         IReadOnlyList<RoundResult> history,
         IReadOnlyDictionary<PlayerId, string> names)
     {
@@ -308,8 +316,8 @@ internal static class Program
             + $"won {Palette.Amount(result.Payouts[result.Winner])} "
             + $"[{Palette.Quiet}]in {result.Turns} turns[/]");
 
-        AnsiConsole.WriteLine();
-        AnsiConsole.Write(
+        console.WriteLine();
+        console.Write(
             new Panel(string.Join(Environment.NewLine, lines))
                 .Header(history.Count > HistoryShown
                     ? $"Rounds so far [{Palette.Quiet}](last {HistoryShown} of {history.Count})[/]"
@@ -325,9 +333,9 @@ internal static class Program
     /// table is sized first and the people are counted out of it. None is allowed: it leaves
     /// the computer playing itself, which is worth watching once.
     /// </remarks>
-    private static (Dictionary<PlayerId, string> Names, HashSet<PlayerId> Bots) AskWhoIsPlaying()
+    private static (Dictionary<PlayerId, string> Names, HashSet<PlayerId> Bots) AskWhoIsPlaying(IAnsiConsole console)
     {
-        var count = AnsiConsole.Prompt(
+        var count = console.Prompt(
             new TextPrompt<int>($"How many at the table? [{Palette.Quiet}]({RoundEngine.MinimumPlayers}–{RoundEngine.MaximumPlayers})[/]")
                 .DefaultValue(RoundEngine.MinimumPlayers)
                 .Validate(value => value is >= RoundEngine.MinimumPlayers and <= RoundEngine.MaximumPlayers
@@ -335,7 +343,7 @@ internal static class Program
                     : ValidationResult.Error(
                         $"[{Palette.Bad}]A round is for {RoundEngine.MinimumPlayers} to {RoundEngine.MaximumPlayers} players (RULES.md §2.1).[/]")));
 
-        var people = AnsiConsole.Prompt(
+        var people = console.Prompt(
             new TextPrompt<int>($"How many of you are people? [{Palette.Quiet}](0–{count}; the rest are played by the computer)[/]")
                 .DefaultValue(1)
                 .Validate(value => value >= 0 && value <= count
@@ -351,7 +359,7 @@ internal static class Program
 
             if (seat <= people)
             {
-                names[player] = AnsiConsole.Prompt(
+                names[player] = console.Prompt(
                     new TextPrompt<string>($"Name for player {seat}?").DefaultValue($"Player {seat}"));
             }
             else
@@ -364,8 +372,8 @@ internal static class Program
         return (names, bots);
     }
 
-    private static Difficulty AskDifficulty() =>
-        AnsiConsole.Prompt(
+    private static Difficulty AskDifficulty(IAnsiConsole console) =>
+        console.Prompt(
             new SelectionPrompt<Difficulty>()
                 .Title("How well should the computer play?")
                 .UseConverter(difficulty => difficulty switch
@@ -377,18 +385,18 @@ internal static class Program
                 })
                 .AddChoices(Difficulty.Hard, Difficulty.Easy));
 
-    private static Stakes AskStakes()
+    private static Stakes AskStakes(IAnsiConsole console)
     {
-        AnsiConsole.WriteLine();
+        console.WriteLine();
 
-        var round = AskAmount("What does the round pay?", Stakes.Standard.RoundValue);
-        var money = AskAmount("What does a money card pay, per player?", Stakes.Standard.MoneyCardValue);
+        var round = AskAmount(console, "What does the round pay?", Stakes.Standard.RoundValue);
+        var money = AskAmount(console, "What does a money card pay, per player?", Stakes.Standard.MoneyCardValue);
 
         return new Stakes(round, money);
     }
 
-    private static int AskAmount(string question, int standard) =>
-        AnsiConsole.Prompt(
+    private static int AskAmount(IAnsiConsole console, string question, int standard) =>
+        console.Prompt(
             new TextPrompt<int>($"{question} [{Palette.Quiet}]($)[/]")
                 .DefaultValue(standard)
                 .Validate(value => value > 0
@@ -420,6 +428,7 @@ internal static class Program
     /// the two halves always add up to what the domain actually settled.
     /// </remarks>
     private static void ReportSettlement(
+        IAnsiConsole console,
         RoundResult result,
         TableState table,
         IReadOnlyDictionary<PlayerId, string> names)
@@ -451,8 +460,8 @@ internal static class Program
                 $"[bold]{Palette.Amount(net)}[/]");
         }
 
-        AnsiConsole.Write(grid);
-        AnsiConsole.MarkupLine(
+        console.Write(grid);
+        console.MarkupLine(
             $"[{Palette.Quiet}]A money card pays its owner — whoever the deck gave it to — whether they "
             + "still hold it or threw it away (RULES.md §4.4).[/]");
     }

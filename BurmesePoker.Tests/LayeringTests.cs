@@ -1,6 +1,7 @@
 using System.Reflection;
 
 using BurmesePoker.Domain.Cards;
+using BurmesePoker.Presentation;
 using BurmesePoker.Sim;
 
 namespace BurmesePoker.Tests;
@@ -11,9 +12,16 @@ namespace BurmesePoker.Tests;
 /// <remarks>
 /// <para>
 /// A console UX pass is verified by playing it, and nothing in <c>BurmesePoker.Console</c> is
-/// reachable from here by construction — the test project references Domain and Sim and never
-/// the front end (BUILD-PLAN §2). What <em>is</em> checkable is the direction of the
-/// dependency: presentation may reach into the domain, and the domain may not reach back.
+/// reachable from here by construction — the test project references Domain, Presentation and
+/// Sim, and never the front end (BUILD-PLAN §2). What <em>is</em> checkable is the direction of
+/// the dependency: presentation may reach into the domain, and the domain may not reach back.
+/// </para>
+/// <para>
+/// ⚠️ <b>P13.1 added the row that matters most for what comes next.</b>
+/// <c>BurmesePoker.Presentation</c> is the project both front ends share, and it earns that
+/// only by knowing about no rendering technology at all — not Spectre, not ASP.NET, not
+/// <c>System.Console</c>. A reference to any of them would make it a third front end wearing a
+/// shared name, and the drift the extraction exists to prevent would be back.
 /// </para>
 /// <para>
 /// <b>This is not decoration.</b> P11 put a deliberate pause between computer turns, and the
@@ -59,6 +67,41 @@ public class LayeringTests
     }
 
     /// <remarks>
+    /// <b>The one new rule of P13.1</b> (BUILD-PLAN §2): a view model that referenced a
+    /// renderer would stop being one. Spectre is the console's, ASP.NET is the browser's, and
+    /// neither belongs to the project that answers what a hand looks like.
+    /// </remarks>
+    [Fact]
+    public void ThePresentationLayerReferencesNoRenderingTechnology()
+    {
+        var referenced = typeof(HandView).Assembly.GetReferencedAssemblies()
+            .Select(reference => reference.Name ?? string.Empty)
+            .ToList();
+
+        Assert.NotEmpty(referenced);
+
+        foreach (var forbidden in new[] { "Spectre", "Microsoft.AspNetCore", "System.Console" })
+        {
+            Assert.DoesNotContain(
+                referenced,
+                name => name.StartsWith(forbidden, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    /// <remarks>
+    /// The direction, stated the other way round: the domain does not know the presentation
+    /// layer exists. Rules first, a view of them second — the same shape as
+    /// <see cref="TheDomainDoesNotReferenceSpectre"/> one layer out.
+    /// </remarks>
+    [Fact]
+    public void TheDomainDoesNotReferenceThePresentationLayer()
+    {
+        Assert.DoesNotContain(
+            typeof(Card).Assembly.GetReferencedAssemblies(),
+            reference => reference.Name is "BurmesePoker.Presentation");
+    }
+
+    /// <remarks>
     /// A guard on the guards above: <see cref="Assembly.GetReferencedAssemblies"/> lists only
     /// what the compiler kept, so a test that passed because the list was empty would be
     /// worthless. It is not empty.
@@ -67,6 +110,7 @@ public class LayeringTests
     public void TheReferenceListsAreNotEmpty()
     {
         Assert.NotEmpty(typeof(Card).Assembly.GetReferencedAssemblies());
+        Assert.NotEmpty(typeof(HandView).Assembly.GetReferencedAssemblies());
         Assert.NotEmpty(typeof(Simulator).Assembly.GetReferencedAssemblies());
     }
 }

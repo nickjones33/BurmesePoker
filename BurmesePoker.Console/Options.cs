@@ -102,8 +102,10 @@ internal sealed record Options(int Seed, TimeSpan Pace, bool Hints, bool Help, s
         return true;
     }
 
-    public static void Usage()
+    public static void Usage(IAnsiConsole console)
     {
+        ArgumentNullException.ThrowIfNull(console);
+
         var grid = new Grid().AddColumn().AddColumn();
 
         grid.AddRow("[bold]--seed <n>[/]", "Play a particular match. One is drawn and printed if you do not give one.");
@@ -113,8 +115,8 @@ internal sealed record Options(int Seed, TimeSpan Pace, bool Hints, bool Help, s
         grid.AddRow("[bold]--fidelity <thin|rich>[/]", "How much of each decision to write down. Rich adds the hand it was holding.");
         grid.AddRow("[bold]--help[/]", "This.");
 
-        AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Panel(grid).Header("dotnet run --project BurmesePoker.Console --").BorderColor(Palette.Frame));
+        console.WriteLine();
+        console.Write(new Panel(grid).Header("dotnet run --project BurmesePoker.Console --").BorderColor(Palette.Frame));
     }
 
     private static bool TryValue(string[] args, ref int index, out string value)

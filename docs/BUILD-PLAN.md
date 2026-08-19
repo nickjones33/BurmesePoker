@@ -222,13 +222,25 @@ layering rule it must not break is I/O, which it does not — `JournalFormat` re
 NeighbourCsv}.cs` in Sim, one property on `SimulationOptions` and two columns on `CsvReport` —
 **and nothing in Domain**, which now stands unchanged across three consecutive packets.
 
-**Planned by P13, and it is the first structural change since P12.** Two new projects:
+**✅ Half built, by P13.1 on 2026-08-19 — the first structural change since P12.** Two new
+projects were planned; the first now exists:
 
 ```
 BurmesePoker.Presentation/  a hand as a view *model*: near-melds, per-card cost, display state.
                             Domain only — no Spectre, no HTML, no rendering technology at all.
+                            ✅ BUILT: {CardDisplayState, DisplayTokens, CardOrder, CardView,
+                            MeldView, HandView, ComputerAdvice}.
 BurmesePoker.Web/           Blazor Server. the second project that draws. Domain + Presentation.
+                            Still to come, in P13.3.
 ```
+
+**By P13.1:** the seven files above, plus `BurmesePoker.Console/HandPanel.cs` replacing the
+console's own `HandView` — the console now renders a view model it did not build. ⚠️ **The test
+project references Presentation**, which is the first time anything presentational has been
+reachable from a test at all; `BurmesePoker.Console` remains unreachable and that rule is
+unchanged. `scripts/drive-console.py` is checked in beside them: a pty driver that captures
+every byte a scripted match prints, which is how *"the console still plays exactly as it did"*
+stops being an assurance and becomes a comparison.
 
 ⚠️ **`BurmesePoker.Presentation` exists because the browser client must not re-derive the
 hand view.** `HandView` today answers *which cards nearly meld, and what does each cost to
@@ -645,11 +657,15 @@ are split by how they are checked, because a standard nobody can verify is a wis
    another seat's hand. **The test:** build the view model for every seat of a scripted round
    and assert each one's `CardId` set is disjoint from every other seat's hand. **Hiding a card
    with CSS is a leak**, and this is the test that says so out loud.
-2. **Colour never carries meaning on its own** (WCAG 1.4.1). The game leans on colour today —
-   red and black suits, money-card and ownership markers. P11's `Palette` already pairs every
-   one with a glyph; the browser must too. **The test:** every display state in the presentation
-   view model carries a non-colour token, asserted over the enum so a new state cannot be added
-   without one.
+2. ✅ **DONE IN P13.1 — colour never carries meaning on its own** (WCAG 1.4.1). The game leans
+   on colour today — red and black suits, money-card and ownership markers. P11's `Palette`
+   already pairs every one with a glyph; the browser must too. **The test:** every display state
+   in the presentation view model carries a non-colour token, asserted over the enum so a new
+   state cannot be added without one. **Shipped as `DisplayTokensTests`, one packet earlier than
+   this list expected**, because `CardDisplayState` and `DisplayTokens` are exactly the enum it
+   asserts over. ⚠️ **`Palette.OwnedMark` and `Palette.AdviceMark` are now aliases of
+   `DisplayTokens`**, so the console and the browser cannot drift to two stars. **Four of these
+   five items are left for P13.2 and P13.3, not five.**
 3. **Contrast is computed, never eyeballed** (WCAG 1.4.3 and 1.4.11): ≥4.5:1 for body text,
    ≥3:1 for large text and for the boundaries of interactive components. **The test:** compute
    the ratio for every foreground/background pair the palette defines, **in both themes**, and
@@ -1785,7 +1801,7 @@ failure mode.
 
 ---
 
-#### P13.1 — A presentation view model, rendered two ways *(no UI yet)*
+#### P13.1 — A presentation view model, rendered two ways ☑ done 2026-08-19
 
 **Build.** A fifth project, `BurmesePoker.Presentation`, referencing **Domain only**.
 
@@ -1815,6 +1831,43 @@ failure mode.
 **Done when.** The console draws its hand from a view model it did not build itself, and a test
 project can build the same view model without a terminal.
 
+##### What P13.1 found
+
+**All three acceptance criteria met.** 294 tests before, **324 after** — thirty of them the
+first assertions ever made about this project's presentation layer. The console prints the same
+bytes it printed at HEAD: five scripted pty matches across **three seeds**, including one under
+`--no-hints`, every one `cmp`-identical.
+
+1. 🔥 **A view model that aliases the engine's list is not a view model, and the test caught it
+   on the first run.** `TurnContext.Hand` hands back the seat's *own live list*, and `RoundEngine`
+   discards from it the moment the answer comes back (step 2 of `TakeTurn`). A `HandView` that
+   kept the reference reported fourteen cards and then held thirteen. **The console never showed
+   it** — it renders the panel and drops the view in the same breath — and **a Blazor component
+   holding a view across a render is precisely the case that does.** `HandView.Of` now copies.
+   ⚠️ **This generalises, and P13.2 inherits it:** anything the server hands a seat must be a
+   *snapshot*, because between building it and drawing it the engine has moved on.
+2. ⚠️ **Two copies of the same card cost the same to throw, and that is correct.** A spare copy
+   is a standing replacement for the one the cover used, so throwing either leaves the same
+   thirteen melding. What differs between them is only *which one the arrangement happened to
+   use* — so a browser must not imply the melded copy is dearer than its twin. The instance
+   identity that matters here is that they are **two entries keyed on `CardId`** (§3.1), not that
+   they are priced differently.
+3. ⚠️ **The `IAnsiConsole` injection is done and its stated benefit is still unreachable.** The
+   console now takes the terminal everywhere and reaches for the static one exactly once, in
+   `Main`. But "drivable from a test" cannot follow while §2 forbids the test project from
+   referencing `BurmesePoker.Console` — and that rule is worth more than the benefit. **So the
+   console's verification is the pty, and `scripts/drive-console.py` is checked in to make it
+   repeatable.** Do not resolve the tension by adding the reference.
+4. **Costs are computed eagerly, all thirteen up front**, where the console memoised them
+   lazily. A view model is data a component can iterate twice and a test can assert over, not a
+   computation graph that searches a hand when a renderer touches it. It is one
+   `PartialCover.Best` per card — a few milliseconds a hand at P12's measured speeds, built once
+   a turn per seat.
+5. **No rules question arose.** `RULES.md` stays at **rev 13**, unchanged across five
+   consecutive packets. The one rule the tests had to be taught was already written down:
+   doubling is the *overlap* of the two designations, so a card pays twice only when a permanent
+   money card is also turned up (§4.1, §4.3) — turning the same card up twice still pays once.
+
 ---
 
 #### P13.2 — The table server *(still no UI)*
@@ -1831,6 +1884,14 @@ project can build the same view model without a terminal.
 - **Per-seat observer fan-out, filtered server-side.** P8 established that filtering private
   information is the front end's job; over a connection it becomes a **security property**
   (§3.10). A viewer is *not sent* what it may not see.
+- ⚠️ **Every per-seat view is a snapshot, never a live reference** — amended after P13.1, which
+  hit this the first time it built a view inside a real turn. `TurnContext.Hand` is the seat's
+  own list and the engine mutates it as soon as the answer comes back. `HandView` copies; **so
+  must anything else the fan-out hands out**, because a circuit holds what it was given until it
+  next renders.
+- ✅ **The seat's own view is already built:** `HandView.Of(TurnContext)` (P13.1). The server does
+  not compose a view of a hand — it decides *which* `TurnContext` a connection is entitled to and
+  calls that.
 - **A table carries its seed**, exactly as a console match does — `--seed` is the bug-report
   format and it is one `Random` per `MatchEngine` (P11).
 - **Abandoning a table is the host's job, not the engine's.** A round ends only on a
@@ -1844,6 +1905,10 @@ project can build the same view model without a terminal.
 2. ⚠️ **The leak test** (§3.11 A1): for a scripted round, each seat's outbound view contains no
    `CardId` from any other seat's hand. **This is the packet's most important test**, and it
    belongs here rather than in the UI packet, because by the UI packet it would be too late.
+   **P13.1 makes it writable as it stands**: build `HandView.Of(context)` for every seat of a
+   scripted round and assert the `CardId` sets are pairwise disjoint. The type already forbids
+   the leak — a `TurnContext` has no path to another seat's hand — so what the test guards is
+   everything the server *adds* around it.
 3. A seat that stops answering is played by a bot, the round finishes, and the takeover is
    reported rather than silent.
 
@@ -1863,7 +1928,10 @@ concealed has crossed the fan-out.
   and banks, discard piles, the turned-up money cards, the round log, and the settlement when a
   round ends. **Every seat is a bot**; there is nothing to click yet.
 - `@key` on every seat and every card (C14). `IDisposable` on anything subscribing (A5).
-  `StateHasChanged` through `InvokeAsync` from the observer thread (C15).
+  `StateHasChanged` through `InvokeAsync` from the observer thread (C15). ✅ **The key is
+  `CardView.Card.Id.Value`, and `CardOrder.Display` is a total order** (P13.1, tested), so a hand
+  re-sorted after a draw cannot swap two identical-looking cards past each other and drag focus
+  with them — which is the exact failure C14 exists to prevent, and it is already closed.
 - ⚠️ **Port the observer *stream*, not `RoundLog`'s panel** — a browser never loses scrollback.
   The log is a `aria-live="polite"` region (B8).
 
@@ -1874,8 +1942,9 @@ layout, the palette and every accessibility decision **before** interaction comp
 
 **Acceptance.**
 1. A bot-only round plays out in a browser, start to settlement.
-2. **The full §3.11 A list passes as tests** — leak, colour tokens, computed contrast in both
-   themes, real controls, disposal.
+2. **The rest of the §3.11 A list passes as tests** — leak, computed contrast in both
+   themes, real controls, disposal. ⚠️ **Colour tokens (A2) shipped in P13.1**; what is left for
+   this packet is that the markup *uses* them, not that they exist.
 3. **The §3.11 B list is reviewed by playing**, the way P11 was: keyboard, focus, live region,
    reduced motion, target sizes. ⚠️ **Say in the report what was actually exercised**, as P11
    did — "13+ rounds through a pty" is the standard to match.
@@ -1892,7 +1961,10 @@ discard, declare.
 
 - The hand comes from P13.1's view model — near-melds grouped, each card priced, the computer's
   suggestion marked, and **a toggle for whether the hints show at all** (`--no-hints`'s
-  equivalent).
+  equivalent). ✅ **The toggle is already a parameter**: `HandView.Of(context, suggestedThrow)`
+  takes null for no hint, and `ComputerAdvice` is where the answer comes from. ⚠️ **Do not
+  re-derive a recommendation in a component** — that is the one thing P13.1 wrote a type to
+  prevent.
 - **Focus lands on the first control of the prompt when the turn arrives** (B7); the whole turn
   is answerable from the keyboard (B6).
 - ⚠️ **Prerender-safe joining** (C13): `OnInitializedAsync` runs twice, and joining a table

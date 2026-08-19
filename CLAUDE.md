@@ -11,7 +11,7 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-This project is **all but finished**. **P0–P12 and P14–P16 are done**: the 2023 implementation has been
+This project is **all but finished**. **P0–P12, P13.1 and P14–P16 are done**: the 2023 implementation has been
 deleted, the whole rules core is built and tested, `dotnet run --project BurmesePoker.Console`
 fills the empty seats with paced, named bots and plays round after round with the banks carrying
 over — showing a hand as the melds it nearly is, keeping a round log across the concealment
@@ -24,8 +24,13 @@ droppable** — re-planned on 2026-08-19 into **P13.1–P13.5**, and it is now *
 §3.10 and §3.11 before touching it**: the engine runs **server-side, always** (a hand is fully
 concealed with money on it, so a client-side engine cannot be made to honour that, and it is
 not retrofittable), the client is **Blazor Server**, and §3.11 fixes seventeen UX standards —
-five of them mechanical tests — *before* the first component exists. **Next packet: P13.1**, a
-presentation view model extracted into a fifth project, `BurmesePoker.Presentation`. **P14–P16 were added on 2026-08-19 and
+five of them mechanical tests — *before* the first component exists. ✅ **P13.1 shipped on
+2026-08-19**: `BurmesePoker.Presentation` exists, the console renders a view model it did not
+build itself (byte-identically at the same `--seed`), and §3.11's colour-token test landed a
+packet early. 🔥 **Its finding, and P13.2 inherits it: a view model that aliases the engine's
+hand list is not a view model** — `TurnContext.Hand` is the seat's own live list and the engine
+discards from it the instant the answer comes back, so **everything handed to a seat is a
+snapshot, never a reference.** **Next packet: P13.2**, the table server. **P14–P16 were added on 2026-08-19 and
 all three shipped the same day.** P14: `--journal <path>` on both front ends writes every
 decision every seat made as JSON Lines, and `BurmesePoker.Sim -- replay <path>` plays it back —
 to a byte-identical CSV. A seed is a pointer into the build that produced it; a journal is the
@@ -69,16 +74,21 @@ controlled experiment without changing `Simulator`, `GameRunner` or `Replay`.**
 The solution is:
 
 ```
-BurmesePoker.Domain/     pure rules. no I/O, no Spectre. everything new goes here.
-                         (System.Text.Json is in here for the journal format — strings, not files.)
-BurmesePoker.Console/    Spectre.Console front end. the only project that prints. P8, reworked in P11.
-BurmesePoker.Sim/        batch play: seeded, parallel, CSV out. Domain only. built in P12, P16.
-BurmesePoker.Tests/      xunit against Domain and Sim. never references Console.
+BurmesePoker.Domain/        pure rules. no I/O, no Spectre. everything new goes here.
+                            (System.Text.Json is in here for the journal format — strings, not files.)
+BurmesePoker.Presentation/  what a hand looks like, as data: near-melds, per-card cost, display
+                            state, display order, the computer's hint. Domain only, and no
+                            rendering technology at all. built in P13.1.
+BurmesePoker.Console/       Spectre.Console front end. the only project that prints. P8, reworked
+                            in P11 and rewritten onto the view model in P13.1.
+BurmesePoker.Sim/           batch play: seeded, parallel, CSV out. Domain only. built in P12, P16.
+BurmesePoker.Tests/         xunit against Domain, Presentation and Sim. never references Console.
+scripts/drive-console.py    drives the console under a pty and writes down every byte, so a
+                            front-end refactor can be proved with `cmp`. built in P13.1.
 ```
 
-**Planned by P13, not built yet:** `BurmesePoker.Presentation/` (a hand as a view *model* —
-near-melds, per-card cost, display state; Domain only, **no rendering technology at all**) and
-`BurmesePoker.Web/` (Blazor Server). See BUILD-PLAN §2.
+**Planned by P13, not built yet:** `BurmesePoker.Web/` (Blazor Server, Domain + Presentation),
+in P13.3. See BUILD-PLAN §2.
 
 ## Rules of engagement
 
@@ -106,9 +116,13 @@ dotnet run -c Release --project BurmesePoker.Sim -- --games 100 --journal run.js
 dotnet run -c Release --project BurmesePoker.Sim -- replay run.jsonl                  # play them back
 dotnet run -c Release --project BurmesePoker.Sim -- neighbours --games 2000          # does the seat before you matter?
 dotnet run -c Release --project BurmesePoker.Sim -- --games 2000 --seating balanced  # every seating, not one rotated pattern
+
+python3 scripts/drive-console.py --out before.raw --seed 20260819   # capture a scripted match
+python3 scripts/drive-console.py --out after.raw  --seed 20260819   # …after a front-end change
+cmp before.raw after.raw                                            # prove it was a refactor
 ```
 
-All four projects target **`net10.0`**, matching the installed SDK (10.0.111). Tests are
+All five projects target **`net10.0`**, matching the installed SDK (10.0.111). Tests are
 **xunit v3** running on **Microsoft.Testing.Platform**, not VSTest — `global.json` opts
 `dotnet test` into MTP mode, which the .NET 10 SDK requires for MTP test projects. The test
 project is therefore an `Exe`, and **test filtering uses `--filter-method` / `--filter-class`,

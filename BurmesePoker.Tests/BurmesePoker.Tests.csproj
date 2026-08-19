@@ -21,6 +21,7 @@
          matters is that nothing is tested through the front end (BUILD-PLAN §2). The harness
          is a headless consumer whose determinism is itself an acceptance test (P12). -->
     <ProjectReference Include="..\BurmesePoker.Domain\BurmesePoker.Domain.csproj" />
+    <ProjectReference Include="..\BurmesePoker.Presentation\BurmesePoker.Presentation.csproj" />
     <ProjectReference Include="..\BurmesePoker.Sim\BurmesePoker.Sim.csproj" />
   </ItemGroup>
 
