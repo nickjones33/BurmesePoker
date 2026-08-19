@@ -2,6 +2,7 @@
   <Project Path="BurmesePoker.Console/BurmesePoker.Console.csproj" />
   <Project Path="BurmesePoker.Domain/BurmesePoker.Domain.csproj" />
   <Project Path="BurmesePoker.Presentation/BurmesePoker.Presentation.csproj" />
+  <Project Path="BurmesePoker.Server/BurmesePoker.Server.csproj" />
   <Project Path="BurmesePoker.Sim/BurmesePoker.Sim.csproj" />
   <Project Path="BurmesePoker.Tests/BurmesePoker.Tests.csproj" />
 </Solution>

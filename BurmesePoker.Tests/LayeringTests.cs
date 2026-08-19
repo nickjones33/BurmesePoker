@@ -2,6 +2,7 @@ using System.Reflection;
 
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Presentation;
+using BurmesePoker.Server;
 using BurmesePoker.Sim;
 
 namespace BurmesePoker.Tests;
@@ -12,8 +13,8 @@ namespace BurmesePoker.Tests;
 /// <remarks>
 /// <para>
 /// A console UX pass is verified by playing it, and nothing in <c>BurmesePoker.Console</c> is
-/// reachable from here by construction — the test project references Domain, Presentation and
-/// Sim, and never the front end (BUILD-PLAN §2). What <em>is</em> checkable is the direction of
+/// reachable from here by construction — the test project references Domain, Presentation,
+/// Server and Sim, and never the front end (BUILD-PLAN §2). What <em>is</em> checkable is the direction of
 /// the dependency: presentation may reach into the domain, and the domain may not reach back.
 /// </para>
 /// <para>
@@ -89,6 +90,37 @@ public class LayeringTests
     }
 
     /// <remarks>
+    /// <para>
+    /// <b>The one new rule of P13.2</b> (BUILD-PLAN §2, §3.10). The table server is a seat and
+    /// a fan-out: Blazor Server supplies the transport, so there is no protocol in there and
+    /// nothing in there that knows a socket exists. A reference to ASP.NET would mean the
+    /// server had grown a wire of its own — at which point a test could no longer hold the very
+    /// connection a browser holds, which is the whole of why P13.2 has a mechanical acceptance
+    /// criterion.
+    /// </para>
+    /// <para>
+    /// Spectre and <c>System.Console</c> are forbidden for the older reason: a table nobody is
+    /// drawing must not be able to print.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheTableServerReferencesNoTransportAndNoRenderingTechnology()
+    {
+        var referenced = typeof(TableSession).Assembly.GetReferencedAssemblies()
+            .Select(reference => reference.Name ?? string.Empty)
+            .ToList();
+
+        Assert.NotEmpty(referenced);
+
+        foreach (var forbidden in new[] { "Spectre", "Microsoft.AspNetCore", "System.Console", "System.Net" })
+        {
+            Assert.DoesNotContain(
+                referenced,
+                name => name.StartsWith(forbidden, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    /// <remarks>
     /// The direction, stated the other way round: the domain does not know the presentation
     /// layer exists. Rules first, a view of them second — the same shape as
     /// <see cref="TheDomainDoesNotReferenceSpectre"/> one layer out.
@@ -99,6 +131,10 @@ public class LayeringTests
         Assert.DoesNotContain(
             typeof(Card).Assembly.GetReferencedAssemblies(),
             reference => reference.Name is "BurmesePoker.Presentation");
+
+        Assert.DoesNotContain(
+            typeof(Card).Assembly.GetReferencedAssemblies(),
+            reference => reference.Name is "BurmesePoker.Server");
     }
 
     /// <remarks>
@@ -112,5 +148,6 @@ public class LayeringTests
         Assert.NotEmpty(typeof(Card).Assembly.GetReferencedAssemblies());
         Assert.NotEmpty(typeof(HandView).Assembly.GetReferencedAssemblies());
         Assert.NotEmpty(typeof(Simulator).Assembly.GetReferencedAssemblies());
+        Assert.NotEmpty(typeof(TableSession).Assembly.GetReferencedAssemblies());
     }
 }

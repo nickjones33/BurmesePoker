@@ -222,23 +222,42 @@ layering rule it must not break is I/O, which it does not — `JournalFormat` re
 NeighbourCsv}.cs` in Sim, one property on `SimulationOptions` and two columns on `CsvReport` —
 **and nothing in Domain**, which now stands unchanged across three consecutive packets.
 
-**✅ Half built, by P13.1 on 2026-08-19 — the first structural change since P12.** Two new
-projects were planned; the first now exists:
+**✅ Two thirds built, by P13.1 and P13.2 on 2026-08-19 — the first structural change since
+P12.** Two new projects were planned; **three exist or are planned, because the table server
+turned out to need a home of its own**:
 
 ```
 BurmesePoker.Presentation/  a hand as a view *model*: near-melds, per-card cost, display state.
                             Domain only — no Spectre, no HTML, no rendering technology at all.
-                            ✅ BUILT: {CardDisplayState, DisplayTokens, CardOrder, CardView,
-                            MeldView, HandView, ComputerAdvice}.
-BurmesePoker.Web/           Blazor Server. the second project that draws. Domain + Presentation.
-                            Still to come, in P13.3.
+                            ✅ BUILT (P13.1): {CardDisplayState, DisplayTokens, CardOrder,
+                            CardView, MeldView, HandView, ComputerAdvice}.
+BurmesePoker.Server/        one table, hosted: a seat somebody plays from elsewhere, and the
+                            fan-out that decides what each viewer is told. Domain +
+                            Presentation, and **no transport at all**.
+                            ✅ BUILT (P13.2): {TableSession, TableSeat, TableOptions,
+                            TableFanOut, TableEvent, SeatConnection, SeatPrompt, SeatQuestion,
+                            SeatAnswer, RemotePlayerAgent, BoundedAgent, TableAbandonedException}.
+BurmesePoker.Web/           Blazor Server. the second project that draws.
+                            Domain + Presentation + Server. Still to come, in P13.3.
 ```
+
+⚠️ **Why the server is a project and not a folder in `BurmesePoker.Web`.** It has to be
+reachable from `BurmesePoker.Tests`, and P13.2's whole claim is that the concealment is
+mechanically checkable *before* any UI exists — a fan-out tested through a web project would be
+tested after the fact. It references Presentation because a seat's prompt carries a `HandView`,
+and it references **nothing that transports anything**: `LayeringTests` forbids Spectre,
+ASP.NET, `System.Console` and `System.Net` in there, which is the assertion that Blazor Server
+really is supplying the wire (§3.10 item 4).
 
 **By P13.1:** the seven files above, plus `BurmesePoker.Console/HandPanel.cs` replacing the
 console's own `HandView` — the console now renders a view model it did not build. ⚠️ **The test
 project references Presentation**, which is the first time anything presentational has been
 reachable from a test at all; `BurmesePoker.Console` remains unreachable and that rule is
-unchanged. `scripts/drive-console.py` is checked in beside them: a pty driver that captures
+unchanged. **By P13.2:** the twelve files of `BurmesePoker.Server` above and **nothing else** —
+Domain, Presentation, Console and Sim are byte-for-byte what P13.1 left them, and the only
+edits outside the new project are one line of `BurmesePoker.slnx`, one `ProjectReference`, and
+a row in `LayeringTests`. ⚠️ **The test project now references Server too**, and the rule that
+matters is unchanged: **never `BurmesePoker.Console`**. `scripts/drive-console.py` is checked in beside them: a pty driver that captures
 every byte a scripted match prints, which is how *"the console still plays exactly as it did"*
 stops being an assurance and becomes a comparison.
 
@@ -618,17 +637,22 @@ console. **Blazor Server** is the first browser client. What follows:
    diffs, so a seat's hidden state never leaves it. `InteractiveAuto` and WebAssembly remain
    available for **presentational components that hold no concealed state** — but the table and
    the hand are not those, and the burden of proof is on any component that wants to move.
-2. **A browser client is a `RemotePlayerAgent`, and §3.6 is what makes that cheap.** A remote
-   player blocks inside the agent; the circuit pushes the answer into a channel. One table is
-   one task, exactly as decided before P10 — and now demonstrated by P10, P12 and P16 each
-   adding a caller to `IPlayerAgent` without the interface moving.
+2. ✅ **BUILT IN P13.2. A browser client is a `RemotePlayerAgent`, and §3.6 is what makes that
+   cheap.** A remote player blocks inside the agent; the circuit pushes the answer into a
+   channel. One table is one task, exactly as decided before P10 — and now demonstrated by P10,
+   P12, P16 **and P13.2** each adding a caller to `IPlayerAgent` without the interface moving.
+   **The bet is collected in full**: a seat played from somewhere else, with a bot standing in
+   when nobody answers, cost the domain **not one line**.
 3. 🔥 **Solo browser play is multiplayer with one connection.** There is no single-player client
    to build and then throw away: the bots fill the other seats exactly as `Program` does today.
    This is the whole reason the two goals collapse into one track.
-4. ✅ **Blazor Server supplies the transport, so there is no protocol to design.** This is the
-   one thing the framework choice genuinely buys and it is worth naming: no bespoke wire format,
-   no client-side state to synchronise, no serialising a `TurnContext`. **The "server" in P13.2
-   is a seat and a fan-out, testable in-process with no sockets at all.**
+4. ✅ **CASHED IN P13.2. Blazor Server supplies the transport, so there is no protocol to
+   design.** This is the one thing the framework choice genuinely buys and it is worth naming:
+   no bespoke wire format, no client-side state to synchronise, no serialising a `TurnContext`.
+   **The "server" in P13.2 is a seat and a fan-out, testable in-process with no sockets at
+   all** — and that is exactly what it turned out to be. `LayeringTests` now forbids ASP.NET and
+   `System.Net` in `BurmesePoker.Server`, which is the claim stated as an assertion: **a test
+   holds the very `SeatConnection` a browser circuit will hold.**
 5. **The console is untouched and stays in-process.** It is a hotseat game on one machine;
    routing it through a server would be a downgrade bought with nothing.
 
@@ -652,11 +676,18 @@ are split by how they are checked, because a standard nobody can verify is a wis
 
 #### A. Mechanically checkable — and therefore a test
 
-1. ⚠️ **No client is ever sent a card it may not see.** The strictest item and the most
-   important. A seat's view model is built server-side; it must contain no `CardId` belonging to
-   another seat's hand. **The test:** build the view model for every seat of a scripted round
-   and assert each one's `CardId` set is disjoint from every other seat's hand. **Hiding a card
-   with CSS is a leak**, and this is the test that says so out loud.
+1. ✅ **DONE IN P13.2 — no client is ever sent a card it may not see.** The strictest item and
+   the most important. A seat's view model is built server-side; it must contain no `CardId`
+   belonging to another seat's hand. **The test:** build the view model for every seat of a
+   scripted round and assert each one's `CardId` set is disjoint from every other seat's hand.
+   **Hiding a card with CSS is a leak**, and this is the test that says so out loud. **Shipped
+   as `ConcealmentTests`, four assertions over one round played by four connected seats with a
+   watcher**: pairwise-disjoint hands, no seat told what anybody else drew blind, a sweep over
+   *every* card in *every* event against what that seat may see, and a watcher sent nothing but
+   the public game. ⚠️ **It is the events rather than the view models that needed the test** —
+   a `TurnContext` has no route to another hand, so the leak could only ever have been in what
+   the server added. **Three of the five go red if the blind-draw filter is removed**, which is
+   how it was checked rather than assumed.
 2. ✅ **DONE IN P13.1 — colour never carries meaning on its own** (WCAG 1.4.1). The game leans
    on colour today — red and black suits, money-card and ownership markers. P11's `Palette`
    already pairs every one with a glyph; the browser must too. **The test:** every display state
@@ -664,8 +695,8 @@ are split by how they are checked, because a standard nobody can verify is a wis
    state cannot be added without one. **Shipped as `DisplayTokensTests`, one packet earlier than
    this list expected**, because `CardDisplayState` and `DisplayTokens` are exactly the enum it
    asserts over. ⚠️ **`Palette.OwnedMark` and `Palette.AdviceMark` are now aliases of
-   `DisplayTokens`**, so the console and the browser cannot drift to two stars. **Four of these
-   five items are left for P13.2 and P13.3, not five.**
+   `DisplayTokens`**, so the console and the browser cannot drift to two stars. **Three of these
+   five items are left, all for P13.3** — items 3, 4 and 5 — now that P13.2 has taken item 1.
 3. **Contrast is computed, never eyeballed** (WCAG 1.4.3 and 1.4.11): ≥4.5:1 for body text,
    ≥3:1 for large text and for the boundaries of interactive components. **The test:** compute
    the ratio for every foreground/background pair the palette defines, **in both themes**, and
@@ -1870,7 +1901,7 @@ bytes it printed at HEAD: five scripted pty matches across **three seeds**, incl
 
 ---
 
-#### P13.2 — The table server *(still no UI)*
+#### P13.2 — The table server ☑ done 2026-08-19 *(still no UI)*
 
 **Build.** In-process, no transport, no sockets.
 
@@ -1915,6 +1946,58 @@ bytes it printed at HEAD: five scripted pty matches across **three seeds**, incl
 **Done when.** A round completes with a mix of remote and bot seats, and nothing that must stay
 concealed has crossed the fan-out.
 
+##### What P13.2 found
+
+**All three acceptance criteria met.** 324 tests before, **342 after** — eighteen of them, in
+three new classes, and the whole suite still runs in eighteen seconds. **`BurmesePoker.Server`
+is a sixth project and it is the only thing that changed**: Domain, Presentation, Console and
+Sim were not touched at all, so the engine now stands unaltered across four consecutive packets.
+
+1. 🔥 **Exactly one event in the whole narration is private, and the security boundary is
+   therefore one `if`.** A discard, a taken discard, a claimed money card and a declaration all
+   happen in front of the table (RULES.md §4.5, §5, §6.3, §7.1); the **blind draw** is the only
+   thing the engine narrates that a viewer may not hear. That is a smaller surface than the
+   plan implied — and it makes `TableFanOut` worth reading, because everything difficult about
+   it is the care around lists rather than the filtering. **Mutation-tested rather than
+   asserted**: broadcasting the drawn card to every connection turns three of the five
+   concealment tests red.
+2. 🔥 **P13.1's snapshot rule generalised exactly as predicted, and it caught two more live
+   lists.** `TableState.TurnedUpOnTable` is aliased by *both* `TurnContext.TurnedUpMoneyCards`
+   and `IGameObserver.RoundStarted`, and **the opening player's claim removes a card from it**
+   (§4.5) — so a prompt or an event that kept the reference would quietly stop saying what it
+   said when it was sent. `EverythingASeatWasSentStaysWhatItWasWhenItWasSent` forces the claim
+   and pins both; removing either copy fails it. ⚠️ **Assume every list the engine hands over is
+   live until shown otherwise.**
+3. 🔥 **Answering inside the connection's own notification makes a whole round deterministic**,
+   and it is why eighteen tests that play real rounds cost four seconds and no flakiness.
+   `SeatConnection.Updated` is raised on the round's thread *before* the seat begins waiting, so
+   a handler that answers immediately latches the answer and the wait returns at once — no
+   sleeps, no polling, no timing. One test drives the genuinely cross-thread path as well,
+   because that is the shape a circuit has.
+4. ⚠️ **A client bug must not be able to end a table's round.** `RoundEngine` throws on a
+   discard the seat is not holding, which is right in a domain and wrong over a connection.
+   `SeatConnection.Answer` **refuses** an answer that does not fit the question or names a card
+   the seat is not holding: it returns false, **the prompt stands**, and the client may correct
+   itself. `SeatAnswer.Fits` is where each case checks itself.
+5. ⚠️ **Pacing was deliberately not applied to the stand-in, and P13.3 inherits the decision.**
+   The packet said to wrap the takeover bot the way P11 wraps a bot seat; a sleep belongs to
+   whatever is *drawing* the table and not to a server that may be hosting many of them, so
+   `TableOptions.StandIn` is a **factory** and a host hands over an agent that is already paced.
+   ⚠️ **`PacedAgent` currently lives in `BurmesePoker.Console`, which `BurmesePoker.Web` may not
+   reference.** P13.3 has to move it to a shared home (Domain's `Agents/` is the obvious one) or
+   write the browser's own — **do not solve it by referencing the console.**
+6. **The wall-clock bound catches what a turn cap cannot.** P12 bounds a simulated round by
+   turns because what goes wrong there is the *play*; a hosted round is bounded by the clock
+   because what goes wrong here is the *people*. Every seat is wrapped, **bots included** — a
+   table nobody is left at would otherwise play bot-perfect rounds for ever. The round is
+   announced abandoned before the exception leaves, and the session is playable afterwards.
+7. **The takeover is per question and announced once a turn** — the same `(Round, TurnNumber)`
+   key, and the same reasoning, as P11's pacing decorator. A player who misses one prompt and
+   comes back for the next one is simply back, because a strategy keeps no state to hand over
+   (P15).
+8. **No rules question arose.** `RULES.md` stays at **rev 13**, unchanged across six
+   consecutive packets.
+
 ---
 
 #### P13.3 — A browser table you can watch *(the first UI, and no seat yet)*
@@ -1927,6 +2010,17 @@ concealed has crossed the fan-out.
 - The table component subscribes to the filtered observer stream from P13.2 and renders: seats
   and banks, discard piles, the turned-up money cards, the round log, and the settlement when a
   round ends. **Every seat is a bot**; there is nothing to click yet.
+- ✅ **The connection it subscribes to already exists and is already the right one.**
+  `TableSession.Watch()` hands back a `SeatConnection` with no seat: the public narration, never
+  a question, and nothing it may not see (P13.2). The component is `connection.Updated` →
+  `InvokeAsync(StateHasChanged)` (C15) and its disposal is `TableSession.Leave(connection)` plus
+  unhooking the handler (A5). ⚠️ **Never `StateHasChanged` from `Dispose`.**
+- ⚠️ **`PacedAgent` has to move before a bot seat reads properly in a browser.** P13.2 left the
+  stand-in unpaced on purpose — a sleep belongs to whatever draws the table, and
+  `TableOptions.StandIn` is a factory so a host can hand over an already-paced agent. But the
+  decorator itself lives in `BurmesePoker.Console`, which `BurmesePoker.Web` may not reference.
+  **Move it to `BurmesePoker.Domain/Agents/` (it has no console dependency and never did) or
+  write the browser's own — not a reference to the console.**
 - `@key` on every seat and every card (C14). `IDisposable` on anything subscribing (A5).
   `StateHasChanged` through `InvokeAsync` from the observer thread (C15). ✅ **The key is
   `CardView.Card.Id.Value`, and `CardOrder.Display` is a total order** (P13.1, tested), so a hand
@@ -1942,9 +2036,12 @@ layout, the palette and every accessibility decision **before** interaction comp
 
 **Acceptance.**
 1. A bot-only round plays out in a browser, start to settlement.
-2. **The rest of the §3.11 A list passes as tests** — leak, computed contrast in both
-   themes, real controls, disposal. ⚠️ **Colour tokens (A2) shipped in P13.1**; what is left for
-   this packet is that the markup *uses* them, not that they exist.
+2. **The rest of the §3.11 A list passes as tests** — computed contrast in both themes, real
+   controls, disposal. ⚠️ **Colour tokens (A2) shipped in P13.1 and the leak test (A1) shipped
+   in P13.2**; what is left for this packet is the other three, plus the fact that the markup
+   *uses* the tokens rather than that they exist. ⚠️ **The leak test is not re-derived here** —
+   it already covers a watcher, which is this packet's own case; what a component could add is a
+   second route to the session that bypasses the fan-out, **which is the thing to refuse.**
 3. **The §3.11 B list is reviewed by playing**, the way P11 was: keyboard, focus, live region,
    reduced motion, target sizes. ⚠️ **Say in the report what was actually exercised**, as P11
    did — "13+ rounds through a pty" is the standard to match.
@@ -1957,7 +2054,10 @@ layout, the palette and every accessibility decision **before** interaction comp
 
 **Build.** The four questions `IPlayerAgent` asks, as interactive components pushing answers
 into P13.2's channel: take the discard or draw blind, claim the turned-up money card, choose a
-discard, declare.
+discard, declare. ✅ **All four already have a type on each side**: `SeatConnection.Pending` is a
+`SeatPrompt` carrying the question and the hand, and `SeatConnection.Answer` takes a
+`SeatAnswer` — which **refuses** anything that does not fit rather than throwing, so a
+half-built component cannot end somebody's round (P13.2).
 
 - The hand comes from P13.1's view model — near-melds grouped, each card priced, the computer's
   suggestion marked, and **a toggle for whether the hints show at all** (`--no-hints`'s
@@ -1973,8 +2073,11 @@ discard, declare.
 **Acceptance.**
 1. A person plays a full match against bots in a browser, several rounds, banks carrying over.
 2. ⚠️ **A round is played end to end using only the keyboard**, and reported as such.
-3. The leak test still passes with a *seated* viewer — which is the case it did not cover in
-   P13.3.
+3. The leak test still passes with a *seated* viewer. ⚠️ **Amended after P13.2, which already
+   covers it**: `ConcealmentTests` plays a round with four connected seats and asserts their
+   `CardId` sets pairwise disjoint. What is left for this packet is that the *component* does
+   not widen it — a seated player's page must render its own hand and nobody else's, from the
+   `SeatPrompt` it was sent and from no other source.
 
 **Done when.** §0's goal 2 has a second, better answer, and it was reached through the
 multiplayer architecture rather than around it.
@@ -1998,11 +2101,12 @@ when", finally reached with everything under it already tested.
 ---
 
 > **What earlier sessions established, and it all still holds.**
-> - **`BurmesePoker.Sim/SeatRecorder.cs` is the shape P13.2's remote seat wants** — a decorator
->   over `IPlayerAgent` that watches every question and can refuse to answer normally. The
->   simulation uses it to give up on a stalled round; P13.2 uses it for *"nobody has answered in
->   thirty seconds"*. **No domain change either time**, which is §3.6's bet paying off before
->   P13 starts.
+> - ✅ **Confirmed by P13.2. `BurmesePoker.Sim/SeatRecorder.cs` is the shape P13.2's remote seat
+>   wants** — a decorator over `IPlayerAgent` that watches every question and can refuse to
+>   answer normally. The simulation uses it to give up on a stalled round; **P13.2's
+>   `BoundedAgent` is the same shape bounded by the clock instead of by turns**, and the waiting
+>   itself sits in `RemotePlayerAgent`. **No domain change either time**, which is §3.6's bet
+>   paying off.
 > - **The simulation is the load test.** Four to six players a table and ~20 ms of compute a
 >   round with the whole search in it, so a host runs many tables per core. The parked-task cost
 >   §3.6 accepted is not the thing to worry about.

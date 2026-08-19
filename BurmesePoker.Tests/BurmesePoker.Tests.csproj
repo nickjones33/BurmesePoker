@@ -19,9 +19,12 @@
   <ItemGroup>
     <!-- Domain and the simulation harness, and never BurmesePoker.Console: the rule that
          matters is that nothing is tested through the front end (BUILD-PLAN §2). The harness
-         is a headless consumer whose determinism is itself an acceptance test (P12). -->
+         is a headless consumer whose determinism is itself an acceptance test (P12), and
+         BurmesePoker.Server is a table with no transport, whose concealment is itself an
+         acceptance test (P13.2). -->
     <ProjectReference Include="..\BurmesePoker.Domain\BurmesePoker.Domain.csproj" />
     <ProjectReference Include="..\BurmesePoker.Presentation\BurmesePoker.Presentation.csproj" />
+    <ProjectReference Include="..\BurmesePoker.Server\BurmesePoker.Server.csproj" />
     <ProjectReference Include="..\BurmesePoker.Sim\BurmesePoker.Sim.csproj" />
   </ItemGroup>
 

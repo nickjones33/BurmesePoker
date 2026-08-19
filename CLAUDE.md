@@ -11,7 +11,7 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-This project is **all but finished**. **P0–P12, P13.1 and P14–P16 are done**: the 2023 implementation has been
+This project is **all but finished**. **P0–P12, P13.1, P13.2 and P14–P16 are done**: the 2023 implementation has been
 deleted, the whole rules core is built and tested, `dotnet run --project BurmesePoker.Console`
 fills the empty seats with paced, named bots and plays round after round with the banks carrying
 over — showing a hand as the melds it nearly is, keeping a round log across the concealment
@@ -27,10 +27,19 @@ not retrofittable), the client is **Blazor Server**, and §3.11 fixes seventeen 
 five of them mechanical tests — *before* the first component exists. ✅ **P13.1 shipped on
 2026-08-19**: `BurmesePoker.Presentation` exists, the console renders a view model it did not
 build itself (byte-identically at the same `--seed`), and §3.11's colour-token test landed a
-packet early. 🔥 **Its finding, and P13.2 inherits it: a view model that aliases the engine's
+packet early. 🔥 **Its finding, which P13.2 inherited: a view model that aliases the engine's
 hand list is not a view model** — `TurnContext.Hand` is the seat's own live list and the engine
 discards from it the instant the answer comes back, so **everything handed to a seat is a
-snapshot, never a reference.** **Next packet: P13.2**, the table server. **P14–P16 were added on 2026-08-19 and
+snapshot, never a reference.** ✅ **P13.2 shipped the same day**: `BurmesePoker.Server` is a
+sixth project — a hosted table with a remote seat, a bot stand-in and a filtered fan-out, **and
+no transport in it at all** — and **§3.11's concealment leak test shipped with it**, four
+assertions over one round played by four connected seats and a watcher. 🔥 **Its findings:
+exactly one event in the whole narration is private (the blind draw), so the security boundary
+is one `if`; and the snapshot rule caught two more live lists — `TableState.TurnedUpOnTable` is
+aliased by both `TurnContext.TurnedUpMoneyCards` and `IGameObserver.RoundStarted`, and the
+opening player's claim removes a card from it.** **Next packet: P13.3**, the first UI.
+⚠️ **It inherits one thing to fix: `PacedAgent` lives in `BurmesePoker.Console`, which
+`BurmesePoker.Web` may not reference — move it, don't reference it.** **P14–P16 were added on 2026-08-19 and
 all three shipped the same day.** P14: `--journal <path>` on both front ends writes every
 decision every seat made as JSON Lines, and `BurmesePoker.Sim -- replay <path>` plays it back —
 to a byte-identical CSV. A seed is a pointer into the build that produced it; a journal is the
@@ -79,16 +88,20 @@ BurmesePoker.Domain/        pure rules. no I/O, no Spectre. everything new goes 
 BurmesePoker.Presentation/  what a hand looks like, as data: near-melds, per-card cost, display
                             state, display order, the computer's hint. Domain only, and no
                             rendering technology at all. built in P13.1.
+BurmesePoker.Server/        one table, hosted: a seat played from elsewhere, a bot that stands in
+                            when nobody answers, and the fan-out that decides what each viewer is
+                            told. Domain + Presentation, and no transport at all. built in P13.2.
 BurmesePoker.Console/       Spectre.Console front end. the only project that prints. P8, reworked
                             in P11 and rewritten onto the view model in P13.1.
 BurmesePoker.Sim/           batch play: seeded, parallel, CSV out. Domain only. built in P12, P16.
-BurmesePoker.Tests/         xunit against Domain, Presentation and Sim. never references Console.
+BurmesePoker.Tests/         xunit against Domain, Presentation, Server and Sim. never references
+                            Console.
 scripts/drive-console.py    drives the console under a pty and writes down every byte, so a
                             front-end refactor can be proved with `cmp`. built in P13.1.
 ```
 
-**Planned by P13, not built yet:** `BurmesePoker.Web/` (Blazor Server, Domain + Presentation),
-in P13.3. See BUILD-PLAN §2.
+**Planned by P13, not built yet:** `BurmesePoker.Web/` (Blazor Server, Domain + Presentation +
+Server), in P13.3. See BUILD-PLAN §2.
 
 ## Rules of engagement
 

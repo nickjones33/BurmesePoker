@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BurmesePoker.Server</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Domain and Presentation, and no transport of any kind. The table server is a seat and
+         a fan-out (BUILD-PLAN §3.10 item 4); Blazor Server supplies the wire, so there is no
+         protocol in here to design and nothing here that knows a socket exists. LayeringTests
+         asserts the absence rather than trusting it. -->
+    <ProjectReference Include="..\BurmesePoker.Domain\BurmesePoker.Domain.csproj" />
+    <ProjectReference Include="..\BurmesePoker.Presentation\BurmesePoker.Presentation.csproj" />
+  </ItemGroup>
+
+</Project>
