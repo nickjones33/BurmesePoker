@@ -10,14 +10,21 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P15 or P13 — independent of each other, take either.** No blockers.
-**P15 is the more useful of the two**: P16 cannot start without it, and P13 is the only packet
-that changes the architecture and the only one that is genuinely optional.
+**Next packet: P16 or P13 — independent of each other, take either.** No blockers.
+**P16 is the more interesting of the two**, and P15 left it a large lead to chase (below); P13
+is the only packet that changes the architecture and the only one that is genuinely optional.
 
 ⚠️ **The plan grew on 2026-08-19 and P13 is no longer the last packet.** Three hang off P12:
-**P14** (game journals — ☑ **done 2026-08-19**), **P15** (a skill ladder) and **P16** (the
-upstream-neighbour experiment, which needs P15). See `BUILD-PLAN.md` **§3.9** for the decision
-behind P14 and **P16** for the hypothesis behind the other two.
+**P14** (game journals — ☑ **done 2026-08-19**), **P15** (a skill ladder — ☑ **done
+2026-08-19**) and **P16** (the upstream-neighbour experiment). See `BUILD-PLAN.md` **§3.9** for
+the decision behind P14 and **P16** for the hypothesis behind the other two.
+
+🔥 **P15 handed P16 a lead worth reading before anything else.** `greedy` and `cautious` are
+**0.5 ± 0.6 points apart head to head over 32,000 games** — indistinguishable. In the four-way
+ladder run they came out **38.7% and 33.3%**. The rotation feeds greedy from `simple` and
+cautious from `greedy` in every single game, so **all 5.4 points of that gap is who fed whom**.
+It is a lead and not a result — the downstream neighbour differs too, which is precisely what
+P16's control separates — but it says the upstream effect is worth **points, not tenths**.
 
 **P0 through P12 and P14 are done. The game is playable alone, pleasant to sit at, and measurable in
 bulk:** `dotnet run --project BurmesePoker.Console` fills the empty seats with bots, paces them
@@ -51,19 +58,22 @@ MeldCandidates,MeldIndex,HandEvaluator,PartialCover}`,
 `Money/{MoneyCardRegistry,CardOwnership,Stakes,Settlement}`,
 `Play/{PlayerId,TurnAction,PlayerState,TableState,TurnContext,RoundResult,RoundEngine,
 MatchEngine}`, `Abstractions/{IPlayerAgent,IGameObserver}` and
-`Agents/{CoverScore,GreedyBotAgent,SimpleBotAgent}`. Console holds `{Program,CardFormatting,
+`Agents/{CoverScore,RandomBotAgent,SimpleBotAgent,GreedyBotAgent,CautiousBotAgent}`. Console holds `{Program,CardFormatting,
 SpectrePlayerAgent,ConsoleObserver}`. Sim holds `{Program,Simulator,GameRunner,
 SimulationOptions,SimulationReport,StrategySummary,Strategy,SeedSequence,SeatRecorder,
 SimObserver,RoundAbandonedException,Results,CsvReport,Replay}`. **Console gained five files in
 P11**: `{Options,Palette,RoundLog,HandView,PacedAgent}`. **P14 added `Play/{GameJournal,
 JournalFormat}` and `Agents/{JournalingAgent,JournalPlayerAgent}` to Domain and `Replay.cs`
-(which holds both `Replay` and `JournalReport`) to Sim.** ⚠️ **Domain now references
+(which holds both `Replay` and `JournalReport`) to Sim. P15 added
+`Agents/{RandomBotAgent,CautiousBotAgent}` and moved the discard loop into `CoverScore`, and
+added nothing to Sim at all** — a strategy is an `IPlayerAgent` and the harness already knew
+how to seat one. ⚠️ **Domain now references
 `System.Text.Json`** — the first framework assembly in there beyond the base library. It is a
 string API, not an I/O one: `JournalFormat` hands back `IEnumerable<string>` and the two front
 ends own every `File` call, the same split `CsvReport` already had.
 
-✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **259 passed,
-0 failed**. **Any red tree is a real problem.**
+✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **278 passed,
+0 failed**, four runs in a row. **Any red tree is a real problem.**
 
 ⚠️ **One hazard a cold context must know before writing a test or a strategy:** with the
 reshuffle built, **a round in which nobody's hand ever improves never ends.** Only a
@@ -95,11 +105,12 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P12** Simulation at scale | P10 | done 2026-08-18 — `BurmesePoker.Sim`; the tie-break wins 30.7% to 19.3% |
 | ☐ | **P13** Multiplayer app | P10 | XL, and §5 now says how to split it — the only one that changes the architecture |
 | ☑ | **P14** Game journals — record and replay | P12 | done 2026-08-19 — a run and its replay produce byte-identical CSV |
-| ☐ | **P15** A skill ladder | P12 | **new 2026-08-19** — ≥4 separated strategies; P16 needs one |
-| ☐ | **P16** Does the player before you decide your game? | P15 | **new 2026-08-19** — ⚠️ the current seating scheme cannot answer it |
+| ☑ | **P15** A skill ladder | P12 | done 2026-08-19 — four rungs, **three** separated skill levels |
+| ☐ | **P16** Does the player before you decide your game? | P15 | ⚠️ the current seating scheme cannot answer it — but P15 already sized the effect |
 
-**P14 is done and closed its branch without opening another.** It needed nothing from the
-engine, raised no rules question, and cost nothing measurable in throughput at either fidelity.
+**P14 and P15 are both done, and neither needed a line of the engine.** P14 cost nothing
+measurable in throughput at either fidelity; P15 raised no rules question either — how well a
+strategy plays is not a rule (`RULES.md` stays at **rev 13**).
 
 **P10 was the fork; P11 and P12 have both been taken through it.** ⚠️ **P12 opened a branch
 rather than closing one** — having a harness is what makes journals and a strategy-comparison
@@ -148,6 +159,53 @@ suite that can fail for a reason other than a defect**, they predate P14 (P5 and
 and a cold context following the `/poker` baseline rule — *any failure at all is a real problem* —
 should re-run on a quiet machine before believing either of them. Nothing has been changed about
 them; loosening a performance guard is a decision for whoever owns it, not a tidy-up.
+
+**From P15:**
+
+- 🔥 **Read this before starting P16.** `greedy` and `cautious` are **0.5 ± 0.6 points apart
+  head to head over 32,000 games** and **5.4 points apart in the four-way ladder run**. The
+  rotation feeds greedy from `simple` and cautious from `greedy` in every game, so the gap is
+  the feeding and not the strategies. It is **a lead, not a result** — the downstream neighbour
+  differs too, which is exactly what P16's control separates — but it sizes the effect at
+  **points, not tenths**, which makes 2,000 games a cell comfortable.
+- ⚠️ **The ladder has four rungs and three skill levels.** For P16's skill dial use
+  `random` / `simple` / `greedy` (separated by 36.9 and 12.9 points). `cautious` is the
+  **intervention arm**, not a fourth level.
+- ⚠️ **P16's intervention is weaker than P16 assumed, and the prediction should be stated at
+  the measured size.** P15 found that denial and self-interest coincide: the cards a hand least
+  wants are already the cards an opponent can least use, so `greedy` is *already* nearly a
+  maximal denier. Swapping a greedy upstream for a cautious one should move the focal seat's
+  take rate a little and its win rate barely at all. **If it comes back large, something other
+  than denial is doing the work.**
+- ⚠️ **Do not try to beat greedy with another tie-break.** Partnership is symmetric, so the
+  total partnership of the twelve cards kept is the hand's total less twice the thrown card's:
+  "throw the fewest partners" and "keep the best-connected twelve" are the *same rule*, and
+  every pairwise-additive measure collapses back into `GreedyBotAgent`. Both denial measures
+  tried reduce to `Supply(rank) − Potential` to within a point or two. **A genuine rung above
+  greedy has to be combinatorial** — counting live outs (unseen values that would raise the
+  cover count of the thirteen kept) is the obvious candidate and costs a `PartialCover.Best`
+  per value per candidate, roughly **100× a decision**. That is a packet of its own, and it is
+  **not** in the plan; raise it with Nick before building it.
+- **The rungs are one function apart, in code.** `CoverScore.Discard(hand, tieBreak)` is the
+  loop all three thinking rungs throw through — simple passes `NoPreference`, greedy passes
+  `Potential`, cautious packs `Potential` and the threat into one `long`. ⚠️ **Keep it that
+  way**: P12's whole result rests on the rungs differing in exactly one decision, and the
+  refactor was verified by the 259-test baseline staying byte-identical before anything new
+  was added.
+- ⚠️ **A random rung must never draw from `Random.Shared`** (§3.7 item 1).
+  `SeedSequence.SeatSeed(gameSeed, seat)` is where a seat's generator comes from, and
+  `Strategy.Create` takes that seed as its argument so there is nowhere else to get one.
+- ⚠️ **A table of nothing but `random` essentially never declares.** Every game of it hits the
+  turn cap and is reported abandoned — which is correct, and which is why the tests that use it
+  read the **journal** rather than the CSV: an abandoned round produces no row.
+- ⚠️ **`WallClockBudgets.cs` is new, and it is load-bearing.**
+  `HandEvaluatorTests.EvaluatingThirteenCardsIsFast` and
+  `PartialCoverTests.ScoringThirteenCardsIsFast` started failing on a *quiet* machine once the
+  ladder tests ran simulations beside them. The four heavy Sim/ladder classes and the two
+  budget classes now share one xunit collection, so they never run concurrently; four
+  consecutive full runs are green. **Neither budget was loosened** — a performance guard is the
+  owner's call, not a tidy-up. **A future test class that plays whole simulations should join
+  that collection.**
 
 **From P14:**
 
@@ -807,6 +865,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-19 | P15 | ☑ Done. **A skill ladder — four rungs, and only three skill levels.** Domain gained `Agents/RandomBotAgent` (the floor: legal moves, no thought, ⚠️ **a `Random` handed in and never `Random.Shared`** — `SeedSequence.SeatSeed(gameSeed, seat)` derives it, so a run is still a pure function of its master seed and two random seats do not play in lockstep) and `Agents/CautiousBotAgent` (greedy, plus a last-resort tie-break towards the card least useful to whoever picks it up). `CoverScore` grew the **shared discard loop** every rung throws through, so simple/greedy/cautious now differ in *one function argument* and nothing else — a refactor verified by the 259-test baseline staying byte-identical. `Strategy.Create` became `Func<int, IPlayerAgent>`; `StrategyCatalog` is now `random, simple, greedy, cautious` **in ladder order**. **Sim gained no file.** ⚠️ **The headline is a negative result, and it is the useful part: `cautious` is not distinguishable from `greedy` — +0.48 ± 0.55 points over 32,000 head-to-head games across two seeds.** Head to head at four seats: random 0.1% vs greedy 49.9%; simple 18.5% vs greedy 31.5% (a confirmation of P12's 30.7/19.3 at twice the games); simple 18.4% vs cautious 31.6%. **Why: denial and self-interest coincide.** The partners a hand holds are exactly the ones an opponent cannot hold, so both natural ways of measuring "least use to them" reduce to `Supply(rank) − Potential` to within a point — and ⚠️ **every *pairwise-additive* tie-break is greedy again**, because partnership is symmetric. A rung above greedy has to be combinatorial (live outs), which costs ~100× a decision — a packet, not a tie-break. 🔥 **And an accident worth more than the packet: in the four-way run the rungs came out random 0.1%, simple 27.9%, cautious 33.3%, greedy 38.7% — 5.4 points between two strategies that are level head to head, and the rotation feeds greedy from simple and cautious from greedy in every game. All of it is who fed whom.** Build clean, **278 passed / 0 failed** (19 new: 10 in `Agents/SkillLadderTests`, 9 in `Sim/SkillLadderRunTests`). ⚠️ **Added `WallClockBudgets.cs`** — the two timing-budget tests began failing on a *quiet* machine because the new ladder tests run simulations beside them, so the heavy classes and the budgets now share one xunit collection and never run concurrently; **neither budget was loosened**. No new rules question — `RULES.md` stays at **rev 13**. Amended BUILD-PLAN §0, §4, P15 (a "What P15 found" section) and **P16 (three amendments: the lead, a much weaker intervention than it assumed, and three usable skill levels rather than four)**. |
 | 2026-08-19 | P14 | ☑ Done. **Game journals — record and replay.** The tree's first persistence layer, and it is a *format* rather than a store. Domain gained `Play/{GameJournal, JournalFormat}` — pure record types plus JSON Lines in and out, `IEnumerable<string>` exactly as `CsvReport.Rows` already did — and `Agents/{JournalingAgent, JournalPlayerAgent}`, a decorator that writes down every answer and a seat that answers from a file. **`RoundEngine` and `MatchEngine` are byte-for-byte unchanged**: replaying is playing the game with different seats, so no second engine and no resumable state machine. Sim gained `Replay` (which reuses `Simulator.Summarise` and `GameRunner`'s row builder) and `JournalReport`; both front ends gained `--journal <path>` and `--fidelity thin|rich`, and the harness a `replay` verb. **The headline acceptance is a `diff`: a 20-game, 40-round journalled run and its replay produce byte-identical CSV.** ⚠️ **The console now draws two `Random`s from `--seed`** — one to seat the table, one for the match — because a journal reproduces the deal by re-seeding the match's generator, and the old single generator had the seating consuming from it first; **a pre-P14 `--seed` no longer plays the same console match**, and two runs at the same seed are still byte-identical to each other. ⚠️ **Rich fidelity costs nothing measurable, which §3.9 expected to be false**: 400 games serially, three interleaved repetitions, **46–49 rounds/s with no journal, 48–49 thin, 48–50 rich** — a thirteen-`CardId` copy is tens of nanoseconds against a 140 µs cover search. **The expensive axis is bytes** (9.6 KB a round against 5.0), so rich stays opt-in for what it costs to keep. Divergence is loud three ways — journal exhausted, wrong question, card not in hand — each with a clean CLI message. Build clean, **259 passed / 0 failed** (20 new: 14 in `Play/GameJournalTests`, 6 in `Sim/JournalReplayTests`). Verified a console match through a pty and replayed it under the harness to the same two rounds. **No new rules question — `RULES.md` stays at rev 13.** Amended BUILD-PLAN §0, §2, §3.9, §4, P14, **P15 (a new acceptance: every rung journals and replays) and P16 (rich journals are now affordable; ⚠️ a new CSV column derived from `SimulationOptions` rather than from the seating would break replay identity)**. |
 | 2026-08-19 | — | **Persistence answered and three packets added** (docs only, no code — still 239 passed / 0 failed). The tree has **no persistence layer**: `CsvReport.WriteTo` is its only write to disk, and that is an outcome table. `BUILD-PLAN.md` **§3.9** records why that has been fine (a bot game is a pure function of its seed — P12 proved it byte-identical) and why it stops being fine: **a person is not a function of a seed, and a seed only replays against the code that produced it.** **P14** — game journals, as record types plus a journalling decorator and a replaying agent over `IPlayerAgent`, with the format in one place and file writing left to the consumers; replay is *a seat that answers from a file*, not a resumable engine, and the rich fidelity level is opt-in because §3.7 measured this work allocation-bound. **P15** — a skill ladder, ≥4 separated strategies including a `RandomBotAgent` (⚠️ must take a seeded `Random`, never `Random.Shared`) and a `CautiousBotAgent` that throws what least helps the seat it feeds. **P16** — the upstream-neighbour hypothesis, raised by Nick's friend: *the skill of the player before you is what decides your game.* Well-posed, because `RULES.md` §5 makes a table a directed cycle; **a strategy question, not a rules question, so `RULES.md` is untouched at rev 13.** ⚠️ **The finding of the session: `SimulationOptions.Seating` cannot answer it** — it rotates one fixed pattern, so at two strategies and four seats *(me, upstream)* is perfectly confounded, every greedy fed by a simple. That also puts a caveat on P12's 30.7%-vs-19.3% headline, which P16 owns separating. Also added `docs/PLAYING.md`, a player-facing guide to solo play, and listed it in CLAUDE.md's documentation map. Amended BUILD-PLAN §3.9 (new), §4, P12, P14–P16 (new) and §7 (two risk rows). |
 | 2026-08-18 | P11 | ☑ Done. **Console UX pass — the terminal is the UI, so this is the UI (§0).** Five new presentation files and **not one line of Domain or Sim changed**. `RoundLog` fixes the sorest thing in the console: the per-turn concealment clear used to destroy every public thing said while a player was away, and with bots those turns pass in milliseconds — `ConsoleObserver` now says each line *and* files the same markup, and the panel is drawn above the table and the hand. `HandView` shows a hand as the melds it nearly is plus its deadwood, off one `PartialCover.Best` call, and prices every card by `covered(13) − covered(12)`. **The discard hint is `GreedyBotAgent`'s own answer**, asked of the very `TurnContext` in hand, so it cannot drift from how the table actually plays; `--no-hints` turns it off. `PacedAgent` — a decorator, **deliberately not a sleep in the bot**, which would have sat inside P12's hot loop — makes computer seats wait once per `(Round, TurnNumber)`. `Palette` gathers P8's three files' worth of ad-hoc colour into one language. A difficulty prompt (`SimpleBotAgent` vs `GreedyBotAgent`) came free out of P12. **Every match is seeded and says so**: one is drawn if `--seed` is absent, and the seating is taken from the match's own `Random` — two runs at `--seed 99` are byte-identical, `--seed 100` is not. ⚠️ **Found by playing, not by building:** `Palette.Legend` shipped with an unbalanced markup tag, compiled clean, passed every test, and threw on the first hand drawn. Build clean, **239 passed / 0 failed** (4 new — `LayeringTests`, the one mechanical check a console packet allows: Domain references neither Spectre nor `System.Console`, Sim references no Spectre). Verified through a pty: **13+ rounds at four seats**, a six-seat table for the reshuffle narration, and seed 1 for the opening turn, which is the only one that offers the money-card claim. No new rules question — `RULES.md` stays at **rev 13**. Amended BUILD-PLAN §0, §2, §3.5, P11 and **P13 (split into three sub-packets, with what P11 proved about the seams)**. |

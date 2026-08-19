@@ -2,12 +2,15 @@ using System.Diagnostics;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
 
+using BurmesePoker.Tests;
+
 namespace BurmesePoker.Tests.Melds;
 
 /// <summary>
 /// The exact-cover evaluator (packet P5) — the only win authority in the codebase
 /// (RULES.md §7.1: all thirteen cards melded, each used once).
 /// </summary>
+[Collection(WallClockBudgets.Collection)]
 public class HandEvaluatorTests
 {
     // ---- the acceptance cases of BUILD-PLAN §5 P5 ----------------------------------------

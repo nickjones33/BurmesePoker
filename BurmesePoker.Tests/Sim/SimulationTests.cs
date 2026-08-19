@@ -6,6 +6,8 @@ using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Play;
 using BurmesePoker.Sim;
 
+using BurmesePoker.Tests;
+
 namespace BurmesePoker.Tests.Sim;
 
 /// <summary>
@@ -16,6 +18,7 @@ namespace BurmesePoker.Tests.Sim;
 /// quick — but nothing about it is different in kind from the runs that answer questions. The
 /// numbers a strategy comparison is worth reading at come from the command line, not from here.
 /// </remarks>
+[Collection(WallClockBudgets.Collection)]
 public class SimulationTests
 {
     private static readonly Strategy Greedy = StrategyCatalog.Resolve("greedy");
@@ -131,7 +134,7 @@ public class SimulationTests
         // reports it, because a strategy that stalls is a result and not a crash.
         var stalling = Simulator.Run(new SimulationOptions
         {
-            Strategies = [new Strategy("stalls", () => new StallingAgent())],
+            Strategies = [new Strategy("stalls", _ => new StallingAgent())],
             Games = 3,
             TurnCap = 40,
             MasterSeed = 5

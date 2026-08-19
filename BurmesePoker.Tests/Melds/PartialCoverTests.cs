@@ -2,6 +2,8 @@ using System.Diagnostics;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
 
+using BurmesePoker.Tests;
+
 namespace BurmesePoker.Tests.Melds;
 
 /// <summary>
@@ -13,6 +15,7 @@ namespace BurmesePoker.Tests.Melds;
 /// authority (BUILD-PLAN §3.4): a complete cover here and a winning hand there are the same
 /// claim, and this type may not make it on a hand the evaluator rejects.
 /// </remarks>
+[Collection(WallClockBudgets.Collection)]
 public class PartialCoverTests
 {
     /// <summary>Thirteen cards that partition exactly: 2♥–7♥, 8♦9♦10♦, and three kings.</summary>

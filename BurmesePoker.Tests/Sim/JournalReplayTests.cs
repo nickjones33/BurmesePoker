@@ -1,6 +1,8 @@
 using BurmesePoker.Domain.Play;
 using BurmesePoker.Sim;
 
+using BurmesePoker.Tests;
+
 namespace BurmesePoker.Tests.Sim;
 
 /// <summary>
@@ -12,6 +14,7 @@ namespace BurmesePoker.Tests.Sim;
 /// two CSV files being the same text — which is exactly how P12 showed that a parallel run and
 /// a serial one are the same run.
 /// </remarks>
+[Collection(WallClockBudgets.Collection)]
 public class JournalReplayTests
 {
     private static readonly SimulationOptions Run = new()

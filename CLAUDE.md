@@ -11,7 +11,7 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-This project is **all but finished**. **P0–P12 and P14 are done**: the 2023 implementation has been
+This project is **all but finished**. **P0–P12, P14 and P15 are done**: the 2023 implementation has been
 deleted, the whole rules core is built and tested, `dotnet run --project BurmesePoker.Console`
 fills the empty seats with paced, named bots and plays round after round with the banks carrying
 over — showing a hand as the melds it nearly is, keeping a round log across the concealment
@@ -23,8 +23,12 @@ splits it into P13.1–P13.3 — and **P14–P16 were added on 2026-08-19**: gam
 ladder, and an experiment on whether the player before you decides your game. **P14 shipped on
 2026-08-19**: `--journal <path>` on both front ends writes every decision every seat made as JSON
 Lines, and `BurmesePoker.Sim -- replay <path>` plays it back — to a byte-identical CSV. A seed is
-a pointer into the build that produced it; a journal is the record (§3.9). **P15 is the next
-useful packet**, since P16 needs it.
+a pointer into the build that produced it; a journal is the record (§3.9). **P15 shipped on
+2026-08-19 too**: `--strategies random,simple,greedy,cautious` is a skill ladder with **four
+rungs and three separated skill levels** — `cautious` turned out to be indistinguishable from
+`greedy`, because denial and self-interest point the same way. 🔥 **It also handed P16 a large
+lead: two strategies that are level head to head finish 5.4 points apart when one is fed by a
+weaker player than the other.** **P16 is the next packet.**
 
 Whether or not you
 use the skill, read these first:

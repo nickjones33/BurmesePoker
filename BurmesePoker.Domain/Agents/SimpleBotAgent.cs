@@ -43,36 +43,16 @@ public sealed class SimpleBotAgent : IPlayerAgent
     }
 
     /// <summary>Throw whichever card costs the fewest melded cards, first one wins.</summary>
+    /// <remarks>
+    /// The same loop <see cref="GreedyBotAgent"/> throws through, handed a tie-break that
+    /// breaks nothing — which is the difference between the two rungs stated as code
+    /// (BUILD-PLAN P15).
+    /// </remarks>
     public Card ChooseDiscard(TurnContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var hand = context.Hand;
-        Card? best = null;
-        var bestScore = int.MinValue;
-        var judged = new List<Card>(hand.Count);
-
-        foreach (var card in hand)
-        {
-            // The same dedup the greedy bot does, so that the two differ in the tie-break and
-            // in nothing else — including what they cost to run.
-            if (judged.Exists(seen => seen.SameValueAs(card)))
-            {
-                continue;
-            }
-
-            judged.Add(card);
-
-            var score = CoverScore.Covered(CoverScore.Without(hand, card));
-
-            if (best is null || score > bestScore)
-            {
-                best = card;
-                bestScore = score;
-            }
-        }
-
-        return best ?? throw new InvalidOperationException("Asked to discard from an empty hand.");
+        return CoverScore.Discard(context.Hand, CoverScore.NoPreference);
     }
 
     /// <inheritdoc cref="GreedyBotAgent.ClaimTurnedUpMoneyCard"/>

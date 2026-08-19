@@ -194,6 +194,7 @@ static string Usage() => """
       dotnet run --project BurmesePoker.Sim -- replay PATH [--csv PATH]
 
       --strategies a,b   who is playing, rotated through the seats  (greedy,simple)
+                         the ladder, weakest first: random, simple, greedy, cautious
       --seats N          4 to 6                                     (4)
       --games N          independent games                          (200)
       --rounds N         rounds per game, banks carrying over       (1)

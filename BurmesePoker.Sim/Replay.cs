@@ -81,7 +81,7 @@ public static class Replay
         }.Validated();
     }
 
-    private static IPlayerAgent NotSeated() =>
+    private static IPlayerAgent NotSeated(int seed) =>
         throw new InvalidOperationException(
             "A replayed seat answers from its journal; there is no strategy to create.");
 }

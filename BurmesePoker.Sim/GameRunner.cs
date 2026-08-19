@@ -39,7 +39,8 @@ public static class GameRunner
 
         var recorders = players.ToDictionary(
             player => player,
-            player => new SeatRecorder(seating[player.Value].Create(), options.TurnCap));
+            player => new SeatRecorder(
+                seating[player.Value].Create(SeedSequence.SeatSeed(seed, player.Value)), options.TurnCap));
 
         // The journal wraps the recorder rather than the other way round, so what is written
         // down is the answer the strategy actually gave (BUILD-PLAN P14).

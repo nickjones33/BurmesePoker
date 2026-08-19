@@ -27,8 +27,9 @@ are wanted.
 
 **Goal 3 grew a tail rather than ending.** Simulation at scale is delivered, but having a
 harness is what makes a *programme* of measurement worth running — hence **P14 (game journals,
-✅ done 2026-08-19), P15 (a skill ladder) and P16 (does the player before you decide your
-game?)**, all hanging off P12. They serve the third goal; none of them is a fifth one.
+✅ done 2026-08-19), P15 (a skill ladder, ✅ done 2026-08-19) and P16 (does the player before
+you decide your game?)**, all hanging off P12. They serve the third goal; none of them is a
+fifth one.
 
 **What they demand of the architecture, and what already satisfies it.** These are stated
 here because they change decisions taken *before* the packets that need them.
@@ -568,7 +569,9 @@ not at all. **P11 and P12 are both done (2026-08-18).** ⚠️ **P12 opened a se
 than closing one:** having a harness makes journals (P14) and a strategy-comparison programme
 (P15 → P16) worth building, and all three hang off P12 rather than off P13. **P14 is done
 (2026-08-19) and closed its branch without opening another** — it needed nothing from the engine
-and asked nothing of the plan. **P13 is now the only packet that would change the architecture,
+and asked nothing of the plan. **P15 is done (2026-08-19) and needed nothing from the engine
+either**, but it did not leave P16 alone: it sized the upstream effect at several points and cut
+the intervention P16 was counting on down to about half a point (see the amendment under P16). **P13 is now the only packet that would change the architecture,
 and the only one that is purely optional.**
 
 | Packet | Title | Depends on | Size |
@@ -588,7 +591,7 @@ and the only one that is purely optional.**
 | P12 | Simulation at scale | P10 | L — ☑ done 2026-08-18 |
 | P13 | Multiplayer app | P10 | XL — **split into P13.1–P13.3** below |
 | P14 | Game journals — record and replay | P12 | L — ☑ done 2026-08-19 |
-| P15 | A skill ladder | P12 | M |
+| P15 | A skill ladder | P12 | M — ☑ done 2026-08-19 |
 | P16 | Does the player before you decide your game? | P15 (**P14 ☑, so rich journals are available**) | M |
 
 ---
@@ -1762,7 +1765,7 @@ console match played by a person can be replayed the same way.
 
 ---
 
-### P15 — A skill ladder
+### P15 — A skill ladder ☑ done 2026-08-19
 
 **Goal.** Several strategies whose strengths are *separated and measured*, so that "skill" is a
 dial with more than two settings. Everything in P16 needs one, and today there are two
@@ -1816,6 +1819,67 @@ separated by more than their intervals.
 
 ---
 
+#### What P15 found
+
+**All four rungs are built and every acceptance but the first is met outright.** The command
+line takes `--strategies random,simple,greedy,cautious`; every rung is deterministic from the
+master seed, including the random one; a table of pure chance is abandoned at the turn cap and
+reported; money changes no rung's discard; and each rung journals and replays to the same rows.
+
+**Acceptance 1 was a measurement, and the measurement came back with three separated levels
+rather than four.** Head to head at four seats, where two strategies alternate and so each is
+fed **exclusively by the other**:
+
+| match-up | games | win rates | difference |
+|---|---:|---|---|
+| random vs greedy | 4,000 | 0.1% vs 49.9% | 49.8 pts |
+| simple vs greedy | 4,000 | 18.5% vs 31.5% | 12.9 ± 1.5 pts |
+| simple vs cautious | 4,000 | 18.4% vs 31.6% | 13.2 ± 1.5 pts |
+| **greedy vs cautious** | **32,000** (two seeds) | **24.8% vs 25.2%** | **0.5 ± 0.6 pts** |
+
+⚠️ **Read the last row differently from the others.** Two strategies alternating means each is
+fed only by the other, which is *exactly* symmetric when they are of equal strength and
+**amplifying** when they are not: the stronger one is fed by the weaker, and the weaker by the
+stronger. So the `greedy` vs `cautious` row is a clean figure — that is the point of it — while
+`simple` vs `greedy` carries P12's existing caveat, that some unknown part of the gap is the
+feeding arrangement. (It is also a straight confirmation of P12's headline at twice the games:
+31.5% against 18.5%, where P12 measured 30.7% against 19.3%.)
+
+⚠️ **`cautious` is not distinguishable from `greedy`.** Two independent 16,000-game runs put it
+0.6 and 0.4 points ahead; pooled, that is +0.48 ± 0.55 points, an interval that contains zero.
+The ladder therefore has **four rungs and three skill levels**: *nothing* ≪ *cover count* <
+*cover count + tie-break*, and then a fourth strategy that plays differently to no measurable
+advantage.
+
+**Why, and it is not a bug in the rung.** ⚠️ **Denial and self-interest point the same way.**
+The partners a hand holds are exactly the partners an opponent cannot hold, so "least use to
+me" and "least use to them" are very nearly the same ordering, and `CoverScore.Potential` has
+already spent that information. Worse, both natural ways of writing the denial measure —
+counting unseen partners, or counting the unseen *pairs* that would complete a meld — turn out
+to be **`Supply(rank) − Potential` to within a point or two**, because the weights that make a
+good keep-heuristic also make a good give-away heuristic. What is left over is only what a hand
+cannot influence: how many runs a rank sits in at all (three for most ranks, two for A, 2 and
+K) and the second-order blockages. That residue is what `CautiousBotAgent` plays on, and it is
+worth about half a point.
+
+⚠️ **A trap for anyone trying to do better: every *pairwise-additive* tie-break is greedy
+again.** Partnership is symmetric, so the total partnership of the twelve cards kept is the
+hand's total less twice the thrown card's — which means "throw the card with the fewest
+partners" and "keep the best-connected twelve" are the *same rule*. A rung that improves on
+greedy has to be combinatorial, not additive; the obvious candidate is counting **live outs**
+(how many unseen values would raise the cover count of the thirteen kept), and the obvious
+problem is that it costs a `PartialCover.Best` per value per candidate — roughly 100× a
+decision today. That is a packet of its own, not a tie-break.
+
+**And one result that belongs to P16, found by accident.** In the four-way run
+(`--games 1000 --seats 4 --seed 20260819`) the rungs came out **random 0.1%, simple 27.9%,
+cautious 33.3%, greedy 38.7%** — a 5.4-point gap between two strategies that are level head to
+head. `Seating` rotates one fixed pattern in list order, and turn order is seat order, so in
+*every* game **greedy was fed by simple and cautious was fed by greedy**. The gap is not the
+strategies; it is the feeding. See the amendment under P16.
+
+---
+
 ### P16 — Does the player before you decide your game?
 
 **Goal.** Answer a specific hypothesis with a number and an interval.
@@ -1830,7 +1894,39 @@ is fed by seat *i−1* and by nobody else. Every seat has exactly one upstream n
 hypothesis is a claim about that edge. ⚠️ **This is a strategy question, not a rules question —
 it does not go in `RULES.md`.**
 
-**Read first.** §3.8 item 4 (join keys), §3.9, P12's `SimulationOptions.Seating` and P15.
+**Read first.** §3.8 item 4 (join keys), §3.9, P12's `SimulationOptions.Seating`, P15 — and
+**"What P15 found" above, which changed two things in this packet.**
+
+> #### ⚠️ Amended 2026-08-19, by P15
+>
+> **1. There is already a lead, and it is a large one.** P15 measured `greedy` and `cautious`
+> at **0.5 ± 0.6 points apart head to head** over 32,000 games — indistinguishable. In the
+> four-way rotation they came out **38.7% and 33.3%**, 5.4 points apart. The rotation seats the
+> strategies in list order and turn order is seat order, so in every game **greedy was fed by
+> `simple` and cautious was fed by `greedy`**, and *the whole 5.4 points sits in that
+> difference*. Two strategies of equal strength, differing only in who feeds them, five points
+> apart.
+>
+> ⚠️ **This is a lead, not a result, and the reason is exactly this packet's control.** The
+> downstream neighbour differs too — greedy feeds cautious, cautious feeds random — so
+> "fed by a weaker player" and "feeding a weaker player" are still tangled together. But it
+> sizes the thing: **if the upstream effect is real it is worth several points, not tenths**,
+> which means 2,000 games per cell is comfortable and the experiment is worth running.
+>
+> **2. The intervention is weaker than this packet assumed.** It reads *"P15's
+> `CautiousBotAgent` throws what is least useful to the player it feeds … the focal seat's take
+> rate and win rate should both fall"*. P15 found that **denial and self-interest coincide**:
+> the cards a hand least wants to keep are already the cards an opponent can least use, so
+> `greedy` is *already* nearly a maximal denier and `cautious` improves on it by about half a
+> point. **State the prediction in advance anyway** (acceptance 4) — but state it at the size
+> P15 measured: swapping a greedy upstream neighbour for a cautious one should move the focal
+> seat's take rate a little and its win rate barely at all. ⚠️ **If that intervention comes
+> back large, something other than denial is doing the work**, and the observational half of
+> the design is the thing to trust less, not more.
+>
+> **3. Three levels, not four, for the skill dial.** Vary the upstream neighbour across
+> `random` / `simple` / `greedy` — those are separated by 12.9 and 36.9 points and are the
+> honest settings. `cautious` is the intervention arm, not a fourth level.
 
 **Build.**
 

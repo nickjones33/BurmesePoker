@@ -75,38 +75,15 @@ public sealed class GreedyBotAgent : IPlayerAgent
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var hand = context.Hand;
-        Card? best = null;
-        var bestScore = int.MinValue;
-        var bestPotential = 0;
-        var judged = new List<Card>(hand.Count);
-
-        foreach (var card in hand)
-        {
-            // Two copies of the same card leave the same thirteen behind, so the second is
-            // the first's answer already.
-            if (judged.Exists(seen => seen.SameValueAs(card)))
-            {
-                continue;
-            }
-
-            judged.Add(card);
-
-            var score = CoverScore.Covered(CoverScore.Without(hand, card));
-            var potential = Potential(card, hand);
-
-            if (best is null
-                || score > bestScore
-                || (score == bestScore && potential < bestPotential))
-            {
-                best = card;
-                bestScore = score;
-                bestPotential = potential;
-            }
-        }
-
-        return best ?? throw new InvalidOperationException("Asked to discard from an empty hand.");
+        return CoverScore.Discard(context.Hand, Preference);
     }
+
+    /// <summary>
+    /// The tie-break itself, kept as a field so that the ladder's rungs are one function
+    /// apart and nothing else (BUILD-PLAN P15).
+    /// </summary>
+    private static readonly Func<Card, IReadOnlyList<Card>, long> Preference =
+        static (card, hand) => CoverScore.Potential(card, hand);
 
     /// <summary>
     /// Take the turned-up money card only if it melds more of the hand.
@@ -129,66 +106,4 @@ public sealed class GreedyBotAgent : IPlayerAgent
 
     /// <summary>Always. The engine only asks when the hand genuinely wins (RULES.md §7.1).</summary>
     public bool Declare(TurnContext context) => true;
-
-    /// <summary>
-    /// Whether adding this card lets more of the hand meld.
-    /// </summary>
-    /// <remarks>
-    /// Asked of the fourteen rather than of the thirteen that would be kept, which is the same
-    /// answer for a fraction of the work: any improvement over the thirteen must use the new
-    /// card, and whatever it leaves loose is then the card to throw. Every arrangement of
-    /// fourteen has a meld of four or more in it, so the thirteen kept are always covered to
-    /// at least the score the fourteen scored, minus the one thrown.
-    /// </remarks>
-    private static int Potential(Card card, IReadOnlyList<Card> hand)
-    {
-        if (card.IsJoker)
-        {
-            return int.MaxValue;
-        }
-
-        var potential = 0;
-
-        foreach (var other in hand)
-        {
-            if (other.Id == card.Id || other.IsJoker)
-            {
-                continue;
-            }
-
-            if (other.Rank == card.Rank)
-            {
-                // Same rank, another suit, and so a set two thirds of the way there.
-                potential += other.Suit == card.Suit ? 0 : 2;
-            }
-            else if (other.Suit == card.Suit)
-            {
-                potential += RunDistance(card.Rank!.Value, other.Rank!.Value) switch
-                {
-                    1 => 2,
-                    2 => 1,
-                    _ => 0
-                };
-            }
-        }
-
-        return potential;
-    }
-
-    /// <summary>
-    /// How far apart two ranks are within a run, counting the ace as high or low but never
-    /// both at once (RULES.md §6.1).
-    /// </summary>
-    private static int RunDistance(Rank one, Rank other)
-    {
-        const int aceLow = 1;
-
-        var straight = Math.Abs((int)one - (int)other);
-
-        return one == Rank.Ace
-            ? Math.Min(straight, Math.Abs(aceLow - (int)other))
-            : other == Rank.Ace
-                ? Math.Min(straight, Math.Abs((int)one - aceLow))
-                : straight;
-    }
 }
