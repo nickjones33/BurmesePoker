@@ -123,8 +123,10 @@ again, rather than the backwards-compatible one.
 which completes `Melds/`. **By P2:** `Money/MoneyCardRegistry.cs`, `Money/CardOwnership.cs`
 and `Play/PlayerId.cs` — the last is brought forward out of `Play/` because ownership is
 recorded against a player, and P2 needs the type. **By P6:** `Money/Stakes.cs` and
-`Money/Settlement.cs`, which completes `Money/`. `Abstractions/` and the rest of `Play/` are
-still to come. The old exe project is renamed `BurmesePoker.Console`; the test project references
+`Money/Settlement.cs`, which completes `Money/`. **By P7:** `Play/{TurnAction, PlayerState,
+TableState, TurnContext, RoundResult, RoundEngine}.cs` and `Abstractions/{IPlayerAgent,
+IGameObserver}.cs`, which completes `Abstractions/`. Only `Play/MatchEngine.cs` is still to
+come, in P9. The old exe project is renamed `BurmesePoker.Console`; the test project references
 **Domain only**, so nothing can accidentally test through the front end.
 
 ---
@@ -259,6 +261,14 @@ public interface IGameObserver   // narration only; never asked for input
 
 `RoundEngine` never prints and never reads the console. A `ScriptedPlayerAgent` in the test
 project drives whole rounds deterministically.
+
+> **As built by P7.** `IPlayerAgent` is exactly the four methods above. `IGameObserver` grew
+> three events the sketch lacked — `PlayerTookDiscard`, `MoneyCardClaimed` and
+> `PlayerDeclared` — because a pickup, a claim and a blind draw are three different things to
+> a player and only one of them confers ownership. **Every observer method has a default
+> no-op body**, so a front end implements only what it draws. The engine narrates
+> *everything*, private information included: filtering per viewer is presentation, and
+> pushing it into the domain would be the same mistake this rewrite exists to undo.
 
 ---
 
@@ -769,6 +779,28 @@ settlement. No domain type references Spectre.
 
 **Done when.** A round is playable start to finish and money changes hands.
 
+> **Amended after the P7 session (2026-08-18) — what the engine actually asks the console.**
+> The domain side is built and the console's whole job is to answer four questions and draw
+> seven events.
+> 1. **`RoundEngine.Shuffled(players, agents, stakes, random)` is the entry point**, and
+>    `engine.Play()` runs the round. `Program.cs` picks the player count (4–6) and the stakes,
+>    **randomises the seating itself** — the engine takes the list as given (RULES.md §3 step
+>    2), because a round that reshuffled its own seating could not be scripted — and builds one
+>    `SpectrePlayerAgent` per human seat.
+> 2. **Prompt only when asked.** The engine asks `ChooseAction` *only* when there is a discard
+>    to take, `ClaimTurnedUpMoneyCard` *only* on the opening turn, and `Declare` *only* when
+>    `HandEvaluator` already says the hand wins. So none of those three prompts needs its own
+>    legality check — offering them unconditionally would be the bug.
+> 3. **`TurnContext` is the whole view a player gets**, and it is deliberately narrow: their
+>    own hand, the available discard, the draw-pile count, the turned-up cards, the stakes, the
+>    registry, and `YouOwn(card)`. There is **no route to another player's hand, to
+>    `TableState`, or to `CardOwnership`** — a reflection test pins that. Money-card markers
+>    come from `context.MoneyCards.Multiplier(card)`; "don't throw away your own money card"
+>    hints come from `context.YouOwn(card)`.
+> 4. **`IGameObserver` narrates private cards too** — `PlayerDrew` reports what an opponent
+>    drew. **The console must filter**; the domain will not do it for you. Every method has a
+>    default no-op, so `ConsoleObserver` overrides only what it draws.
+>
 > **Amended after the P6 session (2026-08-18) — settlement reports net deltas only.**
 > `Settlement.ForRound` returns an unordered `IReadOnlyDictionary<PlayerId, int>` of **net**
 > movements — one number per player, positive to collect. There is **no breakdown** of the
@@ -810,6 +842,28 @@ settlement. No domain type references Spectre.
 
 **Done when.** A full match is playable and banks reconcile.
 
+> **Amended after the P7 session (2026-08-18) — ⚠️ the reshuffle goes *inside* the engine.**
+> P7 left deck exhaustion to propagate, and it is worth being precise about what that means:
+> `DeckExhaustedException` comes out of `RoundEngine.Play()` from the middle of a turn, after
+> the player has been asked for a decision and before they have a card. **There is no resume
+> point**, so P9 cannot implement §5 by catching it around `Play()` — that would abandon a
+> round that is still legally in progress. The reshuffle belongs at the one place that draws:
+> `RoundEngine.TakeCard`. Gather every `PlayerState.Discards` pile, shuffle, and make that the
+> new draw pile *before* drawing, and the exception becomes what it should be — the signal
+> that there is genuinely nothing left anywhere, which is a real end state, not a crash.
+> Two details that fall out:
+> - **Only the top discard is takeable, so gathering all the piles is safe** — but the discard
+>   a player is about to be offered must not be swept into the deck mid-turn. Gather at the
+>   moment of drawing, and the current top discard is still where it was.
+> - **`TableState.AllCards` is the conservation test.** It already spans draw pile, hands,
+>   discards and the turned-up cards; the reshuffle must leave it at 108 distinct cards, and
+>   P7's tests show the shape to copy.
+>
+> `MatchEngine` otherwise has little to do: **a new `RoundEngine` per round re-designates the
+> money cards for free**, because the registry is built in `TableState`'s constructor from that
+> round's turned-up cards and nothing is ever mutated. Bank the `RoundResult.Payouts` and go
+> again. A `RoundEngine` plays exactly one round and refuses a second `Play()`.
+>
 > **Amended after the P6 session (2026-08-18) — conservation is already half-proved.**
 > Settlement's deltas **sum to zero for any configuration**, which a property test pins over
 > 500 randomised rounds. So "money is conserved across the match" reduces to *banking the

@@ -19,6 +19,13 @@ internal static class Hands
         return [.. codes.Select((code, index) => Parse(code, new CardId(index)))];
     }
 
+    /// <summary>
+    /// The card a code names, with no meaningful identity — for matching by value with
+    /// <see cref="Card.SameValueAs"/>. Its id is negative, so an accidental comparison by
+    /// <c>==</c> against a real card can only be false.
+    /// </summary>
+    public static Card Value(string code) => Parse(code, new CardId(-1));
+
     private static Card Parse(string code, CardId id) => code.ToUpperInvariant() switch
     {
         "RJ" => Card.Joker(id, CardColor.Red),

@@ -4,8 +4,9 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-18 (rev 10 — widens §9 #8 to ask whether a meld may be **made only of
-jokers**, raised while building run generation).
+Last revised: 2026-08-18 (rev 11 — adds §9 #12 and #13, both raised while building the round
+engine: whether a claimed money card still designates its value, and whether a player may
+discard the very card they have just taken).
 
 ---
 
@@ -521,6 +522,8 @@ the **7♦** — one of your two permanent money cards. Almost certainly chance.
 | 9 | One shared discard pile or per-player piles? | 5 | Unknown — largely moot | Low |
 | 10 | Why 7♦ and A♠ specifically? | 4.1 | Unknown, likely unrecoverable | None |
 | 11 | If a **joker** is turned up as a money card, what does it designate? | 4.1 | Unknown — recommend *the two jokers of that colour* | Money designation (P2) |
+| 12 | When the opening player **claims** the turned-up money card, does that card's value still pay for the rest of the round? | 4.5 | Unknown — recommend *yes* | Money designation (P7) |
+| 13 | May a player discard the very card they just took? | 5 | Unknown — recommend *yes* | Turn logic (P7) |
 
 
 > **#8 widened in rev 10, while building P3.** "Unlimited jokers" was recorded as a bound on
@@ -530,6 +533,25 @@ the **7♦** — one of your two permanent money cards. Almost certainly chance.
 > bound of one real card per meld is a rule nothing in §6.1 states, and inventing it would be
 > the stricter, not the safer, choice. Four jokers exist in the shoe, so a hand can hold at
 > most four; the effect is bounded and easy to reverse if Mya Lay says otherwise.
+
+> **#12 and #13 raised in rev 11, while building the round engine (P7).**
+>
+> **#12 — a claimed money card.** The two turned-up cards do two jobs at once: they *designate*
+> which values pay (§4.2) and one of them is a physical card the opening player may *take*
+> (§4.5). Taking it separates the two jobs for the first time. **P7 takes the safe default:
+> designation is fixed at setup and does not move with the card**, so the claimed value goes
+> on paying its owners for the rest of the round — the claimer simply is not one of them,
+> because the table gave them the card and not the deck (§4.4). The alternative — that
+> claiming un-designates the value — would silently stop paying the *other* copy of that card,
+> which somebody may have been dealt and now owns; that seems a much stranger rule than the
+> one taken. Reversing it is a one-line change in `TableState`'s constructor.
+>
+> **#13 — discarding what you just took.** RULES.md §5 says take one card and discard one
+> card, and says nothing about them having to be different. Several rummies forbid discarding
+> the card just picked up from a discard pile, precisely because it is a null move. **P7 takes
+> the safe default: nothing forbids it**, and the engine accepts it. If it turns out to be a
+> rule it is a single guard in `RoundEngine`, and the question is really only about the
+> *pickup* — throwing back a card drawn blind is unremarkable.
 
 **Nothing here blocks the build.** Every remaining item has a safe default recorded in
 `BUILD-PLAN.md`. They are worth settling for fidelity, not for progress.

@@ -2,7 +2,7 @@
 
 Cross-session progress tracker. **`/poker` reads this first and updates it last.**
 
-Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 10) · Skill: `.claude/skills/poker/SKILL.md`
+Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 11) · Skill: `.claude/skills/poker/SKILL.md`
 
 State markers: `☐` not started · `◐` in progress · `☑` done
 
@@ -10,24 +10,24 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P7 (round and turn engine).** No blockers — P5 and P6 are both done, so every
-dependency is met. It is also the only packet that can be picked up: everything left is the
-chain P7 → P8 → P9 → P10.
+**Next packet: P8 (console front end).** No blockers. Everything left is the chain
+P8 → P9 → P10.
 
-P0 through P6 are all done, so **the entire rules core exists and is tested** — cards, melds,
-the win authority, and money. What remains is the engine and the front end. The 2023
-implementation is gone from the tree and lives only at the `pre-rewrite` tag. The solution is
-three projects — `BurmesePoker.Domain` (pure rules), `BurmesePoker.Console` (Spectre-less
-placeholder until P8), and `BurmesePoker.Tests` (references **Domain only**).
+P0 through P7 are all done, so **the entire game exists except a way to play it**. A round
+runs end to end in tests: deal, turn up the money cards, take turns, declare, settle — with
+no console anywhere near it. The 2023 implementation is gone from the tree and lives only at
+the `pre-rewrite` tag. The solution is three projects — `BurmesePoker.Domain` (pure rules),
+`BurmesePoker.Console` (a one-line placeholder until P8), and `BurmesePoker.Tests`
+(references **Domain only**).
 
 Domain now holds `Cards/{Rank,Suit,CardColor,CardText,CardId,Card,Deck,DeckBuilder,
 DeckExhaustedException}`, `Melds/{MeldKind,MeldSlot,Meld,RunGenerator,SetGenerator,
-MeldCandidates,HandEvaluator}`, `Money/{MoneyCardRegistry,CardOwnership,Stakes,Settlement}`
-and `Play/PlayerId`. **`Melds/` and `Money/` are both complete** — money is designated, owned
-and now actually moves. `Play/` still holds nothing but `PlayerId`, and `Abstractions/` does
-not exist; P7 builds both.
+MeldCandidates,HandEvaluator}`, `Money/{MoneyCardRegistry,CardOwnership,Stakes,Settlement}`,
+`Play/{PlayerId,TurnAction,PlayerState,TableState,TurnContext,RoundResult,RoundEngine}` and
+`Abstractions/{IPlayerAgent,IGameObserver}`. **`Melds/`, `Money/` and `Abstractions/` are
+complete**; `Play/` wants only `MatchEngine`, which is P9's.
 
-✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **174 passed,
+✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **192 passed,
 0 failed**. **Any red tree is a real problem.**
 
 ---
@@ -43,12 +43,12 @@ not exist; P7 builds both.
 | ☑ | **P4** Set candidate generation | P1 | done 2026-08-18 |
 | ☑ | **P5** Exact-cover hand evaluator | P3, P4 | done 2026-08-18 |
 | ☑ | **P6** Stakes and settlement | P1, P2 | done 2026-08-18 — settlement takes the *unshuffled* shoe |
-| ☐ | **P7** Round and turn engine | P5, P6 | **next** |
-| ☐ | **P8** Console front end | P7 | |
+| ☑ | **P7** Round and turn engine | P5, P6 | done 2026-08-18 — deals from a draw order, not a shuffle |
+| ☐ | **P8** Console front end | P7 | **next** |
 | ☐ | **P9** End-to-end play | P8 | |
 | ☐ | **P10** Bot opponents and hints | P9 | optional |
 
-**Everything left is a chain**: P7 → P8 → P9 → P10. There is no longer any packet that
+**Everything left is a chain**: P8 → P9 → P10. There is no longer any packet that
 can be picked up independently.
 
 ---
@@ -57,7 +57,58 @@ can be picked up independently.
 
 *Anything a cold context would need: decisions taken, surprises, deliberate leftovers.*
 
-**From P6 (most recent):**
+**From P7 (most recent):**
+
+- **`new RoundEngine(players, agents, stakes, drawOrder, round, observer)` deals in the
+  constructor and `Play()` runs the turns**, so `engine.Table` is readable before the first
+  turn and a setup test needs no play at all. `Play()` returns a `RoundResult` and refuses a
+  second call. **`RoundEngine.Shuffled(..., Random)` is the real-game entry point.**
+- **⚠️ A round is dealt from a `drawOrder`, not from a shuffle** — the 108 cards in the order
+  they will leave the deck, validated as a permutation of the shoe. That is what makes a round
+  scriptable: `BurmesePoker.Tests/Play/DealBuilder.cs` arranges the order so seat *s* gets
+  positions *s*, *s+n*, *s+2n*…, then the turned-up top card, then the draw pile, with the
+  turned-up bottom card last. **Its filler is never a money card**, so a settlement expectation
+  can be worked out by hand; ask for a money card explicitly with `ThenDraw("7D")`.
+- **The engine builds the shoe itself.** `Settlement.ForRound` needs the *unshuffled*
+  index-aligned shoe, so `RoundEngine` calls `DeckBuilder.BuildTwoDecks()` at setup, keeps it
+  as `TableState.Shoe`, and validates `drawOrder` against it. P6's warning that the caller must
+  keep the builder list is now handled inside the engine — **callers pass nothing extra**.
+- **`TurnContext` is the concealment rule expressed as a type**: own hand, available discard,
+  draw-pile count, turned-up cards, stakes, registry, `TurnNumber`, `Taken`, `CanDeclare`,
+  `YouOwn(card)`. **No `TableState`, no `PlayerState`, no `CardOwnership`** — exposing
+  ownership would leak which money cards an opponent was dealt. A reflection test pins it.
+- **The engine asks narrowly, so the front end needs no legality checks.** `ChooseAction` is
+  asked only when a discard is available (so the opening turn just draws), `ClaimTurnedUpMoneyCard`
+  only on turn 1, and `Declare` only when `HandEvaluator.TryFindCover` has already succeeded —
+  the cover it found is what `RoundResult.Melds` carries, so it is never computed twice.
+- **⚠️ Narrate *after* the card lands.** The conservation test caught a real ordering fault:
+  raising `PlayerDrew` between `DrawFromTop` and `seat.Take` leaves an observer seeing 107
+  cards. Every take now joins the hand before the event fires. Not a clone bug — but the same
+  test that would have caught the 2023 clone bug caught this.
+- **`IGameObserver` gained three events over BUILD-PLAN §3.5's sketch** — `PlayerTookDiscard`,
+  `MoneyCardClaimed`, `PlayerDeclared` — because a pickup, a claim and a blind draw are three
+  different things and only the draw confers ownership. **All methods are default no-ops.**
+- **Ownership accounting is one invariant, and it is tested as one:** records == cards dealt +
+  blind draws, ever. A claim records nothing, a pickup records nothing, a discard changes
+  nothing. `OnlyTheDealAndABlindDrawEverConferOwnership` exercises all three routes in one
+  round and asserts the count.
+- **Deck exhaustion still propagates, and P9 cannot fix it by catching `Play()`.** The
+  exception unwinds from mid-turn with no resume point. The reshuffle belongs inside
+  `RoundEngine.TakeCard`, gathering the discard piles at the moment of drawing. **BUILD-PLAN
+  P9 has been amended** — this is the one thing P7 re-planned that matters.
+- **Seating is taken as given.** RULES.md §3 step 2 randomises it, but an engine that
+  reshuffled its own seating could not be scripted, so P8's `Program.cs` randomises before
+  constructing. The same list is what settlement is handed.
+- **Two new rules questions, both defaulted, neither blocking** (`RULES.md` rev 11, and both
+  phrased neutrally in `QUESTIONS-FOR-MYA-LAY.md`):
+  **§9 #12** — when the opening player claims the turned-up money card, does that value still
+  pay? **Default taken: yes**, designation is fixed at setup and does not move with the card;
+  reversing it is one line in `TableState`'s constructor.
+  **§9 #13** — may a player discard the very card they just took? **Default taken: yes**,
+  nothing in §5 forbids it; it would be a single guard in `RoundEngine`.
+- P7 shipped 18 tests (192 total).
+
+**Still current, from P6:**
 
 - **`Settlement.ForRound(players, winner, stakes, moneyCards, ownership, shoe)` →
   `IReadOnlyDictionary<PlayerId, int>`** of **net** deltas, positive to collect. Every player
@@ -301,8 +352,9 @@ proceed without further input.
 
 The items left in `RULES.md` §9 are fidelity questions with safe defaults already recorded in
 `BUILD-PLAN.md` — the discard exception, jokers per meld, whether the money-card claim recurs
-each round, whether a pure sequence is required, what a turned-up joker designates, and (new
-in rev 10) whether a meld may be made of nothing but jokers. `QUESTIONS-FOR-MYA-LAY.md` has them phrased ready to ask.
+each round, whether a pure sequence is required, what a turned-up joker designates, whether a
+meld may be made of nothing but jokers, and (new in rev 11) whether a claimed money card still
+designates its value and whether you may throw back the card you just took. `QUESTIONS-FOR-MYA-LAY.md` has them phrased ready to ask.
 **Do not block on them.**
 
 ---
@@ -311,6 +363,7 @@ in rev 10) whether a meld may be made of nothing but jokers. `QUESTIONS-FOR-MYA-
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-18 | P7 | ☑ Done. `TurnAction`, `PlayerState`, `TableState`, `TurnContext`, `RoundResult`, `RoundEngine`, `IPlayerAgent`, `IGameObserver`. A round deals from a validated draw order (so it is scriptable), turns up bottom-then-top, offers the claim on the opening turn only, records ownership on deals and blind draws alone, discards before revealing, and settles on a declaration. Build clean, **192 passed / 0 failed** (18 new), including the four acceptance tests — expected settlement, 13/14 hand sizes, 108 distinct cards at every event, and a claim that grants no ownership. Raised `RULES.md` §9 #12 and #13 (rev 11), both defaulted. Amended BUILD-PLAN §2, §3.5, P8 (what the engine asks the console) and **P9 (the reshuffle must go inside the engine — catching `Play()` cannot resume a round)**. |
 | 2026-08-18 | P6 | ☑ Done. `Stakes` (sealed record, positive-only, `Standard` = $5/$1) and `Settlement.ForRound` → per-player net deltas: flat round value from every loser to the winner, then each **owned** money card paying its owner `multiplier × money card value` from every other player. Walks ownership records and is never given a hand — pinned by a reflection test on the parameter list. Resolves an owned `CardId` through the **unshuffled** shoe by index and rejects a shuffled one outright. Build clean, **174 passed / 0 failed** (26 new), including the §4.3 worked example and a 500-round zero-sum property test. Amended BUILD-PLAN §2, P7 (keep the builder list; one roster; a round always has a winner), P8 (net deltas only) and P9 (conservation is a banking test). |
 | 2026-08-18 | P2 | ☑ Done. `MoneyCardRegistry` (pure function of the turned-up cards; permanent 7♦/A♠ as negative-id value designators; multiplier is permanent + turned-up, so doubling is the overlap and its own ceiling) and `CardOwnership` (append-only, write-once, no transfer/clear/remove — enforced by a reflection test). `PlayerId` brought forward into `Play/`. Build clean, **148 passed / 0 failed** (29 new). Re-planned P6: `Records` is keyed by `CardId` while `Multiplier` takes a `Card`, so settlement needs the shoe passed in — `DeckBuilder.BuildTwoDecks()` is index-aligned, `Deck.Cards` is not. Amended BUILD-PLAN §2, P2, P6 and P7. |
 | 2026-08-18 | P5 | ☑ Done. `MeldCandidates.For` (runs, then the sets no run already consumes) and `HandEvaluator.IsWinning` / `TryFindCover` — backtracking pinned to the lowest uncovered card, candidates indexed by their lowest card, coverage carried as a bitmask so dead ends memoise. Build clean, **119 passed / 0 failed** (19 new). Found that the joker-substitution acceptance hand has to be built from a set rather than a run, and that `TryFindCover`'s cover is not canonical; amended BUILD-PLAN P5, P8, P10 and the §7 risk table. |

@@ -103,6 +103,14 @@ Each of these has a safe default and does not block the build. Ask only if it's 
   (§9 #7 — Nick doesn't recall this being a rule.)
 - **Why these two cards.** *"Is there a reason the 7♦ and A♠ in particular are the money
   cards?"* (§9 #10 — likely unrecoverable, but cheap to ask.)
+- **After somebody takes the turned-up money card.** *"Say the money cards turned over are the
+  9♥ and the 4♠, and the first player takes the 9♥ into their hand at the start. For the rest
+  of that round, does a 9♥ still pay anything — say, if another player was dealt the other
+  one?"* (§9 #12 — asked as a table situation, with no option offered either way.)
+- **Throwing back what you just took.** *"You take a card — either the one the player before
+  you threw away, or one off the top of the deck — and then you have to throw one away. Are
+  you allowed to throw away that same card you just took?"* (§9 #13 — asked flat; the
+  interesting half is the card taken from the discard pile.)
 - **A joker turned up as a money card.** *"At the start of a round, when you turn the two
   cards over for the money cards, what happens if one of them is a joker?"* (§9 #11 — asked
   flat, with no options offered. If the answer is that it does become a money card, the
