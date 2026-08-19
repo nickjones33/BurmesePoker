@@ -52,7 +52,17 @@ internal static class Program
     /// What the computer's seats are called. One per seat, because a table can be all bots — and
     /// named rather than numbered, since the narration reads as a table of players either way.
     /// </summary>
-    private static readonly string[] BotNames = ["Ruby", "Sable", "Onyx", "Jade", "Coral", "Amber"];
+    /// <remarks>
+    /// <b>The players Nick actually plays with come first</b> (asked for on 2026-08-19). Six of
+    /// them and six seats at most (RULES.md §2.1), so the gemstones after them are a fallback
+    /// that a four-to-six-handed table can never reach — they are kept because a table that
+    /// grew would otherwise run off the end of the list rather than being unable to compile.
+    /// </remarks>
+    private static readonly string[] BotNames =
+    [
+        "Mya Lay", "Cobra", "Su Htwe", "Aung Aung", "Myat Htwe", "Khine Myat Zin",
+        "Ruby", "Sable", "Onyx", "Jade", "Coral", "Amber"
+    ];
 
     /// <summary>How many rounds of history the between-round summary shows.</summary>
     private const int HistoryShown = 12;
