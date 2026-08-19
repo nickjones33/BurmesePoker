@@ -28,8 +28,10 @@ are wanted.
 **Goal 3 grew a tail rather than ending.** Simulation at scale is delivered, but having a
 harness is what makes a *programme* of measurement worth running — hence **P14 (game journals,
 ✅ done 2026-08-19), P15 (a skill ladder, ✅ done 2026-08-19) and P16 (does the player before
-you decide your game?)**, all hanging off P12. They serve the third goal; none of them is a
-fifth one.
+you decide your game? ✅ done 2026-08-19)**, all hanging off P12. They serve the third goal;
+none of them is a fifth one. **All three are now done, and the programme has an answer: no,
+the player before you does not decide your game — see "What P16 found".** ⚠️ **P13 is the only
+outstanding packet in the plan.**
 
 **What they demand of the architecture, and what already satisfies it.** These are stated
 here because they change decisions taken *before* the packets that need them.
@@ -41,6 +43,7 @@ here because they change decisions taken *before* the packets that need them.
 | Simulation | Determinism, no ambient randomness, no I/O, no static state, and **speed** | ✅ **Delivered by P12.** `BurmesePoker.Sim` runs seeded games in parallel with byte-identical results; ~20 ms a round, 50–90 rounds a second. No static state, and now a test that says so |
 | Simulation, cont. | **Observability** — meaningful stats must be *derivable*, without the domain knowing what a statistic is | ✅ §3.8 held. Win rate, money split into flat and side bet, turns, how close the losers were, take and claim rates — **all derived by the harness, with no domain change whatever** |
 | Simulation, cont. | **Durability** — a game worth keeping must survive the build that played it (§3.9) | ✅ **Delivered by P14.** Two decorators over `IPlayerAgent` and a JSON Lines format; the engine is unchanged, and a replayed run's CSV is byte-identical to the played one's |
+| Simulation, cont. | **A design that can carry a controlled comparison**, not just a horse race | ✅ **Delivered by P16.** Seatings are enumerable rather than rotated, every row names who fed it, and effects are reported as a mean over games with an interval. ⚠️ The rotation could not have answered a question about neighbours *at any run size* — the cell was never played |
 | Multiplayer | A decision on whether agents block | §3.6, taken now rather than discovered later |
 
 **Three of the four are done, and P12 was the one that could have demanded architecture.** It
@@ -554,8 +557,8 @@ serves.
 P0 ─► P1 ─┬─► P2 ──────────┐                        ┌─► P11  console UX ☑
           ├─► P3 ─┐        │                        │
           └─► P4 ─┴─► P5 ──┴─► P7 ─► P8 ─► P9 ─► P10┼─► P12  simulation ☑ ─┬─► P14  game journals ☑
-                            P6 ─────┘               │                      └─► P15  skill ladder ─► P16  seating-order analysis
-                                                    └─► P13  multiplayer app
+                            P6 ─────┘               │                      └─► P15  skill ladder ☑ ─► P16  seating-order analysis ☑
+                                                    └─► P13  multiplayer app   ← the only one left
 ```
 
 **P2, P3, P4 are independent of one another** — good candidates for separate sessions in any
@@ -571,7 +574,10 @@ than closing one:** having a harness makes journals (P14) and a strategy-compari
 (2026-08-19) and closed its branch without opening another** — it needed nothing from the engine
 and asked nothing of the plan. **P15 is done (2026-08-19) and needed nothing from the engine
 either**, but it did not leave P16 alone: it sized the upstream effect at several points and cut
-the intervention P16 was counting on down to about half a point (see the amendment under P16). **P13 is now the only packet that would change the architecture,
+the intervention P16 was counting on down to about half a point (see the amendment under P16).
+**P16 is done (2026-08-19) and closed the branch**: the question has an answer with an interval
+and a control, and nothing in the domain, the engine or the round row changed to get it.
+**P13 is now the only outstanding packet — the only one that would change the architecture,
 and the only one that is purely optional.**
 
 | Packet | Title | Depends on | Size |
@@ -592,7 +598,7 @@ and the only one that is purely optional.**
 | P13 | Multiplayer app | P10 | XL — **split into P13.1–P13.3** below |
 | P14 | Game journals — record and replay | P12 | L — ☑ done 2026-08-19 |
 | P15 | A skill ladder | P12 | M — ☑ done 2026-08-19 |
-| P16 | Does the player before you decide your game? | P15 (**P14 ☑, so rich journals are available**) | M |
+| P16 | Does the player before you decide your game? | P15 (**P14 ☑, so rich journals are available**) | M — ☑ done 2026-08-19 |
 
 ---
 
@@ -1557,7 +1563,10 @@ the winner is reproducible from a seed.
 > That is exactly right for the question P12 asked — it stops a strategy owning seat 0 — and it
 > is **not** enough for the question P16 asks. With two strategies at four seats it produces only
 > `[A,B,A,B]` and `[B,A,B,A]`, so the pair *(my strategy, the strategy feeding me)* never varies:
-> every A is fed by a B, always. ⚠️ **A consequence for the headline result:** 30.7% against
+> every A is fed by a B, always. ✅ **P16 fixed this (`SimulationOptions.Assignments`,
+> `SeatingPlan.Balanced`, `--seating balanced`) and measured what it was worth: greedy 29.6% vs
+> simple 20.4% balanced, against 30.7% vs 19.3% rotated.** ⚠️ **A consequence for the headline
+> result:** 30.7% against
 > 19.3% was measured with every greedy seat sitting downstream of a simple seat, so it is the
 > honest answer to *"what happens at that table"* rather than a clean strategy-vs-strategy
 > figure. **Nothing here is wrong and nothing needs re-deriving** — but P16 owns separating the
@@ -1880,7 +1889,7 @@ strategies; it is the feeding. See the amendment under P16.
 
 ---
 
-### P16 — Does the player before you decide your game?
+### P16 — Does the player before you decide your game? ☑ done 2026-08-19
 
 **Goal.** Answer a specific hypothesis with a number and an interval.
 
@@ -2002,7 +2011,126 @@ than we can detect", which is a real answer and must be reportable as one.
 > real, some unknown part of that 1.6× is the feeding arrangement rather than the tie-break. The
 > number is not wrong — it is the honest answer to "what happens at that table" — but it is
 > **not** a clean strategy-vs-strategy figure, and P16 is what would separate them. Re-run it
-> under balanced assignment and report both.
+> under balanced assignment and report both. ✅ **Done below: 30.7/19.3 reproduced exactly, and
+> the balanced figure is 29.6/20.4.**
+
+---
+
+#### What P16 found
+
+**The hypothesis is false as stated, and true in a corner of the space that does not contain
+competent players.** The answer has a number, an interval and a control:
+
+> **Upstream skill is worth `+9.1 ± 2.1` points of win rate across the largest gap on the
+> ladder — random against greedy — and `-1.0 ± 2.1` points across the gap between two thinking
+> players. Who is at your table matters. Which side of you they sit on does not, unless they
+> are not really playing.**
+
+**The design.** Four seats. A focal `greedy` seat, `simple` in the two seats that are neither
+focal nor varied, and one varied seat carrying the ladder — `random`, `simple`, `greedy`,
+`cautious`. Two arms: the varied seat **immediately before** the focal seat, and the varied seat
+**immediately after** it. ⚠️ **Both arms seat the same four strategies**, so the table's
+composition is identical and the arms differ only in which way the discards flow between the
+focal seat and the varied one. 4,000 games a cell, 8 cells, **two master seeds** (20260819 and
+7): **64,000 games**. Each cell cycles its games through the four rotations of its pattern, so
+the focal seat sits in each seat exactly 1,000 times — seat 0 opens and is the only seat offered
+the turned-up money card (P12), and this removes it by arithmetic rather than by hope.
+
+```
+dotnet run -c Release --project BurmesePoker.Sim -- neighbours --games 4000 --seed 20260819
+dotnet run -c Release --project BurmesePoker.Sim -- neighbours --games 4000 --seed 7
+```
+
+**The focal seat's win rate, by what sat beside it** (pooled over both seeds, 8,000 games a
+cell, 95% intervals):
+
+| in the varied seat | **upstream** (before the focal seat) | **downstream** (after it) |
+|---|---:|---:|
+| `random` | **50.9 ± 1.1** | 40.9 ± 1.1 |
+| `simple` | 35.9 ± 1.1 | 35.9 ± 1.1 |
+| `greedy` | 31.6 ± 1.0 | 30.6 ± 1.0 |
+| `cautious` | 31.3 ± 1.0 | 30.4 ± 1.0 |
+
+*(The `simple` row is identical in both arms to the last digit, and must be: `simple` is also
+the filler, so at that level the two cells are literally the same table played from the same
+seed. It is a free consistency check on the whole apparatus and it passed on both seeds.)*
+
+**The contrast that answers the question** — each level against `greedy` in the same seat, then
+**upstream less downstream**, which cancels everything that acts through the table's strength:
+
+| level vs `greedy` | upstream effect | downstream effect (control) | **the edge itself** | takes |
+|---|---:|---:|---:|---:|
+| `random` | +19.4 ± 1.5 | +10.3 ± 1.5 | **+9.1 ± 2.1** ✅ | +1.6 ± 0.9 |
+| `simple` | +4.3 ± 1.5 | +5.3 ± 1.5 | **−1.0 ± 2.1** ✗ | −0.8 ± 0.9 |
+| `cautious` | −0.3 ± 1.4 | −0.2 ± 1.4 | **−0.2 ± 2.1** ✗ | −0.4 ± 0.9 |
+
+**Four things follow, and the second is the finding.**
+
+1. **The edge is real at the top of the gap.** Replacing the greedy player before you with one
+   who is not thinking is worth **+19.4** points — but **+10.3** of that is simply the table
+   getting weaker, because putting the *same* player *after* you is worth that much. What is
+   left, `+9.1 ± 2.1`, is the edge. ⚠️ **Without the downstream arm the answer would have been
+   19.4 and it would have been wrong by a factor of two.** The control was the most important
+   part of the packet, exactly as the packet said it would be.
+2. ⚠️ **Between two thinking players the edge is nothing.** `simple` and `greedy` are 12.9
+   points apart in skill (P15) and sit in every real game. Moving that gap to the seat before
+   the focal player changes its win rate by `−1.0 ± 2.1` points — an interval that contains zero
+   and rules out anything above about one point in the hypothesis's favour. Meanwhile the
+   *table* effect is unambiguous and symmetric: the same swap is worth `+4.3` upstream and
+   `+5.3` downstream. **A weaker player anywhere at the table is worth four or five points to
+   you. Which side of you they sit on is worth nothing.**
+3. 🔥 **P15's 5.4-point lead does not survive the control, and now has an explanation.** In the
+   four-way ladder run greedy (fed by simple) beat cautious (fed by greedy) by 5.4 points, and
+   `STATUS.md` recorded that "all of it is who fed whom". **It is not.** It is the same
+   four-or-five-point *neighbour* effect measured here, which the observational design could
+   not tell apart from an upstream one because a rotation moves both neighbours at once. The
+   lead was real and its interpretation was wrong — which is what the control exists to catch.
+4. ⚠️ **The mechanism variable barely moves, which is a finding in itself.** `takes` was the
+   predicted path: if better discards reach you, you take more of them. Across the contrast
+   where the win rate moves **9.1 points**, the focal seat's take rate moves **1.6 ± 0.9**. The
+   effect is real and in the right direction and it is **an order of magnitude too small to be
+   the channel**. What upstream skill changes is evidently *what* is offered, not *how often*
+   something worth taking is. ⚠️ **That is precisely the question a rich journal answers and
+   the CSV cannot** (§3.9/P14): re-run the two `random`-upstream cells at `--fidelity rich` and
+   the hand behind every take is on disk.
+
+**The intervention, predicted in advance and then checked** (P16 acceptance 4). The prediction,
+written into this packet by P15 before the run: *swapping a greedy upstream neighbour for a
+cautious one should move the focal seat's take rate a little and its win rate barely at all.*
+**The win-rate half is confirmed and the take-rate half is not observed**: the focal seat's win
+rate moved `−0.3 ± 1.4` and its take rate `−0.3 ± 0.9`, both indistinguishable from zero, and
+the directional figure is `−0.2 ± 2.1`. `CautiousBotAgent` also did not pay for denying —
+its own win rate in the upstream seat was 31.8% against greedy's 31.3% there. **A strategy
+built to deny the player it feeds cannot be shown to deny them anything**, which is the
+strongest form of P15's finding that denial and self-interest point the same way.
+
+**P12's headline, re-run under balanced assignment** (8,000 games, seed 20260818, four seats):
+
+| seating | greedy | simple | gap |
+|---|---:|---:|---:|
+| rotated `[g,s,g,s]` — P12's arrangement | **30.7%** | 19.3% | 11.4 pts |
+| balanced — all 16 assignments | **29.6%** | 20.4% | 9.2 pts |
+
+P12's numbers reproduce **exactly** at four times the games, and **the rotation flatters greedy
+by 1.1 points a seat — about a fifth of the gap.** ⚠️ **The honest strategy-vs-strategy figure
+at four seats is 29.6% against 20.4%**, and `--seating balanced` is how to get it. The rotation
+is not wrong; it answers "what happens at *that* table", and that is a different question.
+
+**What the design can and cannot resolve.** At 4,000 games a cell the standard error on a cell
+is about 0.75 points, on an arm effect about 1.05, and on the directional figure about 1.5 —
+so one seed resolves a directional effect of about **3 points** and the two seeds pooled about
+**2 points**. Anything smaller than that is reported as "inside the interval" and is not
+claimed. **"Smaller than we can detect" is a real answer** and rows 2 and 3 of the contrast
+table are it.
+
+**What was built, and what it cost the rest of the tree.** `SimulationOptions.Assignments` (an
+explicit list of seatings, cycled by game — null keeps the rotation), `SeatingPlan`
+(`Balanced` = every assignment there is; `Rotations` = one pattern walked round the cycle),
+`Measurement` (a mean over **games**, with the standard error of that mean),
+`NeighbourExperiment` / `NeighbourCsv`, a `neighbours` verb and a `--seating balanced` flag.
+**Two CSV columns**, `upstream_strategy` and `downstream_strategy`, derived from the seating and
+never from the run's options — which is what let a replayed journal produce them too. **The
+domain did not change by a line, and neither did `Simulator`, `GameRunner` or `Replay`.**
 
 ---
 
@@ -2039,7 +2167,7 @@ For picking up in a fresh session with no memory of this conversation.
 | ~~**A strategy that never improves plays for ever**~~ (new 2026-08-18, **retired the same day**). With the P9 reshuffle, only a declaration ends a round (RULES.md §7.1), so a table of bots that never improve never finishes. | `GreedyBotAgent`'s score is **monotone by construction** — throwing back the card just taken restores the hand exactly, so the best-keep score can never fall — and every round of every seed tried terminated in 21–30 turns. The property is a test (`ABotOnlyMatchTerminatesAndConservesMoney`), not a hope. It remains a real hazard for *future* strategies, which is why P12 owns a turn cap. **P12 built the cap and it has never fired** — even a table of four `SimpleBotAgent`s, which has no tie-break to push it off a plateau, finished all 300 rounds tried in 28.3 turns on average. The cap is insurance, and the only thing that has ever tripped it is an agent written to stall. |
 | ~~**Scope growth beyond a playable game**~~ (new 2026-08-18, **all but retired 2026-08-18**). §0 adds three further goals, and the 2023 failure was a half-finished thing nobody could play. | P9, P10 and P11 each ship something *more playable than before*; P12 and P13 are independent of one another after P10 (§4) and can be dropped without stranding anything. The game staying playable at every step is the mitigation. **Three of the four goals are now delivered and the tree has been green at every one of them.** Only P13 is outstanding, and it is the one that can be dropped outright without taking anything with it — **stopping after P11 leaves a finished game, a finished console and a working simulation**, not a half-built anything. |
 | **The synchronous-agent bet is wrong at scale** (new 2026-08-18). §3.6 parks a task per table rather than making the engine resumable. | At four to six players and a handful of tables the cost is a parked task, not a thread. If it is ever wrong, the fix is a resumable engine *behind the same interface* — the agents, tests and simulation loop do not change. Revisit only with a measured problem. |
-| **A measured result is really a seating artifact** (new 2026-08-19). Turn order is a directed cycle — only the immediately-previous player's discard is available (`RULES.md` §5) — so who sits behind whom is a variable, and P12's rotation holds it fixed rather than varying it. | Every comparison names its seating and reports it (§3.8 item 4), and **P16 exists to measure the size of the effect rather than assume it away**. Until it has, treat a strategy win rate as *a strategy at a particular table*, not as a property of the strategy. The cheap mitigation is already in place: the CSV carries the seat and the strategy on every row, so an old run can be re-read for the pattern it was played under. |
+| ~~**A measured result is really a seating artifact**~~ (new 2026-08-19, **retired the same day by P16**). Turn order is a directed cycle — only the immediately-previous player's discard is available (`RULES.md` §5) — so who sits behind whom is a variable, and P12's rotation holds it fixed rather than varying it. | **Measured, and it is real but small and not directional.** A weaker player anywhere at the table is worth 4–5 points of win rate to you; which *side* of you they sit costs nothing between two thinking strategies (−1.0 ± 2.1 pts) and 9.1 ± 2.1 points only across the random-to-greedy gulf. The size of the artifact in P12's own headline is now known: **the rotation flatters greedy by 1.1 points a seat, 2.2 of the 11.4-point gap.** The mitigation is permanent: `--seating balanced` plays every assignment, and every CSV row names `upstream_strategy` and `downstream_strategy`, so a rotated result and a balanced one can both be quoted and told apart. |
 | **Journalling slows the harness** (new 2026-08-19). §3.7 measured the work as allocation-bound, and a per-decision recorder allocates. | P14 keeps two fidelity levels and makes the rich one opt-in, and its acceptance criteria include measuring the throughput cost against P12's recorded 51/85–92 rounds a second rather than assuming it is small. If thin journalling costs more than a few percent it is built wrong. |
 | Rules drift as more is recalled. | `RULES.md` provenance tags make revisiting cheap; §9 tracks what is still unrecorded. |
 | Three projects is over-engineering. | Noted in §2. The enforcement is the point, but a single project with `IGameObserver` is an acceptable fallback. |

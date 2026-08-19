@@ -52,6 +52,28 @@ public sealed record SimulationOptions
     public JournalFidelity? Journal { get; init; }
 
     /// <summary>
+    /// Explicit seat assignments, cycled by game index. Null leaves the rotation in charge,
+    /// which is the default.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠️ <b>The rotation cannot answer a question about neighbours, and this is the escape
+    /// from it</b> (BUILD-PLAN P16). <see cref="Seating"/>'s rotation moves <i>one fixed
+    /// pattern</i> around the table, so with two strategies at four seats it only ever
+    /// produces <c>[A,B,A,B]</c> and <c>[B,A,B,A]</c>: every A is fed by a B and every B by an
+    /// A, in every game there is. The pair <i>(my strategy, the strategy before me)</i> then
+    /// has exactly one value per strategy and is <b>perfectly confounded</b> with the strategy
+    /// itself — no number of games fixes that, because the cell was never played.
+    /// </para>
+    /// <para>
+    /// Listing the assignments instead lets seat and strategy vary independently.
+    /// <see cref="SeatingPlan"/> builds the two that matter: every assignment there is, and
+    /// the rotations of one pattern.
+    /// </para>
+    /// </remarks>
+    public IReadOnlyList<IReadOnlyList<Strategy>>? Assignments { get; init; }
+
+    /// <summary>
     /// Which strategy sits in which seat for a given game.
     /// </summary>
     /// <remarks>
@@ -59,9 +81,21 @@ public sealed record SimulationOptions
     /// round and seat 0 opens every one of them — it is the seat offered the turned-up money
     /// card, and it draws first. A comparison that left a strategy in seat 0 for every game
     /// would measure the seat as much as the strategy.
+    /// <para>
+    /// <b>Rotating is the default and not the only choice</b> — see <see cref="Assignments"/>,
+    /// which replaces it wholesale when a run needs the seating to vary independently of the
+    /// seat.
+    /// </para>
     /// </remarks>
     public Strategy[] Seating(int game)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(game);
+
+        if (Assignments is { Count: > 0 } assignments)
+        {
+            return [.. assignments[game % assignments.Count]];
+        }
+
         var seating = new Strategy[Seats];
 
         for (var seat = 0; seat < Seats; seat++)
@@ -94,6 +128,38 @@ public sealed record SimulationOptions
         ArgumentOutOfRangeException.ThrowIfLessThan(Games, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(RoundsPerGame, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(TurnCap, 1);
+
+        if (Assignments is { } assignments)
+        {
+            if (assignments.Count == 0)
+            {
+                throw new ArgumentException(
+                    "An empty assignment list seats nobody; leave it null for the rotation.",
+                    nameof(Assignments));
+            }
+
+            foreach (var assignment in assignments)
+            {
+                if (assignment is null || assignment.Count != Seats)
+                {
+                    throw new ArgumentException(
+                        $"Every assignment must name a strategy for each of the {Seats} seats.",
+                        nameof(Assignments));
+                }
+
+                // A strategy the run does not know about would play, and then be missing from
+                // every total — the summary tabulates by the names in Strategies.
+                foreach (var strategy in assignment)
+                {
+                    if (!Strategies.Any(known => known.Name == strategy.Name))
+                    {
+                        throw new ArgumentException(
+                            $"'{strategy.Name}' is seated but is not one of the run's strategies.",
+                            nameof(Assignments));
+                    }
+                }
+            }
+        }
 
         return this;
     }

@@ -119,12 +119,23 @@ public class JournalReplayTests
     }
 
     /// <summary>The CSV with the strategy name dropped — everything a replay must reproduce regardless of who is named.</summary>
+    /// <summary>
+    /// Rows with every strategy name blanked out — what happened, rather than who did it.
+    /// </summary>
+    /// <remarks>
+    /// <b>Three columns carry a name, not one</b> (P16): a row also says who fed the seat and
+    /// who the seat fed, and both are the same names read off the seating. Renaming the seats
+    /// therefore changes three fields, and blanking only the first would make this test fail
+    /// for the one reason it is not looking for.
+    /// </remarks>
     private static List<string> Outcomes(IEnumerable<string> rows) =>
     [
         .. rows.Select(row =>
         {
             var fields = row.Split(',');
             fields[5] = string.Empty;
+            fields[6] = string.Empty;
+            fields[7] = string.Empty;
             return string.Join(',', fields);
         })
     ];

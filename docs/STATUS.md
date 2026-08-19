@@ -10,30 +10,42 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P16 or P13 — independent of each other, take either.** No blockers.
-**P16 is the more interesting of the two**, and P15 left it a large lead to chase (below); P13
-is the only packet that changes the architecture and the only one that is genuinely optional.
+**Next packet: P13, and it is the only one left.** No blockers. It is also the only packet that
+changes the architecture and the only one that is genuinely optional — **stopping here is a
+legitimate end state.**
 
-⚠️ **The plan grew on 2026-08-19 and P13 is no longer the last packet.** Three hang off P12:
-**P14** (game journals — ☑ **done 2026-08-19**), **P15** (a skill ladder — ☑ **done
-2026-08-19**) and **P16** (the upstream-neighbour experiment). See `BUILD-PLAN.md` **§3.9** for
-the decision behind P14 and **P16** for the hypothesis behind the other two.
+✅ **P16 is done (2026-08-19), and the whole P14–P16 branch with it.** The question Nick's
+friend raised has an answer, an interval and a control:
 
-🔥 **P15 handed P16 a lead worth reading before anything else.** `greedy` and `cautious` are
-**0.5 ± 0.6 points apart head to head over 32,000 games** — indistinguishable. In the four-way
-ladder run they came out **38.7% and 33.3%**. The rotation feeds greedy from `simple` and
-cautious from `greedy` in every single game, so **all 5.4 points of that gap is who fed whom**.
-It is a lead and not a result — the downstream neighbour differs too, which is precisely what
-P16's control separates — but it says the upstream effect is worth **points, not tenths**.
+> **Upstream skill is worth `+9.1 ± 2.1` points of win rate across the biggest gap on the
+> ladder (`random` against `greedy`) and `−1.0 ± 2.1` points across the gap between two
+> thinking players.** A weaker player *anywhere* at your table is worth 4–5 points to you;
+> **which side of you they sit on is worth nothing** unless they are not really playing.
+> 64,000 games, two seeds, with a downstream control arm that seats exactly the same four
+> strategies.
 
-**P0 through P12 and P14 are done. The game is playable alone, pleasant to sit at, and measurable in
+🔥 **And it corrected P15's headline lead rather than confirming it.** P15 found greedy and
+cautious 5.4 points apart in the ladder run and recorded that "all of it is who fed whom". **It
+is not.** It is the same symmetric *neighbour* effect — a rotation moves both neighbours at
+once, which is exactly what the downstream arm separates. The lead was real and its reading was
+wrong, and the control is what caught it.
+
+⚠️ **Two things every future measurement inherits from P16.** `--seating balanced` plays every
+assignment of the strategies across the seats instead of rotating one pattern, and **every CSV
+row now names `upstream_strategy` and `downstream_strategy`.** **P12's headline re-measured:
+30.7% vs 19.3% rotated (reproduced exactly at 8,000 games) against 29.6% vs 20.4% balanced** —
+so **the rotation flatters greedy by 1.1 points a seat, about a fifth of the gap.** Quote the
+balanced figure for "which strategy is better" and the rotated one only for "what happens at
+that table".
+
+**P0 through P12 and P14–P16 are done. The game is playable alone, pleasant to sit at, and measurable in
 bulk:** `dotnet run --project BurmesePoker.Console` fills the empty seats with bots, paces them
 so a person can follow, shows a hand as the melds it nearly is, keeps a round log across the
 concealment clear, and replays any match from `--seed`; `dotnet run -c Release --project
 BurmesePoker.Sim` plays thousands of seeded games in parallel and reports how two strategies
 compare. **Three of §0's four goals are delivered — solo play (P10), console UX (P11) and
 simulation (P12). The multiplayer app (P13) remains, and P14–P16 were added on 2026-08-19 to
-carry the simulation goal further.**
+carry the simulation goal further; all three shipped the same day.**
 
 ✅ **There is a persistence layer now, and it is a file format rather than a store.** P14 built
 **game journals**: `Play/{GameJournal, JournalFormat}` and `Agents/{JournalingAgent,
@@ -61,7 +73,8 @@ MatchEngine}`, `Abstractions/{IPlayerAgent,IGameObserver}` and
 `Agents/{CoverScore,RandomBotAgent,SimpleBotAgent,GreedyBotAgent,CautiousBotAgent}`. Console holds `{Program,CardFormatting,
 SpectrePlayerAgent,ConsoleObserver}`. Sim holds `{Program,Simulator,GameRunner,
 SimulationOptions,SimulationReport,StrategySummary,Strategy,SeedSequence,SeatRecorder,
-SimObserver,RoundAbandonedException,Results,CsvReport,Replay}`. **Console gained five files in
+SimObserver,RoundAbandonedException,Results,CsvReport,Replay}` **plus P16's
+`{SeatingPlan,Measurement,NeighbourExperiment,NeighbourCsv}`**. **Console gained five files in
 P11**: `{Options,Palette,RoundLog,HandView,PacedAgent}`. **P14 added `Play/{GameJournal,
 JournalFormat}` and `Agents/{JournalingAgent,JournalPlayerAgent}` to Domain and `Replay.cs`
 (which holds both `Replay` and `JournalReport`) to Sim. P15 added
@@ -72,8 +85,8 @@ how to seat one. ⚠️ **Domain now references
 string API, not an I/O one: `JournalFormat` hands back `IEnumerable<string>` and the two front
 ends own every `File` call, the same split `CsvReport` already had.
 
-✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **278 passed,
-0 failed**, four runs in a row. **Any red tree is a real problem.**
+✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **294 passed,
+0 failed**, twice in a row. **Any red tree is a real problem.**
 
 ⚠️ **One hazard a cold context must know before writing a test or a strategy:** with the
 reshuffle built, **a round in which nobody's hand ever improves never ends.** Only a
@@ -103,19 +116,22 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P10** Bot opponents — solo play | P9 | done 2026-08-18 — `PartialCover` + `GreedyBotAgent`; every seed terminates |
 | ☑ | **P11** Console UX pass | P10 | done 2026-08-18 — round log, meld-grouped hand, hints, pacing, `--seed` |
 | ☑ | **P12** Simulation at scale | P10 | done 2026-08-18 — `BurmesePoker.Sim`; the tie-break wins 30.7% to 19.3% |
-| ☐ | **P13** Multiplayer app | P10 | XL, and §5 now says how to split it — the only one that changes the architecture |
+| ☐ | **P13** Multiplayer app | P10 | XL, and §5 now says how to split it — **the only packet left**, the only one that changes the architecture |
 | ☑ | **P14** Game journals — record and replay | P12 | done 2026-08-19 — a run and its replay produce byte-identical CSV |
 | ☑ | **P15** A skill ladder | P12 | done 2026-08-19 — four rungs, **three** separated skill levels |
-| ☐ | **P16** Does the player before you decide your game? | P15 | ⚠️ the current seating scheme cannot answer it — but P15 already sized the effect |
+| ☑ | **P16** Does the player before you decide your game? | P15 | done 2026-08-19 — **no**, not between thinking players: −1.0 ± 2.1 pts |
 
-**P14 and P15 are both done, and neither needed a line of the engine.** P14 cost nothing
-measurable in throughput at either fidelity; P15 raised no rules question either — how well a
-strategy plays is not a rule (`RULES.md` stays at **rev 13**).
+**P14, P15 and P16 are all done, and not one of them needed a line of the engine.** P14 cost
+nothing measurable in throughput at either fidelity; P15 and P16 raised no rules question
+either — how well a strategy plays, and who it plays next to, are not rules (`RULES.md` stays
+at **rev 13**). **P16 changed `BurmesePoker.Sim` only**: `SimulationOptions` gained one property,
+`CsvReport` two columns, and four new files went in beside them.
 
 **P10 was the fork; P11 and P12 have both been taken through it.** ⚠️ **P12 opened a branch
 rather than closing one** — having a harness is what makes journals and a strategy-comparison
-programme worth building, so P14, P15 and P16 hang off P12 and not off P13. The game is finished
-as a game, the console is finished as a console, and the simulation goal is delivered —
+programme worth building, so P14, P15 and P16 hung off P12 and not off P13. ✅ **That branch is
+now closed.** The game is finished as a game, the console is finished as a console, the
+simulation goal is delivered and the measurement programme has run to an answer —
 **stopping here is a legitimate end state**, and everything outstanding is new work rather than
 a debt.
 
@@ -160,9 +176,54 @@ and a cold context following the `/poker` baseline rule — *any failure at all 
 should re-run on a quiet machine before believing either of them. Nothing has been changed about
 them; loosening a performance guard is a decision for whoever owns it, not a tidy-up.
 
+**From P16:**
+
+- 🔥 **The result, in one line: a weaker player anywhere at your table is worth 4–5 points to
+  you, and which side of you they sit on is worth nothing** — unless they are `random`, where
+  the edge is `+9.1 ± 2.1` points. Between `simple` and `greedy`, a 12.9-point skill gap, the
+  directional effect is `−1.0 ± 2.1`: an interval that contains zero. `BUILD-PLAN.md`
+  "What P16 found" has every cell.
+- ⚠️ **The downstream control arm is what makes the number mean anything, and it moved the
+  answer by a factor of two.** The gross upstream effect of `random` over `greedy` is +19.4
+  points; the *same* swap made downstream is worth +10.3. Without the second arm the packet
+  would have reported 19.4 and been wrong. **Any future neighbour claim needs the same arm.**
+- ⚠️ **P15's "all 5.4 points of that gap is who fed whom" was wrong, and is corrected in
+  place below.** It is a *neighbour* effect, not an *upstream* one — a rotation moves both
+  neighbours at once. Nothing about P15's own measurements changes; only the reading of the
+  accident it found.
+- ⚠️ **`SimulationOptions.Assignments` is the seating fix and it is opt-in.** Null keeps the old
+  rotation, so nothing already measured moved. `SeatingPlan.Balanced(strategies, seats)` is
+  every assignment (capped at 4,096 — six seats of the four-rung ladder is exactly that);
+  `SeatingPlan.Rotations(pattern)` walks one pattern round the cycle, which is what a cell uses
+  to average the opening seat away. **Both are validated**: an assignment naming a strategy the
+  run did not list would play and then be missing from every total.
+- ⚠️ **The CSV grew two columns and one existing test had to be taught about them.**
+  `JournalReplayTests.Outcomes` blanks the strategy field so a renamed replay compares equal —
+  it now blanks fields 5, 6 **and** 7, because `upstream_strategy` and `downstream_strategy`
+  carry the same names. Both derive from the *seating*, never from `SimulationOptions`, which is
+  what P14 warned about and is why `AJournalledRunReplaysToTheSameRows` still passes untouched.
+- ⚠️ **The mechanism variable barely moved, and that is the open question this packet leaves.**
+  `takes` was supposed to be the road the effect travels; across a contrast worth 9.1 points of
+  win rate it moved **1.6 ± 0.9**. So upstream skill changes *what* is offered, not *how often*
+  something worth taking is. **The tool for that is a rich journal** (§3.9/P14) — re-run the two
+  `random`-upstream cells at `--fidelity rich` and read the hands. It is a question, not a
+  packet, and nobody has asked for it.
+- **The intervention came back null, and `cautious` did not pay for it either.** Focal win rate
+  `−0.3 ± 1.4` and take rate `−0.3 ± 0.9` against a greedy upstream; cautious's own win rate in
+  that seat was 31.8% against greedy's 31.3%. **A strategy built to deny cannot be shown to deny
+  anything** — P15's "denial and self-interest coincide" in its strongest form.
+- **What a run costs.** Eight cells × 4,000 games is **32,000 games in 8–12 minutes** on this
+  machine (parallel, Release); the two seeds together took about twenty. A quick look is
+  `--games 500` — about a minute, and it resolves nothing finer than ~10 points.
+- ⚠️ **Two new test classes, and only one of them joins `WallClockBudgets.Collection`.**
+  `NeighbourExperimentTests` plays simulations and joins it; `SeatingPlanTests` plays no games
+  at all, because every claim it makes is a property of an assignment list — which is the level
+  the confound actually lives at.
+
 **From P15:**
 
-- 🔥 **Read this before starting P16.** `greedy` and `cautious` are **0.5 ± 0.6 points apart
+- 🔥 **Read this before starting P16.** ✅ *P16 is done — see above. Kept for the reasoning, and
+  ⚠️ **its last sentence is the part P16 corrected**.* `greedy` and `cautious` are **0.5 ± 0.6 points apart
   head to head over 32,000 games** and **5.4 points apart in the four-way ladder run**. The
   rotation feeds greedy from `simple` and cautious from `greedy` in every game, so the gap is
   the feeding and not the strategies. It is **a lead, not a result** — the downstream neighbour
@@ -865,6 +926,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-19 | P16 | ☑ Done. **Does the player before you decide your game? No — not between players who are both thinking.** 🔥 **The answer, with an interval and a control: upstream skill is worth `+9.1 ± 2.1` points of win rate across the `random`-to-`greedy` gulf and `−1.0 ± 2.1` across the `simple`-to-`greedy` gap.** A weaker player *anywhere* at the table is worth 4–5 points to you; **which side of you they sit on is worth nothing** unless they are not really playing. ⚠️ **The packet had to fix the harness before it could ask the question**: `SimulationOptions.Seating` rotates one pattern, so *(my strategy, the one feeding me)* was **perfectly confounded** — the cell was never played, at any run size. `SimulationOptions.Assignments` (opt-in; null keeps the rotation) plus `SeatingPlan.{Balanced, Rotations}` fixes it, and `CsvReport` gained **`upstream_strategy` and `downstream_strategy`**, derived from the *seating* and never from the options — which is why P14's replay identity survived untouched (one test, `JournalReplayTests.Outcomes`, had to blank three name fields instead of one). **The design:** focal `greedy`, filler `simple`, the ladder in one varied seat, **two arms — varied *before* the focal seat and varied *after* it, seating the identical four strategies** — 4,000 games a cell, 8 cells, two seeds, **64,000 games**; each cell cycles the four rotations of its pattern so the focal seat opens exactly a quarter of the time. ⚠️ **The downstream control moved the answer by a factor of two**: the gross upstream effect of `random` is +19.4 points and the same swap downstream is +10.3, so without the second arm the packet would have reported 19.4 and been wrong. 🔥 **It also corrected P15's own headline**: the 5.4-point ladder gap is a *neighbour* effect, not an *upstream* one — a rotation moves both neighbours at once. ⚠️ **The mechanism barely moves**: across a contrast worth 9.1 points of win rate, `takes` moves **1.6 ± 0.9** — so upstream skill changes *what* is offered, not *how often* something worth taking is, and a rich journal is what would say more. **The intervention, predicted in advance by P15, came back null**: `cautious` upstream costs the focal seat `−0.3 ± 1.4` points and costs `cautious` nothing (31.8% against greedy's 31.3% in the same seat). **P12's headline re-run at 8,000 games: 30.7%/19.3% rotated — reproduced exactly — against 29.6%/20.4% balanced, so the rotation flatters greedy by 1.1 points a seat, about a fifth of the gap.** Four new files in Sim (`SeatingPlan`, `Measurement`, `NeighbourExperiment`, `NeighbourCsv`), a `neighbours` verb and a `--seating balanced` flag; **`BurmesePoker.Domain` unchanged, and so are `Simulator`, `GameRunner` and `Replay`.** Build clean, **294 passed / 0 failed** (16 new: 9 in `Sim/NeighbourExperimentTests` — one of them the interval arithmetic itself — 6 in `Sim/SeatingPlanTests`, and 1 in `Sim/SimulationTests` for the two new columns). No new rules question — who you sit next to is not a rule, so `RULES.md` stays at **rev 13**. Amended BUILD-PLAN §0, §4, P12's caveat, P16 (a "What P16 found" section) and §7 (the seating-artifact risk retired, with its size measured). |
 | 2026-08-19 | P15 | ☑ Done. **A skill ladder — four rungs, and only three skill levels.** Domain gained `Agents/RandomBotAgent` (the floor: legal moves, no thought, ⚠️ **a `Random` handed in and never `Random.Shared`** — `SeedSequence.SeatSeed(gameSeed, seat)` derives it, so a run is still a pure function of its master seed and two random seats do not play in lockstep) and `Agents/CautiousBotAgent` (greedy, plus a last-resort tie-break towards the card least useful to whoever picks it up). `CoverScore` grew the **shared discard loop** every rung throws through, so simple/greedy/cautious now differ in *one function argument* and nothing else — a refactor verified by the 259-test baseline staying byte-identical. `Strategy.Create` became `Func<int, IPlayerAgent>`; `StrategyCatalog` is now `random, simple, greedy, cautious` **in ladder order**. **Sim gained no file.** ⚠️ **The headline is a negative result, and it is the useful part: `cautious` is not distinguishable from `greedy` — +0.48 ± 0.55 points over 32,000 head-to-head games across two seeds.** Head to head at four seats: random 0.1% vs greedy 49.9%; simple 18.5% vs greedy 31.5% (a confirmation of P12's 30.7/19.3 at twice the games); simple 18.4% vs cautious 31.6%. **Why: denial and self-interest coincide.** The partners a hand holds are exactly the ones an opponent cannot hold, so both natural ways of measuring "least use to them" reduce to `Supply(rank) − Potential` to within a point — and ⚠️ **every *pairwise-additive* tie-break is greedy again**, because partnership is symmetric. A rung above greedy has to be combinatorial (live outs), which costs ~100× a decision — a packet, not a tie-break. 🔥 **And an accident worth more than the packet: in the four-way run the rungs came out random 0.1%, simple 27.9%, cautious 33.3%, greedy 38.7% — 5.4 points between two strategies that are level head to head, and the rotation feeds greedy from simple and cautious from greedy in every game. All of it is who fed whom.** Build clean, **278 passed / 0 failed** (19 new: 10 in `Agents/SkillLadderTests`, 9 in `Sim/SkillLadderRunTests`). ⚠️ **Added `WallClockBudgets.cs`** — the two timing-budget tests began failing on a *quiet* machine because the new ladder tests run simulations beside them, so the heavy classes and the budgets now share one xunit collection and never run concurrently; **neither budget was loosened**. No new rules question — `RULES.md` stays at **rev 13**. Amended BUILD-PLAN §0, §4, P15 (a "What P15 found" section) and **P16 (three amendments: the lead, a much weaker intervention than it assumed, and three usable skill levels rather than four)**. |
 | 2026-08-19 | P14 | ☑ Done. **Game journals — record and replay.** The tree's first persistence layer, and it is a *format* rather than a store. Domain gained `Play/{GameJournal, JournalFormat}` — pure record types plus JSON Lines in and out, `IEnumerable<string>` exactly as `CsvReport.Rows` already did — and `Agents/{JournalingAgent, JournalPlayerAgent}`, a decorator that writes down every answer and a seat that answers from a file. **`RoundEngine` and `MatchEngine` are byte-for-byte unchanged**: replaying is playing the game with different seats, so no second engine and no resumable state machine. Sim gained `Replay` (which reuses `Simulator.Summarise` and `GameRunner`'s row builder) and `JournalReport`; both front ends gained `--journal <path>` and `--fidelity thin|rich`, and the harness a `replay` verb. **The headline acceptance is a `diff`: a 20-game, 40-round journalled run and its replay produce byte-identical CSV.** ⚠️ **The console now draws two `Random`s from `--seed`** — one to seat the table, one for the match — because a journal reproduces the deal by re-seeding the match's generator, and the old single generator had the seating consuming from it first; **a pre-P14 `--seed` no longer plays the same console match**, and two runs at the same seed are still byte-identical to each other. ⚠️ **Rich fidelity costs nothing measurable, which §3.9 expected to be false**: 400 games serially, three interleaved repetitions, **46–49 rounds/s with no journal, 48–49 thin, 48–50 rich** — a thirteen-`CardId` copy is tens of nanoseconds against a 140 µs cover search. **The expensive axis is bytes** (9.6 KB a round against 5.0), so rich stays opt-in for what it costs to keep. Divergence is loud three ways — journal exhausted, wrong question, card not in hand — each with a clean CLI message. Build clean, **259 passed / 0 failed** (20 new: 14 in `Play/GameJournalTests`, 6 in `Sim/JournalReplayTests`). Verified a console match through a pty and replayed it under the harness to the same two rounds. **No new rules question — `RULES.md` stays at rev 13.** Amended BUILD-PLAN §0, §2, §3.9, §4, P14, **P15 (a new acceptance: every rung journals and replays) and P16 (rich journals are now affordable; ⚠️ a new CSV column derived from `SimulationOptions` rather than from the seating would break replay identity)**. |
 | 2026-08-19 | — | **Persistence answered and three packets added** (docs only, no code — still 239 passed / 0 failed). The tree has **no persistence layer**: `CsvReport.WriteTo` is its only write to disk, and that is an outcome table. `BUILD-PLAN.md` **§3.9** records why that has been fine (a bot game is a pure function of its seed — P12 proved it byte-identical) and why it stops being fine: **a person is not a function of a seed, and a seed only replays against the code that produced it.** **P14** — game journals, as record types plus a journalling decorator and a replaying agent over `IPlayerAgent`, with the format in one place and file writing left to the consumers; replay is *a seat that answers from a file*, not a resumable engine, and the rich fidelity level is opt-in because §3.7 measured this work allocation-bound. **P15** — a skill ladder, ≥4 separated strategies including a `RandomBotAgent` (⚠️ must take a seeded `Random`, never `Random.Shared`) and a `CautiousBotAgent` that throws what least helps the seat it feeds. **P16** — the upstream-neighbour hypothesis, raised by Nick's friend: *the skill of the player before you is what decides your game.* Well-posed, because `RULES.md` §5 makes a table a directed cycle; **a strategy question, not a rules question, so `RULES.md` is untouched at rev 13.** ⚠️ **The finding of the session: `SimulationOptions.Seating` cannot answer it** — it rotates one fixed pattern, so at two strategies and four seats *(me, upstream)* is perfectly confounded, every greedy fed by a simple. That also puts a caveat on P12's 30.7%-vs-19.3% headline, which P16 owns separating. Also added `docs/PLAYING.md`, a player-facing guide to solo play, and listed it in CLAUDE.md's documentation map. Amended BUILD-PLAN §3.9 (new), §4, P12, P14–P16 (new) and §7 (two risk rows). |

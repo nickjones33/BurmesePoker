@@ -11,24 +11,28 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-This project is **all but finished**. **P0–P12, P14 and P15 are done**: the 2023 implementation has been
+This project is **all but finished**. **P0–P12 and P14–P16 are done**: the 2023 implementation has been
 deleted, the whole rules core is built and tested, `dotnet run --project BurmesePoker.Console`
 fills the empty seats with paced, named bots and plays round after round with the banks carrying
 over — showing a hand as the melds it nearly is, keeping a round log across the concealment
 clear, hinting what the computer would do, and replaying any match from `--seed` — and
 `dotnet run -c Release --project BurmesePoker.Sim` plays thousands of seeded games in parallel
 to compare strategies. **Three of the four §0 goals are delivered — solo play (P10), console UX
-(P11) and simulation (P12).** **P13 (multiplayer) remains and is droppable** — BUILD-PLAN §5
-splits it into P13.1–P13.3 — and **P14–P16 were added on 2026-08-19**: game journals, a skill
-ladder, and an experiment on whether the player before you decides your game. **P14 shipped on
-2026-08-19**: `--journal <path>` on both front ends writes every decision every seat made as JSON
-Lines, and `BurmesePoker.Sim -- replay <path>` plays it back — to a byte-identical CSV. A seed is
-a pointer into the build that produced it; a journal is the record (§3.9). **P15 shipped on
-2026-08-19 too**: `--strategies random,simple,greedy,cautious` is a skill ladder with **four
-rungs and three separated skill levels** — `cautious` turned out to be indistinguishable from
-`greedy`, because denial and self-interest point the same way. 🔥 **It also handed P16 a large
-lead: two strategies that are level head to head finish 5.4 points apart when one is fed by a
-weaker player than the other.** **P16 is the next packet.**
+(P11) and simulation (P12).** **P13 (multiplayer) is the only packet left, and it is
+droppable** — BUILD-PLAN §5 splits it into P13.1–P13.3. **P14–P16 were added on 2026-08-19 and
+all three shipped the same day.** P14: `--journal <path>` on both front ends writes every
+decision every seat made as JSON Lines, and `BurmesePoker.Sim -- replay <path>` plays it back —
+to a byte-identical CSV. A seed is a pointer into the build that produced it; a journal is the
+record (§3.9). P15: `--strategies random,simple,greedy,cautious` is a skill ladder with **four
+rungs and three separated skill levels** — `cautious` is indistinguishable from `greedy`,
+because denial and self-interest point the same way. 🔥 **P16 answered the question the other
+two were built for, and the answer is no.** `BurmesePoker.Sim -- neighbours` runs a focal seat
+against a skill dial in the seat before it **and a control arm with the dial in the seat after
+it**: upstream skill is worth **`+9.1 ± 2.1` points** of win rate across the `random`-to-`greedy`
+gulf and **`−1.0 ± 2.1`** across the gap between two thinking players. A weaker player *anywhere*
+at your table is worth 4–5 points to you; **which side of you they sit on is worth nothing.**
+⚠️ P16 also fixed the seating scheme it needed — `--seating balanced` and two new CSV columns —
+and **re-measured P12's headline: 30.7%/19.3% rotated against 29.6%/20.4% balanced.**
 
 Whether or not you
 use the skill, read these first:
@@ -47,8 +51,9 @@ with AI seats. **§3.6, §3.7, §3.8 and §3.9 are the design constraints those 
 in advance: agents stay synchronous, simulation is a first-class consumer, statistics are
 collected by consumers rather than computed by the domain, and a seed is a pointer while a
 journal is the artifact. All four have now been paid off by packets that needed nothing from the
-engine — **P11 shipped a whole UX pass without changing a line of the domain, and P14 added
-record-and-replay without changing `RoundEngine` or `MatchEngine` at all.**
+engine — **P11 shipped a whole UX pass without changing a line of the domain, P14 added
+record-and-replay without changing `RoundEngine` or `MatchEngine` at all, and P16 ran a
+controlled experiment without changing `Simulator`, `GameRunner` or `Replay`.**
 
 **The abandoned 2023 implementation is gone.** P0 deleted it; it survives only at the git tag
 `pre-rewrite`. Roughly 180 lines of enums and lookup tables from `Common.cs` were salvaged into
@@ -89,6 +94,8 @@ dotnet run -c Release --project BurmesePoker.Sim -- --games 2000   # compare str
 dotnet run -c Release --project BurmesePoker.Sim -- bench          # time the cover searches
 dotnet run -c Release --project BurmesePoker.Sim -- --games 100 --journal run.jsonl   # keep every decision
 dotnet run -c Release --project BurmesePoker.Sim -- replay run.jsonl                  # play them back
+dotnet run -c Release --project BurmesePoker.Sim -- neighbours --games 2000          # does the seat before you matter?
+dotnet run -c Release --project BurmesePoker.Sim -- --games 2000 --seating balanced  # every seating, not one rotated pattern
 ```
 
 All four projects target **`net10.0`**, matching the installed SDK (10.0.111). Tests are

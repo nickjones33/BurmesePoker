@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using BurmesePoker.Domain.Abstractions;
@@ -204,6 +205,37 @@ public class SimulationTests
         Assert.Equal("0", first[1]);
         Assert.Equal(Played.Value.Games[0].Seed.ToString(), first[2]);
         Assert.Equal("greedy", first[5]);
+    }
+
+    [Fact]
+    public void EveryRowAlsoNamesWhoFedItAndWhoItFed()
+    {
+        // P16's join keys. Both columns are pure functions of the seating the row's game
+        // already carries, and both are derived from *the seating* rather than from the run's
+        // options — which is what lets a replayed journal, whose options are reconstructed from
+        // headers, produce the same two columns (P14).
+        var report = Played.Value;
+        var rows = CsvReport.Rows(report).Skip(1).Select(row => row.Split(',')).ToList();
+
+        Assert.Contains("upstream_strategy,downstream_strategy", CsvReport.Rows(report).First());
+
+        foreach (var row in rows)
+        {
+            var game = report.Games[int.Parse(row[1], CultureInfo.InvariantCulture)];
+            var seat = int.Parse(row[4], CultureInfo.InvariantCulture);
+            var seats = game.Seating.Count;
+
+            Assert.Equal(game.Seating[seat], row[5]);
+            Assert.Equal(game.Seating[(seat - 1 + seats) % seats], row[6]);
+            Assert.Equal(game.Seating[(seat + 1) % seats], row[7]);
+        }
+
+        // ⚠️ The wrap-around is the whole point: a table is a cycle, so the seat that feeds
+        // seat 0 is the last one, and getting that backwards would be invisible in a win rate.
+        var opener = rows.First(row => row[4] == "0");
+        var closer = report.Games[int.Parse(opener[1], CultureInfo.InvariantCulture)].Seating[^1];
+
+        Assert.Equal(closer, opener[6]);
     }
 
     private static bool IsCompilerGenerated(Type type) =>
