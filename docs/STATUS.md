@@ -136,6 +136,19 @@ a debt.
 
 *Anything a cold context would need: decisions taken, surprises, deliberate leftovers.*
 
+⚠️ **Two tests are wall-clock budgets and fail on a busy machine.**
+`HandEvaluatorTests.EvaluatingThirteenCardsIsFast` and `PartialCoverTests.ScoringThirteenCardsIsFast`
+each assert that three pathological thirteen-card hands are searched in under a second. They
+normally take single-digit milliseconds — P12 measured 91 µs and 140 µs a hand — so the budget
+has three orders of magnitude of headroom, and they still fail if `dotnet test` is run while
+something else is saturating the cores. **Reproduced deliberately on 2026-08-19** by running the
+suite against three concurrent `BurmesePoker.Sim` runs: one or the other failed on two attempts
+out of three, and six unloaded runs in a row were green. **They are the only two tests in the
+suite that can fail for a reason other than a defect**, they predate P14 (P5 and P10 built them),
+and a cold context following the `/poker` baseline rule — *any failure at all is a real problem* —
+should re-run on a quiet machine before believing either of them. Nothing has been changed about
+them; loosening a performance guard is a decision for whoever owns it, not a tidy-up.
+
 **From P14:**
 
 - ⚠️ **The one thing not to undo: `BurmesePoker.Console` now draws two `Random`s from
