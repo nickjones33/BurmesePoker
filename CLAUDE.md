@@ -18,8 +18,11 @@ over — showing a hand as the melds it nearly is, keeping a round log across th
 clear, hinting what the computer would do, and replaying any match from `--seed` — and
 `dotnet run -c Release --project BurmesePoker.Sim` plays thousands of seeded games in parallel
 to compare strategies. **Three of the four §0 goals are delivered — solo play (P10), console UX
-(P11) and simulation (P12). Only P13 (multiplayer) remains, and it is droppable**; BUILD-PLAN §5
-splits it into P13.1–P13.3. Whether or not you use the skill, read these first:
+(P11) and simulation (P12).** **P13 (multiplayer) remains and is droppable** — BUILD-PLAN §5
+splits it into P13.1–P13.3 — and **P14–P16 were added on 2026-08-19**: game journals (§3.9 — the
+tree has *no* persistence layer today, and a seed is a pointer rather than a record), a skill
+ladder, and an experiment on whether the player before you decides your game. Whether or not you
+use the skill, read these first:
 
 1. **`docs/STATUS.md`** — which work packet is next, and the state of the tree. Update it at
    the end of every session.

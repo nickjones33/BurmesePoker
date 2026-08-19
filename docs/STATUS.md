@@ -10,7 +10,12 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P13, the last one — and it may still be dropped.** No blockers.
+**Next packet: P14, P15 or P13 — independent of each other, take any.** No blockers.
+
+⚠️ **The plan grew on 2026-08-19 and P13 is no longer the last packet.** Three new ones hang off
+P12: **P14** (game journals — record and replay), **P15** (a skill ladder) and **P16** (the
+upstream-neighbour experiment, which needs P15). See `BUILD-PLAN.md` **§3.9** for the decision
+behind P14 and **P16** for the hypothesis behind the other two.
 
 **P0 through P12 are done. The game is playable alone, pleasant to sit at, and measurable in
 bulk:** `dotnet run --project BurmesePoker.Console` fills the empty seats with bots, paces them
@@ -18,7 +23,14 @@ so a person can follow, shows a hand as the melds it nearly is, keeps a round lo
 concealment clear, and replays any match from `--seed`; `dotnet run -c Release --project
 BurmesePoker.Sim` plays thousands of seeded games in parallel and reports how two strategies
 compare. **Three of §0's four goals are delivered — solo play (P10), console UX (P11) and
-simulation (P12). Only the multiplayer app (P13) remains.**
+simulation (P12). The multiplayer app (P13) remains, and P14–P16 were added on 2026-08-19 to
+carry the simulation goal further.**
+
+⚠️ **There is no persistence layer.** The entire tree contains **one** write to disk —
+`CsvReport.WriteTo` in `BurmesePoker.Sim`, which writes an *outcome* table, one row per seat per
+round. Nothing else persists: `MatchEngine` keeps no history by design (§3.8), the console's
+standings die with the process, and a game played at the keyboard leaves no trace. **That was
+fine while a bot game was a pure function of its seed** — and P14 is where it stops being fine.
 
 The 2023 implementation is gone from the tree and lives only at the `pre-rewrite` tag. The
 solution is **four** projects — `BurmesePoker.Domain` (pure rules), `BurmesePoker.Console`
@@ -71,12 +83,17 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P10** Bot opponents — solo play | P9 | done 2026-08-18 — `PartialCover` + `GreedyBotAgent`; every seed terminates |
 | ☑ | **P11** Console UX pass | P10 | done 2026-08-18 — round log, meld-grouped hand, hints, pacing, `--seed` |
 | ☑ | **P12** Simulation at scale | P10 | done 2026-08-18 — `BurmesePoker.Sim`; the tie-break wins 30.7% to 19.3% |
-| ☐ | **P13** Multiplayer app | P10 | **the only one left** — XL, and §5 now says how to split it |
+| ☐ | **P13** Multiplayer app | P10 | XL, and §5 now says how to split it — the only one that changes the architecture |
+| ☐ | **P14** Game journals — record and replay | P12 | **new 2026-08-19** — see §3.9; a seed is a pointer, a journal is the artifact |
+| ☐ | **P15** A skill ladder | P12 | **new 2026-08-19** — ≥4 separated strategies; P16 needs one |
+| ☐ | **P16** Does the player before you decide your game? | P15 | **new 2026-08-19** — ⚠️ the current seating scheme cannot answer it |
 
-**P10 was the fork; P11 and P12 have both been taken through it.** P13 is the last packet and
-the only one that would change the architecture. The game is finished as a game, the console
-is finished as a console, and the simulation goal is delivered — **stopping here is a
-legitimate end state**, and P13 is a new piece of work rather than a debt.
+**P10 was the fork; P11 and P12 have both been taken through it.** ⚠️ **P12 opened a branch
+rather than closing one** — having a harness is what makes journals and a strategy-comparison
+programme worth building, so P14, P15 and P16 hang off P12 and not off P13. The game is finished
+as a game, the console is finished as a console, and the simulation goal is delivered —
+**stopping here is a legitimate end state**, and everything outstanding is new work rather than
+a debt.
 
 ⚠️ **Four things the roadmap changed for work that was already planned**, all recorded in
 `BUILD-PLAN.md` — **all four are now discharged**:
@@ -106,7 +123,42 @@ legitimate end state**, and P13 is a new piece of work rather than a debt.
 
 *Anything a cold context would need: decisions taken, surprises, deliberate leftovers.*
 
-**From P11 (most recent):**
+**Planning session, 2026-08-19 (docs only — no code, still 239 passed / 0 failed):**
+
+- **Asked what the persistence layer is. The answer is that there isn't one**, and that turned
+  out to be a defensible position rather than an oversight: `CsvReport.WriteTo` is the only
+  write to disk in the tree, and a bot game is a pure function of its seed, so a log of one is
+  redundant the moment it is written. **`BUILD-PLAN.md` §3.9** records why that stops being true
+  — a person is not a function of a seed, a seed only replays against the code that produced it
+  (P12 already edited `GreedyBotAgent`), and §3.8's one open ⚠️ row wants the decisions
+  themselves. **P14** is the packet: journal types and two `IPlayerAgent` decorators in Domain,
+  the format in one place, `File.WriteAllLines` in the consumers, and replay as *a seat that
+  answers from a file* rather than a resumable engine.
+- **A hypothesis worth testing arrived from outside** (Nick's friend): *the main thing that
+  decides your game is the skill of the player before you.* It is well-posed — `RULES.md` §5
+  makes a table a directed cycle, since only the immediately-previous player's discard is
+  available — and it is **a strategy question, not a rules question, so it does not go in
+  `RULES.md`.** **P15** builds a ladder of strategies to have a skill dial at all; **P16** runs
+  the experiment.
+- ⚠️ **The finding that matters most, and a cold context must not miss it:
+  `SimulationOptions.Seating` cannot answer P16's question.** It rotates *one fixed pattern*,
+  `Strategies[(seat + game) % Strategies.Count]`, so at two strategies and four seats it only
+  ever produces `[A,B,A,B]` and `[B,A,B,A]` — **every A is fed by a B, always**. The pair
+  *(my strategy, upstream strategy)* is perfectly confounded, not merely underpowered. P16 has
+  to enumerate assignments rather than rotate one.
+- ⚠️ **Which puts a caveat on P12's headline.** 30.7% against 19.3% was measured with **every
+  greedy seat sitting downstream of a simple seat**. Nothing is wrong and nothing needs
+  re-deriving — it is the honest answer to *"what happens at that table"* — but it is not a
+  clean strategy-vs-strategy figure, and P16 owns separating the two.
+- **Two design notes worth carrying into P16.** The mechanism variable is **already collected**:
+  `takes` in the CSV is "how useful was what my upstream threw", so if the hypothesis is true
+  that is the path the effect travels. And the packet's sharpest piece is the **control** — run
+  the same design varying the *downstream* neighbour, which should move the focal win rate far
+  less; without it the result is only "strong tables win more".
+- **`docs/PLAYING.md` added** — a player-facing guide to solo play in the console. Listed in
+  CLAUDE.md's documentation map.
+
+**From P11:**
 
 - **Five new files in `BurmesePoker.Console`, and every one of them is presentation.** `Options`
   (the command line), `Palette` (the colour and marker language), `RoundLog` (what survives the
@@ -687,6 +739,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-19 | — | **Persistence answered and three packets added** (docs only, no code — still 239 passed / 0 failed). The tree has **no persistence layer**: `CsvReport.WriteTo` is its only write to disk, and that is an outcome table. `BUILD-PLAN.md` **§3.9** records why that has been fine (a bot game is a pure function of its seed — P12 proved it byte-identical) and why it stops being fine: **a person is not a function of a seed, and a seed only replays against the code that produced it.** **P14** — game journals, as record types plus a journalling decorator and a replaying agent over `IPlayerAgent`, with the format in one place and file writing left to the consumers; replay is *a seat that answers from a file*, not a resumable engine, and the rich fidelity level is opt-in because §3.7 measured this work allocation-bound. **P15** — a skill ladder, ≥4 separated strategies including a `RandomBotAgent` (⚠️ must take a seeded `Random`, never `Random.Shared`) and a `CautiousBotAgent` that throws what least helps the seat it feeds. **P16** — the upstream-neighbour hypothesis, raised by Nick's friend: *the skill of the player before you is what decides your game.* Well-posed, because `RULES.md` §5 makes a table a directed cycle; **a strategy question, not a rules question, so `RULES.md` is untouched at rev 13.** ⚠️ **The finding of the session: `SimulationOptions.Seating` cannot answer it** — it rotates one fixed pattern, so at two strategies and four seats *(me, upstream)* is perfectly confounded, every greedy fed by a simple. That also puts a caveat on P12's 30.7%-vs-19.3% headline, which P16 owns separating. Also added `docs/PLAYING.md`, a player-facing guide to solo play, and listed it in CLAUDE.md's documentation map. Amended BUILD-PLAN §3.9 (new), §4, P12, P14–P16 (new) and §7 (two risk rows). |
 | 2026-08-18 | P11 | ☑ Done. **Console UX pass — the terminal is the UI, so this is the UI (§0).** Five new presentation files and **not one line of Domain or Sim changed**. `RoundLog` fixes the sorest thing in the console: the per-turn concealment clear used to destroy every public thing said while a player was away, and with bots those turns pass in milliseconds — `ConsoleObserver` now says each line *and* files the same markup, and the panel is drawn above the table and the hand. `HandView` shows a hand as the melds it nearly is plus its deadwood, off one `PartialCover.Best` call, and prices every card by `covered(13) − covered(12)`. **The discard hint is `GreedyBotAgent`'s own answer**, asked of the very `TurnContext` in hand, so it cannot drift from how the table actually plays; `--no-hints` turns it off. `PacedAgent` — a decorator, **deliberately not a sleep in the bot**, which would have sat inside P12's hot loop — makes computer seats wait once per `(Round, TurnNumber)`. `Palette` gathers P8's three files' worth of ad-hoc colour into one language. A difficulty prompt (`SimpleBotAgent` vs `GreedyBotAgent`) came free out of P12. **Every match is seeded and says so**: one is drawn if `--seed` is absent, and the seating is taken from the match's own `Random` — two runs at `--seed 99` are byte-identical, `--seed 100` is not. ⚠️ **Found by playing, not by building:** `Palette.Legend` shipped with an unbalanced markup tag, compiled clean, passed every test, and threw on the first hand drawn. Build clean, **239 passed / 0 failed** (4 new — `LayeringTests`, the one mechanical check a console packet allows: Domain references neither Spectre nor `System.Console`, Sim references no Spectre). Verified through a pty: **13+ rounds at four seats**, a six-seat table for the reshuffle narration, and seed 1 for the opening turn, which is the only one that offers the money-card claim. No new rules question — `RULES.md` stays at **rev 13**. Amended BUILD-PLAN §0, §2, §3.5, P11 and **P13 (split into three sub-packets, with what P11 proved about the seams)**. |
 | 2026-08-18 | P12 | ☑ Done. **Simulation at scale.** A fourth project, `BurmesePoker.Sim` (Domain only): seeded games run in parallel, a strategy per seat rotated by game, per-round rows carrying their own join keys, and a CSV writer. Per-game seeds are `SplitMix64(master, index)` so a game is the same game however the run was scheduled — **serial, parallel and two-thread runs are byte-identical**. The turn cap lives in a `SeatRecorder` decorator over `IPlayerAgent` and **reports** abandonment rather than dropping it, because the domain will not invent a rule the game does not have. Domain gained only `Agents/CoverScore` (extracted, so the bots' scoring cannot drift) and **`Agents/SimpleBotAgent`** — the greedy bot with the discard tie-break removed and nothing else changed. **The measured answer: greedy takes 30.7% of 2,000 four-seat rounds against simple's 19.3%, +$1.24 a round against −$1.24** — P10's claim about the tie-break, measured. Build clean, **235 passed / 0 failed** (10 new), including determinism, per-round money conservation, a reflection pin on mutable static state, and the abandonment path. ⚠️ Measurement pass first, as the packet required: `PartialCover.Best` **140 µs**, `TryFindCover` **91 µs**, a round **~20 ms**, **51 rounds/s serial and 85–92 parallel**; **nothing was optimised**, but the work turns out to be **allocation-bound** — the server GC took eight-thread scaling from 25% to 70%. ⚠️ Two findings: **the reshuffle is a six-player phenomenon** (0/3/67 reshuffles per 300 rounds at 4/5/6 seats), and the **turn cap has never fired in a real run**. `RULES.md` → **rev 13**: §4.3's `DERIVED` 40% side-bet estimate measured at 42% over 600 five-player rounds — a confirmation, not a rule change, and no new question raised. Amended BUILD-PLAN §0, §2, §3.7, §4, P11, P12, P13 and §7 (two risk rows retired). |
 | 2026-08-18 | P10 | ☑ Done. **Solo play.** `Melds/PartialCover` — the evaluator's search with one extra branch (give a card up and move on), memoised on `(position, covered)` and short-circuited on a complete cover — and `Agents/GreedyBotAgent`, whose entire strategy is *of the thirteen I would keep, how many meld?* asked of the discard, the claim and every candidate throw. `Melds/MeldIndex` extracted so both searches share one candidate index; `HandEvaluator` rewritten over it and the 208-test baseline re-run before anything else changed. **Money is absent from every decision** (RULES.md §4.4) except the take tie-break, which favours the deck because a blind draw confers ownership. `Program` asks *"how many of you are people?"* and fills the rest with named bots. Build clean, **225 passed / 0 failed** (17 new). ⚠️ **Termination measured, not assumed**: twelve seeds × 4–6 players, every round finished in 21–30 turns at ~40 ms a round. Verified the console by playing **20 rounds** against bots through a pty. No new rules question — `RULES.md` stays at rev 12. Amended BUILD-PLAN §0, §2, §3.7, P11, P12, P13, §4 and §7 (the "never-improving strategy" risk retired; the hot loop re-aimed at `PartialCover`). |

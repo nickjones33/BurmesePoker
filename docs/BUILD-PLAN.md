@@ -459,15 +459,66 @@ this down is that **all three must survive the packets between here and P12**.
 > observer. **P9 should put `Turns` on `RoundResult`** — it is one field, it is not a
 > statistic in the sense forbidden above, and it spares every future consumer a private tally.
 
+### 3.9 A seed is a pointer; a journal is the artifact
+
+Taken **2026-08-19**, after P11, in answer to a direct question: *what are we persisting?*
+
+**Today, almost nothing.** The whole tree contains exactly one write to disk —
+`CsvReport.WriteTo`, in `BurmesePoker.Sim`. Nothing else persists at all: `MatchEngine` keeps
+no per-round history by design (§3.8), the console's standings live in a `List<RoundResult>`
+that dies with the process, and a game played at the keyboard leaves no trace whatever. **There
+is no persistence layer, and until now there has not needed to be one.**
+
+**The reason there has not is that a bot game is a pure function of its seed.** P12 proved it to
+the byte: `SeedSequence.GameSeed(master, index)` plus the seating plus the strategies reproduces
+a game exactly, however the run was scheduled, and P11 gave the console the same property. At
+that point a full log of a simulated game is *redundant at the moment it is written* — eight
+bytes replay it.
+
+**Three things break that, and all three are permanent.**
+
+1. ⚠️ **A person is not a function of a seed.** `--seed` reproduces the deal, the seating and
+   every bot; it cannot reproduce what the human did. **The one kind of game most worth keeping
+   is the one kind a seed cannot recover.**
+2. ⚠️ **A seed only replays against the code that produced it.** It is a pointer into a version
+   of `GreedyBotAgent`, not a recording of a game. P12 already edited that class — extracting
+   `CoverScore` — and a comparison run stored as seeds before an edit and replayed after it is
+   quietly measuring two different games. **Seeds do not survive refactors; a journal does.**
+3. **Decision-level analysis has no seam today.** §3.8's table has exactly one ⚠️ row — *why a
+   strategy chose what it chose* — and it is still open. Aggregates in the CSV say a seat took
+   the discard 41% of the time; nothing says what it was holding when it declined.
+
+**The decision.** Keep both. **The seed stays the cheap handle and the journal becomes the
+durable record**, and neither replaces the other. What follows from that:
+
+- **The domain learns what a *recording* is, and never what a *file* is.** A journal is written
+  by a decorator over `IPlayerAgent` and read by an agent that answers from it — the seam §3.8
+  item 2 already named, and the shape `RecordingAgent` (tests) and `SeatRecorder` (Sim) have
+  both already taken. **`RoundEngine` and `MatchEngine` do not change.**
+- **Replay is a strategy, not a mode.** An agent that answers from a journal is just another
+  `IPlayerAgent`, so replaying a game is playing it with different seats — no second engine, no
+  resumable state machine, and it works for a human seat and a bot seat identically.
+- ⚠️ **Fidelity is a throughput decision and must be measured, not assumed.** Recording the
+  *answers* is a few bytes a turn and costs nothing. Recording the *hand at each decision* —
+  which is what makes the log worth analysing — copies thirteen cards fifty times a round, and
+  §3.7 measured this work to be **allocation-bound rather than compute-bound**. So the rich
+  form is **opt-in and off in a throughput run**, and the packet that builds it measures the
+  cost the way P12 did rather than guessing.
+- **A journal joins to the CSV or it is an island.** Every record carries the same keys a CSV
+  row does — master seed, game, game seed, round, seat, strategy (§3.8 item 4).
+
+**This is P14.** It is independent of P13 and can be taken first; §0's goal 3 is the one it
+serves.
+
 ---
 
 ## 4. Packet dependency graph
 
 ```
-P0 ─► P1 ─┬─► P2 ──────────┐                        ┌─► P11  console UX
+P0 ─► P1 ─┬─► P2 ──────────┐                        ┌─► P11  console UX ☑
           ├─► P3 ─┐        │                        │
-          └─► P4 ─┴─► P5 ──┴─► P7 ─► P8 ─► P9 ─► P10┼─► P12  simulation at scale
-                            P6 ─────┘               │
+          └─► P4 ─┴─► P5 ──┴─► P7 ─► P8 ─► P9 ─► P10┼─► P12  simulation ☑ ─┬─► P14  game journals
+                            P6 ─────┘               │                      └─► P15  skill ladder ─► P16  seating-order analysis
                                                     └─► P13  multiplayer app
 ```
 
@@ -478,7 +529,10 @@ order. P6 needs P1 and P2 only.
 bots: solo play *is* bots, a discard hint is the same scored search a bot uses, a simulation
 is bots playing each other, and a network timeout is a bot taking over a seat (§3.6). After
 P10, **P11, P12 and P13 are independent of one another** and can be taken in any order — or
-not at all. **P11 and P12 are both done (2026-08-18); only P13 remains.**
+not at all. **P11 and P12 are both done (2026-08-18).** ⚠️ **P12 opened a second branch rather
+than closing one:** having a harness makes journals (P14) and a strategy-comparison programme
+(P15 → P16) worth building, and all three hang off P12 rather than off P13. **P13 is now the
+only packet that would change the architecture, and the only one that is purely optional.**
 
 | Packet | Title | Depends on | Size |
 |---|---|---|---|
@@ -496,6 +550,9 @@ not at all. **P11 and P12 are both done (2026-08-18); only P13 remains.**
 | P11 | Console UX pass | P10 | M — ☑ done 2026-08-18 |
 | P12 | Simulation at scale | P10 | L — ☑ done 2026-08-18 |
 | P13 | Multiplayer app | P10 | XL — **split into P13.1–P13.3** below |
+| P14 | Game journals — record and replay | P12 | L |
+| P15 | A skill ladder | P12 | M |
+| P16 | Does the player before you decide your game? | P15 (P14 helps) | M |
 
 ---
 
@@ -1455,6 +1512,17 @@ the winner is reproducible from a seed.
 >   pile; at 300 rounds it happens **0 times at four seats, 3 at five, and 67 at six**. P9's
 >   rule is exercised by real play after all — but only at a full table.
 
+> **Amended 2026-08-19 — the rotation is not general enough, and the headline needs a caveat.**
+> `Seating(game)` rotates **one fixed pattern**: `Strategies[(seat + game) % Strategies.Count]`.
+> That is exactly right for the question P12 asked — it stops a strategy owning seat 0 — and it
+> is **not** enough for the question P16 asks. With two strategies at four seats it produces only
+> `[A,B,A,B]` and `[B,A,B,A]`, so the pair *(my strategy, the strategy feeding me)* never varies:
+> every A is fed by a B, always. ⚠️ **A consequence for the headline result:** 30.7% against
+> 19.3% was measured with every greedy seat sitting downstream of a simple seat, so it is the
+> honest answer to *"what happens at that table"* rather than a clean strategy-vs-strategy
+> figure. **Nothing here is wrong and nothing needs re-deriving** — but P16 owns separating the
+> two, and should re-run the comparison under balanced assignment and report both.
+
 ---
 
 ### P13 — Multiplayer app
@@ -1546,6 +1614,204 @@ its own P13.x list at the point it is next rather than pretended to be one sessi
 
 ---
 
+### P14 — Game journals: record and replay
+
+**Goal.** A game can be written down completely enough to be played back later — every
+decision, by every seat, human or bot — so that a strategy analysis reads a file instead of
+re-running code that has since changed, and a memorable hand can be kept.
+
+**Read first.** **§3.9** (the decision this packet exists to deliver), §3.8 (the seams, and its
+one still-open ⚠️ row), §3.7 item 4 (the allocation finding that decides the fidelity levels).
+`STATUS.md`'s P12 notes for how the CSV's join keys work.
+
+**Build.**
+
+- **`Play/GameJournal`** — the record types, pure data, no I/O. A journal is a header (master
+  seed, game seed, seating, strategy per seat, stakes, table size, and the rules revision it was
+  played under) plus a flat list of **decisions**: `(round, turn, seat, question, answer)`. The
+  four questions are exactly `IPlayerAgent`'s four. ⚠️ **Answers are recorded by `CardId`, not
+  by value** — two decks mean a value is ambiguous and a replay that picks the other copy is a
+  different game (§3.1).
+- **`Agents/JournalingAgent`** — a decorator over any `IPlayerAgent` that appends what it was
+  asked and what it answered. **This is `RecordingAgent`, lifted out of the test project rather
+  than reinvented** (§3.8 item 2; P12 said the same about `SeatRecorder` and was right).
+- **`Agents/JournalPlayerAgent`** — answers from a journal. Replay is then *playing the game
+  with different seats*, which needs no engine change at all. ⚠️ It must **fail loudly** when
+  the journal and the engine disagree — asked a question the journal does not have, or asked to
+  discard a card the seat is not holding — because silent divergence would make a replay look
+  successful while being a different game.
+- **Two fidelity levels, and the expensive one is opt-in.** *Thin* records answers only, and is
+  what a throughput run uses. *Rich* additionally snapshots the hand and the table at each
+  decision, which is what makes the journal analysable without a replay. §3.7 measured this
+  work to be allocation-bound, so **rich must never be the default**.
+- **Serialisation as lines, writing as the consumer's job.** `JournalFormat` turns a journal
+  into JSON Lines and back — one object per decision, streamable and greppable — and returns
+  `IEnumerable<string>`, exactly as `CsvReport.Rows` already does. **`File.WriteAllLines` stays
+  in `Sim` and `Console`**, so the domain still contains no I/O. ⚠️ **One format, in one place**:
+  two consumers writing journals is fine, two consumers *defining* the format is not.
+- **`--journal <path>` on both front ends.** `BurmesePoker.Sim` writes one journal per game (or
+  per run, sharded); `BurmesePoker.Console` writes the match it just played, which is the only
+  way a human game becomes reproducible at all.
+- **A `replay` verb on `BurmesePoker.Sim`** — read a journal, play it back, and report. This is
+  also how the acceptance test is driven.
+
+**Acceptance.**
+
+1. **A journalled game replays identically.** Play a seeded bot game, journal it, replay it with
+   `JournalPlayerAgent` in every seat, and assert the two runs agree on every `RoundResult` —
+   winner, payouts, turns — and on the observer stream. **This is the packet's whole claim** and
+   it is mechanically checkable, unlike P11's.
+2. **A replay is immune to the strategy changing.** Journal a game played by `GreedyBotAgent`,
+   replay it with `SimpleBotAgent` installed in those seats, and assert the replay is unchanged.
+   **This is the argument for the packet in a single test** (§3.9 point 2) — a seed fails it and
+   a journal passes it.
+3. **A journal round-trips through its format** — write, read, replay, same result.
+4. **A corrupt or short journal fails loudly**, at the decision where it diverges, naming it.
+5. ⚠️ **Thin journalling costs a measured, stated fraction of throughput.** Re-run P12's
+   comparison with journalling on and report rounds/second against the recorded 51 serial and
+   85–92 parallel. **If thin costs more than a few percent it is built wrong**; if rich costs a
+   lot, say so and leave it off.
+
+**Done when.** `dotnet run -c Release --project BurmesePoker.Sim -- --games 100 --journal
+run.jsonl` writes a file that `-- replay run.jsonl` plays back to identical results, and a
+console match played by a person can be replayed the same way.
+
+> **Two things to resist.**
+> - **Do not make the engine resumable.** Replay is a seat that answers from a file; a
+>   mid-round save point is a different and much larger packet, and nothing here needs one.
+> - **Do not put the journal in `MatchEngine`.** It keeps no history on purpose (§3.8), and a
+>   journal is a consumer's artifact. If a consumer wants one it wraps the agents, exactly as
+>   it already wraps them to count takes.
+
+> **What this does *not* deliver, deliberately.** It is a file format and two decorators, not a
+> database. Nothing here indexes, queries or aggregates journals — the CSV remains the thing
+> analysis reads, and a journal is what you go to when the CSV raises a question it cannot
+> answer. If a store is ever wanted, it wants this format to exist first.
+
+---
+
+### P15 — A skill ladder
+
+**Goal.** Several strategies whose strengths are *separated and measured*, so that "skill" is a
+dial with more than two settings. Everything in P16 needs one, and today there are two
+strategies whose only difference is a tie-break.
+
+**Read first.** §3.7 (determinism, and no ambient randomness), P12's measured baseline in
+`STATUS.md`, `Agents/GreedyBotAgent` and `Agents/CoverScore`.
+
+**Build.** Four rungs at least, each a `Domain/Agents/` type behind `IPlayerAgent`:
+
+- **`RandomBotAgent` — the floor.** Legal moves chosen arbitrarily. ⚠️ **It must take a
+  `Random` handed to it**, seeded from the game seed, and never touch `Random.Shared` — §3.7's
+  "no ambient randomness" is what makes a run reproducible, and one careless strategy breaks it
+  for the whole harness. ⚠️ It is also the first strategy with **no monotone score**, so it may
+  genuinely stall; `SimulationOptions.TurnCap` exists for exactly this and the abandonment must
+  be **reported, not dropped** (P12).
+- **`SimpleBotAgent`** — exists. Cover count, no tie-break. 19.3%.
+- **`GreedyBotAgent`** — exists. Cover count plus the partner/joker tie-break. 30.7%.
+- **At least one rung above greedy.** The one worth building is **`CautiousBotAgent`: greedy,
+  but breaking ties towards the card least likely to help the player it feeds.** It is a better
+  player *and* it is P16's intervention — see below — so one type earns twice.
+
+⚠️ **Keep the rungs comparable.** P12's whole result rests on `SimpleBotAgent` differing from
+`GreedyBotAgent` in exactly one decision and nothing else. Each new rung should change **one
+thing** against the rung below it, or a difference in results attributes to nothing.
+
+**Acceptance.**
+
+1. Win rates **measured, separated and ordered**, with an interval — not asserted. State the
+   games each number came from.
+2. **Every rung is deterministic**: the same seed gives the same game, byte-identical, including
+   the random one.
+3. Every rung **terminates or is reported as abandoned**; no rung hangs the harness.
+4. `MoneyCardsDoNotChangeWhatABotThrowsAway` holds for every rung — money is not a strategy
+   input (RULES.md §4.4), and a new bot is the likeliest place for that to be got wrong.
+
+**Done when.** `--strategies random,simple,greedy,cautious` runs, and the four win rates are
+separated by more than their intervals.
+
+---
+
+### P16 — Does the player before you decide your game?
+
+**Goal.** Answer a specific hypothesis with a number and an interval.
+
+> **The hypothesis** (Nick's friend, **2026-08-19**): *the main factor in the game is the
+> relative skill of the player preceding you — if their discards give you an advantage, you
+> win easily.*
+
+**It is well-posed, and the rules make the mechanism exact.** Only the **immediately-previous**
+player's top discard is ever available (`RULES.md` §5), so a table is a directed cycle: seat *i*
+is fed by seat *i−1* and by nobody else. Every seat has exactly one upstream neighbour, and the
+hypothesis is a claim about that edge. ⚠️ **This is a strategy question, not a rules question —
+it does not go in `RULES.md`.**
+
+**Read first.** §3.8 item 4 (join keys), §3.9, P12's `SimulationOptions.Seating` and P15.
+
+**Build.**
+
+- ⚠️ **First, fix the seating scheme, because the current one cannot answer the question.**
+  `Seating(game)` is `Strategies[(seat + game) % Strategies.Count]` — a **rotation of a fixed
+  pattern**. With two strategies at four seats it only ever produces `[A,B,A,B]` or `[B,A,B,A]`,
+  so **every A is fed by a B and every B is fed by an A**. The pair *(my strategy, upstream
+  strategy)* has exactly one value per strategy and the effect is **perfectly confounded** — not
+  merely underpowered. P16 needs assignment to vary **independently of the seat**, which means
+  enumerating assignments rather than rotating one.
+- **Two columns on the CSV: `upstream_strategy` and `downstream_strategy`.** Both are pure
+  functions of the seating the row already knows, but §3.8 item 4's rule is that a row carries
+  its own join keys — a consumer that has to reconstruct the table to know who fed whom will
+  eventually reconstruct it wrong.
+- **The mechanism variable already exists.** `takes` — how often a seat took the discard offered
+  rather than drawing blind — *is* "how useful was what my upstream threw". It is already in
+  every CSV row. If the hypothesis is true, **`takes` is the path** the effect travels along,
+  and a rise in win rate with no rise in takes would mean the effect is something else.
+- **The experiment: a focal seat, and a control.**
+  - Fix a **focal seat** to one strategy. Hold every other seat constant. Vary **only the
+    upstream neighbour** across the P15 ladder. The change in the focal seat's win rate is the
+    upstream effect, and nothing else moved.
+  - ⚠️ **Then run the same design varying only the *downstream* neighbour.** Discards flow one
+    way, so downstream skill should move the focal win rate *much less*. **Without this control
+    the result is just "strong tables win more" and proves nothing about the edge.** This is the
+    single most important part of the packet.
+  - Hold the **seat index** fixed across cells, or rotate it and report both — seat 0 opens and
+    is the only seat offered the money card (P12), so seat is a confounder in its own right.
+- **The intervention, which is stronger than any observation.** P15's `CautiousBotAgent` throws
+  what is *least* useful to the player it feeds. Seat it upstream of the focal seat and the
+  hypothesis makes a directional prediction it can fail: **the focal seat's take rate and win
+  rate should both fall**, while the cautious bot's own win rate should not. A correlation
+  survives; a failed prediction kills the hypothesis outright.
+- **Size the runs from the arithmetic, not by feel.** At a ~30% win rate, 2,000 games gives a
+  standard error near **1 percentage point**, so a 3-point effect is comfortable, a 1-point
+  effect needs roughly twenty times the games, and anything smaller is not worth claiming. A
+  round is ~20 ms and a run does 50–90 rounds a second (§3.7), so **state the detectable effect
+  size before running**, and report the interval next to every number.
+- **Journals make the surprises answerable** (§3.9/P14): when a cell comes out strange, the CSV
+  says *that* it did and a journal says *why*. Take P14 first if it is not already done.
+
+**Acceptance.**
+
+1. A **stated effect size with an interval** for upstream skill on win rate, and the same for
+   downstream, from the same design.
+2. The **confound is gone**: the analysis shows every *(focal, upstream)* cell was actually
+   played, in balance, rather than assumed.
+3. The **`takes` path is reported** — whether the effect travels the way the mechanism says.
+4. The **intervention prediction is stated in advance and then checked**.
+5. The whole thing is **reproducible from a master seed** and the run that produced the report
+   is named in it.
+
+**Done when.** The hypothesis has a number, an interval, and a verdict — including "smaller
+than we can detect", which is a real answer and must be reportable as one.
+
+> ⚠️ **A caveat this packet owes P12's headline.** The 30.7% vs 19.3% result was measured under
+> `[greedy, simple, greedy, simple]` seating, in which **every greedy seat sat downstream of a
+> simple seat and every simple seat downstream of a greedy one**. If the upstream effect is
+> real, some unknown part of that 1.6× is the feeding arrangement rather than the tie-break. The
+> number is not wrong — it is the honest answer to "what happens at that table" — but it is
+> **not** a clean strategy-vs-strategy figure, and P16 is what would separate them. Re-run it
+> under balanced assignment and report both.
+
+---
+
 ## 6. Cold-start protocol
 
 For picking up in a fresh session with no memory of this conversation.
@@ -1579,5 +1845,7 @@ For picking up in a fresh session with no memory of this conversation.
 | ~~**A strategy that never improves plays for ever**~~ (new 2026-08-18, **retired the same day**). With the P9 reshuffle, only a declaration ends a round (RULES.md §7.1), so a table of bots that never improve never finishes. | `GreedyBotAgent`'s score is **monotone by construction** — throwing back the card just taken restores the hand exactly, so the best-keep score can never fall — and every round of every seed tried terminated in 21–30 turns. The property is a test (`ABotOnlyMatchTerminatesAndConservesMoney`), not a hope. It remains a real hazard for *future* strategies, which is why P12 owns a turn cap. **P12 built the cap and it has never fired** — even a table of four `SimpleBotAgent`s, which has no tie-break to push it off a plateau, finished all 300 rounds tried in 28.3 turns on average. The cap is insurance, and the only thing that has ever tripped it is an agent written to stall. |
 | ~~**Scope growth beyond a playable game**~~ (new 2026-08-18, **all but retired 2026-08-18**). §0 adds three further goals, and the 2023 failure was a half-finished thing nobody could play. | P9, P10 and P11 each ship something *more playable than before*; P12 and P13 are independent of one another after P10 (§4) and can be dropped without stranding anything. The game staying playable at every step is the mitigation. **Three of the four goals are now delivered and the tree has been green at every one of them.** Only P13 is outstanding, and it is the one that can be dropped outright without taking anything with it — **stopping after P11 leaves a finished game, a finished console and a working simulation**, not a half-built anything. |
 | **The synchronous-agent bet is wrong at scale** (new 2026-08-18). §3.6 parks a task per table rather than making the engine resumable. | At four to six players and a handful of tables the cost is a parked task, not a thread. If it is ever wrong, the fix is a resumable engine *behind the same interface* — the agents, tests and simulation loop do not change. Revisit only with a measured problem. |
+| **A measured result is really a seating artifact** (new 2026-08-19). Turn order is a directed cycle — only the immediately-previous player's discard is available (`RULES.md` §5) — so who sits behind whom is a variable, and P12's rotation holds it fixed rather than varying it. | Every comparison names its seating and reports it (§3.8 item 4), and **P16 exists to measure the size of the effect rather than assume it away**. Until it has, treat a strategy win rate as *a strategy at a particular table*, not as a property of the strategy. The cheap mitigation is already in place: the CSV carries the seat and the strategy on every row, so an old run can be re-read for the pattern it was played under. |
+| **Journalling slows the harness** (new 2026-08-19). §3.7 measured the work as allocation-bound, and a per-decision recorder allocates. | P14 keeps two fidelity levels and makes the rich one opt-in, and its acceptance criteria include measuring the throughput cost against P12's recorded 51/85–92 rounds a second rather than assuming it is small. If thin journalling costs more than a few percent it is built wrong. |
 | Rules drift as more is recalled. | `RULES.md` provenance tags make revisiting cheap; §9 tracks what is still unrecorded. |
 | Three projects is over-engineering. | Noted in §2. The enforcement is the point, but a single project with `IGameObserver` is an acceptable fallback. |
