@@ -18,8 +18,14 @@ over — showing a hand as the melds it nearly is, keeping a round log across th
 clear, hinting what the computer would do, and replaying any match from `--seed` — and
 `dotnet run -c Release --project BurmesePoker.Sim` plays thousands of seeded games in parallel
 to compare strategies. **Three of the four §0 goals are delivered — solo play (P10), console UX
-(P11) and simulation (P12).** **P13 (multiplayer) is the only packet left, and it is
-droppable** — BUILD-PLAN §5 splits it into P13.1–P13.3. **P14–P16 were added on 2026-08-19 and
+(P11) and simulation (P12).** **P13 is the only packet left, and it is
+droppable** — re-planned on 2026-08-19 into **P13.1–P13.5**, and it is now *the browser client
+**and** multiplayer*, because those turned out to be one track. ⚠️ **Read `BUILD-PLAN.md`
+§3.10 and §3.11 before touching it**: the engine runs **server-side, always** (a hand is fully
+concealed with money on it, so a client-side engine cannot be made to honour that, and it is
+not retrofittable), the client is **Blazor Server**, and §3.11 fixes seventeen UX standards —
+five of them mechanical tests — *before* the first component exists. **Next packet: P13.1**, a
+presentation view model extracted into a fifth project, `BurmesePoker.Presentation`. **P14–P16 were added on 2026-08-19 and
 all three shipped the same day.** P14: `--journal <path>` on both front ends writes every
 decision every seat made as JSON Lines, and `BurmesePoker.Sim -- replay <path>` plays it back —
 to a byte-identical CSV. A seed is a pointer into the build that produced it; a journal is the
@@ -66,9 +72,13 @@ The solution is:
 BurmesePoker.Domain/     pure rules. no I/O, no Spectre. everything new goes here.
                          (System.Text.Json is in here for the journal format — strings, not files.)
 BurmesePoker.Console/    Spectre.Console front end. the only project that prints. P8, reworked in P11.
-BurmesePoker.Sim/        batch play: seeded, parallel, CSV out. Domain only. built in P12.
+BurmesePoker.Sim/        batch play: seeded, parallel, CSV out. Domain only. built in P12, P16.
 BurmesePoker.Tests/      xunit against Domain and Sim. never references Console.
 ```
+
+**Planned by P13, not built yet:** `BurmesePoker.Presentation/` (a hand as a view *model* —
+near-melds, per-card cost, display state; Domain only, **no rendering technology at all**) and
+`BurmesePoker.Web/` (Blazor Server). See BUILD-PLAN §2.
 
 ## Rules of engagement
 

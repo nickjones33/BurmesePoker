@@ -24,6 +24,12 @@ are wanted.
 3. **Strategy simulation at scale** — thousands of games run in parallel to compare ways of
    playing. **P12 — ✅ done 2026-08-18.**
 4. **A multiplayer app**, where a lobby host fills empty seats with AI players. **P13.**
+   ⚠️ **Restated 2026-08-19: this is one goal with the browser UI, not two.** Nick asked
+   whether a rich browser UI or multiplayer should come first. They are the same track — see
+   **§3.10** — because the only question that couples them is *where the engine runs*, and
+   concealed hands with money on them settle that in advance. A browser client is a seat over
+   a wire whether one person or four are using it, so **solo browser play is multiplayer with
+   one connection** and there is no separate single-player UI to build and then replace.
 
 **Goal 3 grew a tail rather than ending.** Simulation at scale is delivered, but having a
 harness is what makes a *programme* of measurement worth running — hence **P14 (game journals,
@@ -44,7 +50,9 @@ here because they change decisions taken *before* the packets that need them.
 | Simulation, cont. | **Observability** — meaningful stats must be *derivable*, without the domain knowing what a statistic is | ✅ §3.8 held. Win rate, money split into flat and side bet, turns, how close the losers were, take and claim rates — **all derived by the harness, with no domain change whatever** |
 | Simulation, cont. | **Durability** — a game worth keeping must survive the build that played it (§3.9) | ✅ **Delivered by P14.** Two decorators over `IPlayerAgent` and a JSON Lines format; the engine is unchanged, and a replayed run's CSV is byte-identical to the played one's |
 | Simulation, cont. | **A design that can carry a controlled comparison**, not just a horse race | ✅ **Delivered by P16.** Seatings are enumerable rather than rotated, every row names who fed it, and effects are reported as a mean over games with an interval. ⚠️ The rotation could not have answered a question about neighbours *at any run size* — the cell was never played |
-| Multiplayer | A decision on whether agents block | §3.6, taken now rather than discovered later |
+| Multiplayer | A decision on whether agents block | §3.6, taken now rather than discovered later — and ✅ **vindicated three times since**: P10, P12 and P16 all added callers to `IPlayerAgent` and none needed anything |
+| Multiplayer + browser UI | A decision on **where the engine runs**, before a client exists | **§3.10, taken 2026-08-19.** Server-side, always. Concealment is a security property and a client-side engine cannot be made to honour it afterwards |
+| Browser UI | Accessibility and render mode decided **before** the first component | **§3.11, taken 2026-08-19.** P11 proved *look* needs nothing structural; keyboard operability, focus and render mode are not look, and retrofitting them is a rewrite |
 
 **Three of the four are done, and P12 was the one that could have demanded architecture.** It
 did not: the harness is a fourth project that references Domain and asks it for nothing new.
@@ -210,7 +218,32 @@ are byte-for-byte what P9 left. ⚠️ **`System.Text.Json` is now referenced by
 the first framework assembly beyond the base library in there; it is a *string* API and the
 layering rule it must not break is I/O, which it does not — `JournalFormat` returns
 `IEnumerable<string>` and the two front ends own the `File` calls, exactly as `CsvReport` and
-`CsvReport.WriteTo` already split.
+`CsvReport.WriteTo` already split. **By P16:** `{SeatingPlan, Measurement, NeighbourExperiment,
+NeighbourCsv}.cs` in Sim, one property on `SimulationOptions` and two columns on `CsvReport` —
+**and nothing in Domain**, which now stands unchanged across three consecutive packets.
+
+**Planned by P13, and it is the first structural change since P12.** Two new projects:
+
+```
+BurmesePoker.Presentation/  a hand as a view *model*: near-melds, per-card cost, display state.
+                            Domain only — no Spectre, no HTML, no rendering technology at all.
+BurmesePoker.Web/           Blazor Server. the second project that draws. Domain + Presentation.
+```
+
+⚠️ **`BurmesePoker.Presentation` exists because the browser client must not re-derive the
+hand view.** `HandView` today answers *which cards nearly meld, and what does each cost to
+throw* and then emits Spectre markup in the same breath. A Razor client wants the first half
+and none of the second, and re-implementing it would put a second answer to a question
+`PartialCover` already answers — the exact drift `MeldIndex` and `CoverScore` were extracted to
+prevent. **The cheaper alternative is stated so it can be chosen instead:** let the Blazor
+project reference `BurmesePoker.Console` and take `HandView` from there. It is rejected because
+it would make a browser client depend on a Spectre console, and because `LayeringTests` exists
+precisely to stop that class of reference. **A third option — let the browser re-derive it —
+is rejected on drift.**
+
+⚠️ **`BurmesePoker.Web` is the second project that may draw, and the layering rule generalises
+rather than changes**: `BurmesePoker.Presentation` must reference **no** rendering technology,
+which `LayeringTests` can assert exactly as it asserts Domain references no Spectre.
 
 ---
 
@@ -549,6 +582,135 @@ durable record**, and neither replaces the other. What follows from that:
 **This is P14.** It is independent of P13 and can be taken first; §0's goal 3 is the one it
 serves.
 
+### 3.10 The engine runs on the server; a client is a view
+
+Taken **2026-08-19**, after P16, in answer to a direct question: *rich browser UI first, or
+multiplayer first — and are they related?*
+
+**They are related, through exactly one variable: where the engine runs.** Everything else
+about a browser client — what it looks like, what draws it, how it animates — is independent
+of multiplayer and can be decided later. That one variable cannot.
+
+**And it is already decided by wanting multiplayer at all.** A hand is **fully concealed** until
+a declaration (`RULES.md` §7.1) and there is money on the table. P13 already recorded that a
+client must never be *sent* what it may not see — **a security property, not a courtesy**. An
+engine running in the browser holds every player's hand in every player's client; the DOM and
+the WASM heap are both inspectable, and no amount of care in the view fixes it. **It is also
+not retrofittable**: moving the engine to the server later changes the client's entire
+relationship to the game, which is a rewrite of the client rather than a refactor.
+
+**The decision.** The engine runs server-side for every front end except the local hotseat
+console. **Blazor Server** is the first browser client. What follows:
+
+1. ⚠️ **No WASM engine, ever.** `InteractiveServer` keeps the C# on the server and ships DOM
+   diffs, so a seat's hidden state never leaves it. `InteractiveAuto` and WebAssembly remain
+   available for **presentational components that hold no concealed state** — but the table and
+   the hand are not those, and the burden of proof is on any component that wants to move.
+2. **A browser client is a `RemotePlayerAgent`, and §3.6 is what makes that cheap.** A remote
+   player blocks inside the agent; the circuit pushes the answer into a channel. One table is
+   one task, exactly as decided before P10 — and now demonstrated by P10, P12 and P16 each
+   adding a caller to `IPlayerAgent` without the interface moving.
+3. 🔥 **Solo browser play is multiplayer with one connection.** There is no single-player client
+   to build and then throw away: the bots fill the other seats exactly as `Program` does today.
+   This is the whole reason the two goals collapse into one track.
+4. ✅ **Blazor Server supplies the transport, so there is no protocol to design.** This is the
+   one thing the framework choice genuinely buys and it is worth naming: no bespoke wire format,
+   no client-side state to synchronise, no serialising a `TurnContext`. **The "server" in P13.2
+   is a seat and a fan-out, testable in-process with no sockets at all.**
+5. **The console is untouched and stays in-process.** It is a hotseat game on one machine;
+   routing it through a server would be a downgrade bought with nothing.
+
+⚠️ **What this does *not* decide.** Whether the eventual UI is Blazor or a JS client is still
+open, and deliberately so. A JS SPA over the same server is a client-side change; the property
+worth buying now is that the engine is on the server **whichever way that goes**.
+
+### 3.11 The browser client's UX standards, taken in advance
+
+Taken **2026-08-19**, alongside §3.10 and for a reason P11 makes precise.
+
+**P11 proved that *look* needs nothing structural** — a whole UX pass went in as five
+presentation files with no domain change. ⚠️ **That is true of look and false of accessibility
+and render mode.** Keyboard operability, focus behaviour and colour-independence are decided by
+*how the markup is built*, so retrofitting them is a rewrite of every component rather than a
+pass over them. The render mode is worse: an app made interactive at its root cannot be made
+selectively interactive later without moving every component in it.
+
+So the standards are written down **before P13.3 exists** rather than discovered inside it. They
+are split by how they are checked, because a standard nobody can verify is a wish.
+
+#### A. Mechanically checkable — and therefore a test
+
+1. ⚠️ **No client is ever sent a card it may not see.** The strictest item and the most
+   important. A seat's view model is built server-side; it must contain no `CardId` belonging to
+   another seat's hand. **The test:** build the view model for every seat of a scripted round
+   and assert each one's `CardId` set is disjoint from every other seat's hand. **Hiding a card
+   with CSS is a leak**, and this is the test that says so out loud.
+2. **Colour never carries meaning on its own** (WCAG 1.4.1). The game leans on colour today —
+   red and black suits, money-card and ownership markers. P11's `Palette` already pairs every
+   one with a glyph; the browser must too. **The test:** every display state in the presentation
+   view model carries a non-colour token, asserted over the enum so a new state cannot be added
+   without one.
+3. **Contrast is computed, never eyeballed** (WCAG 1.4.3 and 1.4.11): ≥4.5:1 for body text,
+   ≥3:1 for large text and for the boundaries of interactive components. **The test:** compute
+   the ratio for every foreground/background pair the palette defines, **in both themes**, and
+   fail below the threshold. Tedious by hand, trivial in code, and the single most commonly
+   skipped item in the standard.
+4. **Every action is a real control.** No `<div @onclick>`: buttons are `<button>` and
+   navigation is `<a>`/`NavLink`, so keyboard, screen readers and Blazor's own enhanced
+   navigation all work without special cases. **The check** is a source scan, in the same spirit
+   as `LayeringTests`.
+5. **Anything holding a subscription disposes it.** A table component subscribes to the observer
+   stream, and a circuit that drops without unhooking leaks a game. **The test:** reflect over
+   the client's components and assert every one that takes the table session implements
+   `IDisposable` or `IAsyncDisposable`. ⚠️ **And never call `StateHasChanged` from `Dispose`** —
+   it can run during renderer teardown, where requesting a render is explicitly unsupported.
+
+#### B. Only playing it finds these — reviewed the way P11 was reviewed
+
+6. **Fully playable from the keyboard, with no pointer at all.** Tab order matches reading
+   order; every prompt is reachable and answerable. For a turn-based card game this is not a
+   concession — it is how a quick player will want to play anyway.
+7. **Focus moves when the turn does.** When it becomes your turn, focus lands on the first
+   control of the prompt; when a dialog opens focus enters it, and on close it returns to what
+   opened it.
+8. **The round log is an ARIA live region** (`aria-live="polite"`) — it is the browser's
+   `ConsoleObserver.Say`, and this is WCAG 4.1.3 Status Messages. ⚠️ **Polite, never
+   assertive**: a bot table emits a line every few hundred milliseconds and `assertive` would
+   interrupt a screen reader continuously. **The hand is not a live region**; only the log is.
+9. **Nothing meaningful lives in hover, or in a tooltip alone.** The per-card cost and the
+   computer's hint are content, not chrome — P11 already treats them that way.
+10. **`prefers-reduced-motion` and `prefers-color-scheme` are both honoured.** The pause between
+    computer turns is *pacing* and stays (it is what makes a bot seat legible — P11); anything
+    that actually moves does not.
+11. **Touch targets at least 24×24 CSS px** (WCAG 2.2 SC 2.5.8), and comfortably larger for a
+    card you are being asked to throw away for money.
+
+#### C. Blazor mechanics that are UX decisions in disguise
+
+12. ⚠️ **Static SSR is the default; interactivity is opted into per component. Do not put
+    `@rendermode InteractiveServer` at the root.** The table and the prompts are interactive
+    islands; the shell, the rules help and the settlement report are static. **This is the one
+    decision on the list that cannot be walked back cheaply.**
+13. **Prerendering runs a component twice.** `OnInitializedAsync` executes during prerender and
+    again when the circuit starts, so anything that joins a table must be idempotent — or carry
+    the prerendered result across with `PersistentComponentState`. Joining a table twice is a
+    real bug, not a theoretical one.
+14. **`@key` on every card and every seat.** Without it the diff reorders DOM nodes and drags
+    focus with them — and it shows up exactly when a hand is re-sorted after a draw, which this
+    game does constantly.
+15. **Do not call `StateHasChanged` inside an event handler** — `ComponentBase` already
+    re-renders after one. **Do call it, through `InvokeAsync`, when the observer stream pushes
+    from a non-UI thread**, which is how every opponent's move will arrive.
+16. **Reconnection is part of the UX, not an error path.** A dropped circuit must not look like a
+    dropped game. P13 already decides that a timeout is a bot move; the client has to *say* so —
+    *"Sable is playing your seat"* — rather than freeze and hope.
+17. **CSS isolation (`.razor.css`) over one global stylesheet**, so a component's styling cannot
+    leak into the table.
+
+⚠️ **One thing deliberately not carried over: `RoundLog`.** It exists because the hotseat console
+clears the screen between turns; a browser client has its own scrollback and never loses it.
+**Port the stream, not the panel** — the plan has said this since P11 and it is now a standard.
+
 ---
 
 ## 4. Packet dependency graph
@@ -558,8 +720,21 @@ P0 ─► P1 ─┬─► P2 ──────────┐                  
           ├─► P3 ─┐        │                        │
           └─► P4 ─┴─► P5 ──┴─► P7 ─► P8 ─► P9 ─► P10┼─► P12  simulation ☑ ─┬─► P14  game journals ☑
                             P6 ─────┘               │                      └─► P15  skill ladder ☑ ─► P16  seating-order analysis ☑
-                                                    └─► P13  multiplayer app   ← the only one left
+                                                    │
+                                                    └─► P13  ← everything left, and it is one line
+                                                          P13.1  presentation view model   (no UI)
+                                                          P13.2  table server              (no UI)
+                                                          P13.3  a table you can watch     ← first UI
+                                                          P13.4  a seat you can play       ← solo, in a browser
+                                                          P13.5  the lobby                 ← goal 4
 ```
+
+⚠️ **P13.1–P13.5 are strictly sequential**, which nothing else in this plan has been. Each one
+is the ground the next stands on: the view model before anything renders it, the seat and the
+fan-out before anything connects to them, the render model and the accessibility decisions
+before interaction, and interaction before a second person. **The one place to break the chain
+if time runs short is after P13.4** — that is a finished single-player browser game, and P13.5
+is the only part that needs another person to be worth anything.
 
 **P2, P3, P4 are independent of one another** — good candidates for separate sessions in any
 order. P6 needs P1 and P2 only.
@@ -595,7 +770,12 @@ and the only one that is purely optional.**
 | P10 | Bot opponents — **solo play** | P9 | L — ☑ done 2026-08-18 |
 | P11 | Console UX pass | P10 | M — ☑ done 2026-08-18 |
 | P12 | Simulation at scale | P10 | L — ☑ done 2026-08-18 |
-| P13 | Multiplayer app | P10 | XL — **split into P13.1–P13.3** below |
+| P13 | **The browser client and multiplayer** | P10 | XL — **re-split 2026-08-19 into P13.1–P13.5** below |
+| P13.1 | A presentation view model, rendered two ways | P10 | M — no UI; a fifth project |
+| P13.2 | The table server | P13.1 | M — no UI; the leak test lives here |
+| P13.3 | A browser table you can watch | P13.2 | L — the first UI; Blazor Server |
+| P13.4 | A seat you can play | P13.3 | M — **solo browser play, complete** |
+| P13.5 | The lobby, and a second person | P13.4 | M — §0's goal 4 |
 | P14 | Game journals — record and replay | P12 | L — ☑ done 2026-08-19 |
 | P15 | A skill ladder | P12 | M — ☑ done 2026-08-19 |
 | P16 | Does the player before you decide your game? | P15 (**P14 ☑, so rich journals are available**) | M — ☑ done 2026-08-19 |
@@ -1574,94 +1754,192 @@ the winner is reproducible from a seed.
 
 ---
 
-### P13 — Multiplayer app
+### P13 — The browser client and multiplayer
 
-**Goal.** A host opens a lobby, people join, and the host fills the empty seats with AI
-players.
+**Goal.** A person opens the game in a browser and plays a table; then several people do, with
+the host filling the empty seats with AI players.
 
-**Read first.** §3.5 and **§3.6** — the concurrency decision this packet is built on. §0.
+**Read first.** **§3.10** (where the engine runs — the decision this whole packet is built on),
+**§3.11** (the UX standards, taken in advance and not negotiable inside a sub-packet), §3.5,
+§3.6, §0.
 
-**Expect to split this.** It is the only XL packet in the plan, and it should be broken into
-its own P13.x list at the point it is next rather than pretended to be one session's work.
-
-**Shape, as decided in §3.6.**
-- **One table is one task**, running a `MatchEngine` that blocks exactly as it does today. The
-  engine, the tests and the whole scripted-round apparatus are untouched.
-- **`RemotePlayerAgent : IPlayerAgent`** blocks on a channel until the player's move arrives.
-- ⚠️ **A timeout is a bot move** (P10) — "they dropped out, play the seat for them" is
-  precisely what a bot does, which is why P10 comes first. It also means a disconnection
-  degrades the game rather than ending it. ✅ **The move now exists**: it is
-  `new GreedyBotAgent()` answering the same `TurnContext` the absent player was given, and it
-  needs no handover, because the strategy keeps no state between turns or rounds.
-- **`IGameObserver` fans out per connection, filtered.** P8 established that filtering private
-  information is the front end's job and the domain narrates everything; over a wire that
-  becomes a **security property rather than a courtesy** — a client must never be *sent* what
-  it may not see, so the filtering happens server-side, per viewer, before anything is
-  transmitted.
-- **The lobby is not a domain concept.** Seating, names, who is a bot and who is a person are
-  all decided before `RoundEngine` is constructed — as `Program` already does today.
-
-**Done when.** Two people and two bots play a round over a network.
-
-> **Amended after the P12 session (2026-08-18) — the timeout wrapper is already written, twice.**
-> - **`BurmesePoker.Sim/SeatRecorder.cs` is the shape P13's remote seat wants**: a decorator
->   over `IPlayerAgent` that watches every question the engine asks, and can refuse to answer
->   normally. The simulation uses it to give up on a stalled round; P13 uses the same seam to
->   say *"this player has not answered in thirty seconds, a bot takes the turn"* — no domain
->   change either time, which is §3.6's bet paying off before P13 is even started.
-> - **Abandoning a table has to be somebody's job, and it is not the engine's.** A round ends
->   only on a declaration (RULES.md §7.1), so a table whose people all walk away never ends.
->   P12 bounds a round by turn count from the outside and *reports* the abandonment rather than
->   throwing it away; a host wants the same, bounded by wall-clock instead.
-> - **The simulation is the load test.** Four to six players a table, ~20 ms of compute a round
->   with the whole search in it — a host can run many tables per core, so the parked-task cost
->   §3.6 accepted is not the thing to worry about.
-
-> **Amended after the P11 session (2026-08-18) — the split, and what a UX pass proved about the seams.**
+> #### ⚠️ Re-planned 2026-08-19, after P16, and the change is not cosmetic
 >
-> **P13 is now the only packet left, so this is where it is split.** Three sub-packets, each
-> one session, each ending green. Take them in order; **P13.1 is worth doing even if P13.2 and
-> P13.3 never are**, because it is what makes the front end replaceable at all.
+> **The old P13.1 was written on an assumption Blazor makes false.** It read *"lift the front
+> end off `AnsiConsole`… take an `IAnsiConsole`"*, which is the right refactor for **a second
+> Spectre front end** — and a Razor client is not one. It shares no drawing with the console at
+> all. What it wants from `BurmesePoker.Console` is the **decisions**: which cards nearly meld,
+> what each costs to throw, what state each card is in, and what the computer would do. Today
+> `HandView` answers those *and* emits Spectre markup in one breath.
 >
-> - **P13.1 — Lift the front end off `AnsiConsole`.** Today `SpectrePlayerAgent`,
->   `ConsoleObserver`, `Program` and `RoundLog` all reach for the static `AnsiConsole` directly.
->   A second front end cannot exist until they take an `IAnsiConsole` (Spectre's own interface,
->   which the library already threads everywhere) or, for the parts that are not Spectre at all,
->   until the *decision* is separated from the *drawing*. **Nothing about the game changes**;
->   it is a refactor of one project, and the mechanical check is that the console still plays a
->   match through a pty exactly as it does now. ⚠️ **Do not invent a view abstraction of your
->   own** — Spectre's is adequate and a bespoke one would be a second presentation vocabulary.
-> - **P13.2 — A table server.** One `MatchEngine` per task, `RemotePlayerAgent : IPlayerAgent`
->   blocking on a channel, `SeatRecorder`'s shape reused for the timeout, and per-connection
->   observer fan-out with the filtering done **server-side** (see the security note above).
->   No UI. **Acceptance is a test, and it can be a real one**: two scripted "remote" agents and
->   two bots play a round through the server's own plumbing, with no sockets involved. That is
->   the first time a multiplayer packet has had a mechanical acceptance criterion, and it is
->   worth structuring the packet around.
-> - **P13.3 — The lobby and a client.** Open a table, join it, fill the rest with bots, play.
->   The lobby is not a domain concept (above); it decides seating and names and then constructs
->   what `Program` constructs today.
+> **So P13.1 becomes an extraction rather than an injection**: pull the view *model* out into
+> `BurmesePoker.Presentation` (§2), which both front ends render their own way. `IAnsiConsole`
+> injection is still worth doing for testability, but it is no longer the point of the packet.
 >
-> **What P11 established that changes the estimate.**
-> - ⚠️ **The console is bigger than it was and none of it is reusable across a wire as written.**
->   Nine files now, five of them added by P11. `Palette`, `CardFormatting` and `HandView` are
->   *pure* — value in, markup out — and port to any Spectre-rendering client unchanged.
->   `RoundLog`, `ConsoleObserver`, `SpectrePlayerAgent` and `Program` are not: they print at the
->   moment they are called. **That is the line P13.1 has to cut along**, and it is already
->   visible in the file list.
-> - **The hotseat clear is exactly what a network does not need**, and it is the whole reason
->   `RoundLog` exists. A remote client has its own screen and never loses scrollback, so it
->   wants the observer stream and not the panel. **`RoundLog` is a hotseat concession, not a
->   general feature** — do not carry it over and do not build the server around it.
-> - **A dropped player's move already reads correctly to the table.** P11 gives every bot seat
->   a `PacedAgent` pause and a name, so a seat taken over by the computer on a timeout will
->   *look* like a seat playing rather than like a freeze. Wrap the takeover the same way.
-> - **`--seed` is the bug report format.** A console match now replays byte-identically from
->   its seed and prints the seed it used. A table server should carry the same property per
->   table for the same reason, and it is free — one `Random` per `MatchEngine`, seeded at
->   construction, exactly as `Program` does today.
+> **And P13 splits five ways rather than three**, because §3.10 collapsed the browser UI and
+> multiplayer into one track and each half of that track ships something playable.
+
+**The five sub-packets.** Take them in order. **Each ends green, and each is more playable than
+the one before it** — the property §7 names as the mitigation for this project's one historical
+failure mode.
 
 ---
+
+#### P13.1 — A presentation view model, rendered two ways *(no UI yet)*
+
+**Build.** A fifth project, `BurmesePoker.Presentation`, referencing **Domain only**.
+
+- **The hand as data.** `HandView`'s two questions — *which cards group into which near-meld*
+  (one `PartialCover.Best` call) and *what does each card cost to throw* (`covered(13) −
+  covered(12)`) — move here and return a **view model**, not markup.
+- **Display state as an enum, not a colour.** Money card, owned, near-melded, deadwood, the
+  computer's suggested throw. ⚠️ **Every state carries a non-colour token** (§3.11 A2) — the
+  console already has the glyphs, so this is a move rather than an invention.
+- **The hint stays the computer's own answer.** `GreedyBotAgent` asked directly on the very
+  `TurnContext` in hand (P11). ⚠️ **Do not re-derive a recommendation** — a second
+  implementation is a different strategy wearing the first one's name.
+- `BurmesePoker.Console` is rewritten *onto* the view model and keeps rendering exactly what it
+  renders now. `Palette` and `CardFormatting` stay in the console: they are Spectre markup and
+  that is correct.
+- Secondary: take `IAnsiConsole` where the console reaches for the static one, so the front end
+  is drivable from a test.
+
+**Acceptance.**
+1. `LayeringTests` grows a row: **`BurmesePoker.Presentation` references no rendering
+   technology** — no Spectre, no ASP.NET, no `System.Console`.
+2. The view model is unit-tested directly — the first time anything in the presentation layer
+   has been testable at all, since `BurmesePoker.Console` is unreachable from the test project.
+3. ⚠️ **The console still plays a match through a pty exactly as it does today**, byte-identical
+   at the same `--seed`. This is a refactor and it must be provable as one.
+
+**Done when.** The console draws its hand from a view model it did not build itself, and a test
+project can build the same view model without a terminal.
+
+---
+
+#### P13.2 — The table server *(still no UI)*
+
+**Build.** In-process, no transport, no sockets.
+
+- **`RemotePlayerAgent : IPlayerAgent`** blocking on a channel until an answer arrives —
+  §3.6's decision, finally cashed.
+- **A timeout is a bot move.** Reuse `SeatRecorder`'s shape (a decorator that watches every
+  question and can answer differently); `new GreedyBotAgent()` answers the same `TurnContext`
+  the absent player was given, and needs no handover because the strategy keeps no state
+  between turns. ⚠️ Wrap it the way P11 wraps a bot seat, so a taken-over seat *looks like a
+  seat playing* rather than a freeze.
+- **Per-seat observer fan-out, filtered server-side.** P8 established that filtering private
+  information is the front end's job; over a connection it becomes a **security property**
+  (§3.10). A viewer is *not sent* what it may not see.
+- **A table carries its seed**, exactly as a console match does — `--seed` is the bug-report
+  format and it is one `Random` per `MatchEngine` (P11).
+- **Abandoning a table is the host's job, not the engine's.** A round ends only on a
+  declaration (`RULES.md` §7.1), so a table whose people all walk away never ends. P12 bounds a
+  round by turn count and *reports* it; a host wants the same, bounded by wall clock.
+
+**Acceptance.**
+1. 🔥 **Two scripted "remote" agents and two bots play a full round through the server's own
+   plumbing, in a test, with no sockets involved.** The first time a multiplayer packet in this
+   plan has had a mechanical acceptance criterion — structure the packet around it.
+2. ⚠️ **The leak test** (§3.11 A1): for a scripted round, each seat's outbound view contains no
+   `CardId` from any other seat's hand. **This is the packet's most important test**, and it
+   belongs here rather than in the UI packet, because by the UI packet it would be too late.
+3. A seat that stops answering is played by a bot, the round finishes, and the takeover is
+   reported rather than silent.
+
+**Done when.** A round completes with a mix of remote and bot seats, and nothing that must stay
+concealed has crossed the fan-out.
+
+---
+
+#### P13.3 — A browser table you can watch *(the first UI, and no seat yet)*
+
+**Build.** `BurmesePoker.Web` — a Blazor Web App, **Blazor Server** (§3.10).
+
+- **Static SSR shell, one interactive island.** ⚠️ **`@rendermode InteractiveServer` on the
+  table component and nowhere near the root** (§3.11 C12). The shell, the rules help and the
+  settlement report are static.
+- The table component subscribes to the filtered observer stream from P13.2 and renders: seats
+  and banks, discard piles, the turned-up money cards, the round log, and the settlement when a
+  round ends. **Every seat is a bot**; there is nothing to click yet.
+- `@key` on every seat and every card (C14). `IDisposable` on anything subscribing (A5).
+  `StateHasChanged` through `InvokeAsync` from the observer thread (C15).
+- ⚠️ **Port the observer *stream*, not `RoundLog`'s panel** — a browser never loses scrollback.
+  The log is a `aria-live="polite"` region (B8).
+
+**Why this is a real packet and not scaffolding.** A concealed game watched from outside is
+**the strictest possible concealment case** — there is no seat whose cards may legitimately be
+shown — so the leak test has its cleanest form here. And it settles the render model, the
+layout, the palette and every accessibility decision **before** interaction complexity arrives.
+
+**Acceptance.**
+1. A bot-only round plays out in a browser, start to settlement.
+2. **The full §3.11 A list passes as tests** — leak, colour tokens, computed contrast in both
+   themes, real controls, disposal.
+3. **The §3.11 B list is reviewed by playing**, the way P11 was: keyboard, focus, live region,
+   reduced motion, target sizes. ⚠️ **Say in the report what was actually exercised**, as P11
+   did — "13+ rounds through a pty" is the standard to match.
+
+**Done when.** You can watch a whole round in a browser, with a screen reader, without a mouse.
+
+---
+
+#### P13.4 — A seat you can play *(solo play in the browser, complete)*
+
+**Build.** The four questions `IPlayerAgent` asks, as interactive components pushing answers
+into P13.2's channel: take the discard or draw blind, claim the turned-up money card, choose a
+discard, declare.
+
+- The hand comes from P13.1's view model — near-melds grouped, each card priced, the computer's
+  suggestion marked, and **a toggle for whether the hints show at all** (`--no-hints`'s
+  equivalent).
+- **Focus lands on the first control of the prompt when the turn arrives** (B7); the whole turn
+  is answerable from the keyboard (B6).
+- ⚠️ **Prerender-safe joining** (C13): `OnInitializedAsync` runs twice, and joining a table
+  twice is a real bug.
+
+**Acceptance.**
+1. A person plays a full match against bots in a browser, several rounds, banks carrying over.
+2. ⚠️ **A round is played end to end using only the keyboard**, and reported as such.
+3. The leak test still passes with a *seated* viewer — which is the case it did not cover in
+   P13.3.
+
+**Done when.** §0's goal 2 has a second, better answer, and it was reached through the
+multiplayer architecture rather than around it.
+
+---
+
+#### P13.5 — The lobby, and a second person
+
+**Build.** Open a table, join it, the host fills the rest with bots, play. **The lobby is not a
+domain concept** — it decides seating and names and then constructs what `Program` constructs
+today.
+
+- **Reconnection is UX, not an error path** (C16): a dropped circuit says *"Sable is playing
+  your seat"* and lets the player back in.
+
+**Acceptance.** **Two people and two bots play a round over a network** — P13's original "done
+when", finally reached with everything under it already tested.
+
+**Done when.** §0's goal 4 is delivered.
+
+---
+
+> **What earlier sessions established, and it all still holds.**
+> - **`BurmesePoker.Sim/SeatRecorder.cs` is the shape P13.2's remote seat wants** — a decorator
+>   over `IPlayerAgent` that watches every question and can refuse to answer normally. The
+>   simulation uses it to give up on a stalled round; P13.2 uses it for *"nobody has answered in
+>   thirty seconds"*. **No domain change either time**, which is §3.6's bet paying off before
+>   P13 starts.
+> - **The simulation is the load test.** Four to six players a table and ~20 ms of compute a
+>   round with the whole search in it, so a host runs many tables per core. The parked-task cost
+>   §3.6 accepted is not the thing to worry about.
+> - **A dropped player's move already reads correctly to the table.** P11 gives every bot seat a
+>   pace and a name, so a takeover *looks* like a seat playing.
+> - ⚠️ **The console is bigger than it was and none of its drawing is reusable across a wire.**
+>   Nine files, five from P11. That was P11's finding and P13.1 is the answer to it — but note
+>   the correction above: the line to cut along is **decision versus drawing**, not
+>   *`AnsiConsole` versus `IAnsiConsole`*.
 
 ### P14 — Game journals: record and replay ☑ done 2026-08-19
 
@@ -2165,7 +2443,10 @@ For picking up in a fresh session with no memory of this conversation.
 | The rewrite stalls half-finished, as in 2023. | Packets are individually shippable and each ends green. P1–P6 are pure domain with no UI dependency, so progress is real even if the console never gets built. **As of 2026-08-18 P0–P6 are all done**, so the entire rules core — cards, melds, the win authority, and money — exists and is tested; what remains is the engine and the front end. |
 | ~~**The evaluator in the simulation hot loop**~~ (new 2026-08-18) — **retired 2026-08-18 by P12's measurement pass.** `RoundEngine` calls `TryFindCover` after every discard by every player; P5's ~100 ms for three stress hands is nothing to a human and possibly ruinous across a million rounds. | **Measured end to end at last: a bot-only round costs ~40 ms over 21–30 turns**, so a thousand rounds is under a minute on one core — the goal is not in danger. The live cost has **moved to `PartialCover.Best`**, which a bot calls up to fifteen times a decision against the engine's one. Still **measure before optimising** (§3.7, P12), and still put any speed-up *around* the evaluator rather than inside it — `IsWinning` is the win authority (§3.4) and its answers may not change. A per-turn cache inside the bot is the free win, and touches neither. **P12 measured it and closed the row:** `PartialCover.Best` is 140 µs a hand and `TryFindCover` 91 µs, a round is ~20 ms, and a run does 50–90 rounds a second — 2,000 rounds in 34 s, with nothing optimised. What the measurement did find is that the work is **allocation-bound rather than compute-bound**: eight threads bought 25% under the workstation GC and 70% under the server GC (§3.7 item 4). If throughput ever matters again, attack allocation, and still not inside the evaluator. |
 | ~~**A strategy that never improves plays for ever**~~ (new 2026-08-18, **retired the same day**). With the P9 reshuffle, only a declaration ends a round (RULES.md §7.1), so a table of bots that never improve never finishes. | `GreedyBotAgent`'s score is **monotone by construction** — throwing back the card just taken restores the hand exactly, so the best-keep score can never fall — and every round of every seed tried terminated in 21–30 turns. The property is a test (`ABotOnlyMatchTerminatesAndConservesMoney`), not a hope. It remains a real hazard for *future* strategies, which is why P12 owns a turn cap. **P12 built the cap and it has never fired** — even a table of four `SimpleBotAgent`s, which has no tie-break to push it off a plateau, finished all 300 rounds tried in 28.3 turns on average. The cap is insurance, and the only thing that has ever tripped it is an agent written to stall. |
-| ~~**Scope growth beyond a playable game**~~ (new 2026-08-18, **all but retired 2026-08-18**). §0 adds three further goals, and the 2023 failure was a half-finished thing nobody could play. | P9, P10 and P11 each ship something *more playable than before*; P12 and P13 are independent of one another after P10 (§4) and can be dropped without stranding anything. The game staying playable at every step is the mitigation. **Three of the four goals are now delivered and the tree has been green at every one of them.** Only P13 is outstanding, and it is the one that can be dropped outright without taking anything with it — **stopping after P11 leaves a finished game, a finished console and a working simulation**, not a half-built anything. |
+| ~~**Scope growth beyond a playable game**~~ (new 2026-08-18, **all but retired 2026-08-18**). §0 adds three further goals, and the 2023 failure was a half-finished thing nobody could play. | P9, P10 and P11 each ship something *more playable than before*; P12 and P13 are independent of one another after P10 (§4) and can be dropped without stranding anything. The game staying playable at every step is the mitigation. **Three of the four goals are now delivered and the tree has been green at every one of them.** Only P13 is outstanding, and it is the one that can be dropped outright without taking anything with it — **stopping after P11 leaves a finished game, a finished console and a working simulation**, not a half-built anything. ⚠️ **Re-split into five on 2026-08-19, which is where this risk bites hardest** — five sequential sub-packets is the longest unbroken chain in the plan. The mitigation is unchanged and deliberate: **P13.3 and P13.4 each ship something you can look at and play**, and stopping after P13.4 leaves a finished single-player browser game rather than a half-built lobby. |
+| **An accessibility standard retrofitted is a rewrite** (new 2026-08-19). Keyboard operability, focus behaviour and colour-independence are decided by how the markup is built, not by how it is styled — and a root-level `@rendermode InteractiveServer` cannot be narrowed later without moving every component. | **§3.11, taken before a single component exists**, and split by how each item is *checked*. Five of the seventeen are mechanical tests — the concealment leak, colour tokens, computed contrast in both themes, real controls, subscription disposal — and they land in **P13.2 and P13.3**, before there is anything to retrofit. The rest are reviewed by playing, the way P11 was reviewed, and the report has to say what was actually exercised. |
+| **A fifth project is over-engineering** (new 2026-08-19). `BurmesePoker.Presentation` exists so that one hand view serves two renderers. | The alternatives are named in §2 and both are worse: a Blazor project referencing a Spectre console, or a second implementation of a question `PartialCover` already answers — the exact drift `MeldIndex` and `CoverScore` were extracted to prevent. **The enforcement is the point** (§2), and it is one `LayeringTests` row. If it turns out thin after P13.1, folding it into Domain is a one-session reversal; folding a drifted second implementation back is not. |
+| **Blazor Server holds a live circuit per player** (new 2026-08-19). Every interaction is a round trip, and a dropped connection is a dropped game. | Four to six people a table makes the concurrency cost irrelevant; §3.10 chose the model for **concealment**, not for scale, and a JS client over the same server stays available if the feel is ever wrong. The real risk is the *reconnection experience*, which **P13.5 owns explicitly** and which the plan already has an answer to: a timeout is a bot move (P10), and the client must say so rather than freeze. |
 | **The synchronous-agent bet is wrong at scale** (new 2026-08-18). §3.6 parks a task per table rather than making the engine resumable. | At four to six players and a handful of tables the cost is a parked task, not a thread. If it is ever wrong, the fix is a resumable engine *behind the same interface* — the agents, tests and simulation loop do not change. Revisit only with a measured problem. |
 | ~~**A measured result is really a seating artifact**~~ (new 2026-08-19, **retired the same day by P16**). Turn order is a directed cycle — only the immediately-previous player's discard is available (`RULES.md` §5) — so who sits behind whom is a variable, and P12's rotation holds it fixed rather than varying it. | **Measured, and it is real but small and not directional.** A weaker player anywhere at the table is worth 4–5 points of win rate to you; which *side* of you they sit costs nothing between two thinking strategies (−1.0 ± 2.1 pts) and 9.1 ± 2.1 points only across the random-to-greedy gulf. The size of the artifact in P12's own headline is now known: **the rotation flatters greedy by 1.1 points a seat, 2.2 of the 11.4-point gap.** The mitigation is permanent: `--seating balanced` plays every assignment, and every CSV row names `upstream_strategy` and `downstream_strategy`, so a rotated result and a balanced one can both be quoted and told apart. |
 | **Journalling slows the harness** (new 2026-08-19). §3.7 measured the work as allocation-bound, and a per-decision recorder allocates. | P14 keeps two fidelity levels and makes the rich one opt-in, and its acceptance criteria include measuring the throughput cost against P12's recorded 51/85–92 rounds a second rather than assuming it is small. If thin journalling costs more than a few percent it is built wrong. |
