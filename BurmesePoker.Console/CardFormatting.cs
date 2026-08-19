@@ -29,9 +29,8 @@ public static class CardFormatting
         .Select((suit, index) => (suit, index))
         .ToDictionary(entry => entry.suit, entry => entry.index);
 
-    /// <summary>What the markers mean, for a footer under a hand.</summary>
-    public const string Legend =
-        "[grey]($) pays once · ($$) pays double · ★ the deck gave it to you, so it pays you even after you throw it[/]";
+    /// <summary>What the markers mean, for a footer under a hand. Defined in <see cref="Palette"/>.</summary>
+    public const string Legend = Palette.Legend;
 
     /// <summary>A card on its own — rank, suit glyph, and red or black.</summary>
     public static string Of(Card card)
@@ -40,6 +39,8 @@ public static class CardFormatting
             ? $"{CardText.DisplayCode(card.Rank)}{(card.Color == CardColor.Red ? "R" : "B")}"
             : $"{CardText.DisplayCode(card.Rank)}{CardText.DisplaySuit(card.Suit)}";
 
+        // A card's own colour, and nothing to do with the palette: red and black are a
+        // property of the card (RULES.md §2.2), not a thing the console is saying about it.
         return card.Color == CardColor.Red ? $"[red]{face}[/]" : $"[silver]{face}[/]";
     }
 
@@ -59,12 +60,14 @@ public static class CardFormatting
 
         var marker = multiplier switch
         {
-            2 => " [yellow]($$)[/]",
-            1 => " [yellow]($)[/]",
+            2 => $" [{Palette.Money}]($$)[/]",
+            1 => $" [{Palette.Money}]($)[/]",
             _ => string.Empty
         };
 
-        return $"{Of(card)}{marker}{(owned && multiplier > 0 ? " [green]★[/]" : string.Empty)}";
+        var star = owned && multiplier > 0 ? $" [{Palette.Good}]{Palette.OwnedMark}[/]" : string.Empty;
+
+        return $"{Of(card)}{marker}{star}";
     }
 
     /// <summary>A hand in display order, with markers. Ownership is marked from the player's own view.</summary>
@@ -81,14 +84,27 @@ public static class CardFormatting
     /// <summary>
     /// One meld, with each joker showing what it stands in for — <c>🃏R(4♥)</c>.
     /// </summary>
-    public static string Meld(Meld meld)
+    /// <remarks>
+    /// The money arguments are optional because a meld is drawn in two places that want
+    /// different things: a declaration is public and shows the cards as the table sees them,
+    /// while a player's own hand wants the markers that say which of them pay <em>them</em>.
+    /// </remarks>
+    public static string Meld(Meld meld, MoneyCardRegistry? money = null, Func<Card, bool>? owned = null)
     {
-        var cards = meld.Slots.Select(slot => slot.IsSubstitute
-            ? $"{Of(slot.Card)}[grey]({CardText.DisplayCode(slot.PlaysAs)}{CardText.DisplaySuit(slot.InSuit)})[/]"
-            : Of(slot.Card));
+        var cards = meld.Slots.Select(slot =>
+        {
+            var face = money is null ? Of(slot.Card) : Of(slot.Card, money, owned?.Invoke(slot.Card) ?? false);
 
-        return $"[grey]{meld.Kind.ToString().ToLowerInvariant()}[/] {string.Join(" ", cards)}";
+            return slot.IsSubstitute
+                ? $"{face}[{Palette.Quiet}]({CardText.DisplayCode(slot.PlaysAs)}{CardText.DisplaySuit(slot.InSuit)})[/]"
+                : face;
+        });
+
+        return $"[{Palette.Quiet}]{Label(meld.Kind)}[/] {string.Join("  ", cards)}";
     }
+
+    /// <summary>A meld kind, padded to the width of the widest label so rows line up.</summary>
+    public static string Label(MeldKind kind) => $"{kind.ToString().ToLowerInvariant(),-5}";
 
     /// <summary>
     /// A whole cover, longest meld first.
@@ -103,9 +119,13 @@ public static class CardFormatting
     public static IEnumerable<string> Cover(IReadOnlyList<Meld> melds) => melds
         .OrderByDescending(meld => meld.Count)
         .ThenBy(meld => meld.Kind)
-        .Select(Meld);
+        .Select(meld => Meld(meld));
 
     /// <summary>A player's name, escaped — names are typed by a human and may contain markup.</summary>
     public static string Name(IReadOnlyDictionary<PlayerId, string> names, PlayerId player) =>
-        $"[bold]{Markup.Escape(names.TryGetValue(player, out var name) ? name : player.ToString())}[/]";
+        $"[bold]{Markup.Escape(Plain(names, player))}[/]";
+
+    /// <summary>A player's name unescaped and undecorated, for a narrow column.</summary>
+    public static string Plain(IReadOnlyDictionary<PlayerId, string> names, PlayerId player) =>
+        names.TryGetValue(player, out var name) ? name : player.ToString();
 }

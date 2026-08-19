@@ -29,6 +29,13 @@ namespace BurmesePoker.Console;
 /// is not a move, so it is not a question for an agent either. The banks are the
 /// <see cref="MatchEngine"/>'s to keep and this file's to draw.
 /// </para>
+/// <para>
+/// <b>Every match is seeded, and says so</b> (BUILD-PLAN P11). One <see cref="Random"/> drives
+/// the seating and every shuffle, so <c>--seed</c> replays a strange match exactly; when none
+/// is given one is drawn and printed, which means the match just played can always be asked
+/// for again. This is the same determinism the simulation harness is built on (P12) — the
+/// console simply has to refrain from reaching for <see cref="Random.Shared"/> twice.
+/// </para>
 /// </remarks>
 internal static class Program
 {
@@ -38,52 +45,80 @@ internal static class Program
     /// </summary>
     private static readonly string[] BotNames = ["Ruby", "Sable", "Onyx", "Jade", "Coral", "Amber"];
 
-    private static int Main()
+    /// <summary>How many rounds of history the between-round summary shows.</summary>
+    private const int HistoryShown = 12;
+
+    private static int Main(string[] args)
     {
+        if (!Options.TryParse(args, out var options, out var complaint))
+        {
+            AnsiConsole.MarkupLine($"[{Palette.Bad}]{complaint}[/]");
+            Options.Usage();
+            return 1;
+        }
+
+        if (options.Help)
+        {
+            Options.Usage();
+            return 0;
+        }
+
         AnsiConsole.Write(new Rule("[bold]Burmese Poker[/]").LeftJustified());
 
         if (!AnsiConsole.Profile.Capabilities.Interactive)
         {
             AnsiConsole.MarkupLine(
-                "[red]This game needs a terminal it can read keys from[/] — every seat is a "
+                $"[{Palette.Bad}]This game needs a terminal it can read keys from[/] — every seat is a "
                 + "person at the keyboard. Run it directly rather than through a pipe.");
             return 1;
         }
 
+        var random = new Random(options.Seed);
         var (names, bots) = AskWhoIsPlaying();
+        var difficulty = bots.Count > 0 ? AskDifficulty() : Difficulty.Hard;
         var stakes = AskStakes();
-        var seating = Seat(names);
+        var seating = Seat(names, random);
 
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine(
             "Seating: " + string.Join(" → ", seating.Select(player => CardFormatting.Name(names, player))));
-        AnsiConsole.MarkupLine($"[grey]{CardFormatting.Name(names, seating[0])} opens.[/]");
+        AnsiConsole.MarkupLine($"[{Palette.Quiet}]{CardFormatting.Name(names, seating[0])} opens.[/]");
+        AnsiConsole.MarkupLine(
+            $"[{Palette.Quiet}]Seed {options.Seed} — [/][bold]--seed {options.Seed}[/]"
+            + $"[{Palette.Quiet}] plays this exact match again.[/]");
         AnsiConsole.WriteLine();
+
+        var log = new RoundLog();
 
         var match = new MatchEngine(
             seating,
             seating.ToDictionary(
                 player => player,
                 IPlayerAgent (player) => bots.Contains(player)
-                    ? new GreedyBotAgent()
-                    : new SpectrePlayerAgent(names)),
+                    ? PacedAgent.Wrap(Bot(difficulty), options.Pace)
+                    : new SpectrePlayerAgent(names, log, options.Hints)),
             stakes,
-            Random.Shared,
-            new ConsoleObserver(names));
+            random,
+            new ConsoleObserver(names, log));
+
+        var history = new List<RoundResult>();
 
         try
         {
             do
             {
                 var played = match.PlayRound();
+                history.Add(played.Result);
+
                 ReportSettlement(played.Result, played.Table, names);
-                ReportStandings(match, names);
+                ReportHistory(history, names);
+                ReportStandings(match, history, names);
             }
             while (AnsiConsole.Confirm("Another round?"));
 
             AnsiConsole.MarkupLine(
-                $"[grey]{match.RoundsPlayed} round{(match.RoundsPlayed == 1 ? string.Empty : "s")} played. "
-                + "Nothing ends a game but the players (RULES.md §7.2).[/]");
+                $"[{Palette.Quiet}]{match.RoundsPlayed} round{(match.RoundsPlayed == 1 ? string.Empty : "s")} played, "
+                + $"seed {options.Seed}. Nothing ends a game but the players (RULES.md §7.2).[/]");
 
             return 0;
         }
@@ -93,19 +128,44 @@ internal static class Program
             // discard pile being empty at once, which is a genuine end state rather than the
             // crash it used to be.
             AnsiConsole.MarkupLine(
-                "[yellow]There is nothing left to draw anywhere[/] — not in the deck and not in "
+                $"[{Palette.Money}]There is nothing left to draw anywhere[/] — not in the deck and not in "
                 + "a discard pile — so the round cannot go on. The standings stand as they were.");
 
-            ReportStandings(match, names);
+            ReportStandings(match, history, names);
             return 1;
         }
     }
 
+    /// <summary>How hard the computer plays. Both seats already exist in the domain (BUILD-PLAN P12).</summary>
+    private enum Difficulty
+    {
+        Easy,
+        Hard
+    }
+
     /// <summary>
-    /// Draws the running banks. They start at zero and carry over, and nothing resets them —
-    /// there is no target score and no round limit (RULES.md §7.2).
+    /// A bot of the chosen strength.
     /// </summary>
-    private static void ReportStandings(MatchEngine match, IReadOnlyDictionary<PlayerId, string> names)
+    /// <remarks>
+    /// <b>A difficulty setting came for free out of the simulation.</b> <c>SimpleBotAgent</c>
+    /// is <c>GreedyBotAgent</c> with the discard tie-break removed and nothing else changed,
+    /// and it is measurably weaker for it — 19.3% of rounds against 30.7% over two thousand of
+    /// them (BUILD-PLAN P12). It was built as a control and turns out to be the easy seat.
+    /// </remarks>
+    private static IPlayerAgent Bot(Difficulty difficulty) =>
+        difficulty == Difficulty.Easy ? new SimpleBotAgent() : new GreedyBotAgent();
+
+    /// <summary>
+    /// Draws the running banks, with how many rounds each player has taken.
+    /// </summary>
+    /// <remarks>
+    /// They start at zero and carry over, and nothing resets them — there is no target score
+    /// and no round limit (RULES.md §7.2).
+    /// </remarks>
+    private static void ReportStandings(
+        MatchEngine match,
+        IReadOnlyList<RoundResult> history,
+        IReadOnlyDictionary<PlayerId, string> names)
     {
         if (match.RoundsPlayed == 0)
         {
@@ -114,19 +174,60 @@ internal static class Program
 
         var grid = new Table().Border(TableBorder.Rounded)
             .Title("[bold]Standings[/]")
-            .Caption($"[grey]after {match.RoundsPlayed} round{(match.RoundsPlayed == 1 ? string.Empty : "s")}[/]");
+            .Caption($"[{Palette.Quiet}]after {match.RoundsPlayed} round{(match.RoundsPlayed == 1 ? string.Empty : "s")}[/]");
 
         grid.AddColumn("Player");
+        grid.AddColumn(new TableColumn("Won").RightAligned());
         grid.AddColumn(new TableColumn("Bank").RightAligned());
 
         foreach (var (player, bank) in match.Banks.OrderByDescending(entry => entry.Value))
         {
-            grid.AddRow(CardFormatting.Name(names, player), $"[bold]{Amount(bank)}[/]");
+            var won = history.Count(result => result.Winner == player);
+
+            grid.AddRow(
+                CardFormatting.Name(names, player),
+                won == 0 ? $"[{Palette.Quiet}]—[/]" : won.ToString(),
+                $"[bold]{Palette.Amount(bank)}[/]");
         }
 
         AnsiConsole.WriteLine();
         AnsiConsole.Write(grid);
         AnsiConsole.WriteLine();
+    }
+
+    /// <summary>
+    /// Who won each round and what it was worth.
+    /// </summary>
+    /// <remarks>
+    /// <b>The history is remembered here because the domain deliberately does not keep one</b>
+    /// (BUILD-PLAN §3.8): <see cref="MatchEngine"/> hands back a <c>RoundRecord</c> and drops
+    /// the table, and a consumer that wants a history keeps the results it was given. One line
+    /// a round rather than a column a player, so a six-handed table still fits an
+    /// eighty-column terminal.
+    /// </remarks>
+    private static void ReportHistory(
+        IReadOnlyList<RoundResult> history,
+        IReadOnlyDictionary<PlayerId, string> names)
+    {
+        if (history.Count < 2)
+        {
+            return;
+        }
+
+        var shown = history.Count <= HistoryShown ? history : history.Skip(history.Count - HistoryShown).ToList();
+
+        var lines = shown.Select(result =>
+            $"[{Palette.Quiet}]Round {result.Round,2}[/]  {CardFormatting.Name(names, result.Winner)} "
+            + $"won {Palette.Amount(result.Payouts[result.Winner])} "
+            + $"[{Palette.Quiet}]in {result.Turns} turns[/]");
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(
+            new Panel(string.Join(Environment.NewLine, lines))
+                .Header(history.Count > HistoryShown
+                    ? $"Rounds so far [{Palette.Quiet}](last {HistoryShown} of {history.Count})[/]"
+                    : "Rounds so far")
+                .BorderColor(Palette.Frame));
     }
 
     /// <summary>
@@ -140,19 +241,19 @@ internal static class Program
     private static (Dictionary<PlayerId, string> Names, HashSet<PlayerId> Bots) AskWhoIsPlaying()
     {
         var count = AnsiConsole.Prompt(
-            new TextPrompt<int>($"How many at the table? [grey]({RoundEngine.MinimumPlayers}–{RoundEngine.MaximumPlayers})[/]")
+            new TextPrompt<int>($"How many at the table? [{Palette.Quiet}]({RoundEngine.MinimumPlayers}–{RoundEngine.MaximumPlayers})[/]")
                 .DefaultValue(RoundEngine.MinimumPlayers)
                 .Validate(value => value is >= RoundEngine.MinimumPlayers and <= RoundEngine.MaximumPlayers
                     ? ValidationResult.Success()
                     : ValidationResult.Error(
-                        $"[red]A round is for {RoundEngine.MinimumPlayers} to {RoundEngine.MaximumPlayers} players (RULES.md §2.1).[/]")));
+                        $"[{Palette.Bad}]A round is for {RoundEngine.MinimumPlayers} to {RoundEngine.MaximumPlayers} players (RULES.md §2.1).[/]")));
 
         var people = AnsiConsole.Prompt(
-            new TextPrompt<int>($"How many of you are people? [grey](0–{count}; the rest are played by the computer)[/]")
+            new TextPrompt<int>($"How many of you are people? [{Palette.Quiet}](0–{count}; the rest are played by the computer)[/]")
                 .DefaultValue(1)
                 .Validate(value => value >= 0 && value <= count
                     ? ValidationResult.Success()
-                    : ValidationResult.Error($"[red]There are only {count} seats.[/]")));
+                    : ValidationResult.Error($"[{Palette.Bad}]There are only {count} seats.[/]")));
 
         var names = new Dictionary<PlayerId, string>(count);
         var bots = new HashSet<PlayerId>();
@@ -176,6 +277,19 @@ internal static class Program
         return (names, bots);
     }
 
+    private static Difficulty AskDifficulty() =>
+        AnsiConsole.Prompt(
+            new SelectionPrompt<Difficulty>()
+                .Title("How well should the computer play?")
+                .UseConverter(difficulty => difficulty switch
+                {
+                    Difficulty.Easy =>
+                        $"Easy [{Palette.Quiet}](throws the first card that costs it nothing — wins about a fifth of rounds)[/]",
+                    _ =>
+                        $"Hard [{Palette.Quiet}](keeps the cards with partners — wins about a third)[/]"
+                })
+                .AddChoices(Difficulty.Hard, Difficulty.Easy));
+
     private static Stakes AskStakes()
     {
         AnsiConsole.WriteLine();
@@ -188,17 +302,24 @@ internal static class Program
 
     private static int AskAmount(string question, int standard) =>
         AnsiConsole.Prompt(
-            new TextPrompt<int>($"{question} [grey]($)[/]")
+            new TextPrompt<int>($"{question} [{Palette.Quiet}]($)[/]")
                 .DefaultValue(standard)
                 .Validate(value => value > 0
                     ? ValidationResult.Success()
-                    : ValidationResult.Error("[red]A stake is an amount of money changing hands, so it must be positive.[/]")));
+                    : ValidationResult.Error($"[{Palette.Bad}]A stake is an amount of money changing hands, so it must be positive.[/]")));
 
-    /// <summary>Randomises the seating, which is also the turn order (RULES.md §3 step 2).</summary>
-    private static PlayerId[] Seat(Dictionary<PlayerId, string> names)
+    /// <summary>
+    /// Randomises the seating, which is also the turn order (RULES.md §3 step 2).
+    /// </summary>
+    /// <remarks>
+    /// <b>From the match's own <see cref="Random"/></b>, not from <see cref="Random.Shared"/>:
+    /// the seating is part of what a seed has to reproduce, and drawing it from anywhere else
+    /// would leave <c>--seed</c> replaying the same deals to a different table.
+    /// </remarks>
+    private static PlayerId[] Seat(Dictionary<PlayerId, string> names, Random random)
     {
         var seating = names.Keys.ToArray();
-        Random.Shared.Shuffle(seating);
+        random.Shuffle(seating);
         return seating;
     }
 
@@ -234,18 +355,18 @@ internal static class Program
                 : -table.Stakes.RoundValue;
 
             grid.AddRow(
-                CardFormatting.Name(names, player) + (player == result.Winner ? " [green](out)[/]" : string.Empty),
+                CardFormatting.Name(names, player) + (player == result.Winner ? $" [{Palette.Good}](out)[/]" : string.Empty),
                 owned.TryGetValue(player, out var cards) && cards.Count > 0
                     ? string.Join("  ", cards.Select(card => CardFormatting.Of(card, table.MoneyCards)))
-                    : "[grey]—[/]",
-                Amount(round),
-                Amount(net - round),
-                $"[bold]{Amount(net)}[/]");
+                    : $"[{Palette.Quiet}]—[/]",
+                Palette.Amount(round),
+                Palette.Amount(net - round),
+                $"[bold]{Palette.Amount(net)}[/]");
         }
 
         AnsiConsole.Write(grid);
         AnsiConsole.MarkupLine(
-            "[grey]A money card pays its owner — whoever the deck gave it to — whether they "
+            $"[{Palette.Quiet}]A money card pays its owner — whoever the deck gave it to — whether they "
             + "still hold it or threw it away (RULES.md §4.4).[/]");
     }
 
@@ -274,11 +395,4 @@ internal static class Program
 
         return owned.ToDictionary(entry => entry.Key, entry => CardFormatting.Sorted(entry.Value).ToList());
     }
-
-    private static string Amount(int money) => money switch
-    {
-        > 0 => $"[green]+${money}[/]",
-        < 0 => $"[red]-${-money}[/]",
-        _ => "[grey]$0[/]"
-    };
 }

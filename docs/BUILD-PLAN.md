@@ -20,7 +20,7 @@ are wanted.
    2026-08-18.**
 2. **A console that is pleasant to sit at.** The UI stays terminal-based for a long time, and
    that is fine, *provided* the UX gets deliberate attention rather than being tolerated.
-   **P11.**
+   **P11 — ✅ done 2026-08-18.**
 3. **Strategy simulation at scale** — thousands of games run in parallel to compare ways of
    playing. **P12 — ✅ done 2026-08-18.**
 4. **A multiplayer app**, where a lobby host fills empty seats with AI players. **P13.**
@@ -31,13 +31,17 @@ here because they change decisions taken *before* the packets that need them.
 | Goal | What it needs | Where it stands |
 |---|---|---|
 | Solo play | A bot behind `IPlayerAgent` | ✅ **Delivered by P10.** `GreedyBotAgent` fills any seat the people do not; the console asks how many of them are breathing |
-| Console UX | Nothing structural | ✅ The gap is closed: `PartialCover` (P10) is the scored cover both the hint and the meld-grouped hand read from |
+| Console UX | Nothing structural | ✅ **Delivered by P11.** And it needed nothing structural in the end: five presentation files in `BurmesePoker.Console` and **not one line of Domain or Sim changed** |
 | Simulation | Determinism, no ambient randomness, no I/O, no static state, and **speed** | ✅ **Delivered by P12.** `BurmesePoker.Sim` runs seeded games in parallel with byte-identical results; ~20 ms a round, 50–90 rounds a second. No static state, and now a test that says so |
 | Simulation, cont. | **Observability** — meaningful stats must be *derivable*, without the domain knowing what a statistic is | ✅ §3.8 held. Win rate, money split into flat and side bet, turns, how close the losers were, take and claim rates — **all derived by the harness, with no domain change whatever** |
 | Multiplayer | A decision on whether agents block | §3.6, taken now rather than discovered later |
 
-**Two of the four are done, and P12 was the one that could have demanded architecture.** It
+**Three of the four are done, and P12 was the one that could have demanded architecture.** It
 did not: the harness is a fourth project that references Domain and asks it for nothing new.
+**P11 asked for nothing either** — a whole UX pass, including a hint that has to agree with how
+the bots play and a pause that must not exist in the domain, went in as presentation over the
+seams that were already there. **Only P13 is left, and it is the only one that has ever looked
+like it might change the shape of things.**
 
 **The through-line: the domain never learns that any of this happened.** A bot, a simulation
 harness and a network server are all the same shape — something that answers
@@ -181,7 +185,15 @@ Domain. ⚠️ **`BurmesePoker.Tests` now references Domain *and* Sim.** The rul
 unchanged and is worth restating in its true form: **the test project never references
 `BurmesePoker.Console`**, so nothing is tested through the front end. The harness is a headless
 consumer whose determinism is itself an acceptance criterion, and a fifth project existing only
-to test the fourth would buy nothing.
+to test the fourth would buy nothing. **By P11:** five more files in `BurmesePoker.Console` —
+`{Options, Palette, RoundLog, HandView, PacedAgent}.cs` — and **nothing anywhere else**. A whole
+UX pass, including a hint that must agree with how the bots actually play and a deliberate pause
+between computer turns, went in as presentation over seams that already existed. ⚠️ **The pause
+is a decorator over `IPlayerAgent` in the console** (`PacedAgent`) and not a sleep in
+`GreedyBotAgent`, which would have put a wait inside the simulation's hot loop. The test project
+gained `LayeringTests` — Domain references neither Spectre nor `System.Console`, Sim references
+no Spectre — which is the only mechanical check available to a packet whose subject is
+unreachable from the test project.
 
 ---
 
@@ -466,7 +478,7 @@ order. P6 needs P1 and P2 only.
 bots: solo play *is* bots, a discard hint is the same scored search a bot uses, a simulation
 is bots playing each other, and a network timeout is a bot taking over a seat (§3.6). After
 P10, **P11, P12 and P13 are independent of one another** and can be taken in any order — or
-not at all. **P12 is done (2026-08-18); P11 and P13 remain, still independent.**
+not at all. **P11 and P12 are both done (2026-08-18); only P13 remains.**
 
 | Packet | Title | Depends on | Size |
 |---|---|---|---|
@@ -481,9 +493,9 @@ not at all. **P12 is done (2026-08-18); P11 and P13 remain, still independent.**
 | P8 | Console front end | P7 | M |
 | P9 | End-to-end play, remaining rules | P8 | M |
 | P10 | Bot opponents — **solo play** | P9 | L — ☑ done 2026-08-18 |
-| P11 | Console UX pass | P10 | M |
-| P12 | Simulation at scale | P10 | L |
-| P13 | Multiplayer app | P10 | XL — will be split |
+| P11 | Console UX pass | P10 | M — ☑ done 2026-08-18 |
+| P12 | Simulation at scale | P10 | L — ☑ done 2026-08-18 |
+| P13 | Multiplayer app | P10 | XL — **split into P13.1–P13.3** below |
 
 ---
 
@@ -1235,7 +1247,7 @@ people?"*, and one person can play a full match against bots.
 
 ---
 
-### P11 — Console UX pass
+### P11 — Console UX pass ☑ done 2026-08-18
 
 **Goal.** A console game that is pleasant to sit at for an hour. **The UI stays terminal-based
 for a long time by choice (§0), so this is not polish deferred until a "real" UI arrives — it
@@ -1294,6 +1306,44 @@ a non-interactive terminal with an explanation rather than a stack trace.
 > - **`--seed` is a one-liner and worth having.** `MatchEngine` takes the one `Random` and the
 >   sim now proves a match replays exactly from it; the console needs only to pass
 >   `new Random(seed)` instead of `Random.Shared` and print the seed it used.
+
+> **As built (2026-08-18). Every item above shipped. Five new files, no Domain or Sim change.**
+> - **`RoundLog`** — `ConsoleObserver` now *says and files* each line of narration through one
+>   `Say(markup)` helper, so there is exactly one copy of every sentence the game speaks;
+>   `SpectrePlayerAgent.BeginTurn` redraws the panel above the table and the hand, because the
+>   log is the context the other two panels are read against. **It remembers markup, not
+>   events** — re-rendering from events would have put a second copy of the wording next to the
+>   first. Per round, and nothing survives the round.
+> - **`HandView`** — one `PartialCover.Best` call drawn as `run`/`set`/`loose` rows, headed by
+>   *"9 of 13 meld"*, with jokers still showing what they stand in for. It also prices each card
+>   at `covered(13) − covered(12)`, which is what the discard list annotates itself with.
+> - ⚠️ **The discard hint is `GreedyBotAgent`'s own answer, not a re-derivation.** The agent
+>   holds a bot and asks it `ChooseAction` / `ClaimTurnedUpMoneyCard` / `ChooseDiscard` on the
+>   very `TurnContext` in hand. `CoverScore` is `internal` and the tie-break is not trivial, so
+>   a second implementation would have been a different strategy wearing the first one's name.
+>   `--no-hints` turns the lot off.
+> - **`PacedAgent`** pauses once per `(Round, TurnNumber)` — the pair `SpectrePlayerAgent`
+>   already hands the keyboard over on, because a turn asks a varying number of questions.
+>   `Wrap` returns the agent unchanged at zero, so `--pace 0` costs nothing.
+> - **`Palette`** gathers what P8 had invented in three files. The rule it records: yellow is
+>   money, green is yours or in your favour, red is money leaving you, grey is context — and a
+>   card's own red or black is the card's and means nothing else.
+> - **`Options`** is `--seed`, `--pace`, `--no-hints`, `--help` and nothing more; everything
+>   about the *table* is still asked at the prompt, where the player already is. **A seed is
+>   drawn when none is given and always printed**, so any match can be replayed after the fact;
+>   ⚠️ the **seating** is taken from the match's own `Random` too, or `--seed` would replay the
+>   same deals to a different table.
+> - **The difficulty prompt cost one method.** *Hard* is `GreedyBotAgent`, *easy* is P12's
+>   `SimpleBotAgent`, and the prompt quotes the measured win rates.
+> - ⚠️ **Spectre markup must balance and nothing but running it will tell you.**
+>   `Palette.Legend` shipped with two opening `[grey]` tags and one `[/]`, compiled clean,
+>   passed 239 tests, and threw `Unbalanced markup stack` on the first hand drawn. Any constant
+>   that interpolates a colour deserves a second look.
+> - **Verified by playing**, through a pty as P8 and P9 were: 13+ rounds at four seats with
+>   settlements summing to zero, a six-seat table to see the reshuffle narrated (it never fires
+>   at four — P12's finding from the other side), and seed 1 for the opening turn, which is the
+>   only turn that offers the money-card claim. `--seed 99` twice is byte-identical; `--seed
+>   100` is not.
 
 ---
 
@@ -1450,6 +1500,50 @@ its own P13.x list at the point it is next rather than pretended to be one sessi
 >   with the whole search in it — a host can run many tables per core, so the parked-task cost
 >   §3.6 accepted is not the thing to worry about.
 
+> **Amended after the P11 session (2026-08-18) — the split, and what a UX pass proved about the seams.**
+>
+> **P13 is now the only packet left, so this is where it is split.** Three sub-packets, each
+> one session, each ending green. Take them in order; **P13.1 is worth doing even if P13.2 and
+> P13.3 never are**, because it is what makes the front end replaceable at all.
+>
+> - **P13.1 — Lift the front end off `AnsiConsole`.** Today `SpectrePlayerAgent`,
+>   `ConsoleObserver`, `Program` and `RoundLog` all reach for the static `AnsiConsole` directly.
+>   A second front end cannot exist until they take an `IAnsiConsole` (Spectre's own interface,
+>   which the library already threads everywhere) or, for the parts that are not Spectre at all,
+>   until the *decision* is separated from the *drawing*. **Nothing about the game changes**;
+>   it is a refactor of one project, and the mechanical check is that the console still plays a
+>   match through a pty exactly as it does now. ⚠️ **Do not invent a view abstraction of your
+>   own** — Spectre's is adequate and a bespoke one would be a second presentation vocabulary.
+> - **P13.2 — A table server.** One `MatchEngine` per task, `RemotePlayerAgent : IPlayerAgent`
+>   blocking on a channel, `SeatRecorder`'s shape reused for the timeout, and per-connection
+>   observer fan-out with the filtering done **server-side** (see the security note above).
+>   No UI. **Acceptance is a test, and it can be a real one**: two scripted "remote" agents and
+>   two bots play a round through the server's own plumbing, with no sockets involved. That is
+>   the first time a multiplayer packet has had a mechanical acceptance criterion, and it is
+>   worth structuring the packet around.
+> - **P13.3 — The lobby and a client.** Open a table, join it, fill the rest with bots, play.
+>   The lobby is not a domain concept (above); it decides seating and names and then constructs
+>   what `Program` constructs today.
+>
+> **What P11 established that changes the estimate.**
+> - ⚠️ **The console is bigger than it was and none of it is reusable across a wire as written.**
+>   Nine files now, five of them added by P11. `Palette`, `CardFormatting` and `HandView` are
+>   *pure* — value in, markup out — and port to any Spectre-rendering client unchanged.
+>   `RoundLog`, `ConsoleObserver`, `SpectrePlayerAgent` and `Program` are not: they print at the
+>   moment they are called. **That is the line P13.1 has to cut along**, and it is already
+>   visible in the file list.
+> - **The hotseat clear is exactly what a network does not need**, and it is the whole reason
+>   `RoundLog` exists. A remote client has its own screen and never loses scrollback, so it
+>   wants the observer stream and not the panel. **`RoundLog` is a hotseat concession, not a
+>   general feature** — do not carry it over and do not build the server around it.
+> - **A dropped player's move already reads correctly to the table.** P11 gives every bot seat
+>   a `PacedAgent` pause and a name, so a seat taken over by the computer on a timeout will
+>   *look* like a seat playing rather than like a freeze. Wrap the takeover the same way.
+> - **`--seed` is the bug report format.** A console match now replays byte-identically from
+>   its seed and prints the seed it used. A table server should carry the same property per
+>   table for the same reason, and it is free — one `Random` per `MatchEngine`, seeded at
+>   construction, exactly as `Program` does today.
+
 ---
 
 ## 6. Cold-start protocol
@@ -1483,7 +1577,7 @@ For picking up in a fresh session with no memory of this conversation.
 | The rewrite stalls half-finished, as in 2023. | Packets are individually shippable and each ends green. P1–P6 are pure domain with no UI dependency, so progress is real even if the console never gets built. **As of 2026-08-18 P0–P6 are all done**, so the entire rules core — cards, melds, the win authority, and money — exists and is tested; what remains is the engine and the front end. |
 | ~~**The evaluator in the simulation hot loop**~~ (new 2026-08-18) — **retired 2026-08-18 by P12's measurement pass.** `RoundEngine` calls `TryFindCover` after every discard by every player; P5's ~100 ms for three stress hands is nothing to a human and possibly ruinous across a million rounds. | **Measured end to end at last: a bot-only round costs ~40 ms over 21–30 turns**, so a thousand rounds is under a minute on one core — the goal is not in danger. The live cost has **moved to `PartialCover.Best`**, which a bot calls up to fifteen times a decision against the engine's one. Still **measure before optimising** (§3.7, P12), and still put any speed-up *around* the evaluator rather than inside it — `IsWinning` is the win authority (§3.4) and its answers may not change. A per-turn cache inside the bot is the free win, and touches neither. **P12 measured it and closed the row:** `PartialCover.Best` is 140 µs a hand and `TryFindCover` 91 µs, a round is ~20 ms, and a run does 50–90 rounds a second — 2,000 rounds in 34 s, with nothing optimised. What the measurement did find is that the work is **allocation-bound rather than compute-bound**: eight threads bought 25% under the workstation GC and 70% under the server GC (§3.7 item 4). If throughput ever matters again, attack allocation, and still not inside the evaluator. |
 | ~~**A strategy that never improves plays for ever**~~ (new 2026-08-18, **retired the same day**). With the P9 reshuffle, only a declaration ends a round (RULES.md §7.1), so a table of bots that never improve never finishes. | `GreedyBotAgent`'s score is **monotone by construction** — throwing back the card just taken restores the hand exactly, so the best-keep score can never fall — and every round of every seed tried terminated in 21–30 turns. The property is a test (`ABotOnlyMatchTerminatesAndConservesMoney`), not a hope. It remains a real hazard for *future* strategies, which is why P12 owns a turn cap. **P12 built the cap and it has never fired** — even a table of four `SimpleBotAgent`s, which has no tie-break to push it off a plateau, finished all 300 rounds tried in 28.3 turns on average. The cap is insurance, and the only thing that has ever tripped it is an agent written to stall. |
-| **Scope growth beyond a playable game** (new 2026-08-18). §0 adds three further goals, and the 2023 failure was a half-finished thing nobody could play. | P9, P10 and P11 each ship something *more playable than before*; P12 and P13 are independent of one another after P10 (§4) and can be dropped without stranding anything. The game staying playable at every step is the mitigation. |
+| ~~**Scope growth beyond a playable game**~~ (new 2026-08-18, **all but retired 2026-08-18**). §0 adds three further goals, and the 2023 failure was a half-finished thing nobody could play. | P9, P10 and P11 each ship something *more playable than before*; P12 and P13 are independent of one another after P10 (§4) and can be dropped without stranding anything. The game staying playable at every step is the mitigation. **Three of the four goals are now delivered and the tree has been green at every one of them.** Only P13 is outstanding, and it is the one that can be dropped outright without taking anything with it — **stopping after P11 leaves a finished game, a finished console and a working simulation**, not a half-built anything. |
 | **The synchronous-agent bet is wrong at scale** (new 2026-08-18). §3.6 parks a task per table rather than making the engine resumable. | At four to six players and a handful of tables the cost is a parked task, not a thread. If it is ever wrong, the fix is a resumable engine *behind the same interface* — the agents, tests and simulation loop do not change. Revisit only with a measured problem. |
 | Rules drift as more is recalled. | `RULES.md` provenance tags make revisiting cheap; §9 tracks what is still unrecorded. |
 | Three projects is over-engineering. | Noted in §2. The enforcement is the point, but a single project with `IGameObserver` is an acceptable fallback. |

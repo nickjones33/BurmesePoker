@@ -10,14 +10,15 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Next packet: P11 or P13 — they are independent, and either may also be dropped.** No blockers.
+**Next packet: P13, the last one — and it may still be dropped.** No blockers.
 
-**P0 through P12 are done. The game is playable alone and measurable in bulk:** `dotnet run
---project BurmesePoker.Console` fills the empty seats with bots and plays rounds with the banks
-carrying over, and `dotnet run -c Release --project BurmesePoker.Sim` plays thousands of seeded
-games in parallel and reports how two strategies compare. **Of §0's four goals, solo play (P10)
-and simulation (P12) are delivered; the console UX pass (P11) and the multiplayer app (P13)
-remain.**
+**P0 through P12 are done. The game is playable alone, pleasant to sit at, and measurable in
+bulk:** `dotnet run --project BurmesePoker.Console` fills the empty seats with bots, paces them
+so a person can follow, shows a hand as the melds it nearly is, keeps a round log across the
+concealment clear, and replays any match from `--seed`; `dotnet run -c Release --project
+BurmesePoker.Sim` plays thousands of seeded games in parallel and reports how two strategies
+compare. **Three of §0's four goals are delivered — solo play (P10), console UX (P11) and
+simulation (P12). Only the multiplayer app (P13) remains.**
 
 The 2023 implementation is gone from the tree and lives only at the `pre-rewrite` tag. The
 solution is **four** projects — `BurmesePoker.Domain` (pure rules), `BurmesePoker.Console`
@@ -36,9 +37,10 @@ MatchEngine}`, `Abstractions/{IPlayerAgent,IGameObserver}` and
 `Agents/{CoverScore,GreedyBotAgent,SimpleBotAgent}`. Console holds `{Program,CardFormatting,
 SpectrePlayerAgent,ConsoleObserver}`. Sim holds `{Program,Simulator,GameRunner,
 SimulationOptions,SimulationReport,StrategySummary,Strategy,SeedSequence,SeatRecorder,
-SimObserver,RoundAbandonedException,Results,CsvReport}`.
+SimObserver,RoundAbandonedException,Results,CsvReport}`. **Console gained five files in P11**:
+`{Options,Palette,RoundLog,HandView,PacedAgent}`.
 
-✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **235 passed,
+✅ **Baseline green** — `dotnet build` clean and warning-free, `dotnet test` **239 passed,
 0 failed**. **Any red tree is a real problem.**
 
 ⚠️ **One hazard a cold context must know before writing a test or a strategy:** with the
@@ -67,13 +69,14 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P8** Console front end | P7 | done 2026-08-18 — hotseat; verified by driving a pty |
 | ☑ | **P9** End-to-end play | P8 | done 2026-08-18 — the reshuffle lives inside `RoundEngine.TakeCard` |
 | ☑ | **P10** Bot opponents — solo play | P9 | done 2026-08-18 — `PartialCover` + `GreedyBotAgent`; every seed terminates |
-| ☐ | **P11** Console UX pass | P10 | **candidate** — the terminal *is* the UI (§0); the round log is still the sorest spot |
+| ☑ | **P11** Console UX pass | P10 | done 2026-08-18 — round log, meld-grouped hand, hints, pacing, `--seed` |
 | ☑ | **P12** Simulation at scale | P10 | done 2026-08-18 — `BurmesePoker.Sim`; the tie-break wins 30.7% to 19.3% |
-| ☐ | **P13** Multiplayer app | P10 | **candidate** — XL, split it when it is next |
+| ☐ | **P13** Multiplayer app | P10 | **the only one left** — XL, and §5 now says how to split it |
 
-**P10 was the fork and it is done; P12 has been taken.** P11 and P13 depend on P10 and on
-nothing else, so either can be picked up in any order — or dropped. The game is finished as a
-game, and the simulation goal is delivered.
+**P10 was the fork; P11 and P12 have both been taken through it.** P13 is the last packet and
+the only one that would change the architecture. The game is finished as a game, the console
+is finished as a console, and the simulation goal is delivered — **stopping here is a
+legitimate end state**, and P13 is a new piece of work rather than a debt.
 
 ⚠️ **Four things the roadmap changed for work that was already planned**, all recorded in
 `BUILD-PLAN.md` — **all four are now discharged**:
@@ -103,7 +106,71 @@ game, and the simulation goal is delivered.
 
 *Anything a cold context would need: decisions taken, surprises, deliberate leftovers.*
 
-**From P12 (most recent):**
+**From P11 (most recent):**
+
+- **Five new files in `BurmesePoker.Console`, and every one of them is presentation.** `Options`
+  (the command line), `Palette` (the colour and marker language), `RoundLog` (what survives the
+  clear), `HandView` (a hand as its melds, and what each card costs to throw) and `PacedAgent`
+  (a decorator that makes a bot wait). **Domain and Sim are byte-for-byte unchanged** — the
+  packet needed nothing from either, which is the strongest evidence yet that §3.5's seams are
+  the right ones.
+- ⚠️ **The pause is a decorator in the console and must stay there.** `PacedAgent.Wrap(inner,
+  pause)` sleeps once per `(Round, TurnNumber)` — the same pair `SpectrePlayerAgent` hands the
+  keyboard over on, because a turn asks a varying number of questions and pausing per *call*
+  would make some turns three times as long for no visible reason. **Putting the sleep in
+  `GreedyBotAgent` would have put it inside P12's hot loop**; `LayeringTests` now exists partly
+  to make that class of mistake fail loudly. `Wrap` returns the agent itself when the pause is
+  zero, so `--pace 0` costs nothing.
+- **The round log remembers markup, not events.** `ConsoleObserver.Say(markup)` prints a line
+  *and* files it, so there is exactly one copy of every sentence the game says. Re-rendering
+  from remembered events would have put a second copy of the wording next to the first.
+  `SpectrePlayerAgent.BeginTurn` draws the log panel **first**, above the table and the hand,
+  because it is the context the other two panels are read against. **The log is per round and
+  nothing survives it** — the between-round history is `Program`'s own `List<RoundResult>`,
+  since `MatchEngine` still deliberately keeps none (§3.8).
+- **The hint is the computer's own answer, asked directly.** `SpectrePlayerAgent` holds a
+  `GreedyBotAgent` and calls `ChooseAction` / `ClaimTurnedUpMoneyCard` / `ChooseDiscard` on the
+  very `TurnContext` it was handed. ⚠️ **Do not re-derive a recommendation** — `CoverScore` is
+  `internal` and the tie-break is not trivial, so a second implementation would be a different
+  strategy wearing the first one's name. The per-card *cost* beside it is `HandView`'s own
+  reading of `PartialCover` (`covered(13) − covered(12)`) and agrees with the advice by
+  construction. `--no-hints` turns the lot off.
+- ⚠️ **Spectre markup must balance, and the compiler will not tell you.** `Palette.Legend` was
+  written with two opening `[grey]` tags and one `[/]`, built clean, passed 239 tests, and threw
+  `InvalidOperationException: Unbalanced markup stack` on the first hand drawn. **Only playing
+  it finds this.** Every constant that interpolates a colour needs looking at twice.
+- ⚠️ **`Cover(...)` no longer takes a method group.** `CardFormatting.Meld` gained optional
+  `MoneyCardRegistry` / ownership arguments (a declaration is public and shows plain cards; your
+  own hand wants the markers), which broke `.Select(Meld)` — it now reads `.Select(meld =>
+  Meld(meld))`. Harmless, but the error message blames a Spectre extension method and is
+  thoroughly confusing.
+- **Every match is seeded, whether or not one was asked for.** `Options` draws a seed when
+  `--seed` is absent and `Program` prints it, so any match can be replayed after the fact. ⚠️
+  **The seating comes from the match's own `Random`, not `Random.Shared`** — otherwise `--seed`
+  would replay the same deals to a different table. **Verified:** two runs at `--seed 99` with
+  identical keystrokes produce byte-identical output; `--seed 100` does not.
+- **The difficulty prompt is a strategy name and nothing more.** *Hard* is `GreedyBotAgent`,
+  *easy* is P12's `SimpleBotAgent`, and the prompt quotes the measured win rates (a third
+  against a fifth). It is only asked when there is at least one bot.
+- **What was actually played, since a UX packet is verified by playing it.** Through a pty
+  (`script -qec "dotnet run --project BurmesePoker.Console --no-build -- --seed N --pace 0"`),
+  fed newlines: **13+ rounds at four seats** on seed 4242 — settlements summing to zero,
+  history truncating to "last 12 of 15", the log panel carrying three bot turns across the
+  clear, hints reading *"(breaks a meld — costs 3)"* and *"← the computer would throw this"*;
+  **seed 1 for the opening turn**, which is the only turn that offers the money-card claim, and
+  the only way to see that advice line; **two six-seat runs**, where the reshuffle narration
+  fires (it does not at four — P12's finding, confirmed from the other side). `--pace` measured
+  by counting turns in a fixed window: ~163× fewer at 1,000 ms than at 0.
+- **P11 shipped 4 tests (239 total), and they are the only mechanical check the packet allows.**
+  `LayeringTests` asserts that Domain references no Spectre assembly, that Domain references no
+  `System.Console` either, that Sim references no Spectre, and — guarding the other three —
+  that the reference lists are not empty. **Still no Console tests, by construction.**
+- **No new rules question. `RULES.md` is unchanged at rev 13.** Nothing in a UX pass is a rules
+  decision; the two places one could have crept in — what the hint recommends, and what the
+  claim prompt says a claimed card pays — were both already settled (§4.4, §4.5) and are quoted
+  rather than re-decided.
+
+**Still current, from P12:**
 
 - **`BurmesePoker.Sim` is a fourth project and `BurmesePoker.Tests` now references it.** The
   rule to carry forward is **"tests never reference `BurmesePoker.Console`"**, which is what
@@ -620,6 +687,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-18 | P11 | ☑ Done. **Console UX pass — the terminal is the UI, so this is the UI (§0).** Five new presentation files and **not one line of Domain or Sim changed**. `RoundLog` fixes the sorest thing in the console: the per-turn concealment clear used to destroy every public thing said while a player was away, and with bots those turns pass in milliseconds — `ConsoleObserver` now says each line *and* files the same markup, and the panel is drawn above the table and the hand. `HandView` shows a hand as the melds it nearly is plus its deadwood, off one `PartialCover.Best` call, and prices every card by `covered(13) − covered(12)`. **The discard hint is `GreedyBotAgent`'s own answer**, asked of the very `TurnContext` in hand, so it cannot drift from how the table actually plays; `--no-hints` turns it off. `PacedAgent` — a decorator, **deliberately not a sleep in the bot**, which would have sat inside P12's hot loop — makes computer seats wait once per `(Round, TurnNumber)`. `Palette` gathers P8's three files' worth of ad-hoc colour into one language. A difficulty prompt (`SimpleBotAgent` vs `GreedyBotAgent`) came free out of P12. **Every match is seeded and says so**: one is drawn if `--seed` is absent, and the seating is taken from the match's own `Random` — two runs at `--seed 99` are byte-identical, `--seed 100` is not. ⚠️ **Found by playing, not by building:** `Palette.Legend` shipped with an unbalanced markup tag, compiled clean, passed every test, and threw on the first hand drawn. Build clean, **239 passed / 0 failed** (4 new — `LayeringTests`, the one mechanical check a console packet allows: Domain references neither Spectre nor `System.Console`, Sim references no Spectre). Verified through a pty: **13+ rounds at four seats**, a six-seat table for the reshuffle narration, and seed 1 for the opening turn, which is the only one that offers the money-card claim. No new rules question — `RULES.md` stays at **rev 13**. Amended BUILD-PLAN §0, §2, §3.5, P11 and **P13 (split into three sub-packets, with what P11 proved about the seams)**. |
 | 2026-08-18 | P12 | ☑ Done. **Simulation at scale.** A fourth project, `BurmesePoker.Sim` (Domain only): seeded games run in parallel, a strategy per seat rotated by game, per-round rows carrying their own join keys, and a CSV writer. Per-game seeds are `SplitMix64(master, index)` so a game is the same game however the run was scheduled — **serial, parallel and two-thread runs are byte-identical**. The turn cap lives in a `SeatRecorder` decorator over `IPlayerAgent` and **reports** abandonment rather than dropping it, because the domain will not invent a rule the game does not have. Domain gained only `Agents/CoverScore` (extracted, so the bots' scoring cannot drift) and **`Agents/SimpleBotAgent`** — the greedy bot with the discard tie-break removed and nothing else changed. **The measured answer: greedy takes 30.7% of 2,000 four-seat rounds against simple's 19.3%, +$1.24 a round against −$1.24** — P10's claim about the tie-break, measured. Build clean, **235 passed / 0 failed** (10 new), including determinism, per-round money conservation, a reflection pin on mutable static state, and the abandonment path. ⚠️ Measurement pass first, as the packet required: `PartialCover.Best` **140 µs**, `TryFindCover` **91 µs**, a round **~20 ms**, **51 rounds/s serial and 85–92 parallel**; **nothing was optimised**, but the work turns out to be **allocation-bound** — the server GC took eight-thread scaling from 25% to 70%. ⚠️ Two findings: **the reshuffle is a six-player phenomenon** (0/3/67 reshuffles per 300 rounds at 4/5/6 seats), and the **turn cap has never fired in a real run**. `RULES.md` → **rev 13**: §4.3's `DERIVED` 40% side-bet estimate measured at 42% over 600 five-player rounds — a confirmation, not a rule change, and no new question raised. Amended BUILD-PLAN §0, §2, §3.7, §4, P11, P12, P13 and §7 (two risk rows retired). |
 | 2026-08-18 | P10 | ☑ Done. **Solo play.** `Melds/PartialCover` — the evaluator's search with one extra branch (give a card up and move on), memoised on `(position, covered)` and short-circuited on a complete cover — and `Agents/GreedyBotAgent`, whose entire strategy is *of the thirteen I would keep, how many meld?* asked of the discard, the claim and every candidate throw. `Melds/MeldIndex` extracted so both searches share one candidate index; `HandEvaluator` rewritten over it and the 208-test baseline re-run before anything else changed. **Money is absent from every decision** (RULES.md §4.4) except the take tie-break, which favours the deck because a blind draw confers ownership. `Program` asks *"how many of you are people?"* and fills the rest with named bots. Build clean, **225 passed / 0 failed** (17 new). ⚠️ **Termination measured, not assumed**: twelve seeds × 4–6 players, every round finished in 21–30 turns at ~40 ms a round. Verified the console by playing **20 rounds** against bots through a pty. No new rules question — `RULES.md` stays at rev 12. Amended BUILD-PLAN §0, §2, §3.7, P11, P12, P13, §4 and §7 (the "never-improving strategy" risk retired; the hot loop re-aimed at `PartialCover`). |
 | 2026-08-18 | P9 | ☑ Done. `MatchEngine` — repeated rounds, banks carrying over, no automatic end — returning a `RoundRecord(RoundResult, TableState)` per round and keeping no history. Deck exhaustion now **reshuffles inside `RoundEngine.TakeCard`**: every discard pile gathered and shuffled into a new draw pile, the turned-up cards left alone, ownership held by whoever acquired the card first (`CardOwnership.TryRecordFromDeck`). `RoundResult.Turns` added; `IGameObserver.DiscardsReshuffled` added; `RoundEngine` now **requires** a `Random`. ⚠️ Found and fixed a real concealment bug the match loop exposed — `SpectrePlayerAgent` compared turn numbers alone and so skipped its screen clear on turn 1 of every round after the first; `TurnContext` gained `Round`. `Program` now loops rounds, asks *"another round?"* and prints standings. Build clean, **208 passed / 0 failed** (16 new, 1 removed — a passive round no longer terminates, so the old exhaustion test would hang). Verified the console by driving two full rounds through a pty. Rules defaults taken for `RULES.md` §9 #4 and #5, and new #14 raised (rev 12). Amended BUILD-PLAN §2, P10, P11 and P12. |
