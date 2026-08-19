@@ -1,11 +1,43 @@
 # Burmese Poker — Build Plan
 
 **Supersedes `RECONCILIATION-PLAN.md`**, which assumed the existing code was the foundation.
-Rules authority remains `RULES.md` (rev 10).
+Rules authority remains `RULES.md` (rev 11).
 
 Designed to be worked through across **many separate sessions**. Every packet in §5 is
 self-contained: it names what to read, what it depends on, what to build, and how to know
 it's done. See §6 for the cold-start protocol.
+
+---
+
+## 0. Where this is going
+
+Stated by Nick on **2026-08-18**, after P8 made the game playable. The rewrite was scoped to
+"a working game"; these are the four things it is a working game *towards*, in the order they
+are wanted.
+
+1. **Solo play against the computer.** The nearest of the four and the gateway to the rest —
+   a game you can start alone, at any hour, with no other people. **P10.**
+2. **A console that is pleasant to sit at.** The UI stays terminal-based for a long time, and
+   that is fine, *provided* the UX gets deliberate attention rather than being tolerated.
+   **P11.**
+3. **Strategy simulation at scale** — thousands of games run in parallel to compare ways of
+   playing. **P12.**
+4. **A multiplayer app**, where a lobby host fills empty seats with AI players. **P13.**
+
+**What they demand of the architecture, and what already satisfies it.** These are stated
+here because they change decisions taken *before* the packets that need them.
+
+| Goal | What it needs | Where it stands |
+|---|---|---|
+| Solo play | A bot behind `IPlayerAgent` | The seam exists; the domain is drivable with no console at all (P7) |
+| Console UX | Nothing structural | `Melds/` gives the vocabulary; the only gap is a *scored* cover (§3.4, P10) |
+| Simulation | Determinism, no ambient randomness, no I/O, no static state, and **speed** | §3.7. Determinism and purity hold today; **speed is unmeasured and is the one live risk** |
+| Multiplayer | A decision on whether agents block | §3.6, taken now rather than discovered later |
+
+**The through-line: the domain never learns that any of this happened.** A bot, a simulation
+harness and a network server are all the same shape — something that answers
+`IPlayerAgent` and listens to `IGameObserver`. Nothing below §5's P10 belongs in
+`BurmesePoker.Domain/Play/`.
 
 ---
 
@@ -274,19 +306,76 @@ project drives whole rounds deterministically.
 > *everything*, private information included: filtering per viewer is presentation, and
 > pushing it into the domain would be the same mistake this rewrite exists to undo.
 
+### 3.6 Agents are synchronous, and stay that way
+
+Taken **2026-08-18**, ahead of P10, because every packet from here adds callers to
+`IPlayerAgent` and the cost of changing it only rises.
+
+`IPlayerAgent` returns values, not tasks, and `RoundEngine.Play()` blocks until the round is
+over. A networked table wants a decision that arrives seconds later over a wire, and there are
+two ways to have one:
+
+- **Make the engine resumable** — turn `Play()` into a state machine that yields a "waiting for
+  P3's discard" state and is fed the answer later. Correct in the abstract, and it is what a
+  web request/response cycle would want.
+- **Keep the engine blocking, and let the *agent* wait** — a `RemotePlayerAgent` blocks on a
+  channel until the player's move arrives, and one table is one task.
+
+**Take the second.** The first would rewrite `RoundEngine` and invalidate the scripted-round
+apparatus that every P7 test and the whole of P12 depends on; the second costs one parked
+task per table, which at this game's scale — four to six people, a handful of tables — is
+nothing. A blocked task is not a blocked thread.
+
+Two consequences worth stating now:
+
+- **A remote agent needs a timeout, and the timeout policy is a bot** (P10). "Player timed out,
+  play their turn for them" is exactly a bot move, which is another reason bots come before
+  multiplayer rather than after.
+- **Do not make the interface `async` "just in case".** It would infect `RoundEngine`, every
+  test agent, and the simulation loop — where an `await` per decision across millions of
+  decisions is pure overhead — to buy something §3.6 says is not needed.
+
+### 3.7 Simulation is a first-class consumer, not an afterthought
+
+Taken **2026-08-18**, ahead of P12. Running thousands of games in parallel asks four things of
+the domain, and **three of them already hold**:
+
+1. **No ambient randomness.** `RoundEngine.Shuffled` takes a `Random`; `Deck.Shuffle` takes a
+   `Random`. `Random.Shared` appears **only** in `BurmesePoker.Console/Program.cs`. ✅ Keep it
+   that way: a domain type that reaches for `Random.Shared` breaks reproducibility silently.
+2. **No I/O.** The observer is optional and defaults to a silent one. ✅
+3. **No mutable static state**, so that games in parallel cannot interfere. ✅ today — the only
+   statics are immutable tables (`CardText`, `MoneyCardRegistry.Permanent`, `Stakes.Standard`).
+   **P12 should pin this with a test**, because it is the kind of invariant a later convenience
+   cache would quietly break.
+4. ⚠️ **Speed, which is the one unmeasured thing.** `RoundEngine` calls
+   `HandEvaluator.TryFindCover` after *every* discard by *every* player — it is how a
+   declaration is offered only on a genuine win (P7). P5 measured three deliberately awful
+   stress hands at ~100 ms *in total*, which is irrelevant to a human and possibly ruinous
+   across a million rounds. **P12 measures before it optimises**, and any optimisation goes
+   behind the existing evaluator rather than into it: `IsWinning` is the win authority
+   (§3.4) and its answers may not change.
+
 ---
 
 ## 4. Packet dependency graph
 
 ```
-P0 ─► P1 ─┬─► P2 ──────────┐
-          ├─► P3 ─┐        │
-          └─► P4 ─┴─► P5 ──┴─► P7 ─► P8 ─► P9 ─► (P10 optional)
-                            P6 ─────┘
+P0 ─► P1 ─┬─► P2 ──────────┐                        ┌─► P11  console UX
+          ├─► P3 ─┐        │                        │
+          └─► P4 ─┴─► P5 ──┴─► P7 ─► P8 ─► P9 ─► P10┼─► P12  simulation at scale
+                            P6 ─────┘               │
+                                                    └─► P13  multiplayer app
 ```
 
 **P2, P3, P4 are independent of one another** — good candidates for separate sessions in any
 order. P6 needs P1 and P2 only.
+
+**P10 is the fan-out point.** Everything the three end goals need turns out to run through
+bots: solo play *is* bots, a discard hint is the same scored search a bot uses, a simulation
+is bots playing each other, and a network timeout is a bot taking over a seat (§3.6). After
+P10, **P11, P12 and P13 are independent of one another** and can be taken in any order — or
+not at all.
 
 | Packet | Title | Depends on | Size |
 |---|---|---|---|
@@ -300,7 +389,10 @@ order. P6 needs P1 and P2 only.
 | P7 | Round and turn engine | P5, P6 | L |
 | P8 | Console front end | P7 | M |
 | P9 | End-to-end play, remaining rules | P8 | M |
-| P10 | Bot opponents and hints (optional) | P9 | L |
+| P10 | Bot opponents — **solo play** | P9 | L |
+| P11 | Console UX pass | P10 | M |
+| P12 | Simulation at scale | P10 | L |
+| P13 | Multiplayer app | P10 | XL — will be split |
 
 ---
 
@@ -921,25 +1013,160 @@ settlement. No domain type references Spectre.
 
 ---
 
-### P10 — Bot opponents and hints (optional)
+### P10 — Bot opponents (solo play against the computer)
 
-Only worth doing if you want to play solo. `MeldCandidates` plus `HandEvaluator` already give
-a greedy bot most of what it needs: prefer discarding cards in no candidate, never discard an
-owned money card.
+**Goal.** A game you can start alone. **Promoted out of "optional" on 2026-08-18** — §0 makes
+this the nearest of the four goals, and §4 shows the other three all run through it.
 
-> **Amended after the P8 session (2026-08-18) — the seams are already there.** A bot is an
-> `IPlayerAgent`, so it drops into `Program`'s agent dictionary beside `SpectrePlayerAgent`
-> with no other change; the only new setup question is which seats are human. A *hint* for a
-> human player is different — it wants a scored, partial version of the cover search
-> (see the P5 note), and `SpectrePlayerAgent.ChooseDiscard` is where it would be drawn, next
-> to the card it is advising against.
+**Read first.** `RULES.md` **§4.4** (ownership never transfers — the whole heuristic turns on
+it), §5, §6. Here: §3.4 (candidates vs. cover), §3.6, and the P5 note below on partial covers.
 
-⚠️ **What P5 did *not* build is a partial cover.** `TryFindCover` is all-or-nothing — it
-answers "can these cards be covered exactly", and returns nothing at all when they cannot. A
-bot's "keep the largest cover found" and a human's "best cover so far" hint are a different
-search: maximise the cards covered rather than demand every one of them. It is the same
-backtracking over the same index, scored instead of short-circuited, and it belongs here in
-P10, not in the win authority.
+**Build.**
+- **`BurmesePoker.Domain/Agents/`** — bots live in **Domain, not Console**. They are rules
+  reasoning with no I/O, the simulation harness (P12) and any future server (P13) both need
+  them without dragging Spectre along, and — unlike everything in `BurmesePoker.Console` —
+  **a bot in Domain is unit-testable**, because the test project references Domain only.
+- **A scored, partial cover.** ⚠️ P5 deliberately did not build one: `TryFindCover` is
+  all-or-nothing and returns *nothing at all* when a hand cannot be covered exactly, which is
+  every hand a bot is ever asked about. What a bot needs is the same backtracking over the
+  same index, **maximising cards covered instead of demanding all thirteen**. Put it beside
+  the evaluator as its own type — `HandEvaluator.IsWinning` is the win authority (§3.4) and
+  **its answers may not change**.
+- **`GreedyBotAgent : IPlayerAgent`.** A strategy is just another implementation of the
+  interface; do not invent a strategy abstraction on top of one that already exists.
+- **`Program`** asks how many seats are people and fills the rest with bots, naming them.
+
+**The heuristic, and one correction that matters.**
+
+⚠️ **This packet's original line — "never discard an owned money card" — is wrong**, and was
+caught when P8 drew the settlement report. Ownership is **permanent and never transfers**
+(`RULES.md` §4.4, encoded in `CardOwnership` having no transfer or removal): a money card the
+deck gave you **pays you whether you are still holding it or threw it away four turns ago**.
+So holding one gains nothing at all, and a bot that hoards money cards is simply playing a
+worse hand for no return. **Money cards are near-irrelevant to a discard decision**, and the
+one test that pins this is worth more than the rest of the heuristic put together.
+
+What is left is ordinary rummy reasoning:
+- **Take the discard** only if it joins a meld candidate that improves the best partial cover;
+  otherwise draw. A blind draw also confers ownership, which is a small tiebreak *in favour of
+  drawing* — the only place money enters the decision at all.
+- **Discard** the card that costs the least cover, jokers last.
+- **Claim the turned-up money card** only if it improves the hand. It costs the turn's draw and
+  the table — not the deck — gives it, so it **pays nobody** (RULES.md §4.5); there is no
+  money reason to take it.
+- **Declare** whenever offered. The engine only offers on a genuine win.
+
+**Acceptance tests.**
+- A scripted deal plays a whole round with **every seat a bot** and reaches a declaration.
+- **`MoneyCardsDoNotChangeWhatABotThrowsAway`** — the same hand, evaluated under two different
+  turned-up designations, discards the same card. This is §4.4 expressed as behaviour.
+- A bot never discards a card that a meld it is already holding needs.
+- The scored cover agrees with `HandEvaluator.IsWinning` on a winning hand: thirteen of
+  thirteen covered, and never a claim of thirteen on a hand the evaluator rejects.
+- A bot-only **match** (P9) of several rounds terminates and conserves money.
+
+**Done when.** `dotnet run --project BurmesePoker.Console` offers *"how many of you are
+people?"*, and one person can play a full match against bots.
+
+> **Hints are P11, not here.** A hint is the same scored cover pointed at a human, and it is a
+> presentation decision about when to interrupt somebody — it belongs with the rest of the UX
+> pass, drawn next to the card it is advising against in `SpectrePlayerAgent.ChooseDiscard`.
+
+---
+
+### P11 — Console UX pass
+
+**Goal.** A console game that is pleasant to sit at for an hour. **The UI stays terminal-based
+for a long time by choice (§0), so this is not polish deferred until a "real" UI arrives — it
+is the UI.**
+
+**Read first.** §0. `STATUS.md`'s P8 notes, which list what P8 knowingly left rough.
+
+**Build.** Roughly in order of how much they are missed:
+- ⚠️ **A round log that survives the per-turn clear.** P8 clears the screen every turn for
+  concealment, so all public narration scrolls away — a player cannot see what the last three
+  people discarded. This wants a panel rebuilt each turn from remembered events, **not more
+  `WriteLine`s**; `ConsoleObserver` already receives everything it needs.
+- **Show the hand as the melds it nearly is** — group by P10's scored cover so a player sees
+  the three melds they have and the four loose cards, rather than thirteen sorted cards.
+- **A discard hint**, off the same scored cover, next to the card it advises against.
+- **Standings and a between-round summary** — banks carried over (P9), who won what.
+- **A settled colour and marker language**, defined once: the `($)` / `($$)` / `★` set from P8
+  extended rather than re-invented per screen.
+- **`--seed`**, so a strange round can be replayed and reported.
+
+**Acceptance.** Manual, and the packet should say plainly what was played to check it. The one
+mechanical check available: **no domain type references Spectre**, and `Program` still refuses
+a non-interactive terminal with an explanation rather than a stack trace.
+
+**Done when.** A full match against bots is enjoyable rather than merely possible.
+
+---
+
+### P12 — Simulation at scale
+
+**Goal.** Run thousands of games in parallel and compare ways of playing.
+
+**Read first.** §3.7, which is the contract this packet cashes in. §3.4 for why the evaluator
+may not be "optimised" into a different answer.
+
+**Build.**
+- **A separate project, `BurmesePoker.Sim`** (recommended) referencing Domain only. Batch runs,
+  parallelism and CSV output have nothing to do with the Spectre front end, and a fourth
+  project keeps both honest. *Alternative if four projects feel heavy: a `--sim` mode inside
+  `BurmesePoker.Console`.* It works, but it puts a throughput concern inside the interactive
+  binary, and §2's argument against "it'll be fine in one project" applies again.
+- **Seeding**: one master seed, per-game seeds derived from it, recorded with every result. A
+  run must be **exactly reproducible from its seed**, which is what makes a surprising result
+  investigable rather than folklore.
+- **Parallel execution** over games, with per-strategy stats: win rate, money per round, turns
+  to a declaration, how often the deck is exhausted (P9's reshuffle), how often the turned-up
+  money card is claimed.
+- ⚠️ **A measurement pass first.** `RoundEngine` calls `TryFindCover` after every discard by
+  every player, so it is the inner loop of the whole harness (§3.7 item 4). **Measure it,
+  record the number in the packet notes, and only then decide whether anything needs doing.**
+  Any speed-up goes *around* the evaluator — a cheap pre-filter, a memo — never into changing
+  what it answers.
+
+**Acceptance tests.**
+- **Determinism**: the same master seed produces byte-identical results, run serially or in
+  parallel. This is the test the whole packet stands on.
+- **No mutable static state** — pinned deliberately (§3.7 item 3), because it is what a later
+  convenience cache would break silently.
+- Money is conserved in **every** simulated match, not merely on average.
+- A strategy comparison over enough games to be meaningful, with the throughput recorded.
+
+**Done when.** Two strategies can be played off against each other over thousands of games and
+the winner is reproducible from a seed.
+
+---
+
+### P13 — Multiplayer app
+
+**Goal.** A host opens a lobby, people join, and the host fills the empty seats with AI
+players.
+
+**Read first.** §3.5 and **§3.6** — the concurrency decision this packet is built on. §0.
+
+**Expect to split this.** It is the only XL packet in the plan, and it should be broken into
+its own P13.x list at the point it is next rather than pretended to be one session's work.
+
+**Shape, as decided in §3.6.**
+- **One table is one task**, running a `MatchEngine` that blocks exactly as it does today. The
+  engine, the tests and the whole scripted-round apparatus are untouched.
+- **`RemotePlayerAgent : IPlayerAgent`** blocks on a channel until the player's move arrives.
+- ⚠️ **A timeout is a bot move** (P10) — "they dropped out, play the seat for them" is
+  precisely what a bot does, which is why P10 comes first. It also means a disconnection
+  degrades the game rather than ending it.
+- **`IGameObserver` fans out per connection, filtered.** P8 established that filtering private
+  information is the front end's job and the domain narrates everything; over a wire that
+  becomes a **security property rather than a courtesy** — a client must never be *sent* what
+  it may not see, so the filtering happens server-side, per viewer, before anything is
+  transmitted.
+- **The lobby is not a domain concept.** Seating, names, who is a bot and who is a person are
+  all decided before `RoundEngine` is constructed — as `Program` already does today.
+
+**Done when.** Two people and two bots play a round over a network.
 
 ---
 
@@ -949,7 +1176,9 @@ For picking up in a fresh session with no memory of this conversation.
 
 1. Read `CLAUDE.md` (points here).
 2. Read `docs/STATUS.md` — which packet is next and what state the tree is in.
-3. Read this document's §2 and §3 — architecture and the settled design decisions.
+3. Read this document's §2 and §3 — architecture and the settled design decisions. **§0 says
+   where the whole thing is heading**; read it before re-planning anything, and before
+   deciding a packet is finished with a goal it was supposed to serve.
 4. Read the target packet in §5, plus only the `RULES.md` sections it names.
 5. Build, run tests, confirm green **before** changing anything.
 6. On finishing: tick the packet in `STATUS.md`, note anything surprising, commit.
@@ -970,5 +1199,8 @@ For picking up in a fresh session with no memory of this conversation.
 | ~~**P3 is the hard packet**~~ — **done 2026-08-18.** Window-based generation with joker substitution was fiddly, and everything downstream depends on it. | The candidate-count tests were an exact, pre-existing spec (5, not the 2023 test's 8 — see `docs/spec/RUN-CANDIDATES.md` §4), and they were written first. P5 may now proceed. |
 | ~~Candidate explosion on joker-heavy hands~~ — **contained, measured 2026-08-18.** | Deduplicate by `CardId` set at generation, and choose joker instances as combinations rather than permutations. **Measured worst case: 4,032 run candidates in milliseconds** — thousands, not the hundreds this row assumed, and nowhere near millions. **Sets add almost nothing**: a set holds at most four cards, so no hand can produce many. P4's measured worst case is **639** — nine cards of one rank split (3,2,2,2) across the suits plus all four jokers. The risk is P3's alone. P5 does index candidates by `CardId` — by the *lowest* one in each meld — and evaluates three thirteen-card stress hands in about 100 ms in total. |
 | The rewrite stalls half-finished, as in 2023. | Packets are individually shippable and each ends green. P1–P6 are pure domain with no UI dependency, so progress is real even if the console never gets built. **As of 2026-08-18 P0–P6 are all done**, so the entire rules core — cards, melds, the win authority, and money — exists and is tested; what remains is the engine and the front end. |
+| ⚠️ **The evaluator in the simulation hot loop** (new 2026-08-18). `RoundEngine` calls `TryFindCover` after every discard by every player; P5's ~100 ms for three stress hands is nothing to a human and possibly ruinous across a million rounds. | **Measure before optimising** (§3.7, P12), and put any speed-up *around* the evaluator rather than inside it — `IsWinning` is the win authority (§3.4) and its answers may not change. Nothing before P12 needs it. |
+| **Scope growth beyond a playable game** (new 2026-08-18). §0 adds three further goals, and the 2023 failure was a half-finished thing nobody could play. | P9, P10 and P11 each ship something *more playable than before*; P12 and P13 are independent of one another after P10 (§4) and can be dropped without stranding anything. The game staying playable at every step is the mitigation. |
+| **The synchronous-agent bet is wrong at scale** (new 2026-08-18). §3.6 parks a task per table rather than making the engine resumable. | At four to six players and a handful of tables the cost is a parked task, not a thread. If it is ever wrong, the fix is a resumable engine *behind the same interface* — the agents, tests and simulation loop do not change. Revisit only with a measured problem. |
 | Rules drift as more is recalled. | `RULES.md` provenance tags make revisiting cheap; §9 tracks what is still unrecorded. |
 | Three projects is over-engineering. | Noted in §2. The enforcement is the point, but a single project with `IGameObserver` is an acceptable fallback. |

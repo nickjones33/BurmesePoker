@@ -16,8 +16,9 @@ the solution is now three projects. Whether or not you use the skill, read these
 
 1. **`docs/STATUS.md`** — which work packet is next, and the state of the tree. Update it at
    the end of every session.
-2. **`docs/BUILD-PLAN.md`** — the rewrite plan. §2 target architecture, §3 settled design
-   decisions, §5 self-contained work packets, §6 cold-start protocol.
+2. **`docs/BUILD-PLAN.md`** — the rewrite plan. **§0 where the whole thing is heading**, §2
+   target architecture, §3 settled design decisions, §5 self-contained work packets, §6
+   cold-start protocol.
 3. **`docs/RULES.md`** — **the only rules authority.** Every rule is tagged with provenance
    and confidence.
 
