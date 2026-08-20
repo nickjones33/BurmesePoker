@@ -38,6 +38,11 @@
                     <span>@Shape(table)</span>
                 </p>
 
+                <p class="shape">
+                    <span class="glyph" aria-hidden="true">🤖</span>
+                    <span>The computer plays @table.Difficulty.Name</span>
+                </p>
+
                 <p class="state">@State(table)</p>
 
                 @*
@@ -89,9 +94,29 @@
                 <InputNumber id="new-people" @bind-Value="Wanted!.People" min="0" max="@RoundEngine.MaximumPlayers" />
             </p>
 
+            @*
+                🔥 The whole ladder, out of BotCatalog, strongest first (P18). Until this packet
+                the browser had no difficulty setting at all — two hard-coded `new
+                GreedyBotAgent()`s — while the console had a private two-value enum of its own.
+                One list now, so a new rung arrives here without this file being touched.
+
+                ⚠️ A <select> and not a slider: this is a list of players, and §3.12 is why it
+                is not yet a dial. P19 is where it becomes one.
+            *@
+            <p>
+                <label for="new-difficulty">The computer plays</label>
+                <InputSelect id="new-difficulty" @bind-Value="Wanted!.Difficulty">
+                    @foreach (var rung in BotCatalog.ByStrength)
+                    {
+                        <option @key="rung.Name" value="@rung.Name">@rung.Name — @rung.Description</option>
+                    }
+                </InputSelect>
+            </p>
+
             <p class="note">
                 The rest are played by the computer. A table with no people at it still deals,
-                and is worth watching.
+                and is worth watching. A seat the computer takes over for somebody who has
+                stopped answering plays as well as it can, whatever this says.
             </p>
 
             <p>
@@ -122,7 +147,8 @@
         Wanted ??= new NewTable
         {
             Seats = Lobby.Opening.Seats,
-            People = Lobby.Opening.People
+            People = Lobby.Opening.People,
+            Difficulty = Lobby.Opening.Difficulty
         };
 
         _tables = Lobby.Tables;
@@ -141,6 +167,8 @@
                 Title = string.IsNullOrWhiteSpace(wanted.Title) ? "A table" : wanted.Title.Trim(),
                 Seats = seats,
                 People = people,
+                // A name off a form is a name off a wire: resolved, never trusted (P18).
+                Difficulty = (BotCatalog.Find(wanted.Difficulty) ?? BotCatalog.Hardest).Name,
                 Seed = Lobby.NextSeed()
             });
 
@@ -179,5 +207,8 @@
         public int Seats { get; set; } = RoundEngine.MinimumPlayers;
 
         public int People { get; set; } = 1;
+
+        /// <summary>Which rung of <c>BotCatalog</c> the computer's seats play.</summary>
+        public string Difficulty { get; set; } = BotCatalog.Hardest.Name;
     }
 }

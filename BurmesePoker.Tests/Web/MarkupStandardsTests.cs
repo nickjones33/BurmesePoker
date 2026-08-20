@@ -1,5 +1,7 @@
 using System.Text.RegularExpressions;
 
+using BurmesePoker.Domain.Agents;
+
 namespace BurmesePoker.Tests.Web;
 
 /// <summary>
@@ -492,6 +494,37 @@ public class MarkupStandardsTests
             .Select(run => Regex.Replace(run, @"\s+", " ").Trim())
             .OrderByDescending(run => run.Length)
             .First();
+
+    /// <summary>
+    /// ✅ <b>P18 acceptance 1 — the lobby offers the whole ladder, from the one list.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The browser had no difficulty setting at all until this packet</b> — two hard-coded
+    /// <c>new GreedyBotAgent()</c>s — so this is the acceptance criterion rather than a
+    /// decoration. What is checked is that the choice is <em>generated</em> from
+    /// <see cref="BotCatalog"/>: a page that listed the rungs itself would offer today's four
+    /// for ever, which is the failure the packet exists to end.
+    /// </para>
+    /// <para>
+    /// A source scan because a static SSR page is unreachable from here any other way — the
+    /// same reason as every other check in this file (§3.11 A4).
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheLobbyOffersEveryRungAndKeepsNoListOfItsOwn()
+    {
+        var lobby = Sources.Read("Components/Pages/Tables.razor");
+
+        Assert.Contains("BotCatalog.ByStrength", lobby, StringComparison.Ordinal);
+        Assert.Contains("Wanted!.Difficulty", lobby, StringComparison.Ordinal);
+
+        // ⚠️ And no rung is named in the markup, which is what makes the loop the only source
+        // of the list. `BotCatalog.Hardest` is a fallback rather than a name, so it is allowed.
+        Assert.All(
+            BotCatalog.All,
+            rung => Assert.DoesNotContain($"\"{rung.Name}\"", lobby, StringComparison.Ordinal));
+    }
 
     /// <summary>
     /// ✅ <b>B8 — the round log is a polite live region, and the only one.</b> A bot table says

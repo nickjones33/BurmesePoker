@@ -24,7 +24,7 @@ Then it asks four things:
 |---|---|
 | **How many at the table?** | 4 to 6. A round is not played with fewer or more (`RULES.md` §2.1). |
 | **How many of you are people?** | **1**, for solo play. The rest of the seats are filled by named bots — *Ruby (bot)*, *Sable (bot)*, … **0 is allowed**, and leaves the computer playing itself, which is worth watching once. |
-| **How well should the computer play?** | *Hard* wins about a third of rounds, *easy* about a fifth. They differ in exactly one thing — see [Playing better](#playing-better). |
+| **How well should the computer play?** | A list of four players, **hardest first**, each with a line saying how it plays. *greedy* and *cautious* are the two strong ones and nothing can tell them apart; *simple* wins about a fifth of rounds against *greedy*'s third; *random* knows only the rules. See [Playing better](#playing-better). Pressing return takes the top of the list, which is the hardest. |
 | **What do the stakes pay?** | A **round value** and a **money card value**, defaulting to $5 and $1. Both matter; the second is the whole side bet. |
 
 Seating is shuffled, so you will not always open. The seat that opens is announced, and so is
@@ -172,9 +172,9 @@ The computer's whole strategy is one question asked three ways: *of the thirteen
 left holding, how many meld?* Take the discard if it raises that number, claim the turned-up
 card if it raises that number, throw whichever card leaves it highest.
 
-**What separates the hard bot from the easy one is only the tie-break** — and it is worth
+**What separates the strong bot from the simple one is only the tie-break** — and it is worth
 1.6× the wins (30.7% of rounds against 19.3%, measured over 2,000 four-seat rounds). Early in
-a round almost every discard costs you nothing, so the count alone cannot choose. The hard bot
+a round almost every discard costs you nothing, so the count alone cannot choose. The strong bot
 then keeps:
 
 - cards with **partners** — another suit of the same rank, or a neighbour in the same suit;
@@ -220,11 +220,13 @@ seats, at the same pace the console uses.
 
 Each card in the lobby is a table: what it is called, how many seats it has and how many of them
 are for people, and what it is doing. **Sit down** takes a seat; **Watch this table** takes none.
-*Open another table* opens a second one, and you can be at both in two windows.
+*Open another table* opens a second one — and that form is where you say **how well the
+computer plays**, from the same list of four the console offers. Each open table says which one
+it is playing. You can be at both tables in two windows.
 
-⚠️ **A table waits for everybody it was opened for.** The one the site starts with has **two**
-seats for people, so it deals nothing until two of you have sat down — open a second browser
-window and sit down again, or start the site with `--people 1` for a solo game. A table with
+⚠️ **A table waits for everybody it was opened for.** The one the site starts with has **one**
+seat for a person, so it deals as soon as you sit down; start the site with `--people 2` and it
+waits for a second of you — open another browser window and sit down again. A table with
 `--people 0` is a room full of computer players and deals as soon as anybody watches.
 
 **Your name is how you get your seat back.** If your browser reloads, or you close the tab and
@@ -308,6 +310,7 @@ Useful options — all of them plain configuration, so `--` then the flag:
 | `--between 5` | Seconds between the settlement and the next deal. |
 | `--patience 120` | Seconds a question waits for you before the computer plays your seat. |
 | `--seats 5` | Four to six players (RULES.md §2.1). |
+| `--difficulty simple` | How well the computer plays at the table the site opens: `greedy`, `cautious`, `simple` or `random`. A name nobody knows opens the table on the hardest one rather than refusing to start. |
 
 ⚠️ **If you walk away, the computer plays your seat** — the log says so and so does your seat, with
 a **⟳**. Come back and the next question is yours again.

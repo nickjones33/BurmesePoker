@@ -48,6 +48,16 @@ public sealed class HostedTable : IAsyncDisposable
         "Mya Lay", "Cobra", "Su Htwe", "Aung Aung", "Myat Htwe", "Khine Myat Zin"
     ];
 
+    /// <summary>
+    /// How well the computer plays at this table, resolved once out of the one list there is.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The plan carries a name and this carries the rung</b> (BUILD-PLAN P18). Resolving
+    /// it here means an unknown name is dealt with when the table is opened rather than on the
+    /// first turn of the first round.
+    /// </remarks>
+    private readonly BotRung _rung;
+
     private readonly Lock _gate = new();
     private readonly CancellationTokenSource _stopping = new();
     private readonly TableSession _table;
@@ -67,6 +77,7 @@ public sealed class HostedTable : IAsyncDisposable
         Id = id;
         Plan = plan;
         _log = log ?? throw new ArgumentNullException(nameof(log));
+        _rung = BotCatalog.Find(plan.Difficulty) ?? BotCatalog.Hardest;
 
         if (plan.People < 0 || plan.People > plan.Seats)
         {
@@ -86,7 +97,12 @@ public sealed class HostedTable : IAsyncDisposable
                 // A stand-in is paced too, so a seat the computer took over reads as a seat
                 // playing rather than as a stutter (P13.4, §3.11 C16). The factory is why the
                 // server never had to know what a pause was.
-                StandIn = () => PacedAgent.Wrap(new GreedyBotAgent(), plan.Pace)
+                //
+                // ⚠️ The *hardest* rung, and deliberately not this table's difficulty setting
+                // (P18). Somebody whose connection dropped mid-round should not also find their
+                // seat playing badly; the setting is about the opponents you chose to sit down
+                // against. Left as a `new` here would be four lists again.
+                StandIn = () => PacedAgent.Wrap(BotCatalog.Hardest.Create(plan.Seed), plan.Pace)
             });
 
         Board = TableBoard.Of(_table.Players, _table.Names);
@@ -112,6 +128,9 @@ public sealed class HostedTable : IAsyncDisposable
 
     /// <summary>Whether the computer's suggestions are shown to begin with.</summary>
     public bool Hints => Plan.Hints;
+
+    /// <summary>How well the computer plays here.</summary>
+    public BotRung Difficulty => _rung;
 
     /// <summary>The seats still waiting for somebody, in seating order.</summary>
     public IReadOnlyList<PlayerId> WaitingFor => _table.WaitingFor;
@@ -365,7 +384,10 @@ public sealed class HostedTable : IAsyncDisposable
         : TableSeat.Computer(
             new PlayerId(seat),
             $"{BotNames[(seat - 1) % BotNames.Length]} (bot)",
-            PacedAgent.Wrap(new GreedyBotAgent(), Plan.Pace));
+            // ⚠️ A seed per seat, out of the table's own (§3.9): a rung that decides anything
+            // at random — only `random` does today — must still be reproducible from the one
+            // number the table carries, and two seats of it must not play the same game.
+            PacedAgent.Wrap(_rung.Create(Plan.Seed + seat), Plan.Pace));
 
     /// <summary>
     /// Folds everything the watcher has been told since last time into the board.

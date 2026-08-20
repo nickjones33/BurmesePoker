@@ -11,6 +11,12 @@ match after it, and compare the two files.
     python3 scripts/drive-console.py --out after.raw  --script human --seed 20260819
     cmp before.raw after.raw
 
+⚠️ A capture is only comparable with another one that made the same choices, and the third
+question — how well the computer plays — is a *list*, so "the same choice" is a position in it
+rather than a key. `--pick n` moves n places down it before accepting. P18 turned that list from
+two entries into the whole ladder, which moved every entry; a capture from before it compares
+against `--pick 2`, and the reason is written down in docs/STATUS.md.
+
 ⚠️ Keys are fed on *quiescence* — when the program has printed nothing for a moment — and
 never on a clock. That is what makes the capture a function of the seed and the key list
 alone; a timed driver races the renderer and produces a different file every run. The pty is
@@ -36,6 +42,7 @@ SETTLE = 1.5         # seconds of silence after the last key before giving up
 HARD_LIMIT = 180.0   # a stalled round must not hang a build
 
 ENTER = b"\r"
+DOWN = b"\x1b[B"
 
 # The prompts a match asks, in order: how many seats, how many people, how well the computer
 # plays, what the round pays, what a money card pays — then the seat's own questions.
@@ -46,6 +53,19 @@ SCRIPTS = {
     # Four seats, one person, everything defaulted: every panel the human seat draws.
     "human": [ENTER] * 6 + [ENTER] * 40 + [b"n" + ENTER],
 }
+
+# Which key of each script answers "How well should the computer play?". ⚠️ It is not the same
+# key in both, and the reason is easy to miss: a match with a person in it asks that person's
+# *name* first, so the difficulty is the fourth question there and the third when every seat is
+# the computer's. `--pick` puts arrow keys in front of that one key, which is how a capture
+# names the rung it played rather than taking whichever the list happened to open on.
+DIFFICULTY_KEY = {"bots": 2, "human": 3}
+
+
+def pick(script, keys, moves):
+    """The same script, with `moves` presses of Down before the difficulty is accepted."""
+    at = DIFFICULTY_KEY[script]
+    return keys[:at] + [DOWN] * moves + keys[at:]
 
 
 def drive(exe, args, keys, out_path):
@@ -109,13 +129,19 @@ def main():
     parser.add_argument("--out", required=True, help="where to write the captured bytes")
     parser.add_argument("--script", choices=sorted(SCRIPTS), default="human")
     parser.add_argument("--seed", default="20260819")
+    parser.add_argument("--pick", type=int, default=0,
+                        help="how far down the difficulty list to move before accepting it. "
+                             "P18 made that list the whole ladder, strongest first, so 0 is the "
+                             "hardest bot and 2 is `simple` — which is what the two-item list "
+                             "before it was landing on.")
     parser.add_argument("--extra", nargs=argparse.REMAINDER, default=[],
                         help="anything else for the console, e.g. --extra --no-hints")
     chosen = parser.parse_args()
 
     # Pace zero: the pause between computer turns is deliberate (P11) and pure latency here.
     args = ["--seed", chosen.seed, "--pace", "0"] + list(chosen.extra)
-    size = drive(os.path.abspath(chosen.exe), args, SCRIPTS[chosen.script], chosen.out)
+    keys = pick(chosen.script, SCRIPTS[chosen.script], chosen.pick)
+    size = drive(os.path.abspath(chosen.exe), args, keys, chosen.out)
     print(f"{size} bytes -> {chosen.out}")
 
 

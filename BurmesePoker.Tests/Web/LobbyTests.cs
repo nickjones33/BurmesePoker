@@ -1,3 +1,4 @@
+using BurmesePoker.Domain.Agents;
 using BurmesePoker.Web;
 
 using Microsoft.Extensions.Configuration;
@@ -33,6 +34,28 @@ public class LobbyTests
 
         // Idempotent: every request that reached the site would otherwise open another one.
         Assert.Same(table, lobby.OpenTheHouseTable());
+    }
+
+    /// <summary>
+    /// ✅ <b>P18 — <c>--difficulty</c>, which the browser did not have at all.</b>
+    /// </summary>
+    /// <remarks>
+    /// The site's own command line names the rung the house table plays on, exactly as
+    /// <c>--people</c> names how many seats are waiting. A name nobody knows opens the table
+    /// anyway, on the hardest rung: a site that refused to boot over a typo in a difficulty
+    /// would be a poor trade.
+    /// </remarks>
+    [Fact]
+    public async Task TheCommandLineNamesHowWellTheComputerPlays()
+    {
+        await using var easy = Open(("difficulty", "simple"));
+        await using var strange = Open(("difficulty", "thoughtful"));
+        await using var silent = Open();
+
+        Assert.Equal("simple", easy.Opening.Difficulty);
+        Assert.Equal("simple", easy.OpenTheHouseTable().Difficulty.Name);
+        Assert.Equal(BotCatalog.Hardest.Name, strange.Opening.Difficulty);
+        Assert.Equal(BotCatalog.Hardest.Name, silent.Opening.Difficulty);
     }
 
     [Fact]

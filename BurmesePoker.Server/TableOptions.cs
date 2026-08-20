@@ -54,6 +54,12 @@ public sealed record TableOptions
     /// than as a freeze — and the sleep that does it belongs to whatever is drawing, never to a
     /// server hosting many tables. The hardest bot is the default, on P13.1's principle that a
     /// stand-in playing worse than the table does would be worth less than no stand-in.
+    /// <para>
+    /// ⚠️ <b>The default is <see cref="BotCatalog.Hardest"/> and not the table's difficulty</b>
+    /// (BUILD-PLAN P18). It is the same argument as the hint's: a seat the computer took over
+    /// because nobody was answering should not also start playing badly, and a host that wants
+    /// the table's own setting here says so by supplying this factory.
+    /// </para>
     /// </remarks>
-    public Func<IPlayerAgent> StandIn { get; init; } = () => new GreedyBotAgent();
+    public Func<IPlayerAgent> StandIn { get; init; } = () => BotCatalog.Hardest.Create(0);
 }

@@ -1,3 +1,4 @@
+using BurmesePoker.Domain.Abstractions;
 using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Play;
@@ -9,7 +10,8 @@ namespace BurmesePoker.Presentation;
 /// </summary>
 /// <remarks>
 /// <para>
-/// ⚠️ <b>Every answer here is <see cref="GreedyBotAgent"/>'s, put to it on the very
+/// ⚠️ <b>Every answer here is the hardest rung's (<see cref="BotCatalog.Hardest"/>), put to it
+/// on the very
 /// <see cref="TurnContext"/> the player is looking at</b> (BUILD-PLAN P11, P13.1). It costs one
 /// call and it cannot drift from how the bots at this table actually play. <b>Do not re-derive
 /// a recommendation</b> — a second implementation of the advice is a different strategy wearing
@@ -23,13 +25,23 @@ namespace BurmesePoker.Presentation;
 /// whole table of them.
 /// </para>
 /// <para>
-/// The hardest seat is the one that advises, deliberately: a hint that plays worse than the
-/// bots do would be worth less than no hint.
+/// ⚠️ <b>The hardest seat is the one that advises, deliberately, and it is not the table's
+/// difficulty setting</b> (BUILD-PLAN P18). A hint that got worse as you lowered the difficulty
+/// would be absurd — you would be asking the computer what to do and being told what a weak
+/// player would do — so this asks <see cref="BotCatalog.Hardest"/> whatever the opponents are
+/// set to. Said out loud because it otherwise reads as a place somebody forgot to thread the
+/// setting through.
 /// </para>
 /// </remarks>
 public sealed class ComputerAdvice
 {
-    private readonly GreedyBotAgent _adviser = new();
+    /// <remarks>
+    /// ⚠️ <b>Built from the catalog and typed as the interface</b>, so that the strongest rung
+    /// is a fact stated in one place (P18). The seed is a formality: a rung that decided
+    /// anything at random would be a strange thing to take advice from, and the hardest one
+    /// ignores it — the zero is a seed and it is never drawn from.
+    /// </remarks>
+    private readonly IPlayerAgent _adviser = BotCatalog.Hardest.Create(0);
 
     /// <summary>Whether it would claim the top turned-up money card instead of drawing (RULES.md §4.5).</summary>
     public bool ClaimTurnedUpMoneyCard(TurnContext context) => _adviser.ClaimTurnedUpMoneyCard(context);

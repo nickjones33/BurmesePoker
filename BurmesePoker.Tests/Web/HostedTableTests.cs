@@ -1,3 +1,4 @@
+using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Play;
 using BurmesePoker.Web;
 
@@ -38,6 +39,30 @@ public class HostedTableTests
         Assert.Equal(4, table.Board.Seating.Count);
         Assert.Equal("Nick", table.Board.Names[new PlayerId(1)]);
         Assert.Null(mine.Hand);
+    }
+
+    /// <summary>
+    /// ✅ <b>P18 — a table is opened on a rung of the one catalog, by name.</b>
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>An unknown name is fallen back from and never thrown over.</b> A difficulty comes
+    /// off a command line or out of a form field, and neither is worth failing to open a table
+    /// for; the hardest rung is what a table plays at when nobody has said otherwise.
+    /// </remarks>
+    [Fact]
+    public async Task TheComputerPlaysTheRungTheTableWasOpenedOn()
+    {
+        await using var easy = Open(seats: 4, people: 0, difficulty: "simple");
+        await using var strange = Open(seats: 4, people: 0, difficulty: "thoughtful");
+        await using var silent = Open(seats: 4, people: 0);
+
+        Assert.Equal("simple", easy.Difficulty.Name);
+        Assert.Equal(BotCatalog.Hardest.Name, strange.Difficulty.Name);
+        Assert.Equal(BotCatalog.Hardest.Name, silent.Difficulty.Name);
+
+        // Case is the person's; the name kept is the catalog's own spelling.
+        await using var shouted = Open(seats: 4, people: 0, difficulty: "SIMPLE");
+        Assert.Equal("simple", shouted.Difficulty.Name);
     }
 
     /// <remarks>
@@ -223,7 +248,8 @@ public class HostedTableTests
         int people,
         int seed = 20260819,
         int betweenSeconds = 0,
-        int patienceSeconds = 0) => new(
+        int patienceSeconds = 0,
+        string? difficulty = null) => new(
         "test",
         new TablePlan
         {
@@ -239,7 +265,8 @@ public class HostedTableTests
                 : TimeSpan.FromMilliseconds(1),
             // ⚠️ Zero patience is how a test makes a takeover deterministic (P13.2); a test
             // that wants a question to *stand* in front of a seat has to give it time to.
-            Patience = TimeSpan.FromSeconds(patienceSeconds)
+            Patience = TimeSpan.FromSeconds(patienceSeconds),
+            Difficulty = difficulty ?? BotCatalog.Hardest.Name
         },
         Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance);
 }

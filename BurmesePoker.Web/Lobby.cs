@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 
+using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Play;
 
 namespace BurmesePoker.Web;
@@ -64,7 +65,11 @@ public sealed class Lobby : IAsyncDisposable
             // catching is a table nobody is left at (P13.2), and forty-five seconds is a short
             // time to look at fourteen cards and decide which one is worth the least.
             Patience = TimeSpan.FromSeconds(configuration.GetValue<int?>("patience") ?? 90),
-            Hints = configuration.GetValue<bool?>("hints") ?? true
+            Hints = configuration.GetValue<bool?>("hints") ?? true,
+            // ⚠️ Resolved through the catalog rather than trusted (P18): `--difficulty rubbish`
+            // opens the house table on the hardest rung rather than failing to boot, and the
+            // name kept is the catalog's own spelling whatever case was typed.
+            Difficulty = (BotCatalog.Find(configuration.GetValue<string>("difficulty")) ?? BotCatalog.Hardest).Name
         };
 
         You = configuration.GetValue<string>("name") ?? "You";

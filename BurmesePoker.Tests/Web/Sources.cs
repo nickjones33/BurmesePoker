@@ -34,6 +34,30 @@ internal static class Sources
             .Select(file => (Path.GetRelativePath(Root.FullName, file.FullName), Markup(File.ReadAllText(file.FullName))))
     ];
 
+    /// <summary>
+    /// Every file of every project that is not the test project: path and text, with the
+    /// commentary taken out.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Wider than the browser client, and P18 is why</b>: <em>a bot is constructed in one
+    /// place</em> is a claim about the whole solution, and the projects that used to get it
+    /// wrong were the console, the browser client and the table server. The test project is
+    /// excluded deliberately — a test that wants a particular agent in a particular seat is
+    /// entitled to say so, and several do.
+    /// </remarks>
+    internal static IReadOnlyList<(string Path, string Text)> Production { get; } =
+    [
+        .. Root.GetDirectories("BurmesePoker.*")
+            .Where(project => !project.Name.EndsWith(".Tests", StringComparison.Ordinal))
+            .OrderBy(project => project.Name, StringComparer.Ordinal)
+            .SelectMany(project => project.GetFiles("*.*", SearchOption.AllDirectories))
+            .Where(file => file.Extension is ".cs" or ".razor")
+            .Where(file => !file.FullName.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                && !file.FullName.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .OrderBy(file => file.FullName, StringComparer.Ordinal)
+            .Select(file => (Path.GetRelativePath(Root.FullName, file.FullName), Markup(File.ReadAllText(file.FullName))))
+    ];
+
     /// <summary>One file of the browser client, by path relative to its project directory.</summary>
     internal static string Read(string relative) =>
         Markup(File.ReadAllText(Path.Combine(Web.FullName, relative.Replace('/', Path.DirectorySeparatorChar))));

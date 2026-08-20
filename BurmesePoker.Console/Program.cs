@@ -105,7 +105,7 @@ internal static class Program
         var matchSeed = setup.Next();
 
         var (names, bots) = AskWhoIsPlaying(console);
-        var difficulty = bots.Count > 0 ? AskDifficulty(console) : Difficulty.Hard;
+        var difficulty = bots.Count > 0 ? AskDifficulty(console) : BotCatalog.Hardest;
         var stakes = AskStakes(console);
         var seating = Seat(names, setup);
 
@@ -120,10 +120,16 @@ internal static class Program
 
         var log = new RoundLog();
 
+        // ⚠️ A bot's seed comes from the *setup* generator and is drawn here, after the seating
+        // (BUILD-PLAN P14, P18). The match's own generator deals every round and nothing else
+        // may touch it; the setup generator has already done its two jobs by this line, so a
+        // rung that decides anything at random — only `random` does — is reproducible from
+        // `--seed` along with everything else. The rungs that ignore it are unaffected, which
+        // is what keeps this packet a refactor.
         var seats = seating.ToDictionary(
             player => player,
             IPlayerAgent (player) => bots.Contains(player)
-                ? PacedAgent.Wrap(Bot(difficulty), options.Pace)
+                ? PacedAgent.Wrap(difficulty.Create(setup.Next()), options.Pace)
                 : new SpectrePlayerAgent(console, names, log, options.Hints));
 
         // The one kind of game a seed cannot recover is the one with a person in it
@@ -192,7 +198,7 @@ internal static class Program
         IReadOnlyList<PlayerId> seating,
         IReadOnlyDictionary<PlayerId, string> names,
         IReadOnlySet<PlayerId> bots,
-        Difficulty difficulty,
+        BotRung difficulty,
         Stakes stakes,
         int rounds)
     {
@@ -205,7 +211,7 @@ internal static class Program
             Seed: matchSeed,
             Seats: [.. seating.Select(player => new JournalSeat(
                 player,
-                bots.Contains(player) ? (difficulty == Difficulty.Easy ? "simple" : "greedy") : "human",
+                bots.Contains(player) ? difficulty.Name : "human",
                 names[player]))],
             Stakes: stakes,
             Rounds: rounds,
@@ -229,25 +235,6 @@ internal static class Program
             console.MarkupLine($"[{Palette.Bad}]The journal could not be written:[/] {Markup.Escape(problem.Message)}");
         }
     }
-
-    /// <summary>How hard the computer plays. Both seats already exist in the domain (BUILD-PLAN P12).</summary>
-    private enum Difficulty
-    {
-        Easy,
-        Hard
-    }
-
-    /// <summary>
-    /// A bot of the chosen strength.
-    /// </summary>
-    /// <remarks>
-    /// <b>A difficulty setting came for free out of the simulation.</b> <c>SimpleBotAgent</c>
-    /// is <c>GreedyBotAgent</c> with the discard tie-break removed and nothing else changed,
-    /// and it is measurably weaker for it — 19.3% of rounds against 30.7% over two thousand of
-    /// them (BUILD-PLAN P12). It was built as a control and turns out to be the easy seat.
-    /// </remarks>
-    private static IPlayerAgent Bot(Difficulty difficulty) =>
-        difficulty == Difficulty.Easy ? new SimpleBotAgent() : new GreedyBotAgent();
 
     /// <summary>
     /// Draws the running banks, with how many rounds each player has taken.
@@ -373,18 +360,41 @@ internal static class Program
         return (names, bots);
     }
 
-    private static Difficulty AskDifficulty(IAnsiConsole console) =>
+    /// <summary>
+    /// How well the computer should play, from the one list there is.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠️ <b>The whole ladder, out of <see cref="BotCatalog"/></b> (BUILD-PLAN P18). It used to
+    /// be a private two-value enum here, which is why the browser had no difficulty setting at
+    /// all and why a fifth rung would have meant editing four places. <b>Nothing about a bot is
+    /// written down in this project any more</b> — not its name, not what it plays like, not
+    /// how to build one.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Strongest first, which is the order a menu wants and not the ladder's</b>
+    /// (<see cref="BotCatalog.ByStrength"/>). <b>This list is not the difficulty dial</b> —
+    /// §3.12 is why it is a list of players rather than a row of levels, and P19 is where it
+    /// stops being one.
+    /// </para>
+    /// <para>
+    /// 🔥 <b>A <c>SelectionPrompt&lt;T&gt;</c> opens on <c>default(T)</c> if it is one of the
+    /// choices, and the two-value enum this replaced was <em>Easy = 0</em>.</b> So the old
+    /// prompt listed <em>Hard</em> first, read as though hard were the default, and handed the
+    /// easy bot to everybody who pressed return. Measured rather than guessed: a probe prompt
+    /// offering <c>(7, 0, 5)</c> comes back with <c>0</c>. A rung is a reference type, so
+    /// <c>default</c> is null, is not in the list, and the cursor stays where it is drawn — on
+    /// the first entry, which is the hardest. ⚠️ <b>Anything later that makes the choice a
+    /// value type again inherits the bug</b>, which is why this is written down here rather
+    /// than in a session log.
+    /// </para>
+    /// </remarks>
+    private static BotRung AskDifficulty(IAnsiConsole console) =>
         console.Prompt(
-            new SelectionPrompt<Difficulty>()
+            new SelectionPrompt<BotRung>()
                 .Title("How well should the computer play?")
-                .UseConverter(difficulty => difficulty switch
-                {
-                    Difficulty.Easy =>
-                        $"Easy [{Palette.Quiet}](throws the first card that costs it nothing — wins about a fifth of rounds)[/]",
-                    _ =>
-                        $"Hard [{Palette.Quiet}](keeps the cards with partners — wins about a third)[/]"
-                })
-                .AddChoices(Difficulty.Hard, Difficulty.Easy));
+                .UseConverter(rung => $"{rung.Name} [{Palette.Quiet}]({rung.Description})[/]")
+                .AddChoices(BotCatalog.ByStrength));
 
     private static Stakes AskStakes(IAnsiConsole console)
     {

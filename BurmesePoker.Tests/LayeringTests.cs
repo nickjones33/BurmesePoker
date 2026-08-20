@@ -1,9 +1,12 @@
 using System.Reflection;
+using System.Text.RegularExpressions;
 
+using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Presentation;
 using BurmesePoker.Server;
 using BurmesePoker.Sim;
+using BurmesePoker.Tests.Web;
 using BurmesePoker.Web;
 
 namespace BurmesePoker.Tests;
@@ -170,6 +173,64 @@ public class LayeringTests
         Assert.DoesNotContain(
             typeof(Card).Assembly.GetReferencedAssemblies(),
             reference => reference.Name is "BurmesePoker.Server");
+    }
+
+    /// <summary>
+    /// ✅ <b>P18 acceptance 4 — a bot is constructed in one place.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>A source scan, in the same spirit as the reference checks above</b>, and for the same
+    /// reason: the rule is about where a decision is <em>written down</em>, which no compiled
+    /// assembly records. Before this packet the console, the browser client and the table
+    /// server each named a bot for themselves — four independent notions of which one — and the
+    /// browser had no difficulty setting at all as a direct result.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>It bans constructing a <em>rung</em>, not an agent.</b> The types are asked of
+    /// <see cref="BotCatalog"/> rather than listed here, so a fifth rung is covered the day it
+    /// is added. Decorators and stand-ins — the pacing wrapper, the journalling wrapper, the
+    /// replay seat, the remote seat — are not ways of playing and are not in the catalog, so
+    /// they are untouched by this.
+    /// </para>
+    /// <para>
+    /// The test project is not scanned, deliberately: a test that wants a particular agent in a
+    /// particular seat is entitled to say so, and several do.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void NothingOutsideTheCatalogBuildsABot()
+    {
+        var rungs = BotCatalog.All.Select(rung => rung.Create(0).GetType().Name).Distinct().ToList();
+
+        Assert.Equal(BotCatalog.All.Count, rungs.Count);
+
+        var catalog = Path.Combine("BurmesePoker.Domain", "Agents") + Path.DirectorySeparatorChar;
+        var scanned = 0;
+        var found = 0;
+
+        foreach (var (path, text) in Sources.Production)
+        {
+            scanned++;
+
+            foreach (var rung in rungs)
+            {
+                foreach (Match built in Regex.Matches(text, $@"\bnew\s+{rung}\s*\("))
+                {
+                    found++;
+
+                    Assert.True(
+                        path.StartsWith(catalog, StringComparison.Ordinal),
+                        $"{path}: builds a {rung} directly. A bot is named once, in BotCatalog, and "
+                        + "resolved by name everywhere else (BUILD-PLAN P18) — otherwise a new rung "
+                        + $"reaches this file only when somebody remembers it exists. Found: {built.Value}");
+                }
+            }
+        }
+
+        // A guard on the guard: a scan that matched nothing would pass whatever the tree said.
+        Assert.True(scanned > 40, $"only {scanned} files scanned, which is less than this solution has.");
+        Assert.Equal(BotCatalog.All.Count, found);
     }
 
     /// <remarks>

@@ -20,17 +20,20 @@ compare strategies, and `dotnet run --project BurmesePoker.Web` is **a browser l
 in and play other people at**.
 
 ⚠️ **A fifth goal was stated on 2026-08-19: a designed difficulty
-system, and a settled answer to what actually works.** That is **P17–P23**; **P17 is done and
-P18 is the next packet.** It is two jobs kept apart on purpose — a *product* (difficulty as a table setting, per
-seat, in both front ends; **the browser has none at all today**) and a *programme* (analysis and
+system, and a settled answer to what actually works.** That is **P17–P23**; **P17 and P18 are
+done and P19 is the next packet.** It is two jobs kept apart on purpose — a *product* (difficulty as a table setting, per
+seat, in both front ends; **the browser has a per-table one since P18**) and a *programme* (analysis and
 simulation enough to say which ways of playing are better, by how much, and with an interval).
 ⚠️ **Read `BUILD-PLAN.md` §3.12 first**: *difficulty is a dial, skill is a ladder, and they are
 not the same axis* — which is what keeps the difficulty menu from being a list of research
 instruments, and what makes the product independent of whether any given rung is worth anything.
-🔥 **Two facts set the order.** ✅ The first is discharged: the ordinary `Sim` report used to
-print no interval at all, so P17 — statistics and ranking — came before P19 — calibration.
-⚠️ The second still stands: there are **four independent notions of *which bot*** across Sim,
-Console, Web and Server, so P18 makes it one catalog before any new rung is written.
+🔥 **Two facts set the order, and both are now discharged.** The ordinary `Sim` report used to
+print no interval at all, so P17 — statistics and ranking — came before P19 — calibration. And
+there were **four independent notions of *which bot*** across Sim, Console, Web and Server, so
+P18 made it one catalog before any new rung is written: **`Domain/Agents/BotCatalog.cs` is the
+only place a bot is named**, `LayeringTests` fails the build if any project outside
+`Domain/Agents` constructs a rung, and a new rung reaches the console prompt, the browser lobby
+and the harness with no front-end work at all.
 ⚠️ **P19 finishes the difficulty product with today's rungs; P20–P22 are droppable in preference
 order** — P15 spent a whole packet on a plausible rung worth +0.5 ± 0.55 points, and that
 precedent is designed into the plan.
@@ -157,7 +160,15 @@ seats in different games of a crossed run, and the two are not the same quantity
 within a cell it *widens by exactly √2*, because only one seat declares — so the independent
 formula was **anti**-conservative on every head-to-head margin.
 
-⚠️ **P18–P23 are planned and unbuilt** (goal 5, above). **P18 is the next packet.** See
+✅ **P18 shipped 2026-08-19: one catalog.** A bot is named once, in
+`Domain/Agents/BotCatalog.cs`, and the console, the browser and the harness all resolve the name;
+the browser gained a difficulty setting it never had. 🔥 **It found a user-facing bug that had
+stood since P10: a Spectre `SelectionPrompt<T>` opens on `default(T)` if that value is one of the
+choices, and the console's enum was `Easy = 0`** — so the menu said *Hard* first and gave
+everybody who pressed return the easy bot. ⚠️ **A console capture is only comparable with one
+that made the same choice**: pass `--pick n` and compare from the `Seating:` line on.
+
+⚠️ **P19–P23 are planned and unbuilt** (goal 5, above). **P19 is the next packet.** See
 BUILD-PLAN §2 for how the seven projects fit together — the strategy programme adds no eighth
 project.
 
@@ -185,6 +196,7 @@ dotnet run --project BurmesePoker.Web           # a browser lobby at http://loca
 dotnet run --project BurmesePoker.Web -- --people 1                   # …a solo table; it deals as soon as you sit
 dotnet run --project BurmesePoker.Web -- --people 0                   # …just watch; every seat is a bot
 dotnet run --project BurmesePoker.Web -- --seed 20260819 --pace 400   # …the same table, faster
+dotnet run --project BurmesePoker.Web -- --difficulty simple          # …how well the computer plays; the lobby form offers the same list
 dotnet run -c Release --project BurmesePoker.Sim -- --games 2000   # compare strategies
 dotnet run -c Release --project BurmesePoker.Sim -- bench          # time the cover searches
 dotnet run -c Release --project BurmesePoker.Sim -- --games 100 --journal run.jsonl   # keep every decision
@@ -194,9 +206,9 @@ dotnet run -c Release --project BurmesePoker.Sim -- --games 2000 --seating balan
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --games 2000          # rank every player against every other
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv
 
-python3 scripts/drive-console.py --out before.raw --seed 20260819   # capture a scripted match
-python3 scripts/drive-console.py --out after.raw  --seed 20260819   # …after a front-end change
-cmp before.raw after.raw                                            # prove it was a refactor
+python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 2   # capture a scripted match
+python3 scripts/drive-console.py --out after.raw  --seed 20260819 --pick 2   # …after a front-end change
+cmp before.raw after.raw                                                    # prove it was a refactor
 ```
 
 All seven projects target **`net10.0`**, matching the installed SDK (10.0.111). Tests are

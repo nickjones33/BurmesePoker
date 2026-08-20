@@ -248,7 +248,13 @@ are byte-for-byte what P9 left. ⚠️ **`System.Text.Json` is now referenced by
 the first framework assembly beyond the base library in there; it is a *string* API and the
 layering rule it must not break is I/O, which it does not — `JournalFormat` returns
 `IEnumerable<string>` and the two front ends own the `File` calls, exactly as `CsvReport` and
-`CsvReport.WriteTo` already split. **By P16:** `{SeatingPlan, Measurement, NeighbourExperiment,
+`CsvReport.WriteTo` already split. **By P18:** `Agents/BotCatalog.cs` in Domain — the ladder as `BotRung`s, named once for the
+whole solution — and **nothing new anywhere else**: `Sim.StrategyCatalog` became an adapter over
+it, the console's private `Difficulty` enum was deleted, `ComputerAdvice` and
+`TableOptions.StandIn` ask it for the hardest rung, and `TablePlan` carries a rung's *name*.
+⚠️ **`LayeringTests` gained the rule that goes with it** — nothing outside `Domain/Agents`
+constructs a rung, scanned over every project but the test one, with the types taken from the
+catalog so a fifth rung is covered the day it is added. **By P16:** `{SeatingPlan, Measurement, NeighbourExperiment,
 NeighbourCsv}.cs` in Sim, one property on `SimulationOptions` and two columns on `CsvReport` —
 **and nothing in Domain**, which now stands unchanged across three consecutive packets.
 
@@ -946,10 +952,10 @@ P0 ─► P1 ─┬─► P2 ──────────┐                  
                                                           P13.5  a table, not a document   ← the layout pass
                                                           P13.6  the lobby                 ← goal 4
 
-P15 ─┬─► P17  the tournament ─┬─► P19  difficulty as a dial  ← goal 5's product, finished here
-     │   (stats + ranking)    ├─► P20  counting rung   (memory)      ─┐
-P16 ─┘                        ├─► P21  outs rung       (lookahead)   ─┼─► P23  the standing answer
-          P18  one catalog ───┘   P22  prospector rung (the money)   ─┘
+P15 ─┬─► P17  the tournament ☑ ┬─► P19  difficulty as a dial  ← goal 5's product, finished here
+     │   (stats + ranking)     ├─► P20  counting rung   (memory)      ─┐
+P16 ─┘                         ├─► P21  outs rung       (lookahead)   ─┼─► P23  the standing answer
+          P18  one catalog ☑ ──┘   P22  prospector rung (the money)   ─┘
               (all front ends)
 ```
 
@@ -982,7 +988,8 @@ and a control, and nothing in the domain, the engine or the round row changed to
 
 ⚠️ **The P12 branch reopened on 2026-08-19 as goal 5, and it is now the only live one.**
 **P17 (statistics and ranking) and P18 (one catalog) are independent of each other**; both feed
-**P19**, which finishes the difficulty product with the rungs that exist today. **P20, P21 and
+**P19**, which finishes the difficulty product with the rungs that exist today. ✅ **Both are
+done (2026-08-19), so P19 is next and nothing is in front of it.** **P20, P21 and
 P22 are independent of one another and of P19**, and are droppable in that preference order —
 each adds one rung and one measured answer. **P23 closes the branch** by re-calibrating against
 whichever of them landed. 🔥 **The dependency that matters is P17 before P19**: a difficulty
@@ -3321,7 +3328,7 @@ Signed figures are now built by hand.
 
 ---
 
-### P18 — One catalog: the same players everywhere ☐
+### P18 — One catalog: the same players everywhere ☑ done 2026-08-19
 
 **Goal.** A bot is **named in one place**, and every front end resolves the name. No new
 strategy, no behaviour change — the enabling refactor that makes every later rung land in the
@@ -3364,18 +3371,64 @@ still would not offer it.
 
 **Acceptance.**
 
-1. Console and Web both offer the whole ladder, from one list, by name.
+1. ✅ Console and Web both offer the whole ladder, from one list, by name.
 2. 🔥 **`scripts/drive-console.py` at a fixed seed is byte-identical before and after** for the
    same choice. This is a refactor and `cmp` is what proves it — P13.1 built the tool for
    exactly this.
-3. Sim's CSV strategy names are unchanged; a P16 CSV from yesterday still joins.
-4. A grep test: no project outside `Domain/Agents` constructs a concrete agent type.
-   `MarkupStandardsTests` already owns the shape of this assertion.
-5. The journal header records the catalog name for a bot seat, unchanged for the two that
-   already existed — a P14 journal from yesterday still replays.
 
-**Done when.** `dotnet run --project BurmesePoker.Web -- --difficulty simple` deals a table of
-the easy bot, and the lobby form offers the same choice.
+   ⚠️ **Amended while building it, twice, and both amendments are findings rather than
+   excuses.**
+
+   - **The whole capture cannot be identical, because acceptance 1 changes the prompt.** Two
+     entries became four, so the comparison is of the *match* — every byte from the `Seating:`
+     line to the end — and the prompt above it is expected to differ. ✅ **It is identical:
+     6,625 bytes for `--script bots` and 89,233 for `--script human`.**
+   - 🔥 **"The same choice" had to be *made*, because the old prompt was not choosing what it
+     looked like it was choosing.** A `SelectionPrompt<T>` opens on `default(T)` when that value
+     is one of the choices, and the deleted enum was `Easy = 0` — so the list read *Hard,
+     Easy*, and everybody who pressed return got the **easy** bot. Measured with a probe prompt
+     offering `(7, 0, 5)`, which comes back `0`. A rung is a reference type, `default` is null,
+     and the cursor stays on the first entry. **`--pick n` was added to the driver** so a
+     capture names the rung it played; the pre-P18 captures compare against `--pick 2`
+     (`simple`). ⚠️ **P19 inherits this the moment it makes the choice a value type again.**
+3. ✅ Sim's CSV strategy names are unchanged; a P16 CSV from yesterday still joins.
+   `BotCatalogTests` freezes the four names and the ladder order in a literal, and asserts the
+   harness's catalog is the same list in the same order.
+4. ✅ A grep test: no project outside `Domain/Agents` constructs a concrete agent type.
+   ⚠️ **It landed in `LayeringTests` rather than `MarkupStandardsTests`** — the claim is about
+   all seven projects and not about markup, and it reads as a layering rule beside "the domain
+   does not reference Spectre". ⚠️ **It bans constructing a *rung*, and the types come from
+   `BotCatalog` rather than from a list in the test**, so a fifth rung is covered the day it is
+   added; decorators and stand-ins (`PacedAgent`, `JournalingAgent`, `JournalPlayerAgent`,
+   `SeatRecorder`, `RemotePlayerAgent`) are not ways of playing and are untouched.
+5. ✅ The journal header records the catalog name for a bot seat, unchanged for the two that
+   already existed — a P14 journal from yesterday still replays. Checked by replaying a journal
+   written by the *old* console beside one written by the new one at the same seed and rung:
+   the two reports are the same.
+
+**Done when.** ✅ `dotnet run --project BurmesePoker.Web -- --difficulty simple` deals a table of
+the easy bot, and the lobby form offers the same choice. **Verified in the real browser** — the
+house table says *the computer plays simple*, and a table opened from the form on `random` deals
+`random` and says so in the lobby. (P13.6's rule: found by pressing the button.)
+
+**What P18 found.**
+
+1. 🔥 **The console's difficulty default was a lie, and had been since P10.** See acceptance 2:
+   `Hard` was listed first and `Easy` was what return picked. Nobody noticed because nothing
+   printed which bot it seated — the journal header is what finally said so out loud.
+2. ⚠️ **A record's `with` expression does not re-run a property initialiser.** `BotRung.Name`
+   validated in an initialiser refused a `#` in a constructor and allowed one in
+   `rung with { Name = … }` — which is *exactly* how `Tournament` makes its mirror. The check
+   moved into the `init` accessor. **Found by writing the test that says a mirror is not a
+   rung**, not by reading the code.
+3. ⚠️ **Two orders, and neither is derivable from the other.** `BotCatalog.All` is ladder order
+   (what was added), `ByStrength` is menu order (what was measured), and `greedy`/`cautious`
+   share a level because P17's verdict on them is *inside the interval*. A `Strength` ordinal
+   rather than a number: it is a reading of `docs/strategy/measurements.csv`, not a copy of it.
+4. ⚠️ **The driver's difficulty question is not the same key in both scripts** — a match with a
+   person in it asks that person's *name* first, so it is the fourth prompt there and the third
+   when every seat is the computer's. A `--pick` that was right for `--script bots` silently did
+   nothing for `--script human`, and the capture looked like a failed refactor.
 
 ---
 
@@ -3390,6 +3443,31 @@ measured), `RandomBotAgent`'s remark on why it declares whenever it may, P17's c
 output.
 
 **Depends on.** P17 (nothing is calibrated without it), P18 (nothing is exposed without it).
+
+⚠️ **What P18 left on the table for this packet, and what it changed about it.**
+
+- **The plumbing is done and the shape is fixed.** A level goes in a `BotRung` — name,
+  description, `Strength`, and a factory taking a seat seed — and *everything* already resolves
+  one: `Console`'s prompt, `Lobby`'s `--difficulty`, the lobby form's `<select>`, `TablePlan`,
+  `HostedTable`, `Sim`'s `StrategyCatalog`, the journal header. **A level added to the catalog
+  arrives in all of them without a line of front-end work.**
+- ⚠️ **But `BotCatalog` today is the ladder, and P19's levels are not.** §3.12 says these are two
+  jobs; P18 built one list because there was one kind of thing in it. When levels arrive there
+  are two — *rungs* (a research instrument, ordered by what was added) and *levels* (a product,
+  ordered by measurement and evenly spaced). **Decide which list a front end offers**; the
+  strong default is that the console and the lobby offer **levels only** and the harness offers
+  **rungs**, with `BotRung.Strength` retired in favour of the level's own ordering. What must
+  *not* happen is a menu with both in it.
+- ⚠️ **`Difficulty` on `TablePlan` is a single name today** and P19 wants it per seat. The
+  single-value shorthand is therefore the *existing* field, and the assignment is the new one.
+- 🔥 **A `SelectionPrompt<T>` opens on `default(T)` if it is one of the choices.** P18 deleted an
+  enum whose `Easy = 0` meant everybody who pressed return at the console got the easy bot while
+  the list said *Hard* first. **If a level is an enum or any other value type, this is back** —
+  and this time it would be a difficulty dial silently defaulting to its bottom.
+- ⚠️ **`ComputerAdvice` and `TableOptions.StandIn` are `BotCatalog.Hardest` on purpose**, in
+  three places that each say so. When the hardest thing in the catalog stops being a rung and
+  becomes a level, that expression still has to mean *play as well as you can* rather than
+  *play at whatever the table is set to*.
 
 **The design decision, stated before the code.** 🔥 **Skill rungs are not difficulty levels.**
 The ladder is discrete and its rungs are far apart — 0.0%, 26.7%, 36.1% at four balanced seats —
@@ -3441,6 +3519,9 @@ rung with a **mistake rate**, and the ladder is what the mistakes are made *agai
    afford. The ladder may not silently invert.
 3. **ε = 0 is byte-identical to the undecorated rung.** A decorator that does nothing must be
    transparent, and this is the cheap mutation-proof test of the whole mechanism.
+   ⚠️ **P18 makes the console half of this cheap**: `scripts/drive-console.py --pick n` names the
+   rung a capture played, so *"level `hard` at ε = 0 plays the match `greedy` plays"* is a `cmp`
+   of two captures from the `Seating:` line on, exactly as P18 proved its own refactor.
 4. Every level is deterministic, journals and replays (P15 acceptance 2 and 5).
 5. `MoneyCardsDoNotChangeWhatABotThrowsAway` holds for the decorator too — a new wrapper is the
    likeliest place for money to leak into a discard (RULES.md §4.4).
@@ -3492,6 +3573,11 @@ what the rules conceal**. Be wrong in the direction that does not cheat.
 - Whatever `TurnContext` gains, it gains as **public information only** — `ConcealmentTests` and
   the fan-out already own the mechanical assertion (P13.2), and a new test asserts the bot's
   view ⊆ the watcher's view.
+- ⚠️ **A new rung is one entry in `BotCatalog` (P18), and that holds for P21 and P22 too.** It
+  is a name, a line of description written for somebody choosing an opponent, a `Strength` and a
+  factory; the console's prompt, the browser lobby's form, `--difficulty`, the journal header
+  and `StrategyCatalog` all pick it up with no front-end work at all. **Nothing outside
+  `Domain/Agents` may construct it** — `LayeringTests` fails the build if anything does.
 - **`CountingBotAgent`** — greedy's decision with `Unseen` computed against everything seen
   rather than against the hand alone, which sharpens `CoverScore.Potential` and
   `CautiousBotAgent.Threat` at once. ⚠️ **One change against the rung below it**, or a
