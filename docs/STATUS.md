@@ -2,7 +2,7 @@
 
 Cross-session progress tracker. **`/poker` reads this first and updates it last.**
 
-Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 13) · Skill: `.claude/skills/poker/SKILL.md`
+Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 14) · Skill: `.claude/skills/poker/SKILL.md`
 
 State markers: `☐` not started · `◐` in progress · `☑` done
 
@@ -10,10 +10,38 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-**Every packet in the plan is done.** P0–P12, P13.1–P13.6 and P14–P16. **All four of §0's goals
-are delivered**: solo play against the computer (P10), a console worth sitting at (P11),
-simulation at scale (P12), and — as of P13.6 — **a multiplayer browser app with AI seats.**
-There is no next packet. Anything further is new work rather than a debt.
+⚠️ **The next packet is P17 — the tournament.** Nothing is in progress and the tree is green at
+**438 passed / 0 failed**.
+
+**Everything built so far is done.** P0–P12, P13.1–P13.6 and P14–P16, and **all four of §0's
+original goals are delivered**: solo play against the computer (P10), a console worth sitting at
+(P11), simulation at scale (P12), and — as of P13.6 — **a multiplayer browser app with AI
+seats.**
+
+🔥 **A fifth goal was stated on 2026-08-19 and planned the same day: a designed difficulty
+system, and a settled answer to what actually works.** It is **P17–P23**, and it is two jobs
+kept deliberately apart — a *product* (difficulty as a table setting, per seat, in both front
+ends) and a *programme* (enough analysis and simulation to say which ways of playing are better,
+by how much, with an interval). **§3.12 is the design decision taken in advance**: *difficulty is
+a dial, skill is a ladder, and they are not the same axis.*
+
+**The two facts that shaped the plan, both established while writing it.**
+
+1. 🔥 **The default report prints no interval at all.** A balanced 2,048-game run on 2026-08-19
+   gave `random` 0.0%, `simple` 26.7%, `greedy` 36.1%, `cautious` 36.8% — and the last two are
+   two numbers P15 needed **32,000 games** to establish are the same number. `Measurement`
+   exists and is used by exactly one verb (`neighbours`). **P17 comes first because a ladder
+   calibrated on point estimates is calibrated on nothing.**
+2. ⚠️ **There are four independent notions of *which bot*** — `Sim.StrategyCatalog`,
+   `Console.Program.Difficulty` (a private two-value enum), `Web.HostedTable` (`new
+   GreedyBotAgent()`, hard-coded, twice) and `Server.TableOptions.StandIn`. **The browser has no
+   difficulty setting at all.** P18 makes it one list, so every later rung reaches all three
+   front ends for free.
+
+⚠️ **P19 is where the difficulty system is finished** — with the rungs that exist today.
+**P20–P22 are independently droppable, in preference order**; each adds one rung and one measured
+answer, and P15's precedent (a plausible rung worth +0.5 ± 0.55 points) is why none of them is
+allowed to be load-bearing.
 
 ✅ **P13.6 is done (2026-08-19): the lobby, a second person, and §0's goal 4.** `dotnet run
 --project BurmesePoker.Web` opens a lobby at `/`, a table at `/table/{id}`, and **two people and
@@ -431,6 +459,13 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P14** Game journals — record and replay | P12 | done 2026-08-19 — a run and its replay produce byte-identical CSV |
 | ☑ | **P15** A skill ladder | P12 | done 2026-08-19 — four rungs, **three** separated skill levels |
 | ☑ | **P16** Does the player before you decide your game? | P15 | done 2026-08-19 — **no**, not between thinking players: −1.0 ± 2.1 pts |
+| ☐ | **P17** The tournament: a harness that ranks players | P15, P16 | **next** — intervals on every figure, paired comparisons, Holm, a null test, `suite` |
+| ☐ | **P18** One catalog: the same players everywhere | — | `BotCatalog` in Domain; console, browser and harness resolve one list of names |
+| ☐ | **P19** Difficulty as a dial, not a list | P17, P18 | **goal 5's product, finished here** — a mistake rate over the strongest rung, calibrated |
+| ☐ | **P20** Memory: the card-counting rung | P17, P18 | droppable — the first packet to ask the engine for anything; raises a rules question |
+| ☐ | **P21** Outs: the first rung that looks ahead | P17, P18 | droppable — P15 specified it; the ~100× cost is the packet |
+| ☐ | **P22** Money: is there a strategy in the side bet? | P17, P18 | droppable — judged on `$/round`, not win rate |
+| ☐ | **P23** The standing answer | P17, P19 | `docs/STRATEGY.md`, re-calibrated against whichever rungs landed |
 
 **P14, P15 and P16 are all done, and not one of them needed a line of the engine.** P14 cost
 nothing measurable in throughput at either fidelity; P15 and P16 raised no rules question
@@ -440,11 +475,17 @@ at **rev 13**). **P16 changed `BurmesePoker.Sim` only**: `SimulationOptions` gai
 
 **P10 was the fork; P11 and P12 have both been taken through it.** ⚠️ **P12 opened a branch
 rather than closing one** — having a harness is what makes journals and a strategy-comparison
-programme worth building, so P14, P15 and P16 hung off P12 and not off P13. ✅ **That branch is
-now closed.** The game is finished as a game, the console is finished as a console, the
-simulation goal is delivered and the measurement programme has run to an answer —
-**stopping here is a legitimate end state**, and everything outstanding is new work rather than
-a debt.
+programme worth building, so P14, P15 and P16 hung off P12 and not off P13. ✅ **That branch
+closed with P16** — the game is finished as a game, the console as a console, the simulation goal
+is delivered and the neighbour question has an answer with a control. **Stopping there was a
+legitimate end state.**
+
+⚠️ **It reopened on 2026-08-19 as goal 5, and it is now the only live branch.** P17–P23 hang off
+P15/P16 (the measurement apparatus) and off nothing in P13. **P17 and P18 are independent of each
+other**, both feed **P19** — where the difficulty product is finished — and **P20, P21 and P22 are
+independent of one another and droppable in that preference order**. 🔥 **The dependency that
+matters is P17 before P19**: calibrating a difficulty ladder with the interval-free report the
+harness prints today would be a guess wearing a number.
 
 ⚠️ **Four things the roadmap changed for work that was already planned**, all recorded in
 `BUILD-PLAN.md` — **all four are now discharged**:
@@ -473,6 +514,39 @@ a debt.
 ## Notes for the next session
 
 *Anything a cold context would need: decisions taken, surprises, deliberate leftovers.*
+
+**From the 2026-08-19 planning session — read these before starting P17:**
+
+- 🔥 **`Measurement` already exists and is used by one verb.** `Sim/Measurement.cs` is a mean over
+  **games** with a standard error and a 95% interval, built for P16's cells. The ordinary
+  `Report` table in `Sim/Program.cs` uses none of it. **P17 is mostly wiring what is there into
+  the path everybody actually runs**, plus the paired form.
+- 🔥 **Common random numbers are already available and are being thrown away on purpose.**
+  `SeedSequence.GameSeed(master, game)` makes game *i* the same shoe in every cell of a master
+  seed, whoever is seated, so a comparison between cells is **paired**. `Measurement.Difference`
+  says in its own remark that it adds the variances anyway to be conservative. ⚠️ **The paired
+  form must take per-game values, not two finished `Measurement`s** — pairing cells that did not
+  share seeds is silently wrong, and only the signature can prevent it.
+- ⚠️ **Four strategy names are load-bearing.** `random`, `simple`, `greedy`, `cautious` are half
+  of every CSV row's join key (§3.8 item 4) and appear in P14 journal headers. **P18 may not
+  rename them.**
+- ⚠️ **`scripts/drive-console.py` + `cmp` is how P18 proves it is a refactor** — that is what
+  P13.1 built the tool for.
+- ⚠️ **The hint must not follow the difficulty.** `RemotePlayerAgent` builds its discard advice
+  from a `GreedyBotAgent`; when P18 makes the stand-in configurable, the *advice* stays the
+  strongest bot. A hint that degrades with the opponents would be absurd, and it is the obvious
+  thing for a later session to "fix".
+- ⚠️ **P20 raises a rules question and must not decide it in code.** RULES.md §6.3 makes the
+  discards public and P13.5's client already draws a discard pile per seat to every watcher, but
+  `TurnContext` shows a seat only the one discard it is offered. Whether a pile is inspectable,
+  or only its top card, goes to §9 and to `QUESTIONS-FOR-MYA-LAY.md`. **Safe default: a seat
+  counts only what it has actually been shown** — wrong in the direction that makes the bot weak
+  rather than the direction that makes it cheat.
+- **Measured while planning, for sizing:** a balanced 4-seat run of the four rungs did
+  **2,040 rounds in 18.2 s (112 rounds/s)**, 27.9 turns a round, 8 games abandoned at the turn
+  cap (the random-heavy tables). So a six-pair tournament at 2,000 games a cell is on the order
+  of two minutes. `random` took 48.7% and claimed 46.2% — coin flips, which is a free sanity
+  check that the harness is wiring the agents up the way it thinks it is.
 
 ⚠️ **Two tests are wall-clock budgets and fail on a busy machine.**
 `HandEvaluatorTests.EvaluatingThirteenCardsIsFast` and `PartialCoverTests.ScoringThirteenCardsIsFast`
@@ -1462,6 +1536,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-19 | — (planning) | 🔥 **Goal 5 stated and planned: a designed difficulty system and a settled answer to what works.** No packet executed and no code changed — the deliverable is the plan. Added **§3.12** (*difficulty is a dial, skill is a ladder, and they are not the same axis*), **§0's fifth goal** with the three architecture rows it demands, **seven packets P17–P23** in §5, a second branch on the §4 graph, and **five risk rows** in §7. Baseline verified first: build clean, **438 passed / 0 failed**. 🔥 **Two findings drove the ordering.** (1) A balanced 2,048-game run gave `random` 0.0% / `simple` 26.7% / `greedy` 36.1% / `cautious` 36.8% — **and the ordinary report prints no interval at all**, so P17 (statistics) precedes P19 (calibration); `Measurement` already exists and is reachable from one verb only. (2) **Four independent notions of *which bot*** across Sim, Console, Web and Server, and **the browser has no difficulty setting** — so P18 unifies the catalog before any new rung is written. ⚠️ **P19 finishes the difficulty product with today's rungs**; P20–P22 are droppable in preference order, which is P15's +0.5 ± 0.55 lesson applied in advance. ⚠️ **P20 will need a rules answer** — whether a discard pile is inspectable or only its top card (`RULES.md` §9 #9 stops being moot once a bot counts cards); the safe default is *only what this seat has been shown*, which errs towards a weak bot rather than a cheating one. |
 | 2026-08-19 | P13.6 | ☑ Done. **The lobby, a second person, and §0's goal 4 — the plan is finished.** `Lobby` (singleton) holds `HostedTable`s by id, opened from a `TablePlan`; `Pages/Tables.razor` is the lobby at `/` (static SSR, two real forms) and `/table/{Id}` names one table. **`TableHost` is gone.** 🔥 **A `SeatBoard` belongs to a viewer**: `TableView` sits down, holds it, hands it to `YourSeat` as a parameter and stands up in `Dispose` — the one thing P13.4 said had to change rather than be added to. **`TableSession` learned who is sitting where** (`SitDown`, `StandUp`, `RemoteSeats`, `WaitingFor`, `IsFull`, `SeatTaken`/`SeatLeft`), because two viewers handed one `SeatConnection` are two people answering one question and a seat is a property of a table. 🔥 **The table deals while somebody is at it** — a viewer attending *and* every seat accounted for — which is P13.4's leftover, answerable at last, **without shortening the patience**. **Acceptance met:** `TwoPeopleTests.TwoPeopleAndTwoBotsPlayARound` settles round 1 with both people asked their own questions, hands pairwise disjoint a round at a time, banks summing to zero; **and it was played for real in two browser tabs**, Nick and Mya Lay, a whole round each answering their own prompts with `Tab`/`Enter`. §3.11 C16 finished: the felt marks a seat the computer is standing in at, and a reload takes your own seat back off your own ghost. **18 new tests, 438 passed / 0 failed, 0 warnings; five mutations applied, five red.** 🔥 **Findings: a test that a stood-up seat refuses is vacuous unless a question is standing — found by mutating `Dispose` and watching it stay green; two `<AntiforgeryToken />`s are worse than none and the page renders perfectly either way, found by pressing the button; a marker that means "away" has to stop meaning it, so standing-in is per turn and cleared at the next `TurnBegan`; the sit-down form must not hide itself when the table is full, because the person locked out is the one who just reloaded; a claim on a table must not be made while prerendering, and there are two of them now; a parameter to an interactive root is serialised, so the page passes an id; a settlement is not a resting state; and `FocusOnNavigate` beats §3.11 B7 on a reconnect, deliberately left alone.** |
 | 2026-08-19 | P13.4 | ☑ Done. **A seat you can play — solo browser play, complete, and a legitimate stopping point.** `BurmesePoker.Web` gains `SeatBoard` (your seat, folded out of **your own** `SeatConnection`: the question standing, the hand it is about, and the hand you kept between turns) and three components — `YourSeat`, `TurnPrompt`, `HandPanel` — **all inside P13.3's single interactive island**, so §3.11 C12 is untouched. `TableHost` seats you: `--seat` (1 by default, 0 to only watch), `--name`, `--hints`, `--patience`. **All three acceptance criteria met.** ✅ **1:** a match played from the seats themselves — three rounds, four connected seats, banks carrying over and summing to zero, asserted in `SeatBoardTests` through `ClickingPlayer` (the browser's `ScriptedSeat`, which drives a `SeatBoard` so everything it sees is something a page would draw); and five rounds played for real in headless Chromium. ✅ **2 — a round played end to end with no pointer at all:** 86 questions answered with `Tab` and `Enter` over five rounds, **393 tab presses walking the hand**, and focus was already on a `<button>` at every prompt before a key was pressed (§3.11 B7); a second run on the final build played three rounds, **went out from the seat**, and so exercised all four branches of `TurnPrompt` in a browser. ✅ **3:** `NoSeatEverHeldACardFromAnotherSeatsHand` asserts every hand that was ever on any of four pages pairwise disjoint **a round at a time**, and `MarkupStandardsTests.NoComponentFindsASecondRouteToTheTable` forbids any component naming `TableSession`, `MatchEngine`, `TableState`, `TurnContext`, `PartialCover`, `HandEvaluator` or `ConnectionFor`. **§3.11 B6, B7 and B11 shipped**, and **A4 stopped passing vacuously** — it counts what it scanned now (eight handlers). **18 new tests, 389 passed / 0 failed**, and **eight mutations applied, eight red.** 🔥 **Findings: a `CardId` names a card in a *round's* shoe, which is rebuilt every deal, so hands are compared across seats a round at a time; your hand between turns is not stale and is worth rebuilding, with ownership read back off the `CardView`s you were sent rather than recomputed; a refusal must not raise "something changed", or a client answering on the change event answers the same refused question for ever; and only the first control may capture a `@ref`, because Blazor captures on insertion and not on every diff.** ⚠️ **A seated table no longer deals from boot** — an unanswered seat spends its whole patience on every question — and `TableHost.Yours` is one `SeatBoard` shared by every circuit, which P13.5 must change. 🔥 **And one thing only reading a control's accessible name out of the browser found: `CardChip`'s hidden words needed a full stop.** A card sits next to whatever else is said about it, and without one a screen reader ran the two together into *"five of clubs melds nothing"* — a sentence that means the opposite of itself. `docs/PLAYING.md` gained a browser section; `BUILD-PLAN.md` P13.4, P13.5, §2 and §3.11 (A4, B6, B7, B11) amended. |
 | 2026-08-19 | P13.3 | ☑ Done. **The first UI in this project's history — a seventh project, and a browser table you can watch.** `BurmesePoker.Web` (Blazor Server; Domain + Presentation + Server): `TableHost` (one table, dealing itself round after round, one watcher connection, idempotent `Start`), `TableBoard` (the public game folded out of `TableEvent`s and **nothing else**), `CardWords` (a card said out loud, for a screen reader), and eleven components — a static SSR shell and rules page, and one interactive island: `TableView`, `SeatPanel`, `CardChip`, `RoundLogPanel`, `SettlementPanel`, each with its own `.razor.css`. **All three acceptance criteria met.** ✅ **1:** bot-only rounds play out in a browser start to settlement — verified in headless Chromium over the DevTools protocol, which watched the page go from Round 8 to Round 10 with no reload, no console errors and no reconnect modal, and screenshotted both themes at a settlement. ✅ **2 — the rest of the §3.11 A list shipped as tests:** `PaletteContrastTests` (A3 — computed contrast in **both themes**, read from `wwwroot/theme.css`, **pairs discovered by naming convention** rather than listed, plus a check that every `var(--…)` names a declared token), `MarkupStandardsTests` (A4 real controls, C12 no render mode at the root, C14 `@key`, C15 `InvokeAsync`, B8 one polite live region, and no `StateHasChanged` in a `Dispose`), `ComponentDisposalTests` (A5 — reflection over every `ComponentBase` for a table member, private ones included, plus that the subscription is actually unhooked). ✅ **3 — the B list reviewed by driving it:** tab order walked with `Input.dispatchKeyEvent` (skip link → nav, every stop visible and outlined 3px), the log made keyboard-reachable and named, `prefers-reduced-motion` and `prefers-color-scheme` honoured, 24px minimum targets, and every card carrying words as well as a glyph. 🔥 **Finding 1: `UseStaticFiles` does not serve the framework's own files.** `_framework/blazor.web.js` 404'd and the page looked perfect — **a prerendered Blazor Server page is a photograph of a broken one.** `MapStaticAssets`, and `launchSettings.json` because a build's endpoints manifest is a Development one. 🔥 **Finding 2: a trimmed log must not key on the length of the log** — `TableBoard.Narrated` counts every line ever said; `Log.Count` repeats the moment it trims, and a repeated `@key` is Blazor reusing the wrong DOM node. 🔥 **Finding 3: 240 visually-hidden spans made the document 10,295px tall** for a body of 1,814 — the absolute-positioning recipe needs a positioned ancestor. **Measured, not seen.** 🔥 **Finding 4: a source scan must read markup, not the prose about it** — four of six scans failed on comments in the files obeying the standard; and a `@key` check that looks *nearby* let a nested key cover for a missing one. **Eleven mutations applied, eleven red.** ⚠️ **`PacedAgent` moved to Presentation, not Domain** — Sim references Domain and must not be able to reach a sleep; **console byte-identical after the move** (two pty captures, two seeds, `cmp`). ⚠️ **`BurmesePoker.Tests` now references `BurmesePoker.Web`** and still never the console: the rule is that nothing is tested *through* a front end, and a component tree is data. **Build clean and warning-free, 371 passed / 0 failed** (29 new). **Domain, Server and Sim untouched** — the engine now stands unaltered across five consecutive packets. No new rules question — `RULES.md` stays at **rev 13**. Amended BUILD-PLAN §2, §3.11 (A3, A4, A5, B8, C12–C15, C17 all marked), P13.3 (a "What P13.3 found" section) and **P13.4 and P13.5, each of which inherits something now built.** |

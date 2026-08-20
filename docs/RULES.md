@@ -4,10 +4,11 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-18 (rev 13 — §4.3's `DERIVED` balance argument is now measured rather
-than estimated: 600 simulated five-player rounds put the side-bet at 42% of the round prize,
-against the 40% the derivation guessed. No rule changed; rev 12 added §9 #14, raised while
-building the match engine, and the P9 defaults for §9 #4 and #5).
+Last revised: 2026-08-19 (rev 14 — §9 #15 added while planning the strategy programme: is a
+discard pile inspectable, or only its top card? No rule changed. Rev 13 measured §4.3's `DERIVED`
+balance argument — 600 simulated five-player rounds put the side-bet at 42% of the round prize,
+against the 40% the derivation guessed; rev 12 added §9 #14, raised while building the match
+engine, and the P9 defaults for §9 #4 and #5).
 
 ---
 
@@ -541,6 +542,7 @@ the **7♦** — one of your two permanent money cards. Almost certainly chance.
 | 12 | When the opening player **claims** the turned-up money card, does that card's value still pay for the rest of the round? | 4.5 | Unknown — recommend *yes* | Money designation (P7) |
 | 13 | May a player discard the very card they just took? | 5 | Unknown — recommend *yes* | Turn logic (P7) |
 | 14 | Does anything move between rounds — the seating, the deal, who goes first? | 3 | Unknown — recommend *no* | Match setup (P9) |
+| 15 | Is a discard pile **inspectable**, or only its top card? | 5 | Unknown — recommend *top card only*, **taken as the default by P20** | What a player may count (P20) |
 
 
 > **#8 widened in rev 10, while building P3.** "Unlimited jokers" was recorded as a bound on
@@ -595,6 +597,26 @@ the **7♦** — one of your two permanent money cards. Almost certainly chance.
 > round. Whether that confers an advantage is a question for P12 rather than a rules question,
 > but if seating does move, the change is in `MatchEngine` alone — the round engine already
 > takes its seating as given.
+
+> **#15 raised in rev 14, while planning the strategy programme (P17–P23).** §5 says the only
+> public information is the discards, and lists per-player piles against one shared pile as
+> *largely moot* (#9) — **it stops being moot the moment a player counts cards.** Whether a pile
+> may be picked up and read, or whether only the card on top of it is visible, decides how much
+> a player can know about what is left in the shoe, and it is the difference between a game of
+> memory and a game of the current hand.
+>
+> Nothing has needed the answer until now: every bot built so far reasons from its own thirteen
+> cards alone. **P20's counting rung is the first player of any kind that would use it**, and
+> `TurnContext` — the type that *is* the concealment rule — currently shows a seat only the one
+> discard it is being offered, which is **less** than §6.3 makes public and less than the browser
+> client already draws to every watcher.
+>
+> **P20 takes the safe default: a seat may count only what it has actually been shown** — its own
+> cards, the cards it took, the discard offered to it on each of its turns, and the turned-up
+> cards. If the answer turns out to be that piles are inspectable, this bot is merely *weaker*
+> than the rules allow; the opposite default would have it **seeing what the rules conceal**, and
+> a bot that cheats is a worse error than a bot that is beatable. Reversing it widens one
+> property on `TurnContext` and changes no rule.
 
 **Nothing here blocks the build.** Every remaining item has a safe default recorded in
 `BUILD-PLAN.md`. They are worth settling for fidelity, not for progress.

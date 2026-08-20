@@ -11,14 +11,29 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-This project is **finished**. **Every packet in the plan is done — P0–P12, P13.1–P13.6 and
-P14–P16** — and **all four of §0's goals are delivered**: the 2023 implementation is deleted, the
+**Every packet built so far is done — P0–P12, P13.1–P13.6 and P14–P16** — and **all four of §0's
+original goals are delivered**: the 2023 implementation is deleted, the
 whole rules core is built and tested, `dotnet run --project BurmesePoker.Console` fills the empty
 seats with paced, named bots and plays round after round with the banks carrying over,
 `dotnet run -c Release --project BurmesePoker.Sim` plays thousands of seeded games in parallel to
 compare strategies, and `dotnet run --project BurmesePoker.Web` is **a browser lobby you sit down
-in and play other people at**. There is no next packet; anything further is new work rather than a
-debt.
+in and play other people at**.
+
+⚠️ **A fifth goal was stated on 2026-08-19 and is planned but unbuilt: a designed difficulty
+system, and a settled answer to what actually works.** That is **P17–P23**, and **P17 is the next
+packet.** It is two jobs kept apart on purpose — a *product* (difficulty as a table setting, per
+seat, in both front ends; **the browser has none at all today**) and a *programme* (analysis and
+simulation enough to say which ways of playing are better, by how much, and with an interval).
+⚠️ **Read `BUILD-PLAN.md` §3.12 first**: *difficulty is a dial, skill is a ladder, and they are
+not the same axis* — which is what keeps the difficulty menu from being a list of research
+instruments, and what makes the product independent of whether any given rung is worth anything.
+🔥 **Two facts set the order.** The ordinary `Sim` report **prints no interval at all**
+(`Measurement` exists and exactly one verb uses it), so P17 — statistics and ranking — comes
+before P19 — calibration. And there are **four independent notions of *which bot*** across Sim,
+Console, Web and Server, so P18 makes it one catalog before any new rung is written.
+⚠️ **P19 finishes the difficulty product with today's rungs; P20–P22 are droppable in preference
+order** — P15 spent a whole packet on a plausible rung worth +0.5 ± 0.55 points, and that
+precedent is designed into the plan.
 
 ⚠️ **Before touching the browser client, read `BUILD-PLAN.md` §3.10 and §3.11.** The engine runs
 **server-side, always** (a hand is fully concealed with money on it, so a client-side engine cannot
@@ -127,7 +142,8 @@ scripts/drive-console.py    drives the console under a pty and writes down every
                             front-end refactor can be proved with `cmp`. built in P13.1.
 ```
 
-**Nothing is planned and unbuilt.** See BUILD-PLAN §2 for how the seven projects fit together.
+⚠️ **P17–P23 are planned and unbuilt** (goal 5, above). See BUILD-PLAN §2 for how the seven
+projects fit together — the strategy programme adds no eighth project.
 
 ## Rules of engagement
 

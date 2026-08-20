@@ -118,6 +118,11 @@ Each of these has a safe default and does not block the build. Ask only if it's 
 - **The turned-up cards once the deck runs out.** *"The two cards you turned over for the money
   cards are lying there all round. If the deck runs out and you gather the discards up to make a
   new deck, do those two go in as well, or do they stay where they are?"* (§9 #4 — asked flat.)
+- **Looking through the thrown-away cards.** *"While you are playing, can you pick up the pile
+  of cards that have been thrown away and look through them, or can you only see the one card
+  on top? And what about the cards the other players have thrown away — can you look at
+  those?"* (§9 #15 — asked flat, and the whole of the answer matters: it decides whether
+  remembering what has gone is part of the game.)
 - **A joker turned up as a money card.** *"At the start of a round, when you turn the two
   cards over for the money cards, what happens if one of them is a joker?"* (§9 #11 — asked
   flat, with no options offered. If the answer is that it does become a money card, the

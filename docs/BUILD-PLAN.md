@@ -36,8 +36,23 @@ harness is what makes a *programme* of measurement worth running — hence **P14
 ✅ done 2026-08-19), P15 (a skill ladder, ✅ done 2026-08-19) and P16 (does the player before
 you decide your game? ✅ done 2026-08-19)**, all hanging off P12. They serve the third goal;
 none of them is a fifth one. **All three are now done, and the programme has an answer: no,
-the player before you does not decide your game — see "What P16 found".** ⚠️ **P13 is the only
-outstanding packet in the plan.**
+the player before you does not decide your game — see "What P16 found".** ⚠️ ~~**P13 is the
+only outstanding packet in the plan.**~~ — **P13 shipped on 2026-08-19, and all four goals with
+it.**
+
+5. **A designed difficulty system, and a settled answer to what actually works.** Stated by Nick
+   on **2026-08-19**, after all four goals landed, and it is **two jobs deliberately kept
+   apart**: a *product* — difficulty as a first-class table setting a person chooses, per seat,
+   in both front ends — and a *programme* — enough analysis, statistics and simulation to say
+   which ways of playing are better, by how much, and with an interval. **P17–P23.**
+   ⚠️ **Why it is one goal and not two:** the difficulty setting is only honest if it is
+   calibrated by the programme, and the programme is only worth running if something consumes
+   its answer. **§3.12 is the design decision they impose**, taken in advance: *difficulty is a
+   dial, skill is a ladder, and they are not the same axis* — which is what stops the difficulty
+   menu from being a list of research instruments, and what makes the difficulty system
+   independent of whether any given rung turns out to be worth anything. 🔥 **P15 is the
+   precedent that shaped it:** a plausible rung cost a whole packet and measured +0.5 ± 0.55
+   points.
 
 **What they demand of the architecture, and what already satisfies it.** These are stated
 here because they change decisions taken *before* the packets that need them.
@@ -54,12 +69,22 @@ here because they change decisions taken *before* the packets that need them.
 | Multiplayer + browser UI | A decision on **where the engine runs**, before a client exists | **§3.10, taken 2026-08-19.** Server-side, always. Concealment is a security property and a client-side engine cannot be made to honour it afterwards |
 | Browser UI | Accessibility and render mode decided **before** the first component | **§3.11, taken 2026-08-19.** P11 proved *look* needs nothing structural; keyboard operability, focus and render mode are not look, and retrofitting them is a rewrite |
 
-**Three of the four are done, and P12 was the one that could have demanded architecture.** It
-did not: the harness is a fourth project that references Domain and asks it for nothing new.
+| Difficulty and strategy (goal 5) | **A ladder that is a research instrument and a menu that is a product, built from one mechanism and never confused for one another** | **§3.12, taken 2026-08-19, before P17.** The rungs are 0.0%/26.7%/36.1% apart and a lower rung plays a *different* idea rather than the right one badly — neither is what a difficulty menu needs |
+| Difficulty and strategy, cont. | **Statistics honest enough to survive a round-robin** — intervals on every figure, paired comparisons, and a correction for the number of comparisons made | **P17.** ⚠️ The gap is real today: the default report prints **no interval at all**, and a balanced run separates `greedy` 36.1% from `cautious` 36.8% — two numbers P15 needed 32,000 games to establish are the same number |
+| Difficulty and strategy, cont. | **A bot named in one place**, so a new rung reaches the console, the browser and the harness at once | **P18.** Today there are four independent notions of *which bot*, and the browser has no difficulty setting at all |
+
+**All four are done, and none of them demanded architecture.** P12 was the one that could
+have: it did not, being a fourth project that references Domain and asks it for nothing new.
 **P11 asked for nothing either** — a whole UX pass, including a hint that has to agree with how
 the bots play and a pause that must not exist in the domain, went in as presentation over the
-seams that were already there. **Only P13 is left, and it is the only one that has ever looked
-like it might change the shape of things.**
+seams that were already there. **P13 was the one that had always looked like it might change the
+shape of things, and it changed the shape of the client instead** (§3.10, §3.11).
+
+⚠️ **Goal 5 is the first thing in this plan that is expected to ask the engine for something** —
+P20's counting rung wants what `TurnContext` conceals and the rules do not (RULES.md §6.3 makes
+the discards public, and P13.5's client already draws them to every watcher). That is one
+addition of **public** information, guarded by the concealment tests P13.2 already shipped, and
+it is the only one foreseen.
 
 **The through-line: the domain never learns that any of this happened.** A bot, a simulation
 harness and a network server are all the same shape — something that answers
@@ -855,6 +880,51 @@ clears the screen between turns; a browser client has its own scrollback and nev
 
 ---
 
+### 3.12 Difficulty is a dial; skill is a ladder; they are not the same axis
+
+**Taken 2026-08-19, before P17, and it is the decision the whole strategy programme hangs on.**
+
+Three of the four rungs the project already has were built to answer *which way of playing is
+better*. It is tempting — and P11's console already does it — to hand those same rungs to a
+person as a difficulty menu. **That is two different jobs wearing one name, and the ladder does
+neither of them well as a menu.**
+
+**A skill ladder is a research instrument.** Its rungs must differ in **exactly one decision**
+(P15), so that a difference in results attributes to that decision and to nothing else. It has
+no obligation to be evenly spaced, and it is not: at four balanced seats the rungs measured
+0.0%, 26.7% and 36.1%. It has no obligation to be complete, either — a rung that plays
+differently to no measurable effect (`cautious`) is a **result**, and results are kept.
+
+**A difficulty dial is a product.** It must be **monotone** — level *n+1* beats level *n*, and a
+person can tell. It must be **fine-grained enough to ask for "a bit easier"**. And it must
+produce an opponent that reads as *a weaker player*, which a lower rung does not: `simple`
+throws whatever card it reaches first, so it plays a **different and worse idea**, not the right
+idea badly. A weaker human plays the right idea and slips.
+
+**So the two are built from one mechanism and exposed as two things.** Difficulty is the
+**strongest available rung with a mistake rate** — the ladder is what the mistakes are made
+against, and it stays a research instrument. This has three consequences worth taking in
+advance:
+
+1. **The difficulty system does not depend on research succeeding.** P19 finishes it with the
+   rungs that exist today. Every later rung raises the *ceiling* and moves the calibration; none
+   of them is required for a person to get a good opponent. ⚠️ **This is the direct lesson of
+   P15**, which spent a packet on a plausible rung worth +0.5 ± 0.55 points.
+2. **A level is deleted if it is not separated from its neighbour.** Three real levels beat five
+   imaginary ones, and a menu whose middle two entries are the same player is a lie told to
+   every person who reads it.
+3. **A mistake must be a plausible move.** Substituting a *random* legal move produces a bot
+   that throws jokers away, which no person does and which reads as broken rather than as weak.
+   The mistake is the next move down the agent's own ordering.
+
+**And one rule about every number this programme produces: a published figure carries the
+command that made it and the games it came from.** `RULES.md` has provenance tags because a rule
+without its source cannot be re-examined; a measurement without its origin is worse, because it
+looks like a fact. `sim suite` exists (P17) so the documented numbers are **generated rather than
+transcribed**, and P23 makes that a test rather than a habit.
+
+---
+
 ## 4. Packet dependency graph
 
 ```
@@ -870,6 +940,12 @@ P0 ─► P1 ─┬─► P2 ──────────┐                  
                                                           P13.4  a seat you can play       ← solo, in a browser
                                                           P13.5  a table, not a document   ← the layout pass
                                                           P13.6  the lobby                 ← goal 4
+
+P15 ─┬─► P17  the tournament ─┬─► P19  difficulty as a dial  ← goal 5's product, finished here
+     │   (stats + ranking)    ├─► P20  counting rung   (memory)      ─┐
+P16 ─┘                        ├─► P21  outs rung       (lookahead)   ─┼─► P23  the standing answer
+          P18  one catalog ───┘   P22  prospector rung (the money)   ─┘
+              (all front ends)
 ```
 
 ⚠️ **P13.1–P13.4 are strictly sequential**, which nothing else in this plan has been. Each one
@@ -898,6 +974,15 @@ either**, but it did not leave P16 alone: it sized the upstream effect at severa
 the intervention P16 was counting on down to about half a point (see the amendment under P16).
 **P16 is done (2026-08-19) and closed the branch**: the question has an answer with an interval
 and a control, and nothing in the domain, the engine or the round row changed to get it.
+
+⚠️ **The P12 branch reopened on 2026-08-19 as goal 5, and it is now the only live one.**
+**P17 (statistics and ranking) and P18 (one catalog) are independent of each other**; both feed
+**P19**, which finishes the difficulty product with the rungs that exist today. **P20, P21 and
+P22 are independent of one another and of P19**, and are droppable in that preference order —
+each adds one rung and one measured answer. **P23 closes the branch** by re-calibrating against
+whichever of them landed. 🔥 **The dependency that matters is P17 before P19**: a difficulty
+ladder calibrated with the interval-free report today's harness prints would be a guess wearing
+a number.
 **P13 is now the only outstanding packet — the only one that would change the architecture,
 and the only one that is purely optional.**
 
@@ -3047,6 +3132,383 @@ domain did not change by a line, and neither did `Simulator`, `GameRunner` or `R
 
 ---
 
+### P17 — The tournament: a harness that ranks players ☐
+
+**Goal.** Turn "run these strategies and read the table" into "**rank every player against every
+other, with an interval you can trust, from one command, re-runnably**". Everything after this
+packet is a measurement, and today the harness cannot make one honestly at the size the
+questions need.
+
+**Read first.** §3.7 (determinism, no ambient randomness), §3.8 (statistics are collected, never
+computed by the domain), §3.12, P15's *What P15 found* and P16's *What P16 found* —
+between them they are the two ways this apparatus has already been wrong.
+
+**Depends on.** P12, P15, P16. Sim only; **no domain change, and none is expected.**
+
+**Why it comes first.** 🔥 **The default report prints no interval at all.** A balanced run on
+2026-08-19 gave `greedy` 36.1% and `cautious` 36.8% over 2,048 games — two numbers a reader
+will rank, and which P15 needed **32,000 games** to establish are the same number. The harness
+already knows how to say `± 2.1` (`Measurement`, built for P16's cells) and says it in exactly
+one verb. **A ladder built on point estimates is a ladder built on nothing.**
+
+**Build.**
+
+- **Intervals on the ordinary run.** Every figure in the `Report` table becomes a
+  `Measurement` — a mean over **games**, one value per game (§3.8, and `Measurement`'s own
+  remark on why the game and not the turn or the seat).
+- **`Measurement.Paired`, and the common random numbers it rests on.** `SeedSequence.GameSeed`
+  makes game *i* the **same shoe in every cell of the same master seed**, whoever is seated —
+  so a comparison between two cells is a paired one, and `Measurement.Difference` says in its
+  own remark that it is throwing that away to be conservative. Pairing is free variance
+  reduction and it is available today. ⚠️ **It must take the per-game values, not two finished
+  `Measurement`s** — pairing two cells that did not share seeds is silently wrong, and a
+  signature that cannot express the mistake is the only defence.
+- **`tournament`, a fifth verb.** Round-robin: every unordered pair of the named strategies gets
+  a balanced-seating cell of *N* games at the given seats. Out comes a **matrix** (row beats
+  column by *x* ± *y* points), a **ranking**, and a CSV row per cell. The free-for-all — every
+  strategy at one table, which is what `--seating balanced` already plays — is reported beside
+  it, because the two answer different questions and P16 is the packet that learned they differ.
+- ⚠️ **A round-robin manufactures findings, and this is the packet that has to refuse to.** *k*
+  strategies is *k(k−1)/2* comparisons; at 95% intervals roughly one in twenty clears zero by
+  chance, so six pairs make a false finding likelier than not over a few runs. **Report the
+  comparison count and a Holm-corrected verdict beside the raw one.** An uncorrected
+  round-robin is a machine for promoting noise to a rung.
+- **`suite`, a sixth verb**: plays the standing set of measurements the docs quote and writes
+  them to `docs/strategy/measurements.csv`. 🔥 **The numbers in the documentation stop being
+  transcribed and start being generated.** Same discipline as `RULES.md`'s provenance tags — a
+  number without its origin is not evidence (§3.12).
+
+**Acceptance.**
+
+1. `tournament --strategies random,simple,greedy,cautious` prints a matrix and a ranking; every
+   cell states its games and every difference carries an interval.
+2. 🔥 **The harness's own null test: a strategy against itself measures 1/seats within its
+   interval** — 25.0% at four seats. It costs one cell and it is the test that would have caught
+   P16's seating artifact from the inside.
+3. **Paired intervals are narrower than unpaired ones on the same data, and the two means agree
+   to rounding.** State the ratio. If pairing does not narrow them, the pairing is wrong and
+   *that* is the finding.
+4. The comparison count and the corrected threshold are printed. A raw "separated" that does not
+   survive Holm is shown as not surviving it.
+5. Deterministic: the same seed writes a byte-identical CSV, and `--serial` agrees with parallel.
+6. The four existing rungs are **re-measured** and land in `docs/STRATEGY.md` (created here),
+   each with the command that produced it.
+
+**Done when.** One command produces the ranking table `docs/STRATEGY.md` quotes, and re-running
+it reproduces the file's data byte-for-byte.
+
+---
+
+### P18 — One catalog: the same players everywhere ☐
+
+**Goal.** A bot is **named in one place**, and every front end resolves the name. No new
+strategy, no behaviour change — the enabling refactor that makes every later rung land in the
+console, the browser and the harness at once instead of three times.
+
+**Read first.** §2 (what each project may reference), §3.8 item 4 (a strategy name is half of
+every row's join key), `Sim/Strategy.cs`, `Console/Program.cs`'s private `Difficulty` enum.
+
+**Depends on.** Nothing. Can be built before P17 if preferred; it is put second only because
+P17 is what the programme rests on.
+
+**The state it is fixing.** There are **four independent notions of "which bot"**:
+`Sim.StrategyCatalog` (four rungs, names that CSV rows join on), `Console.Program.Difficulty`
+(a private two-value enum mapping to two `new`s), `Web.HostedTable` (`new GreedyBotAgent()`,
+twice, hard-coded — **the browser has no difficulty setting at all**), and
+`Server.TableOptions.StandIn`. A fifth rung today means editing four places and the browser
+still would not offer it.
+
+**Build.**
+
+- **`BurmesePoker.Domain/Agents/BotCatalog.cs`** — the ladder, ordered: a name, a one-line
+  description **written for a person choosing an opponent** rather than for a reader of the
+  plan, and a factory taking a seat seed. Domain-resident because agents already are and this
+  names them; no I/O, so it breaks no layering rule.
+- `Sim.StrategyCatalog` becomes an adapter over it. ⚠️ **The four existing names may not
+  change** — §3.8 item 4: rename a strategy and yesterday's numbers stop joining.
+- Console's `Difficulty` enum is **deleted**; the prompt is built from the catalog, and the
+  journal header's bot name comes from the same place it already writes (`"simple"`/`"greedy"`).
+- Web: `TablePlan.Difficulty`, a `--difficulty` argument, and **the choice on the lobby's
+  open-a-table form**. `HostedTable` builds its stand-in from the catalog.
+- ⚠️ **The hint is not the difficulty.** `RemotePlayerAgent`'s advice stays the *strongest* bot
+  whatever the table's opponents are set to — a hint that got worse as you lowered the
+  difficulty would be absurd, and the code should say so out loud where somebody would otherwise
+  "fix" it.
+
+**Acceptance.**
+
+1. Console and Web both offer the whole ladder, from one list, by name.
+2. 🔥 **`scripts/drive-console.py` at a fixed seed is byte-identical before and after** for the
+   same choice. This is a refactor and `cmp` is what proves it — P13.1 built the tool for
+   exactly this.
+3. Sim's CSV strategy names are unchanged; a P16 CSV from yesterday still joins.
+4. A grep test: no project outside `Domain/Agents` constructs a concrete agent type.
+   `MarkupStandardsTests` already owns the shape of this assertion.
+5. The journal header records the catalog name for a bot seat, unchanged for the two that
+   already existed — a P14 journal from yesterday still replays.
+
+**Done when.** `dotnet run --project BurmesePoker.Web -- --difficulty simple` deals a table of
+the easy bot, and the lobby form offers the same choice.
+
+---
+
+### P19 — Difficulty as a dial, not a list ☐
+
+**Goal.** A difficulty setting a person can **feel**, monotone by construction, calibrated by
+measurement rather than by assertion, and **independent of whether any later research packet
+succeeds**. This is where the difficulty system is finished.
+
+**Read first.** §3.12, P15's *What P15 found* (why a plausible rung is worth nothing until
+measured), `RandomBotAgent`'s remark on why it declares whenever it may, P17's calibration
+output.
+
+**Depends on.** P17 (nothing is calibrated without it), P18 (nothing is exposed without it).
+
+**The design decision, stated before the code.** 🔥 **Skill rungs are not difficulty levels.**
+The ladder is discrete and its rungs are far apart — 0.0%, 26.7%, 36.1% at four balanced seats —
+so there is no way to ask for *a bit easier*. Worse, a lower rung plays a **different and worse
+idea** (`simple` throws whatever it reaches first), which reads as an alien opponent rather than
+a weaker one. **A weaker player plays the right idea and slips.** So difficulty is the strongest
+rung with a **mistake rate**, and the ladder is what the mistakes are made *against*.
+
+**Build.**
+
+- **`FallibleAgent(inner, mistakeRate, Random)`** — a decorator. With probability ε it plays a
+  plausible worse move; otherwise it defers entirely.
+  - ⚠️ **A mistake is a legal, plausible move, not a random one.** Throwing a joker is not a
+    mistake anybody makes; throwing the *second*-best card is. So the mistake is "the next card
+    down the inner agent's own ordering", which needs `CoverScore.Discard` to be able to return
+    a **ranking** rather than a winner — a small shared change, and the same shape P20 and P21
+    both want.
+  - ⚠️ **It never fumbles a declaration.** Refusing a won hand is not a worse player but a
+    different game — `RandomBotAgent` already settles this and the reasoning carries.
+  - Seeded from the seat seed. **Never `Random.Shared`** (§3.7 item 1) — one careless decorator
+    takes every other seat's reproducibility down with it.
+- **Named levels in the catalog**, each a rung plus an ε. ⚠️ **The ε values are set by
+  measurement in this packet, not guessed**; the packet is not done until they are calibrated.
+- ⚠️ **Difficulty is per seat.** A table may mix levels, because a table of four identical bots
+  is the least interesting table in the game. `TablePlan` takes an assignment with a
+  single-value shorthand, and P13.6's named bots pair a name with a level so a seat reads as a
+  character rather than a setting.
+
+**Acceptance.**
+
+1. 🔥 **Monotone, measured and separated**: every level's win rate at a stated reference table is
+   ordered, and adjacent levels are separated by more than their **paired, Holm-corrected**
+   intervals. ⚠️ **A level that is not separated from its neighbour is deleted, not shipped** —
+   P15's lesson applied in advance. Three real levels beat five imaginary ones.
+2. A test asserts the **published** calibration's ordering against a re-run at a size a test can
+   afford. The ladder may not silently invert.
+3. **ε = 0 is byte-identical to the undecorated rung.** A decorator that does nothing must be
+   transparent, and this is the cheap mutation-proof test of the whole mechanism.
+4. Every level is deterministic, journals and replays (P15 acceptance 2 and 5).
+5. `MoneyCardsDoNotChangeWhatABotThrowsAway` holds for the decorator too — a new wrapper is the
+   likeliest place for money to leak into a discard (RULES.md §4.4).
+6. Both front ends expose it, and the browser lobby can open a **mixed** table.
+
+**Done when.** A table can be opened at any level from either front end, the levels are
+measurably ordered, and `docs/STRATEGY.md` publishes the calibration **with the command that
+produced it**.
+
+⚠️ **P20–P22 are independently droppable, in preference order.** They widen the ladder; none of
+them is required for the difficulty system to exist and be good. Stopping after P19 leaves a
+finished, calibrated, honest difficulty setting — not a half-built one.
+
+---
+
+### P20 — Memory: the card-counting rung ☐
+
+**Goal.** The first rung that knows more than its own hand — and **the first packet in the whole
+strategy programme that asks the engine for anything.**
+
+**Read first.** RULES.md §5 and §6.3, §9 #9, `TurnContext`'s remark ("the type is the
+concealment rule"), P13.5's finding that the browser derives the discard piles publicly.
+
+**Depends on.** P17, P18.
+
+**The finding that motivates it.** 🔥 **`TurnContext` conceals more than the rules do.**
+RULES.md §6.3 makes the discards the public information, and P13.5's client already draws **a
+discard pile per seat to every watcher** — so a card is public in the fan-out and withheld from
+the bots, which see only the one discard they are offered. A counting bot cannot be written
+honestly without closing that gap, and the gap is a real inconsistency independent of this
+packet.
+
+⚠️ **This is a rules question and must not be decided in code.** Is a discard pile face-up and
+inspectable, or is only its top card visible? RULES.md §5 does not say, and §9 #9 ("one shared
+pile or per-player piles?", recorded as *largely moot*) **stops being moot the moment a player
+counts cards**. Raise it in §9 with provenance and put a neutrally-phrased table situation in
+`QUESTIONS-FOR-MYA-LAY.md`.
+
+**The safe default, and why that direction.** A seat may count **only what it has actually been
+shown** — its own hand, the cards it took, the discard offered to it each turn whether or not it
+took it, and the turned-up cards. If the real rule turns out to be *full piles are inspectable*,
+this bot is merely **weaker** than the rules allow; the other default would have it **seeing
+what the rules conceal**. Be wrong in the direction that does not cheat.
+
+**Build.**
+
+- Decide and write down the information set **before writing the bot**: what a seat may see is a
+  subset of what a watcher at the table can see, and a test says so.
+- Whatever `TurnContext` gains, it gains as **public information only** — `ConcealmentTests` and
+  the fan-out already own the mechanical assertion (P13.2), and a new test asserts the bot's
+  view ⊆ the watcher's view.
+- **`CountingBotAgent`** — greedy's decision with `Unseen` computed against everything seen
+  rather than against the hand alone, which sharpens `CoverScore.Potential` and
+  `CautiousBotAgent.Threat` at once. ⚠️ **One change against the rung below it**, or a
+  difference in results attributes to nothing (P15).
+- Within-round state, reset when `context.Round` moves. ⚠️ **The round-boundary trap is the
+  hazard here** — `GreedyBotAgent`'s remark records the console agent falling into it, and this
+  is the first rung that remembers anything at all.
+
+**Acceptance.**
+
+1. Measured against greedy, **paired**, with an interval, at a stated *N*. ⚠️ **A null result is
+   a result and gets published** — `cautious` is already such an entry and its *why* is worth
+   more than its number.
+2. The bot's information set is a strict subset of a watcher's, asserted by test.
+3. Nothing carries across a round boundary, asserted by playing two rounds and mutating the
+   reset to watch the test go red.
+4. Deterministic, journals, replays, money-blind.
+5. Throughput stated against P12's recorded rounds a second.
+
+**Done when.** `--strategies greedy,counting` runs and `docs/STRATEGY.md` records what counting
+is worth — whatever it is.
+
+---
+
+### P21 — Outs: the first rung that looks ahead ☐
+
+**Goal.** The rung P15 named and specified, and the optimisation it forces.
+
+**Read first.** P15's closing paragraph ("*a trap for anyone trying to do better*"), §3.4
+(candidate generation vs. exact cover — `IsWinning` is the win authority and its answers may not
+change), §3.7 item 4 (the work is **allocation**-bound, not compute-bound), P12's bench numbers.
+
+**Depends on.** P17, P18. Independent of P20, though it composes with it.
+
+**What P15 established, quoted because it is the whole specification.** *Every pairwise-additive
+tie-break is greedy again* — partnership is symmetric, so "throw the card with the fewest
+partners" and "keep the best-connected twelve" are the same rule. **A rung that improves on
+greedy has to be combinatorial**, and the obvious candidate is counting **live outs**: how many
+unseen values would raise the cover count of the thirteen kept. The obvious problem is that it
+costs a `PartialCover.Best` per value per candidate — **roughly 100× a decision**.
+
+**Build.**
+
+- **`OutsBotAgent`** — for each candidate discard, count the distinct unseen values that would
+  raise the cover count of the thirteen kept; throw whichever leaves the most. Ties fall back to
+  greedy's key, so it is one change against the rung below.
+- ⚠️ **The cost is the packet, not a footnote.** 140 µs × 100 is 14 ms a decision; ~28 turns a
+  round makes a round ~0.4 s, and P12's 2,000 rounds in 34 s becomes a quarter of an hour. **The
+  optimisation §3.7 has been pointing at since P12 is due here**: attack **allocation**, and put
+  every speed-up **around** the evaluator, never inside it.
+- Levers, in the order they are cheap: score only the candidates already tied on cover count;
+  prune candidate values to those with a partner in hand (**verify that a value with none cannot
+  raise the count — do not assume it**); memoise `PartialCover.Best` by the kept multiset within
+  a turn.
+- **A budget, stated in advance: the outs rung may not cost more than 10× greedy's rounds a
+  second.** Over that, it is built wrong — and a rung nobody can afford to run cannot be
+  measured, which makes it worthless whatever it plays like.
+
+**Acceptance.**
+
+1. Measured against greedy **and** counting, paired, Holm-corrected, at a stated *N*.
+2. Throughput measured and inside the budget. `bench` is extended to time **the rung's
+   decision**, not only the primitives underneath it.
+3. 🔥 **`HandEvaluator.IsWinning`'s answers are unchanged by every optimisation.** It is the win
+   authority (§3.4); any cache is asserted transparent, and the existing evaluator tests are the
+   guard that says so.
+4. Deterministic, journals, replays, money-blind.
+
+**Done when.** The ladder has a rung separated from greedy — **or** the packet reports that it
+does not and says what it cost to find out. Both are publishable.
+
+---
+
+### P22 — Money: is there a strategy in the side bet? ☐
+
+**Goal.** The one strategy axis in this game that is **not rummy**, and the first question in the
+programme whose answer is not a win rate.
+
+**Read first.** RULES.md §4.4 (ownership is permanent, first acquisition wins, a blind draw
+confers it and a take does not) and §4.5, `GreedyBotAgent`'s remark on why money is absent from
+all of its decisions, `StrategySummary.SideBetPerRound`.
+
+**Depends on.** P17, P18.
+
+**The question nobody has asked.** Every rung is money-blind **on purpose**, and
+`MoneyCardsDoNotChangeWhatABotThrowsAway` makes it a test. But money-blindness of the *discard*
+does not settle the *draw*: **a blind draw confers ownership and a take does not** (§4.4), so a
+seat that draws blind more often acquires more money cards — while playing a worse hand. Greedy
+concedes exactly one tie-break to this and nothing else. **What that trade is worth has never
+been measured**, and the harness has reported `side $/r` separately from the flat payment since
+P12 without anybody asking it this.
+
+**Build.**
+
+- **`ProspectorBotAgent`** — greedy, except that it takes the discard only when the improvement
+  outweighs the expected ownership value of drawing blind instead: a function of the stakes, the
+  money values in play, and how much of the shoe is left.
+- ⚠️ **The discard stays money-blind.** Only the take/draw decision changes, which keeps the
+  money-blindness test green and keeps the difference attributable to one decision (P15).
+- ⚠️ **Judged on `$/round`, not on win rate.** A rung that wins fewer rounds and banks more money
+  is the better player, and **this is the first packet where the two can come apart** — the
+  reporting has split flat from side bet since P12 precisely so that they could.
+- **Stakes are a variable, not a constant.** The answer plausibly depends on `MoneyCardValue`
+  against `RoundValue`, so the packet runs a sweep rather than one cell.
+
+**Acceptance.**
+
+1. Measured on net per round, paired, with an interval, across **at least three stakes ratios**.
+2. Win rate reported beside it, and any divergence between the two stated **explicitly** rather
+   than left for a reader to notice.
+3. Discard behaviour provably unchanged: the money-blindness test still holds.
+4. Deterministic, journals, replays.
+
+**Done when.** `docs/STRATEGY.md` answers *"should you draw blind for the money?"* with a number
+and the stakes it depends on.
+
+---
+
+### P23 — The standing answer ☐
+
+**Goal.** The programme's output as a **maintained document**, not a session report — and a
+difficulty ladder re-calibrated against the ladder the programme actually ended up with.
+
+**Read first.** Everything P17–P22 wrote into `docs/STRATEGY.md`, §3.12, `docs/PLAYING.md`.
+
+**Depends on.** P17 and P19. P20–P22 to whatever extent they were built.
+
+**Build.**
+
+- **`docs/STRATEGY.md`** as the standing answer: the ranking matrix, the difficulty calibration,
+  and a short entry per rung — **including the ones that failed.** `cautious` is already such an
+  entry, and P15's account of *why* denial and self-interest point the same way is worth more
+  than its number ever was.
+- ⚠️ **Every figure carries the command that produced it and the games it came from**, and
+  `sim suite` regenerates the data behind it. The same discipline `RULES.md` applies to
+  provenance: a number without its origin is not evidence (§3.12).
+- **Re-run the suite over the final ladder and re-calibrate P19's levels against it.** Adding
+  rungs moves them; a calibration published before the last rung landed is stale by
+  construction.
+- The final exposure: level names, descriptions and honest one-line explanations in both front
+  ends, **read from the catalog** rather than typed into a UI.
+- `docs/PLAYING.md` gains how to choose an opponent.
+
+**Acceptance.**
+
+1. `docs/STRATEGY.md` exists; every figure names its command and its *N*; `sim suite` reproduces
+   the underlying CSV byte-identically.
+2. 🔥 **The levels published are the levels offered** — asserted by a test, not by proofreading.
+   A difficulty document that drifts from the difficulty menu is worse than none.
+3. Failed rungs are documented **as failures**, with the reasoning that makes them worth having
+   tried.
+
+**Done when.** Somebody asking *"which bot should I play, and what actually works in this
+game?"* has one document to read, and it regenerates from one command.
+
+---
+
 ## 6. Cold-start protocol
 
 For picking up in a fresh session with no memory of this conversation.
@@ -3085,5 +3547,10 @@ For picking up in a fresh session with no memory of this conversation.
 | **The synchronous-agent bet is wrong at scale** (new 2026-08-18). §3.6 parks a task per table rather than making the engine resumable. | At four to six players and a handful of tables the cost is a parked task, not a thread. If it is ever wrong, the fix is a resumable engine *behind the same interface* — the agents, tests and simulation loop do not change. Revisit only with a measured problem. |
 | ~~**A measured result is really a seating artifact**~~ (new 2026-08-19, **retired the same day by P16**). Turn order is a directed cycle — only the immediately-previous player's discard is available (`RULES.md` §5) — so who sits behind whom is a variable, and P12's rotation holds it fixed rather than varying it. | **Measured, and it is real but small and not directional.** A weaker player anywhere at the table is worth 4–5 points of win rate to you; which *side* of you they sit costs nothing between two thinking strategies (−1.0 ± 2.1 pts) and 9.1 ± 2.1 points only across the random-to-greedy gulf. The size of the artifact in P12's own headline is now known: **the rotation flatters greedy by 1.1 points a seat, 2.2 of the 11.4-point gap.** The mitigation is permanent: `--seating balanced` plays every assignment, and every CSV row names `upstream_strategy` and `downstream_strategy`, so a rotated result and a balanced one can both be quoted and told apart. |
 | **Journalling slows the harness** (new 2026-08-19). §3.7 measured the work as allocation-bound, and a per-decision recorder allocates. | P14 keeps two fidelity levels and makes the rich one opt-in, and its acceptance criteria include measuring the throughput cost against P12's recorded 51/85–92 rounds a second rather than assuming it is small. If thin journalling costs more than a few percent it is built wrong. |
+| **A round-robin manufactures findings** (new 2026-08-19, P17). *k* strategies is *k(k−1)/2* comparisons, so at 95% intervals roughly one in twenty clears zero by chance — a six-way tournament makes a false rung likelier than not. | **Holm correction reported beside the raw verdict, and the comparison count printed** (P17 acceptance 4). Plus the harness's own null test: **a strategy against itself must measure 1/seats**, which costs one cell and would have caught P16's seating artifact from the inside. |
+| **A research rung is worth nothing** (new 2026-08-19). `cautious` cost a packet and measured +0.5 ± 0.55 points; there is no reason to expect the next one to fare better. | **§3.12: the difficulty system does not depend on research succeeding.** P19 finishes it with the rungs that exist today, and **P20–P22 are independently droppable in preference order**. A null result is published rather than buried (P20 acceptance 1), because *why* `cautious` failed was worth more than its number. |
+| **The outs rung makes the programme too slow to run** (new 2026-08-19, P21). A live-outs measure costs a `PartialCover.Best` per value per candidate — ~100× a decision, which turns P12's 34-second run into a quarter of an hour. | **A budget stated in advance: no more than 10× greedy's rounds a second, measured** — over it, the rung is built wrong. The optimisation is the one §3.7 has pointed at since P12: **attack allocation**, and put every speed-up **around** the evaluator, never inside it, because `IsWinning` is the win authority (§3.4) and its answers may not change. |
+| **A counting bot sees what the rules conceal** (new 2026-08-19, P20). It is the first strategy to want information beyond its own hand, and `TurnContext` is the concealment rule expressed as a type. | **The information set is decided and asserted before the bot is written**, and the safe default is *only what this seat has actually been shown* — wrong in the direction that makes the bot weak rather than the direction that makes it cheat. ⚠️ Whether a discard pile is inspectable is a **rules** question and goes to §9 and to Mya Lay, not into code. |
+| **The difficulty ladder becomes a lie** (new 2026-08-19). Levels are calibrated against a ladder that later packets widen, so a published calibration is stale the moment a rung lands. | P23 re-runs the suite and re-calibrates, and **a test asserts that the levels published are the levels offered** — proofreading is not a mitigation. A level not separated from its neighbour is **deleted rather than shipped** (P19 acceptance 1). |
 | Rules drift as more is recalled. | `RULES.md` provenance tags make revisiting cheap; §9 tracks what is still unrecorded. |
 | Three projects is over-engineering. | Noted in §2. The enforcement is the point, but a single project with `IGameObserver` is an acceptable fallback. |
