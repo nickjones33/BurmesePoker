@@ -62,10 +62,28 @@ internal static class CoverScore
     /// two orderings that had to match would have been two places for the answer to drift —
     /// which is the reason this file exists at all.
     /// </remarks>
-    internal static Card Discard(IReadOnlyList<Card> hand, Func<Card, IReadOnlyList<Card>, long> tieBreak) =>
-        Ranking(hand, tieBreak) is [var best, ..]
+    internal static Card Discard(
+        IReadOnlyList<Card> hand,
+        Func<Card, IReadOnlyList<Card>, long> tieBreak,
+        Refinement? amongTheBest = null) =>
+        Ranking(hand, tieBreak, amongTheBest) is [var best, ..]
             ? best
             : throw new InvalidOperationException("Asked to discard from an empty hand.");
+
+    /// <summary>
+    /// A second opinion, asked <b>only of the candidates that already leave the most melded</b>
+    /// — the thirteen that would be kept, and what a best cover already made of them. Lower
+    /// wins, as the tie-break does.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>It exists because of what it costs, not because of what it says</b> (BUILD-PLAN
+    /// P21). A key expensive enough to change how a rung is written is a key that has to be
+    /// asked of as few cards as possible, and a card that already leaves fewer of the hand
+    /// melded has lost on the first key whatever the second one thinks — so paying for it there
+    /// buys nothing. Everything a cheap key can decide, <paramref name="tieBreak"/> still
+    /// decides.
+    /// </remarks>
+    internal delegate long Refinement(IReadOnlyList<Card> kept, int covered);
 
     /// <summary>
     /// Every card worth considering throwing, <b>best first</b>: fewest melded cards lost,
@@ -89,6 +107,13 @@ internal static class CoverScore
     /// is stable; <see cref="List{T}.Sort()"/> is not.
     /// </para>
     /// <para>
+    /// ⚠️ <b>P21 added a second key between the two</b>, and it is optional because it is
+    /// expensive: a <see cref="Refinement"/> is asked only of the candidates already tied at the
+    /// top, and where none is given the order is exactly the order every rung before it was
+    /// measured under. A rung whose new idea is <em>cheap</em> still packs it into
+    /// <paramref name="tieBreak"/>, which is what <see cref="CautiousBotAgent"/> does.
+    /// </para>
+    /// <para>
     /// 🔥 <b>Why a ranking and not just a winner</b> (BUILD-PLAN P19): a difficulty level is the
     /// strongest rung with a mistake rate, and a mistake that is worth making is <em>the next
     /// move down the agent's own ordering</em> rather than a random legal one. A bot that threw
@@ -98,10 +123,13 @@ internal static class CoverScore
     /// </remarks>
     internal static IReadOnlyList<Card> Ranking(
         IReadOnlyList<Card> hand,
-        Func<Card, IReadOnlyList<Card>, long> tieBreak)
+        Func<Card, IReadOnlyList<Card>, long> tieBreak,
+        Refinement? amongTheBest = null)
     {
         var judged = new List<Card>(hand.Count);
-        var scored = new List<(Card Card, int Cost, long Preference)>(hand.Count);
+        var scored = new List<(Card Card, List<Card> Kept, int Cost, long Refined, long Preference)>(hand.Count);
+        var best = int.MinValue;
+        var tied = 0;
 
         foreach (var card in hand)
         {
@@ -111,13 +139,44 @@ internal static class CoverScore
             }
 
             judged.Add(card);
-            scored.Add((card, Covered(Without(hand, card)), tieBreak(card, hand)));
+
+            var kept = Without(hand, card);
+            var cost = Covered(kept);
+
+            scored.Add((card, kept, cost, 0L, tieBreak(card, hand)));
+
+            if (cost > best)
+            {
+                best = cost;
+                tied = 1;
+            }
+            else if (cost == best)
+            {
+                tied++;
+            }
+        }
+
+        // Nothing to refine unless something is actually tied at the top — and the caller pays
+        // per call, so this is the difference between one expensive key and a dozen.
+        if (amongTheBest is not null && tied > 1)
+        {
+            for (var candidate = 0; candidate < scored.Count; candidate++)
+            {
+                if (scored[candidate].Cost == best)
+                {
+                    scored[candidate] = scored[candidate] with
+                    {
+                        Refined = amongTheBest(scored[candidate].Kept, best)
+                    };
+                }
+            }
         }
 
         return
         [
             .. scored
                 .OrderByDescending(candidate => candidate.Cost)
+                .ThenBy(candidate => candidate.Refined)
                 .ThenBy(candidate => candidate.Preference)
                 .Select(candidate => candidate.Card)
         ];

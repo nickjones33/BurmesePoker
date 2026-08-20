@@ -46,14 +46,32 @@ public static class SetGenerator
         var candidates = new List<Meld>();
         var seen = new HashSet<HashSet<CardId>>(HashSet<CardId>.CreateSetComparer());
 
+        var slots = new List<MeldSlot>(MaximumSize);
+
         foreach (var rank in CardText.AllRanks)
         {
+            var held = 0;
+
+            foreach (var card in hand)
+            {
+                if (card.Rank == rank)
+                {
+                    held++;
+                }
+            }
+
+            // A rank that cannot reach three cards even with every joker helping has no set on
+            // it (BUILD-PLAN §3.7 item 4). Counting first is cheaper than the lookup it saves.
+            if (held + jokers.Length < MinimumSize)
+            {
+                continue;
+            }
+
             var bySuit = hand
                 .Where(card => card.Rank == rank)
                 .ToLookup(card => card.Suit!.Value);
 
-            Fill(rank, bySuit, jokers, suitIndex: 0, lastJokerUsed: -1,
-                 slots: new List<MeldSlot>(MaximumSize), candidates, seen);
+            Fill(rank, bySuit, jokers, suitIndex: 0, lastJokerUsed: -1, slots, candidates, seen);
         }
 
         return candidates;

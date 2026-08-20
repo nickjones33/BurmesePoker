@@ -11,7 +11,7 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-**Every packet built so far is done — P0–P12, P13.1–P13.6 and P14–P20** — and **all four of §0's
+**Every packet built so far is done — P0–P12, P13.1–P13.6 and P14–P21** — and **all four of §0's
 original goals are delivered**: the 2023 implementation is deleted, the
 whole rules core is built and tested, `dotnet run --project BurmesePoker.Console` fills the empty
 seats with paced, named bots and plays round after round with the banks carrying over,
@@ -20,8 +20,8 @@ compare strategies, and `dotnet run --project BurmesePoker.Web` is **a browser l
 in and play other people at**.
 
 ⚠️ **A fifth goal was stated on 2026-08-19: a designed difficulty
-system, and a settled answer to what actually works.** That is **P17–P23**; **P17, P18, P19 and P20
-are done and P21 is the next packet — and P21–P22 are droppable.** It is two jobs kept apart on
+system, and a settled answer to what actually works.** That is **P17–P23**; **P17–P21 are done and
+P22 is the next packet — P22 is droppable, and P23 no longer is.** It is two jobs kept apart on
 purpose — a *product* (difficulty as a table setting, per seat, in both front ends: **finished in
 P19**) and a *programme* (analysis and simulation enough to say which ways of playing are better,
 by how much, and with an interval).
@@ -40,14 +40,16 @@ P18 made it one catalog before any new rung is written: **`Domain/Agents/BotCata
 only place a bot is named**, `LayeringTests` fails the build if any project outside
 `Domain/Agents` constructs a rung, and a new rung reaches the console prompt, the browser lobby
 and the harness with no front-end work at all.
-⚠️ **P19 finished the difficulty product with today's rungs; P21–P22 are droppable in preference
-order** — P15 spent a whole packet on a plausible rung worth +0.5 ± 0.55 points, and that
-precedent is designed into the plan. 🔥 **P20 spent another one and got less**: `counting` is
-`+0.3 ± 1.0` the *wrong* way. **Two of three research rungs have returned nothing**, and the plan
-expects the third to as well. 🔥 **A new rung is not free of the dial**: every level is
-`BotCatalog.Hardest` with an ε, so a rung stronger than `greedy` re-bases all four levels the day
-it lands and the ε values stop being the ones that were measured. `sim suite` exits non-zero if
-the dial stops being monotone, and **P23 owns re-spacing it.**
+⚠️ **P19 finished the difficulty product with today's rungs.** P15 spent a whole packet on a
+plausible rung worth +0.5 ± 0.55 points and P20 spent another and got less — `counting` is
+`+0.3 ± 1.0` the *wrong* way — **so two of the first three research rungs returned nothing.**
+🔥 **P21 is the third and it separated**: `outs` beats `greedy` by **`+3.1 ± 1.0`**, and the
+difference between it and the two nulls is *where the new key went* — above greedy's tie-break
+rather than beneath it. 🔥 **A new rung is not free of the dial, and this is the day that bill
+came due**: every level is `BotCatalog.Hardest` with an ε, `outs` is `Strength: 3`, so all four
+levels are `outs` now and the ε values 0.9/0.7/0.5/0.0 were spaced against `greedy`. The dial is
+still monotone — `sim suite` exits non-zero if it stops being — but **P23 owns re-spacing it and
+is no longer droppable.**
 
 ⚠️ **Before touching the browser client, read `BUILD-PLAN.md` §3.10 and §3.11.** The engine runs
 **server-side, always** (a hand is fully concealed with money on it, so a client-side engine cannot
@@ -204,9 +206,36 @@ found the ladder written out in three places**: `tournament` and `suite` default
 to a hand-typed list, so a fifth rung was measured only if somebody named it — **the default is
 `BotCatalog` now**, which is P18's defect one layer up.
 
-⚠️ **P21–P23 are planned and unbuilt** (goal 5, above). **P21 is the next packet, and it is
-droppable.** See BUILD-PLAN §2 for how the seven projects fit together — the strategy programme
-adds no eighth project.
+✅ **P21 shipped 2026-08-20: outs — the first rung that looks ahead, and the first that beats
+`greedy`.** Where two discards leave the hand equally melded, `outs` keeps the thirteen that
+**more of the pack would improve**: `+3.1 ± 1.0` points head to head at 8,008 games, `p = 1.9e-09`,
+surviving Holm. 🔥 **Why it paid when two rungs before it did not: its key sits *above*
+`CoverScore.Potential`, not beneath it** — `cautious` and `counting` both refined greedy's
+leftovers, and greedy's leftovers are worth about half a point, which is below what the harness
+can resolve.
+🔥 **The cost was the packet and the profile was the surprise.** Naive, it ran at 12.6× a greedy
+round; four shortcuts *around* the evaluator — refine only what is tied at the top, prune values
+that cannot enter a meld, ask the search for **a bar rather than a maximum**
+(`PartialCover.CoversAtLeast`), and build **one meld index a candidate rather than one a probe**
+(`CoverProbe`) — took it to 8.2×. **`PartialCover.Best` was not touched and `HandEvaluator` does
+not know any of it exists.** Then three quarters of what was left turned out to be a **fixed
+per-call allocation cost in candidate generation** — ninety window arrays × four suits every
+call, whatever the hand held. Fixing that made **every rung, every hint and every engine turn
+about 45% faster**, and `drive-console.py` proves it was a refactor byte for byte. ⚠️ **The
+domain now has an `InternalsVisibleTo BurmesePoker.Tests`**: each shortcut is a claim about
+answers and is asserted against the search it replaces.
+🔥 **One finding that is not about strategy: a stronger bot is a longer round.** Promoting `outs`
+broke two concealment tests from P13.2 and P13.4 that asserted four seats' hands are pairwise
+disjoint over a whole round — but the round now runs long enough to **exhaust the draw pile**, so
+the discards are shuffled back in (RULES.md §5) and a card one seat threw legitimately reaches
+another. **Disjointness was never the property; it was a coincidence of short rounds.**
+`Tests/Server/PublicRelease.cs` carries the argument. ⚠️ **The suite went from 35 minutes to 105
+and the local tests from 2m to 6m 33s**, both because six rungs is fifteen head-to-head cells and
+every difficulty level now pays `outs`' price.
+
+⚠️ **P22–P23 are planned and unbuilt** (goal 5, above). **P22 is the next packet and is
+droppable; P23 is not, because P21 re-based the difficulty dial.** See BUILD-PLAN §2 for how the
+seven projects fit together — the strategy programme adds no eighth project.
 
 ## Rules of engagement
 
@@ -235,7 +264,8 @@ dotnet run --project BurmesePoker.Web -- --seed 20260819 --pace 400   # …the s
 dotnet run --project BurmesePoker.Web -- --difficulty medium          # …how hard the computer is: easy, medium, hard, expert; the lobby form offers the same list
 dotnet run --project BurmesePoker.Web -- --mixed true                # …a different level in each computer seat (it takes a value, like --hints)
 dotnet run -c Release --project BurmesePoker.Sim -- --games 2000   # compare strategies
-dotnet run -c Release --project BurmesePoker.Sim -- bench          # time the cover searches
+dotnet run -c Release --project BurmesePoker.Sim -- bench          # time the cover searches, and every rung's decision
+dotnet run -c Release --project BurmesePoker.Sim -- bench --rounds 200 --strategies greedy,outs   # …is a rung affordable? (P21's budget is 10x greedy)
 dotnet run -c Release --project BurmesePoker.Sim -- --games 100 --journal run.jsonl   # keep every decision
 dotnet run -c Release --project BurmesePoker.Sim -- replay run.jsonl                  # play them back
 dotnet run -c Release --project BurmesePoker.Sim -- neighbours --games 2000          # does the seat before you matter?

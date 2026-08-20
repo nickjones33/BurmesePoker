@@ -50,21 +50,57 @@ public static class RunGenerator
         var candidates = new List<Meld>();
         var seen = new HashSet<HashSet<CardId>>(HashSet<CardId>.CreateSetComparer());
 
+        // One buffer a length rather than one a window: Meld copies its slots, so the same
+        // array can fill every window of that length (BUILD-PLAN §3.7 item 4). It used to be
+        // an allocation per window per suit — three hundred and sixty of them a call, whatever
+        // the hand held.
+        var slots = new MeldSlot[HighestRank + 1][];
+
         foreach (var suit in CardText.AllSuits)
         {
+            var held = 0;
+
+            foreach (var card in hand)
+            {
+                if (card.Suit == suit)
+                {
+                    held++;
+                }
+            }
+
+            // A suit that cannot reach three cards even with every joker helping has no run in
+            // it, and Fill would walk all ninety windows to say so.
+            if (held + jokers.Length < MinimumLength)
+            {
+                continue;
+            }
+
             var bySuitAndRank = hand
                 .Where(card => card.Suit == suit)
                 .ToLookup(card => card.Rank!.Value);
 
-            foreach (var window in Windows())
+            foreach (var window in AllWindows)
             {
                 Fill(window, suit, bySuitAndRank, jokers, position: 0, lastJokerUsed: -1,
-                     slots: new MeldSlot[window.Length], candidates, seen);
+                     slots: slots[window.Length] ??= new MeldSlot[window.Length], candidates, seen);
             }
         }
 
         return candidates;
     }
+
+    /// <summary>
+    /// <see cref="Windows"/>, worked out once.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A table rather than a generator, and it is a measurement rather than a tidy-up</b>
+    /// (BUILD-PLAN §3.7 item 4, P21). Every call used to allocate all ninety of these arrays
+    /// four times over — once a suit — whatever the hand held, which made generating the
+    /// candidates of six cards cost very nearly what thirteen cost. <b>The windows are the same
+    /// windows in the same order</b>; nothing about what is generated changes, and the
+    /// generators' own tests are what say so.
+    /// </remarks>
+    private static readonly Rank[][] AllWindows = [.. Windows()];
 
     /// <summary>
     /// The rank sequences a run may occupy, in ascending start order. Ace handling is

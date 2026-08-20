@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
 using BurmesePoker.Domain.Play;
@@ -564,11 +565,66 @@ static int Bench(string[] args)
     }
 
     Console.WriteLine($"{hands} random thirteen-card hands");
-    Console.WriteLine($"PartialCover.Best        {Time(dealt, hand => PartialCover.Best(hand).CoveredCount != -1)}");
+    Console.WriteLine($"PartialCover.Best          {Time(dealt, hand => PartialCover.Best(hand).CoveredCount != -1)}");
     Console.WriteLine($"HandEvaluator.TryFindCover {Time(dealt, hand => HandEvaluator.TryFindCover(hand, out _))}");
+    // ⚠️ One better than the hand can actually do, which is the question the outs rung asks
+    // hundreds of times a turn and the expensive half of it: the answer is "no", so the search
+    // cannot stop early and has to be pruned to the end (BUILD-PLAN P21).
+    var bars = dealt.ToDictionary(hand => hand, hand => PartialCover.Best(hand).CoveredCount + 1);
+    Console.WriteLine($"PartialCover.CoversAtLeast {Time(dealt, hand => PartialCover.CoversAtLeast(hand, bars[hand]))}");
+
+    // 🔥 The primitives are no longer the whole story (BUILD-PLAN P21 acceptance 2). A rung
+    // that asks a partial cover per value per candidate costs two orders of magnitude more
+    // than the search underneath it, so what has to be timed is the decision — and the budget
+    // the packet set itself is stated against greedy's rounds a second, not against microseconds.
+    var rounds = arguments.Number("rounds", 200);
+    var rungs = arguments.Value("strategies", string.Join(",", BotCatalog.All.Select(rung => rung.Name)));
+
+    Console.WriteLine();
+    Console.WriteLine($"{rounds} rounds, 4 seats, one rung at every seat, serial, seed {arguments.Number("seed", 20260818)}");
+
+    var reference = 0.0;
+
+    foreach (var name in rungs.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+    {
+        // ⚠️ Warmed first, and it is not a nicety: without it the rung measured first carries
+        // everything's jitting and comes out slower than the rung above it, which is how the
+        // first run of this said cautious was faster than greedy.
+        Simulator.Run(Table(name, Math.Max(1, rounds / 20), arguments).Validated());
+
+        var played = Simulator.Run(Table(name, rounds, arguments).Validated());
+
+        // Greedy is the reference because the budget is: the outs rung may not cost more than
+        // ten times a greedy round (BUILD-PLAN P21).
+        if (name.Equals(BotCatalog.Resolve("greedy").Name, StringComparison.OrdinalIgnoreCase))
+        {
+            reference = played.RoundsPerSecond;
+        }
+
+        var perTurn = played.Turns == 0 ? 0 : played.Elapsed.TotalMilliseconds * 1000 / played.Turns;
+
+        var relative = reference > 0
+            ? string.Create(CultureInfo.InvariantCulture, $"  {reference / played.RoundsPerSecond,6:0.0}x greedy")
+            : string.Empty;
+
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"{name,-10}{played.RoundsPerSecond,8:0.0} rounds/s  {perTurn,8:0} us/turn  {played.TurnsPerRound,5:0.0} turns/round{relative}"));
+    }
 
     return 0;
 }
+
+// One rung at all four seats, played serially so that a per-turn figure is a per-turn figure.
+static SimulationOptions Table(string rung, int rounds, Arguments arguments) => new()
+{
+    Strategies = [StrategyCatalog.Resolve(rung)],
+    Seats = 4,
+    Games = rounds,
+    RoundsPerGame = 1,
+    MasterSeed = arguments.Number("seed", 20260818),
+    TurnCap = arguments.Number("turn-cap", 400),
+    Parallel = false
+};
 
 static string Time(IReadOnlyList<Card[]> hands, Func<Card[], bool> work)
 {
@@ -591,19 +647,21 @@ static string Time(IReadOnlyList<Card[]> hands, Func<Card[], bool> work)
         + $"({hands.Count / clock.Elapsed.TotalSeconds,9:0} hands/s)");
 }
 
-static string Usage() => """
+// ⚠️ The ladder is read from the catalog and never typed out (BUILD-PLAN P20): the last two
+// rungs were added to a list that three other places also kept, and the help was one of them.
+static string Usage() => $"""
     BurmesePoker.Sim — batch play, seeded and parallel.
 
       dotnet run --project BurmesePoker.Sim -- [options]
-      dotnet run --project BurmesePoker.Sim -- bench [--hands N] [--seed N]
+      dotnet run --project BurmesePoker.Sim -- bench [--hands N] [--rounds N] [--strategies a,b] [--seed N]
       dotnet run --project BurmesePoker.Sim -- replay PATH [--csv PATH]
       dotnet run --project BurmesePoker.Sim -- neighbours [options]
       dotnet run --project BurmesePoker.Sim -- tournament [options]
       dotnet run --project BurmesePoker.Sim -- suite [options]
 
       --strategies a,b   who is playing, rotated through the seats  (greedy,simple)
-                         the ladder, weakest first: random, simple, greedy, cautious
-                         the difficulty dial: easy, medium, hard, expert
+                         the ladder, weakest first: {WholeLadder()}
+                         the difficulty dial: {string.Join(", ", StrategyCatalog.Levels.Select(level => level.Name))}
                          a calibration probe: greedy@0.35 — a rung with a mistake rate
       --seating S        rotate one pattern, or play every balanced
                          assignment of the strategies across the seats

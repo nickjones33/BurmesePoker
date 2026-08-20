@@ -11,23 +11,29 @@ transcribed, out of `docs/strategy/measurements.csv`, which is written by one co
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seed 20260819
 ```
 
-Last generated **2026-08-20** (BUILD-PLAN P20). **52 measurements in 35 minutes** — the ladder
-ranked, the difficulty dial calibrated beside it, and P12's headline under both seatings.
-⚠️ **P17's run of the same seed wrote every ladder figure identically**, which is the only reason
-a document may quote a simulation at all; §10 is what P19 added.
+Last generated **2026-08-20** (BUILD-PLAN P21). **65 measurements in 6,287 s — an hour and
+three quarters** — the ladder ranked, the difficulty dial calibrated beside it, and P12's headline
+under both seatings. ⚠️ **Every head-to-head margin P20 published reproduced to the digit**, which
+is the only reason a document may quote a simulation at all.
+
+⚠️ **The suite has become an hour-and-three-quarters job and P21 is why.** Head-to-head is
+`k(k−1)/2`, so a sixth rung took it from ten cells to fifteen; `outs` is in five of them and
+costs about eight times a `greedy` round; and every difficulty level is now built on `outs` too,
+so the dial's four cells went up with it. **`--pairs adjacent` exists** (P19) if this stops
+finishing in a sitting — a ladder's claim is that each rung beats the one below it, which is
+k−1 cells rather than k(k−1)/2.
 
 ⚠️ **The `--strategies` list is gone from that command, and its absence is the point.** P20 added
 a fifth rung and had to spell the field out in three places to make it appear; the default is now
 `BotCatalog` itself (P18), so **the suite measures every rung there is** and a rung cannot be
-added without being measured.
+added without being measured — which is how `outs` came to be measured against all five of the
+others without anybody naming it.
 
 The fuller report the tables below are drawn from comes from the same seed:
 
 ```bash
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --games 8000 --seed 20260819
 ```
-
-> **96,213 games in 1,476.1 s, 13 abandoned at the turn cap.**
 
 ---
 
@@ -59,7 +65,7 @@ this project at least once.**
 
 ## 2. The ladder
 
-Five rungs, ordered, each differing from the one below it in **exactly one decision** — which is
+Six rungs, ordered, each differing from the one below it in **exactly one decision** — which is
 what makes a difference in results attribute to that decision and to nothing else.
 
 | rung | what it decides differently | packet |
@@ -69,6 +75,13 @@ what makes a difference in results attribute to that decision and to nothing els
 | `greedy` | `simple`, plus a tie-break towards the cards worth keeping. | P10 |
 | `cautious` | `greedy`, plus the remaining ties decided by what the discard is worth to whoever picks it up. | P15 |
 | `counting` | `cautious`, plus a **memory**: what is left in the shoe is estimated from every card it has been shown this round, not from its own thirteen. | P20 |
+| `outs` | `greedy`, plus a **look ahead**: where the cover count ties, keep the thirteen that more of the values still out there would improve. | P21 |
+
+🔥 **Where a rung's new key goes is not a detail, and §3 is about to make that the headline.**
+`cautious` and `counting` both slide theirs in **beneath** greedy's tie-break, so they decide
+only what greedy had already given up on. `outs` puts its key **above** it, and greedy's
+tie-break is demoted to breaking *its* ties. **Two of those three rungs measure nothing and the
+third is the only rung that has ever beaten `greedy`.**
 
 ⚠️ **A skill ladder is a research instrument, not a difficulty menu.** Its rungs are unevenly
 spaced and one of them plays a *different and worse idea* rather than the right idea badly. See
@@ -85,80 +98,92 @@ exactly 4,004 times *by construction*.
 
 **The row's win rate less the column's, in points, game by game:**
 
-| | random | simple | greedy | cautious | counting |
-|---|---:|---:|---:|---:|---:|
-| **random** | · | −49.7 ± 0.4 \* | −49.9 ± 0.4 \* | −49.9 ± 0.4 \* | −49.8 ± 0.4 \* |
-| **simple** | +49.7 ± 0.4 \* | · | −11.2 ± 1.0 \* | −10.8 ± 1.0 \* | −11.0 ± 1.0 \* |
-| **greedy** | +49.9 ± 0.4 \* | +11.2 ± 1.0 \* | · | −0.2 ± 1.0 | +0.3 ± 1.0 |
-| **cautious** | +49.9 ± 0.4 \* | +10.8 ± 1.0 \* | +0.2 ± 1.0 | · | +0.8 ± 1.0 |
-| **counting** | +49.8 ± 0.4 \* | +11.0 ± 1.0 \* | −0.3 ± 1.0 | −0.8 ± 1.0 | · |
+| | `random` | `simple` | `greedy` | `cautious` | `counting` | `outs` |
+|---|---:|---:|---:|---:|---:|---:|
+| **`random`** | · | −49.7 ± 0.4 \* | −49.9 ± 0.4 \* | −49.9 ± 0.4 \* | −49.8 ± 0.4 \* | −49.9 ± 0.4 \* |
+| **`simple`** | +49.7 ± 0.4 \* | · | −11.2 ± 1.0 \* | −10.8 ± 1.0 \* | −11.0 ± 1.0 \* | −14.2 ± 1.0 \* |
+| **`greedy`** | +49.9 ± 0.4 \* | +11.2 ± 1.0 \* | · | −0.2 ± 1.0 | +0.3 ± 1.0 | **−3.1 ± 1.0** \* |
+| **`cautious`** | +49.9 ± 0.4 \* | +10.8 ± 1.0 \* | +0.2 ± 1.0 | · | +0.8 ± 1.0 | **−2.8 ± 1.0** \* |
+| **`counting`** | +49.8 ± 0.4 \* | +11.0 ± 1.0 \* | −0.3 ± 1.0 | −0.8 ± 1.0 | · | **−3.3 ± 1.0** \* |
+| **`outs`** | +49.9 ± 0.4 \* | +14.2 ± 1.0 \* | **+3.1 ± 1.0** \* | **+2.8 ± 1.0** \* | **+3.3 ± 1.0** \* | · |
 
-\* survives Holm at α = 0.05 over the family of ten.
+\* survives Holm at α = 0.05 over the family of fifteen.
 
 | # | strategy | mean margin over the field | free-for-all win % | beat / lost / undecided |
 |---|---|---:|---:|---:|
-| 1 | `cautious` | +15.4 | 34.3 ± 1.0 | 2 / 0 / 2 |
-| 2 | `greedy` | +15.3 | 32.8 ± 1.0 | 2 / 0 / 2 |
-| 3 | `counting` | +14.9 | 33.5 ± 1.0 | 2 / 0 / 2 |
-| 4 | `simple` | +4.2 | 24.2 ± 0.9 | 1 / 3 / 0 |
-| 5 | `random` | −49.8 | 0.1 ± 0.1 | 0 / 4 / 0 |
+| 1 | `outs` | +14.6 | 34.9 ± 1.1 | **5 / 0 / 0** |
+| 2 | `cautious` | +11.8 | 30.1 ± 1.0 | 2 / 1 / 2 |
+| 3 | `greedy` | +11.6 | 31.5 ± 1.1 | 2 / 1 / 2 |
+| 4 | `counting` | +11.3 | 31.2 ± 1.1 | 2 / 1 / 2 |
+| 5 | `simple` | +0.5 | 22.0 ± 1.0 | 1 / 4 / 0 |
+| 6 | `random` | −49.8 | 0.1 ± 0.1 | 0 / 5 / 0 |
 
-⚠️ **The mean margin and the free-for-all win rates are not comparable with the four-rung run
+⚠️ **The mean margin and the free-for-all win rates are not comparable with the five-rung run
 above them in git history** — both depend on who else is in the field, and the field gained a
-rung. **The head-to-head margins do not**, and every one of them reproduced to the digit.
+rung that beats everything in it. **The head-to-head margins do not**, and every one of the ten
+that P20 published reproduced to the digit.
 
-**Three skill levels, five rungs.** *Nothing* ≪ *cover count* < *cover count + tie-break*, and
-then **two** further strategies that play differently to no measurable advantage.
+🔥 **`outs` is the first rung that beats `greedy`, and it beats everything: 5 / 0 / 0.** Where two
+discards leave the hand equally melded it keeps the thirteen that **more of the values still out
+there would improve** — `+3.1 ± 1.0` over `greedy`, `+2.8 ± 1.0` over `cautious`, `+3.3 ± 1.0`
+over `counting`, all three surviving the correction over a family of fifteen. It is the only
+figure in this document that separates two *thinking* rungs.
 
-🔥 **`counting` is the second of them, and it is the sharper result.** A memory of every card
-this seat has been shown is worth **+0.3 ± 1.0 points to `greedy`'s side of the margin** — the
-point estimate does not merely fail to separate, it points the *wrong way*, and `cautious` is
-0.8 ± 1.0 ahead of it. See §8 for what that costs and why it was predictable.
+🔥 **Why it paid when the two rungs before it did not, and the answer is structural rather than
+clever.** `cautious` and `counting` both slide their new idea in **underneath**
+`CoverScore.Potential`: they decide only what `greedy` had already given up on. `outs` puts its
+key **above** it — where the cover count ties, the outs count decides, and greedy's own tie-break
+is demoted to breaking *its* ties. ⚠️ **Greedy's leftovers are worth about half a point and this
+apparatus cannot see half a point** (§7), so a rung that competes for the residue is
+unmeasurable before it is written. **A rung that changes the question asked before greedy's
+tie-break speaks is playing for something the instrument can see.**
 
-🔥 **`greedy` and `cautious` are `−0.2 ± 1.0` apart, and that is the strongest confirmation of
-P15's finding yet** — it comes from a design P15 never ran. The two are level head to head, level
-in the free-for-all (32.8 ± 1.0 against 34.3 ± 1.0) and level in the ranking (+15.30 against
-+15.42). **Why**, from P15: *denial and self-interest point the same way.* The partners a hand
-holds are exactly the partners an opponent cannot hold, so "least use to me" and "least use to
-them" are very nearly one ordering, and the cover score has already spent that information.
-⚠️ And every *pairwise-additive* tie-break is greedy again — partnership is symmetric, so
-"throw the card with the fewest partners" and "keep the best-connected twelve" are the same rule.
-**A rung that improves on greedy has to be combinatorial.**
+⚠️ **And it does not contradict P15 — it is what P15 said to do.** *Every pairwise-additive
+tie-break is greedy again*, because partnership is symmetric: "throw the card with the fewest
+partners" and "keep the best-connected twelve" are the same rule. **A rung that improves on
+greedy has to be combinatorial**, and a count of live outs is: it asks, of each value in turn, a
+question about the *whole arrangement* of the thirteen that would be left. Two cards with
+identical partners can leave different numbers of outs behind — the clearest case is a second
+copy of a card already in a run of six, which no count of partners can see and which splits that
+run into two legal runs covering one more card.
 
-🔥 **P20 tested that sentence and it held.** `counting` changes no decision rule at all: it
-supplies a *better number* to the same pairwise-additive measure — how many copies of a card are
-really left, rather than how many are not in this hand. **Better arithmetic inside a tie-break
-that is worth nothing is still worth nothing.** The information is genuine and the estimate it
-produces is genuinely sharper (§8); it enters at the only place in the decision where it cannot
-be paid for.
+🔥 **`greedy` and `cautious` are still `−0.2 ± 1.0` apart, and `counting` is still inside the
+interval against both.** Three rungs, one level, three packets of measurement. ⚠️ **Note what
+their free-for-all order does here**: `greedy` 31.5, `counting` 31.2, `cautious` 30.1 — a
+1.4-point spread among three players nothing can separate head to head, and last time it ranked
+them the other way up. **That column is noise at this resolution and §4 says so.**
 
 **The family, and what the correction cost:**
 
 | comparison | margin | p | Holm threshold | raw | corrected |
 |---|---:|---:|---:|---|---|
-| `random` vs `cautious` | −49.9 ± 0.4 | < 1e-300 | 0.00500 | separated | **survives** |
-| `random` vs `counting` | −49.8 ± 0.4 | < 1e-300 | 0.00556 | separated | **survives** |
-| `random` vs `greedy` | −49.9 ± 0.4 | < 1e-300 | 0.00625 | separated | **survives** |
-| `random` vs `simple` | −49.7 ± 0.4 | < 1e-300 | 0.00714 | separated | **survives** |
-| `simple` vs `greedy` | −11.2 ± 1.0 | 2.1e-109 | 0.00833 | separated | **survives** |
-| `simple` vs `counting` | −11.0 ± 1.0 | 7.8e-105 | 0.01000 | separated | **survives** |
-| `simple` vs `cautious` | −10.8 ± 1.0 | 3.3e-100 | 0.01250 | separated | **survives** |
+| `random` vs `simple` | −49.7 ± 0.4 | < 1e-300 | 0.00333 | separated | **survives** |
+| `random` vs `greedy` | −49.9 ± 0.4 | < 1e-300 | 0.00357 | separated | **survives** |
+| `random` vs `cautious` | −49.9 ± 0.4 | < 1e-300 | 0.00385 | separated | **survives** |
+| `random` vs `counting` | −49.8 ± 0.4 | < 1e-300 | 0.00417 | separated | **survives** |
+| `random` vs `outs` | −49.9 ± 0.4 | < 1e-300 | 0.00455 | separated | **survives** |
+| `simple` vs `greedy` | −11.2 ± 1.0 | < 1e-300 | 0.00500 | separated | **survives** |
+| `simple` vs `cautious` | −10.8 ± 1.0 | < 1e-300 | 0.00556 | separated | **survives** |
+| `simple` vs `counting` | −11.0 ± 1.0 | < 1e-300 | 0.00625 | separated | **survives** |
+| `simple` vs `outs` | −14.2 ± 1.0 | < 1e-300 | 0.00714 | separated | **survives** |
+| `counting` vs `outs` | −3.3 ± 1.0 | 2.8e-10 | 0.00833 | separated | **survives** |
+| `greedy` vs `outs` | −3.1 ± 1.0 | 1.9e-09 | 0.01000 | separated | **survives** |
+| `cautious` vs `outs` | −2.8 ± 1.0 | 9.2e-08 | 0.01250 | separated | **survives** |
 | `cautious` vs `counting` | +0.8 ± 1.0 | 0.11 | 0.01667 | inside | does not survive |
 | `greedy` vs `counting` | +0.3 ± 1.0 | 0.55 | 0.02500 | inside | does not survive |
 | `greedy` vs `cautious` | −0.2 ± 1.0 | 0.70 | 0.05000 | inside | does not survive |
 
-⚠️ **Nothing was demoted here, and that is not an argument for dropping the correction.** The
-same run puts `cautious` 1.4 points ahead of `greedy` in the free-for-all and 0.1 points behind
-it head to head. **A reader who ranks point estimates would have read a rung out of two coin
-flips**; the corrected verdict is what says not to.
+⚠️ **The `p` and `threshold` columns are recomputed here from the mean and standard error the CSV
+carries**, by the two-sided normal test and the Holm ladder the harness uses; **the `corrected`
+column is the CSV's own verdict**, and the two agree on all fifteen rows.
 
-🔥 **P20 doubled the cost of the correction and it is worth paying.** The family went from six
-comparisons to ten, so the strictest threshold tightened from `0.00833` to `0.00500` — and the
-three margins that matter are the three at the bottom, **all inside the interval and none
-surviving**. ⚠️ **`cautious` vs `counting` is the one to watch**: at `p = 0.11` it is the closest
-any pair of thinking rungs has come to separating, and it is a rung *losing* to the one below it.
-**Read uncorrected and unstarred, that table has a reader concluding memory makes a bot worse.**
-It does not say that; it says the harness cannot tell them apart.
+⚠️ **Nothing was demoted here, and that is not an argument for dropping the correction.** The
+same run puts `greedy` 1.4 points ahead of `cautious` in the free-for-all and 0.2 points behind
+it head to head. **A reader who ranks point estimates would have read a rung out of two coin
+flips**; the corrected verdict is what says not to. 🔥 **P21 grew the family from ten to fifteen
+and the strictest threshold tightened from `0.00500` to `0.00333` — and the three new margins
+cleared it by seven orders of magnitude.** A correction that only ever kills findings would be
+easy to resent; this is the run that shows it letting one through.
 
 ---
 
@@ -169,16 +194,23 @@ given strategy is at the table in about 4,800 of them.
 
 | strategy | win rate |
 |---|---:|
-| `cautious` | 34.3 ± 1.0 |
-| `counting` | 33.5 ± 1.0 |
-| `greedy` | 32.8 ± 1.0 |
-| `simple` | 24.2 ± 0.9 |
+| `outs` | 34.9 ± 1.1 |
+| `greedy` | 31.5 ± 1.1 |
+| `counting` | 31.2 ± 1.1 |
+| `cautious` | 30.1 ± 1.0 |
+| `simple` | 22.0 ± 1.0 |
 | `random` | 0.1 ± 0.1 |
 
-⚠️ **Every figure here moved when P20 added a rung, and none of it is a change in play.** Five
-strategies crossed over four seats is a different field from four, so each is at the table less
+⚠️ **Every figure here moved when P21 added a rung, and none of it is a change in play.** Six
+strategies crossed over four seats is a different field from five, so each is at the table less
 often and against a stronger average opponent. **This is the column to distrust when a rung is
 added; §3's margins are the column that survives it.**
+
+🔥 **This run is the sharpest demonstration of that yet.** `greedy`, `counting` and `cautious`
+come out 31.5 / 31.2 / 30.1 here — and P20's run of the same three, in a five-rung field, had
+them 32.8 / 33.5 / 34.3, **in exactly the opposite order**. Nothing about any of the three
+changed. Their head-to-head margins moved by at most a tenth of a point. ⚠️ **A 4.2-point swing
+in a column, and a reversal, produced entirely by who else sat down.**
 
 ⚠️ **This answers a different question from §3 and the two are not interchangeable.** A
 free-for-all win rate depends on *who else is in the field*; a head-to-head margin weights every
@@ -216,44 +248,53 @@ that opens first, a seating that is not balanced, an estimator that counts seats
 
 | | win rate | seats sat in |
 |---|---:|---|
-| `counting` | 25.1 ± 0.5 | 4004 / 4004 / 4004 / 4004 |
-| `counting#mirror` | 24.9 ± 0.5 | 4004 / 4004 / 4004 / 4004 |
-| **margin** | **+0.1 ± 1.0** | inside the interval |
+| `outs` | 25.1 ± 0.5 | 4004 / 4004 / 4004 / 4004 |
+| `outs#mirror` | 24.9 ± 0.5 | 4004 / 4004 / 4004 / 4004 |
+| **margin** | **+0.3 ± 1.0** | inside the interval |
 
 A fair four-seat table gives each 25.0%. ✅ **It holds, and `sim suite` exits non-zero if it ever
-stops holding.** ⚠️ **The subject changed with the field** — P17 ran this on `cautious` and got
-`+0.3 ± 1.0`; the rung is whichever the catalog ends with, so **a rung added is a rung the null
-test moves to**. That it holds for a bot carrying *within-round state* is worth more than the
-earlier pass: `counting` is the first rung that could have made a game depend on the order the
-harness happened to schedule it in.
+stops holding.** ⚠️ **The subject changed with the field** — P17 ran this on `cautious`, P20 on
+`counting`, and it is `outs` now; the rung is whichever the catalog ends with, so **a rung added
+is a rung the null test moves to.** 🔥 **This pass is worth more than either of the earlier
+ones.** `outs` is the first rung that carries a **cache across deals**, and a cache is precisely
+the kind of state that could make a game depend on the order the harness happened to schedule it
+in. It does not, because the cache is keyed on card *values* rather than on the identities of a
+round's shoe — and this is the run that says so at scale rather than in a unit test.
 
 **What pairing is worth, and which way it points.** The per-game difference against the
 add-the-variances formula, on identical data:
 
-| scope | comparison | paired SE | independent | ratio |
-|---|---|---:|---:|---:|
-| within-cell | `simple` vs `greedy` | 0.506 | 0.359 | **1.41** |
-| within-cell | `simple` vs `cautious` | 0.506 | 0.359 | **1.41** |
-| within-cell | `simple` vs `counting` | 0.508 | 0.360 | **1.41** |
-| within-cell | `greedy` vs `cautious` | 0.523 | 0.370 | **1.41** |
-| within-cell | `greedy` vs `counting` | 0.521 | 0.368 | **1.41** |
-| within-cell | `cautious` vs `counting` | 0.520 | 0.368 | **1.41** |
-| within-cell | `random` vs anything | 0.214–0.218 | 0.212–0.214 | 1.01–1.02 |
-| across-cells | `greedy`: vs `cautious` less vs `counting` | 0.194 | 0.369 | **0.52** |
-| across-cells | `simple`: vs `greedy` less vs `cautious` | 0.203 | 0.359 | **0.57** |
-| across-cells | `random`: vs `simple` less vs `greedy` | 0.028 | 0.035 | 0.79 |
-| across-cells | `counting`: vs `random` less vs `simple` | 0.312 | 0.332 | 0.94 |
-| across-cells | `cautious`: vs `random` less vs `simple` | 0.313 | 0.331 | 0.95 |
+| scope | comparison | paired SE ÷ independent |
+|---|---|---:|
+| within-cell | `greedy` vs `cautious` | **1.4142** |
+| within-cell | `greedy` vs `counting` | **1.4142** |
+| within-cell | `cautious` vs `counting` | **1.4142** |
+| within-cell | `cautious` vs `outs` | **1.4139** |
+| within-cell | `greedy` vs `outs` | **1.4138** |
+| within-cell | `counting` vs `outs` | **1.4137** |
+| within-cell | `simple` vs any thinking rung | 1.404–1.409 |
+| within-cell | `random` vs anything | 1.008–1.017 |
+| across-cells | `greedy`: vs `cautious` less vs `counting` | **0.52** |
+| across-cells | `simple`: vs `greedy` less vs `cautious` | **0.57** |
+| across-cells | `cautious`: vs `counting` less vs `outs` | 0.72 |
+| across-cells | `random`: vs `simple` less vs `greedy` | 0.79 |
+| across-cells | `outs`: vs `random` less vs `simple` | 0.92 |
+| across-cells | `counting`: vs `random` less vs `simple` | 0.94 |
+
+⚠️ **The ratio is what `measurements.csv` carries**, so it is what is quoted; the two standard
+errors behind it are in the `tournament` report the CSV is generated from.
 
 🔥 **Pairing is not a synonym for a narrower interval. It measures the correlation that is
 there, and here it points both ways.**
 
 - **Within a cell**, two strategies sit at the *same* table and **exactly one seat declares**, so
   their results are strongly negatively correlated and the paired interval is **wider** — by
-  **√2 to three digits** in every cell of thinking players, which is what a perfectly opposed
-  pair of equal-variance series predicts. ⚠️ **So the independent formula is not conservative
-  here but *anti*-conservative.** (Against `random` the ratio collapses to 1.01: a series that
-  is almost always zero has almost nothing to correlate with.)
+  **√2 to four digits** — `1.4142` — in every cell of two evenly matched thinking players, which
+  is exactly what a perfectly opposed pair of equal-variance series predicts. ⚠️ **So the
+  independent formula is not conservative here but *anti*-conservative.** (Against `random` the
+  ratio collapses towards 1: a series that is almost always zero has almost nothing to correlate
+  with. And where the two are *not* evenly matched — `outs` against the rungs it beats — it dips
+  a shade below √2, because the opposition stops being symmetric.)
 - **Across cells**, one strategy plays two different tables dealt from the *same shoes*, the
   correlation is positive, and pairing **narrows** — down to 0.52. That is free variance
   reduction, and it is what common random numbers are for.
@@ -273,12 +314,25 @@ At 8,008 games a cell the standard error on a head-to-head margin between two th
 - **So a new rung worth less than about a point is not promotable at the default run size**, and
   a packet proposing one has to say in advance what it will cost to measure.
 
+🔥 **P21 is the first rung this apparatus has been able to see, and the margin is what tells you
+where to look for the next one.** `outs` came in at `+3.1 ± 1.0` — three times the half-width, at
+the ordinary run size, with no special design. ⚠️ **Read that beside `cautious`'s half a point
+and it says something about *kinds* of idea rather than about sample sizes**: a rung that refines
+what greedy had already given up on is competing for a residue that is smaller than the
+instrument, and no affordable number of games rescues it. A rung that changes the question asked
+*before* greedy's tie-break gets to speak is playing for something the instrument can see.
+
 ---
 
 ## 8. Entries for the rungs that failed
 
 **Kept deliberately. A rung that plays differently to no measurable effect is a *result*, and
 the reasoning that made it plausible is worth more than its number.**
+
+⚠️ **Two of the three research rungs are here and the third is not** — `outs` is in §3, above
+`greedy`. Read the two entries below with that in mind: **both of these put their new idea
+underneath `CoverScore.Potential` and `outs` put its above it**, and that is the only structural
+difference between them.
 
 - **`cautious` — throw the card least useful to the player you feed.** Worth `+0.5 ± 0.55`
   points (P15, 32,000 games) and `−0.2 ± 1.0` here; not separated from `greedy` under any design
@@ -318,9 +372,19 @@ the reasoning that made it plausible is worth more than its number.**
 above, and `BUILD-PLAN.md` §3.12 is why: a ladder is a research instrument — unevenly spaced,
 entitled to be incomplete, and its lower rungs play a *different and worse idea* rather than the
 right idea badly. **A weaker player plays the right idea and slips.** So every level is the
-strongest rung there is (`greedy`) wearing a **mistake rate** — with probability ε it throws the
-card that rung ranked *second* instead of the one it ranked first, and nothing else about it
-changes.
+strongest rung there is wearing a **mistake rate** — with probability ε it throws the card that
+rung ranked *second* instead of the one it ranked first, and nothing else about it changes.
+
+🔥 **The strongest rung changed on 2026-08-20 and this section has not caught up.** P21's `outs`
+separated from `greedy` (§3), so it is `BotCatalog.Hardest` and **all four levels are `outs` with
+an ε now**. Everything below was measured with `greedy` underneath the dial. ⚠️ **What is stale
+is the spacing, not the ordering**: the dial is still monotone — `sim suite` exits non-zero if it
+stops being, and it does not — so nobody is being offered a level that is not harder than the one
+below it. But **the ε values below were chosen to space the levels evenly in *results*, and they
+were spaced against a rung that is no longer there.** ε was violently non-linear on `greedy` and
+there is no reason to assume the same curve on a rung that looks ahead. **P23 owns re-running the
+sweep and re-spacing the four values**, and until it does, read the table below as *how these
+four were placed* rather than as *what they measure today*.
 
 | level | ε | what it is |
 |---|--:|---|
@@ -329,9 +393,15 @@ changes.
 | `medium` | 0.70 | throws the wrong one of two good cards more often than not |
 | `easy` | 0.90 | gets it wrong nearly every time |
 
-⚠️ **ε is not the dial; results are.** Measured over a sweep of seven mistake rates, ε = 0 to
-0.5 costs about **8 points** of win rate and ε = 0.5 to 1 costs about **17** — so levels spaced
-evenly in ε would not be spaced evenly in play. These four are spaced by the measurement.
+⚠️ **ε is not the dial; results are.** Measured over a sweep of seven mistake rates *on
+`greedy`*, ε = 0 to 0.5 cost about **8 points** of win rate and ε = 0.5 to 1 about **17** — so
+levels spaced evenly in ε would not be spaced evenly in play. These four were spaced by that
+measurement. 🔥 **And the tables below are what the same four ε values do on `outs`**: the steps
+came out `+11.2 / +6.9 / +9.8` where on `greedy` they were `+10.8 / +5.7 / +9.9`. **All three
+still separate, the ordering is intact, and the middle step is still the narrow one** — but the
+spread across the three widened from 4.2 points to 4.3 and the *shape* shifted, which is the
+evidence that re-basing the dial moved it and that the values want re-fitting rather than
+re-checking.
 
 ### The reference table — all four levels at one table, fully crossed
 
@@ -339,10 +409,10 @@ evenly in ε would not be spaced evenly in play. These four are spaced by the me
 
 | level | win % | step |
 |---|--:|--:|
-| `expert` | **36.11 ± 0.87** | — |
-| `hard` | **27.22 ± 0.83** | −8.9 |
-| `medium` | **22.17 ± 0.79** | −5.1 |
-| `easy` | **14.50 ± 0.69** | −7.7 |
+| `expert` | **36.94 ± 0.87** | — |
+| `hard` | **26.65 ± 0.82** | −10.3 |
+| `medium` | **22.33 ± 0.78** | −4.3 |
+| `easy` | **14.09 ± 0.66** | −8.2 |
 
 ### The steps, head to head
 
@@ -353,15 +423,17 @@ at the table, and each margin is the **paired** one (§1 rule 4).
 
 | step | margin | Holm |
 |---|--:|---|
-| `expert` over `hard` | **+9.90 ± 1.00** | separated |
-| `hard` over `medium` | **+5.69 ± 1.01** | separated |
-| `medium` over `easy` | **+10.79 ± 1.00** | separated |
+| `expert` over `hard` | **+9.75 ± 1.00** | separated |
+| `hard` over `medium` | **+6.86 ± 1.00** | separated |
+| `medium` over `easy` | **+11.20 ± 1.00** | separated |
 
-✅ **Every step clears the correction, and the narrowest of them is 5.7× the half-width.** A
+✅ **Every step clears the correction, and the narrowest of them is 6.9× the half-width.** A
 level that could not be separated from its neighbour would be deleted rather than shipped
 (§3.12 item 2) — that is why there are four and not five. ⚠️ **`sim suite` exits non-zero if the
-dial ever stops being monotone**, which is how a rung that raises the ceiling (P20–P22) is
-stopped from quietly invalidating the menu.
+dial ever stops being monotone**, which is how a rung that raises the ceiling is stopped from
+quietly invalidating the menu — **and P21 is the packet that fired that alarm in anger**: it
+raised the ceiling, the dial re-based onto `outs`, and the check is what says the menu is still
+honest while the spacing waits for P23.
 
 ```bash
 # the calibration, on its own
@@ -389,6 +461,9 @@ dotnet run -c Release --project BurmesePoker.Sim -- tournament --games 8000 --se
 
 # one ordinary run, now with an interval on every figure
 dotnet run -c Release --project BurmesePoker.Sim -- --strategies greedy,simple --seating balanced --games 4096 --seed 20260819
+
+# what a rung costs, in rounds a second and microseconds a turn (P21's budget is 10x greedy)
+dotnet run -c Release --project BurmesePoker.Sim -- bench --rounds 200
 
 # the difficulty dial on its own — §9
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy,medium,hard,expert --pairs adjacent --games 8000 --seed 20260819

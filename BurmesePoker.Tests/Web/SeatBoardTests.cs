@@ -109,12 +109,20 @@ public class SeatBoardTests(PlayedMatch match) : IClassFixture<PlayedMatch>
     /// <remarks>
     /// 🔥 <b>Asserted over what the seat <em>drew</em>, not over what the fan-out sent.</b>
     /// <c>ConcealmentTests</c> guards the wire; this guards the thing that renders — every hand
-    /// that was ever on any of these four pages, pairwise disjoint by <c>CardId</c>. A component
-    /// that found a second route to the table would show up here as an overlap.
+    /// that was ever on any of these four pages, sharing no <c>CardId</c> that the table did not
+    /// hand round. A component that found a second route to the table would show up here as an
+    /// overlap.
+    /// <para>
+    /// ⚠️ <b>The allowance for what the table handed round is P21's, and it is not a relaxation
+    /// of the rule</b> — it is the rule stated correctly. A round long enough to exhaust the
+    /// draw pile shuffles the discards back into it (RULES.md §5), so a discarded card reaching
+    /// a second hand is the game working. <see cref="PublicRelease"/> is where that is argued.
+    /// </para>
     /// </remarks>
     [Fact]
-    public void NoSeatEverHeldACardFromAnotherSeatsHand()
+    public void NoSeatEverHeldACardFromAnotherSeatsHandExceptByWayOfTheTable()
     {
+        var released = PublicRelease.PerRound(match.Watcher.Events);
         var rounds = 0;
 
         for (var round = 1; round <= PlayedMatch.Rounds; round++)
@@ -136,11 +144,13 @@ public class SeatBoardTests(PlayedMatch match) : IClassFixture<PlayedMatch>
             Assert.All(held.Values, cards => Assert.NotEmpty(cards));
             rounds++;
 
+            var public_ = PublicRelease.In(released, at);
+
             foreach (var mine in held)
             {
                 foreach (var theirs in held.Where(other => other.Key != mine.Key))
                 {
-                    Assert.Empty(mine.Value.Intersect(theirs.Value));
+                    Assert.Empty(mine.Value.Intersect(theirs.Value).Except(public_));
                 }
             }
         }

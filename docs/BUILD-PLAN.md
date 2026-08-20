@@ -555,6 +555,19 @@ the domain, and **three of them already hold**:
    evaluator, never into it — `IsWinning` is the win authority (§3.4) and its answers may not
    change.
 
+   ✅ **P21 collected on this, and the prediction was right down to the line.** A rung that
+   counts live outs asks the partial cover a couple of hundred times a turn, so the cost of one
+   answer became the packet. Profiling put **three quarters of it in candidate generation** —
+   and not in generating candidates, but in a **fixed per-call cost that did not depend on the
+   hand at all**: `RunGenerator` allocated all ninety rank windows afresh for each of four
+   suits on every call, and both generators walked suits and ranks that could not possibly hold
+   a meld. Precomputing the windows and skipping the impossible suits and ranks — **no change
+   to what is generated, and the console's byte-for-byte capture proves it** — made
+   `PartialCover.Best` and therefore *every rung and every engine turn* about **45% faster**,
+   and it is the single largest speed-up the solution has had. ⚠️ **The lesson is that "the
+   inner loop is the partial cover" was true and still misleading**: the inner loop of the
+   partial cover was `new`.
+
    ⚠️ **One measured surprise worth keeping: the work is allocation-bound, not compute-bound.**
    Both searches allocate a meld index, a memo and a candidate list per call, and under the
    default workstation GC eight threads bought only **25%** more throughput than one. The
@@ -3695,7 +3708,81 @@ is worth — whatever it is.
 
 ---
 
-### P21 — Outs: the first rung that looks ahead ☐
+### P21 — Outs: the first rung that looks ahead ☑ done 2026-08-20
+
+🔥 **The answer is yes, and it is the first one.** `outs` beats `greedy` by **`+3.1 ± 1.0`
+points** head to head at 8,008 games — `p = 1.9e-09`, and the only comparison in its family, so
+it survives Holm outright — and takes the free-for-all 26.3 ± 0.5 against 23.7 ± 0.5. **Two
+rungs and two packets had tried to beat `greedy` and neither could be told apart from it; this
+one clears the apparatus's resolution three times over.** ⚠️ **It is therefore `Strength: 3`, which re-bases the
+difficulty dial** — every level is `BotCatalog.Hardest` with an ε, so all four are now `outs` with
+a mistake rate and the ε values 0.9/0.7/0.5/0.0 are no longer the ones that were measured. The
+dial is still *ordered* (`DifficultyCalibrationTests` at the reference table, and the suite's
+standing monotonicity check), but **re-spacing it is P23's, and it is no longer optional.**
+
+**What made it work, stated as the contrast, because two rungs before it did not.** `cautious`
+and `counting` both put their new idea *underneath* `CoverScore.Potential` — they decide only
+what greedy had already given up on, and greedy's leftovers are a residue worth about half a
+point. `outs` puts its key *above* it: where the cover count ties, the count of live outs decides
+and greedy's own tie-break is demoted to breaking **its** ties. 🔥 **"Change which question is
+asked" (P20) turned out to mean "and ask it earlier than the question you are replacing."**
+
+🔥 **The cost was the packet, exactly as written — and the profile was the surprise.** A naive
+reading came in at **12.6× a greedy round**, over the budget. Four things, all of them *around*
+the evaluator, brought it to **8.2×**:
+
+- **Refine only what is tied at the top.** `CoverScore.Ranking` takes an optional
+  `Refinement`, asked only of candidates that already leave the most melded — **7.1 candidates a
+  turn rather than thirteen.**
+- **A prune with a proof.** A value with fewer than two cards in the hand that could sit beside
+  it cannot enter a meld, whatever the arrangement — **34 values searched of 53.** The packet
+  said to verify rather than assume it, and `ThePruneNeverThrowsAwayARealOut` counts the long
+  way and demands the same answer.
+- **A bar, not a maximum.** `PartialCover.CoversAtLeast` is the same walk asked as a yes/no: it
+  stops at the first arrangement that clears the bar and abandons branches that cannot reach it.
+  **The search fell from ~98 µs to ~10 µs**, and `PartialCover.Best` was not touched.
+- **One index a candidate, not one a probe.** `CoverProbe` builds the melds of the thirteen once
+  and generates only the melds that use the drawn value — a run through it is in its suit, a set
+  on it is its rank, either may borrow a joker, so a handful of cards go to the generator instead
+  of thirteen.
+
+🔥 **And then the measurement that was worth more than the rung.** With the search cheap,
+**three quarters of what was left was candidate generation — and it was a fixed cost that did
+not depend on the hand at all.** `RunGenerator` allocated all ninety rank windows afresh for each
+of four suits on every call, and both generators walked suits and ranks that could not hold a
+meld. A precomputed window table, one slot buffer a length, and two feasibility checks —
+**generating nothing different, and the console's byte-for-byte capture says so** — made
+`PartialCover.Best` and therefore **every rung, every hint and every engine turn about 45%
+faster**: `greedy` went from 48.8 to 71.8 rounds a second serial in the same process. §3.7 item 4
+predicted "allocation is the thing to attack" and was right; what it got wrong was where —
+**the inner loop of the partial cover was `new`.**
+
+⚠️ **Three things worth knowing before touching this rung.** (1) **The cache keys on card
+*values* and never on a `CardId`**, which is why it may outlive a deal where `counting`'s memory
+may not (P13.4) — and it earns only a **9% hit rate**, so it is kept for being free rather than
+for being clever. (2) **Only the discard changed.** Taking, claiming and declaring are greedy's,
+so the difference attributes to one decision (P15). (3) **The suite is `k(k−1)/2` and `outs` is
+in five of the fifteen cells**; it went from 35 minutes to **105**, and `--pairs adjacent` exists
+if it stops finishing in a sitting.
+
+🔥 **And one finding that has nothing to do with strategy: a stronger bot is a longer round.**
+Promoting `outs` broke two concealment tests written in P13.2 and P13.4, and **they were wrong
+rather than the code.** Both asserted that four seats' hands, taken over a whole round, are
+pairwise disjoint by `CardId`. With `outs` standing in for the unanswered seats the fixture's
+round ran **67 turns and exhausted the draw pile**, so the discards were shuffled back into it
+(RULES.md §5) — public on the way out, private on the way back, and a breach at neither end.
+⚠️ **Disjointness was never the property; it was a coincidence of short rounds.** Both now allow
+exactly what the table handed round (`Tests/Server/PublicRelease.cs`), and the strict form of the
+same rule — `EveryCardASeatIsSentIsOneItMaySee`, which asks what the fan-out *sent* rather than
+what a hand happened to hold — **never needed relaxing and stayed green.** ⚠️ **A test over a
+played round can be asserting a property of that round's length**, and nothing says so until
+something changes how long rounds are. Worth remembering at P22, which changes when a seat draws
+blind.
+
+**The packet as it was planned, below.**
+
+---
+
 
 **Goal.** The rung P15 named and specified, and the optimisation it forces.
 
@@ -3773,6 +3860,16 @@ all of its decisions, `StrategySummary.SideBetPerRound`.
 
 **Depends on.** P17, P18.
 
+⚠️ **Amended by P21, and the amendment is about where a new key goes.** Three research rungs
+have now been measured and the one that separated is the one whose key sits **above** the key it
+was trying to beat, not beneath it. `ProspectorBotAgent` changes the *take* decision, which has
+no key underneath it at all, so it is not in danger of being a residue — but it is in danger of
+the opposite: a take rule that overrides the cover comparison plays a worse hand on purpose, and
+the packet's own acceptance (judged on `$/round`, not win rate) is what decides whether that was
+worth it. **Report both, and say which moved.** ⚠️ **`outs` is `Strength: 3` now**, so "greedy,
+except…" is no longer "the best rung, except…": say explicitly which rung this one is one change
+away from, and measure it against **that** rung.
+
 **The question nobody has asked.** Every rung is money-blind **on purpose**, and
 `MoneyCardsDoNotChangeWhatABotThrowsAway` makes it a test. But money-blindness of the *discard*
 does not settle the *draw*: **a blind draw confers ownership and a take does not** (§4.4), so a
@@ -3842,6 +3939,19 @@ difficulty ladder re-calibrated against the ladder the programme actually ended 
 - **Re-run the suite over the final ladder and re-calibrate P19's levels against it.** Adding
   rungs moves them; a calibration published before the last rung landed is stale by
   construction.
+  🔥 **P21 turned this from a tidy-up into the packet's reason for existing.** `outs` separated
+  from `greedy` and so carries `Strength: 3`, which makes it `BotCatalog.Hardest` — and every
+  difficulty level is `Hardest` with an ε. **All four levels are now a rung nobody calibrated
+  them against.** The dial is still ordered (the suite's standing check and
+  `DifficultyCalibrationTests` both hold), so nothing is broken; what is stale is the *spacing*,
+  which P19 measured to be even in results rather than in ε and which was measured on a rung that
+  is no longer underneath the dial. ⚠️ **Re-run P19's sweep before re-spacing**: ε was violently
+  non-linear on `greedy` (0 → 0.5 worth ~8 points, 0.5 → 1 worth ~17) and there is no reason
+  to assume the curve has the same shape on a rung that looks ahead.
+  ⚠️ **And the dial got expensive.** Every level now pays `outs`' price — `FallibleAgent` asks
+  its inner rung to *rank*, so even `easy` runs the outs search —
+  and `DifficultyCalibrationTests` went from seconds to **3m 51s**, which is most of the test
+  suite's wall clock. If P22 adds a stronger rung still, this compounds.
 - The final exposure: level names, descriptions and honest one-line explanations in both front
   ends, **read from the catalog** rather than typed into a UI.
 - `docs/PLAYING.md` gains how to choose an opponent.
@@ -3899,7 +4009,7 @@ For picking up in a fresh session with no memory of this conversation.
 | ~~**A measured result is really a seating artifact**~~ (new 2026-08-19, **retired the same day by P16**). Turn order is a directed cycle — only the immediately-previous player's discard is available (`RULES.md` §5) — so who sits behind whom is a variable, and P12's rotation holds it fixed rather than varying it. | **Measured, and it is real but small and not directional.** A weaker player anywhere at the table is worth 4–5 points of win rate to you; which *side* of you they sit costs nothing between two thinking strategies (−1.0 ± 2.1 pts) and 9.1 ± 2.1 points only across the random-to-greedy gulf. The size of the artifact in P12's own headline is now known: **the rotation flatters greedy by 1.1 points a seat, 2.2 of the 11.4-point gap.** The mitigation is permanent: `--seating balanced` plays every assignment, and every CSV row names `upstream_strategy` and `downstream_strategy`, so a rotated result and a balanced one can both be quoted and told apart. |
 | **Journalling slows the harness** (new 2026-08-19). §3.7 measured the work as allocation-bound, and a per-decision recorder allocates. | P14 keeps two fidelity levels and makes the rich one opt-in, and its acceptance criteria include measuring the throughput cost against P12's recorded 51/85–92 rounds a second rather than assuming it is small. If thin journalling costs more than a few percent it is built wrong. |
 | **A round-robin manufactures findings** (new 2026-08-19, P17). *k* strategies is *k(k−1)/2* comparisons, so at 95% intervals roughly one in twenty clears zero by chance — a six-way tournament makes a false rung likelier than not. | **Holm correction reported beside the raw verdict, and the comparison count printed** (P17 acceptance 4). Plus the harness's own null test: **a strategy against itself must measure 1/seats**, which costs one cell and would have caught P16's seating artifact from the inside. |
-| **A research rung is worth nothing** (new 2026-08-19). `cautious` cost a packet and measured +0.5 ± 0.55 points; there is no reason to expect the next one to fare better. | **§3.12: the difficulty system does not depend on research succeeding.** P19 finishes it with the rungs that exist today, and **P20–P22 are independently droppable in preference order**. A null result is published rather than buried (P20 acceptance 1), because *why* `cautious` failed was worth more than its number. ⚠️ **P20 is the second such rung and it happened exactly as this row predicted** — `counting` measured `+0.3 ± 1.0` the wrong way, was published as a failure, and its *why* narrowed P21: **better information fed to a decision rule that does not matter is worth nothing**, so the remaining rung has to change the question rather than the answer. **Two of three research rungs have now returned nothing; plan P21 expecting the same and value it for what it rules out.** |
+| **A research rung is worth nothing** (new 2026-08-19). `cautious` cost a packet and measured +0.5 ± 0.55 points; there is no reason to expect the next one to fare better. | **§3.12: the difficulty system does not depend on research succeeding.** P19 finishes it with the rungs that exist today, and **P20–P22 are independently droppable in preference order**. A null result is published rather than buried (P20 acceptance 1), because *why* `cautious` failed was worth more than its number. ⚠️ **P20 is the second such rung and it happened exactly as this row predicted** — `counting` measured `+0.3 ± 1.0` the wrong way, was published as a failure, and its *why* narrowed P21: **better information fed to a decision rule that does not matter is worth nothing**, so the remaining rung has to change the question rather than the answer. **Two of three research rungs returned nothing.** 🔥 **P21 is the third and it did not** — `outs` measured `+3.1 ± 1.0` over `greedy` and beat every rung in the field, which is the first time this row has been wrong. ⚠️ **It does not retire the row, it sharpens it**: the two that failed both refined the *residue* greedy leaves behind, worth about half a point against an instrument that resolves one; the one that paid changed the question asked *before* greedy's tie-break spoke. **Plan a research rung by asking where its key sits, not by how clever the idea is.** ⚠️ And note the cost of success: a rung that separates becomes `Hardest`, re-bases every difficulty level onto itself, and made both the suite and the test tree three times slower. |
 | **The outs rung makes the programme too slow to run** (new 2026-08-19, P21). A live-outs measure costs a `PartialCover.Best` per value per candidate — ~100× a decision, which turns P12's 34-second run into a quarter of an hour. | **A budget stated in advance: no more than 10× greedy's rounds a second, measured** — over it, the rung is built wrong. The optimisation is the one §3.7 has pointed at since P12: **attack allocation**, and put every speed-up **around** the evaluator, never inside it, because `IsWinning` is the win authority (§3.4) and its answers may not change. |
 | **A counting bot sees what the rules conceal** (new 2026-08-19, P20). It is the first strategy to want information beyond its own hand, and `TurnContext` is the concealment rule expressed as a type. | **The information set is decided and asserted before the bot is written**, and the safe default is *only what this seat has actually been shown* — wrong in the direction that makes the bot weak rather than the direction that makes it cheat. ⚠️ Whether a discard pile is inspectable is a **rules** question and goes to §9 and to Mya Lay, not into code. ✅ **Discharged by P20 as designed**: §9 #15 stayed open, the question went to Mya Lay flat, and the bot counts only what it was shown — **12 → 23 cards a round out of 108**. 🔥 **The cost of the cautious default is now a measured quantity rather than a worry**, and it is one of the two reasons the rung returned nothing. If the answer comes back *the piles may be read*, the rung deserves re-measuring before it is written off. |
 | **The difficulty ladder becomes a lie** (new 2026-08-19). Levels are calibrated against a ladder that later packets widen, so a published calibration is stale the moment a rung lands. | P23 re-runs the suite and re-calibrates, and **a test asserts that the levels published are the levels offered** — proofreading is not a mitigation. A level not separated from its neighbour is **deleted rather than shipped** (P19 acceptance 1). |

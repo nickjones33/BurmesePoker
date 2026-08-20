@@ -57,6 +57,105 @@ public sealed class PartialCover
     public bool IsComplete => Uncovered.Count == 0;
 
     /// <summary>
+    /// Could <paramref name="target"/> of these cards be melded at once? — the same question
+    /// <see cref="Best"/> answers, asked as a <b>yes or no</b>, which is a far cheaper thing to
+    /// ask.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>It exists because a rung that looks ahead asks it hundreds of times a turn</b>
+    /// (BUILD-PLAN P21). <em>Would this card improve my hand?</em> is not "how good could this
+    /// hand be" — it is "can it beat what I already have", and a search that only has to clear
+    /// a bar can stop the moment it clears it and can abandon any branch that cannot reach it.
+    /// <see cref="Best"/> can do neither, because it does not know what it is looking for until
+    /// it has found it.
+    /// </para>
+    /// <para>
+    /// <b>Two prunes, and the second is the one that pays.</b> The walk stops at the first
+    /// arrangement that reaches the bar; and at any point, everything still to come is at most
+    /// one card each, so a branch whose cards covered so far plus the cards left cannot reach
+    /// the bar is abandoned unexplored. The failures are memoised rather than the values —
+    /// sound because the bar is fixed for the whole search, so "how many more are still needed"
+    /// is decided by <c>covered</c> alone.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>This is a speed-up placed <em>beside</em> the evaluator and never inside it</b>
+    /// (BUILD-PLAN §3.4, §3.7 item 4). <see cref="Best"/> is untouched, so every arrangement
+    /// this solution has ever published is the arrangement it published before, and
+    /// <see cref="HandEvaluator"/> — the win authority — does not know this method exists.
+    /// What makes it trustworthy is that it is asserted against <see cref="Best"/> rather than
+    /// reasoned about: <c>TheYesOrNoSearchAgreesWithTheFullOne</c>.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// The hand is larger than <see cref="HandEvaluator.MaximumHandSize"/>, or holds the same
+    /// physical card twice.
+    /// </exception>
+    public static bool CoversAtLeast(IReadOnlyList<Card> hand, int target)
+    {
+        if (target <= 0)
+        {
+            return true;
+        }
+
+        var index = MeldIndex.Build(hand);
+
+        if (target > index.Count)
+        {
+            return false;
+        }
+
+        var hopeless = new HashSet<(int Position, ulong Covered)>();
+
+        return Reaches(0, 0UL);
+
+        bool Reaches(int position, ulong covered)
+        {
+            var have = BitOperations.PopCount(covered);
+
+            if (have >= target)
+            {
+                return true;
+            }
+
+            // Everything from here on is one card at best, so a branch that cannot reach the
+            // bar even by covering all of it is not worth walking.
+            if (position == index.Count || have + index.Count - position < target)
+            {
+                return false;
+            }
+
+            if ((covered & (1UL << position)) != 0)
+            {
+                return Reaches(position + 1, covered);
+            }
+
+            if (hopeless.Contains((position, covered)))
+            {
+                return false;
+            }
+
+            // Leave this card uncovered, exactly as Best may.
+            if (Reaches(position + 1, covered))
+            {
+                return true;
+            }
+
+            foreach (var (_, mask) in index.ByLowestCard[position])
+            {
+                if ((covered & mask) == 0 && Reaches(position + 1, covered | mask))
+                {
+                    return true;
+                }
+            }
+
+            hopeless.Add((position, covered));
+
+            return false;
+        }
+    }
+
+    /// <summary>
     /// The largest cover the hand allows.
     /// </summary>
     /// <exception cref="ArgumentException">

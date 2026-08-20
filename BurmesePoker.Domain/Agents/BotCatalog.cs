@@ -143,7 +143,12 @@ public static class BotCatalog
             "counting",
             "Plays like the last one, and remembers the cards it has watched go by.",
             Strength: 2,
-            _ => new CountingBotAgent())
+            _ => new CountingBotAgent()),
+        new(
+            "outs",
+            "Thinks about what it is still waiting for, and keeps the hand that more of the pack would help.",
+            Strength: 3,
+            _ => new OutsBotAgent())
     ];
 
     /// <summary>

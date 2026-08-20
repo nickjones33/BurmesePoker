@@ -109,6 +109,7 @@ public class SkillLadderRunTests
     [InlineData("simple")]
     [InlineData("greedy")]
     [InlineData("cautious")]
+    [InlineData("outs")]
     public void EveryRungJournalsAndReplaysToTheSameRows(string rung)
     {
         // P15 acceptance 5, which P14 made a one-liner. What it catches is the one thing a
@@ -157,7 +158,7 @@ public class SkillLadderRunTests
         // The catalog is the command line's whole vocabulary, so a rung that is named but
         // cannot be built is a crash at the CLI rather than a compile error.
         Assert.Equal(
-            ["random", "simple", "greedy", "cautious", "counting"],
+            ["random", "simple", "greedy", "cautious", "counting", "outs"],
             StrategyCatalog.All.Select(strategy => strategy.Name));
 
         Assert.All(StrategyCatalog.All, strategy => Assert.NotNull(strategy.Create(1)));

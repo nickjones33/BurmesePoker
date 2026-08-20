@@ -72,12 +72,21 @@ public class ConcealmentTests(WatchedRound round) : IClassFixture<WatchedRound>
 {
     /// <summary>
     /// The form P13.1 made writable: build the seat's own view for every seat of a round and
-    /// assert the <c>CardId</c> sets are pairwise disjoint.
+    /// assert that no card reached two hands <b>except by way of the table</b>.
     /// </summary>
+    /// <remarks>
+    /// 🔥 <b>This used to demand the <c>CardId</c> sets be pairwise disjoint outright, and P21
+    /// showed that that was a fact about short rounds rather than about concealment.</b> Run the
+    /// draw pile out and the discards are shuffled back into it (RULES.md §5), so a card one
+    /// seat threw away is a card another seat may draw — public on the way out, private on the
+    /// way back, and a breach at neither end. <see cref="PublicRelease"/> carries the reasoning
+    /// and the round that found it.
+    /// </remarks>
     [Fact]
-    public void NoSeatIsEverShownACardFromAnotherSeatsHand()
+    public void NoSeatIsEverShownACardFromAnotherSeatsHandExceptByWayOfTheTable()
     {
         var bySeat = round.Scripts.ToDictionary(entry => entry.Key, entry => Shown(entry.Value));
+        var released = PublicRelease.In(PublicRelease.PerRound(round.Watcher.Events), round: 1);
 
         Assert.All(bySeat.Values, Assert.NotEmpty);
 
@@ -87,10 +96,14 @@ public class ConcealmentTests(WatchedRound round) : IClassFixture<WatchedRound>
             {
                 if (seat != other)
                 {
-                    Assert.Empty(cards.Intersect(theirs));
+                    Assert.Empty(cards.Intersect(theirs).Except(released));
                 }
             }
         }
+
+        // ⚠️ And the allowance is not a hole to hide a leak in: a card only enters it by being
+        // named in an event every seat and every watcher received.
+        Assert.All(released, card => Assert.Contains(Mentioned(round.Watcher.Events), seen => seen == card));
     }
 
     /// <summary>The one event that differs by listener, and the only one that could leak.</summary>

@@ -32,10 +32,10 @@ public class BotCatalogTests
     /// Written out rather than derived: a test that reads the catalog to check the catalog
     /// would agree with any rename at all.
     /// </remarks>
-    private static readonly string[] Ladder = ["random", "simple", "greedy", "cautious", "counting"];
+    private static readonly string[] Ladder = ["random", "simple", "greedy", "cautious", "counting", "outs"];
 
     [Fact]
-    public void TheLadderIsTheFiveRungsInTheOrderTheyWereBuilt()
+    public void TheLadderIsTheSixRungsInTheOrderTheyWereBuilt()
     {
         Assert.Equal(Ladder, BotCatalog.All.Select(rung => rung.Name));
     }
@@ -50,6 +50,7 @@ public class BotCatalogTests
     [InlineData("random")]
     [InlineData("cautious")]
     [InlineData("counting")]
+    [InlineData("outs")]
     public void AnOlderFileNamingARungStillResolvesToOne(string written)
     {
         var rung = BotCatalog.Resolve(written);
@@ -158,17 +159,29 @@ public class BotCatalogTests
     /// them.</b>
     /// </summary>
     /// <remarks>
-    /// <c>greedy</c> and <c>cautious</c> come back at +20.30 and +20.28 mean margin with the
-    /// head-to-head between them <c>−0.2 ± 1.0</c>, verdict <em>inside the interval</em>
-    /// (<c>docs/strategy/measurements.csv</c>, P17). Giving them different levels would put a
-    /// difference in front of a person that nobody can feel, because it is not there (§3.12
-    /// item 2) — and it would quietly change what the console's default opponent is.
+    /// <para>
+    /// <c>greedy</c>, <c>cautious</c> and <c>counting</c> are mutually inside the interval
+    /// (<c>docs/strategy/measurements.csv</c>, P17 and P20). Giving them different levels would
+    /// put a difference in front of a person that nobody can feel, because it is not there
+    /// (§3.12 item 2) — and it would quietly change what the console's default opponent is.
+    /// </para>
+    /// <para>
+    /// 🔥 <b>And the other half of the same rule: a rung that <em>is</em> separated must not
+    /// share their number.</b> P21 measured <c>outs</c> at <c>+3.1 ± 1.0</c> over <c>greedy</c>,
+    /// surviving Holm, so it is a level of its own and it is <see cref="BotCatalog.Hardest"/> —
+    /// which is what every difficulty level, the browser's hint and a stand-in seat are built
+    /// on. <b>This assertion is what would have caught leaving the strength behind when the
+    /// measurement moved.</b>
+    /// </para>
     /// </remarks>
     [Fact]
-    public void TheTwoRungsMeasurementCannotSplitAreOneLevel()
+    public void TheRungsMeasurementCannotSplitAreOneLevelAndTheOneItCanIsNot()
     {
         Assert.Equal(BotCatalog.Resolve("greedy").Strength, BotCatalog.Resolve("cautious").Strength);
-        Assert.Equal("greedy", BotCatalog.Hardest.Name);
+        Assert.Equal(BotCatalog.Resolve("greedy").Strength, BotCatalog.Resolve("counting").Strength);
+
+        Assert.True(BotCatalog.Resolve("outs").Strength > BotCatalog.Resolve("greedy").Strength);
+        Assert.Equal("outs", BotCatalog.Hardest.Name);
     }
 
     /// <remarks>

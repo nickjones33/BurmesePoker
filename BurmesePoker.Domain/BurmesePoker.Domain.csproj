@@ -7,4 +7,11 @@
     <RootNamespace>BurmesePoker.Domain</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- P21: the prune, the cache and the probe search are internal because they are how a
+         rung is written and not what it does — but each is a claim that has to be asserted
+         against the search it stands in for, and a test cannot assert what it cannot see. -->
+    <InternalsVisibleTo Include="BurmesePoker.Tests" />
+  </ItemGroup>
+
 </Project>
