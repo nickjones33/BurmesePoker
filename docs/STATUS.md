@@ -10,8 +10,75 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-⚠️ **The next packet is P17 — the tournament.** Nothing is in progress and the tree is green at
-**438 passed / 0 failed**.
+⚠️ **The next packet is P18 — one catalog.** Nothing is in progress and the tree is green at
+**461 passed / 0 failed**. ⚠️ **The suite now takes about a minute** (18 s before P17): the
+tournament tests play real simulations, and they share `WallClockBudgets.Collection` so the two
+timing budgets are not starved.
+
+✅ **P17 is done (2026-08-19): the tournament, and the first honest interval this harness has
+printed.** `BurmesePoker.Sim -- tournament` plays every unordered pair head to head, reports the
+free-for-all beside it, ranks the field, and puts every margin through a **Holm–Bonferroni**
+correction; `-- suite` generates `docs/strategy/measurements.csv`; `docs/STRATEGY.md` is created
+and quotes that file. **Two independent 15-minute, ~64,000-game runs of the suite wrote a
+byte-identical file.**
+
+🔥 **The finding that changed the code, and it was found by reading a number that should not have
+moved.** P17 says "every figure becomes a `Measurement` — a mean over games, one value per game".
+Built literally, the balanced headline came back **30.6% / 19.3%** where P16 published
+**29.6% / 20.4%**. Neither is wrong: they are **two different estimands**. A strategy holds a
+different number of seats in different games of a crossed run, so *the unweighted average of the
+per-game ratios* is not *the ratio of the totals* — and it over-weights the games where the
+strategy held fewest seats, which for a strong strategy are the games it does best in. ⚠️ **The
+gap was 1.05 points, the size of P16's entire rotated-versus-balanced effect.** Adding an interval
+to a figure must not change the figure (§3.8 item 4), so `GameValue` carries **a total and the
+trials it is out of** and `Measurement.Of` is the **ratio estimator** — totals divided, with the
+standard error built from the per-game residual `total − ratio × trials`. The game is still the
+trial. Where the denominator is constant it reduces *exactly* to the per-game mean, and the
+balanced headline now reads **29.75 ± 0.47 / 20.25 ± 0.47** — P16's number, with an interval on
+it for the first time.
+
+🔥 **"Paired is narrower" was half backwards, and the correction is a fact about this game.**
+Pairing measures the correlation that is actually there. **Across cells** — one strategy at two
+tables of one master seed — the shoes are shared, the correlation is positive, and the interval
+**narrows** (ratios 0.57–0.95). **Within a cell** — two strategies at the *same* table —
+**exactly one seat declares**, so the series are strongly negatively correlated and the interval
+**widens**: measured at **1.408, 1.409, 1.414** across the three cells of thinking players, which
+is √2 to three digits. ⚠️ **So the add-the-variances formula is *anti*-conservative on a
+head-to-head margin, by 41%.** BUILD-PLAN P17 acceptance 3 is amended to say so.
+
+**The measured answer, 8,008 games a head-to-head cell** (`docs/STRATEGY.md` has the matrix):
+`random` loses by **49.7–49.9 ± 0.4**, `simple` loses to `greedy` by **11.2 ± 1.0** and to
+`cautious` by **10.8 ± 1.0**, and 🔥 **`greedy` vs `cautious` is `−0.2 ± 1.0`, p = 0.70** — the
+strongest confirmation of P15's negative result yet, from a design P15 never ran. **Three
+separated skill levels, four rungs.** The ranking is `greedy` +20.30, `cautious` +20.28, `simple`
++9.25, `random` −49.83 mean margin; the free-for-all (8,192 games, 256 seatings) is 35.8 ± 0.9,
+36.5 ± 0.9, 27.3 ± 0.8, 0.1 ± 0.1. ⚠️ **`cautious` is ahead of `greedy` in one table and behind
+it in the other, both inside the interval** — which is precisely what the correction exists to
+stop a reader promoting to a rung.
+
+✅ **The harness's own null test passes and is checked on every run.** `cautious` against a copy
+of itself under another name: **25.1 ± 0.5 and 24.9 ± 0.5**, margin **+0.3 ± 1.0**, against a
+fair share of 25.0%, with each label sitting in each seat exactly 4,004 times. `sim suite` exits
+non-zero if it ever fails.
+
+⚠️ **What P17 can and cannot resolve, which is what P19–P22 have to budget against.** At 8,008
+games a cell the 95% half-width on a margin between two thinking rungs is **1.02 points**. **A
+rung worth less than about a point is not promotable at the default run size**, and half a point
+costs about **34,000 games a cell** — four hours, and very nearly the 32,000 P15 had to run.
+
+⚠️ **Three things P17 deliberately left.** (1) `neighbours` still uses `Measurement.Difference`,
+whose own remark admits it is being conservative about a pairing it could take — `Paired` exists
+now and would narrow P16's intervals, but re-running would change published numbers and belongs
+with a re-measurement. (2) `NeighbourCell.TakeRate` averages per-game ratios unweighted, the
+estimand P17 moved away from everywhere else; its *win* rate is unaffected, because a cell has
+exactly one focal seat and so a constant denominator. (3) The suite's standing set is a hand-kept
+list in `Suite.Run` — P23 owns making that a test.
+
+⚠️ **One display defect fixed in passing**, because it is one shared helper and changes no
+number: a .NET **two-section format picks its section from the *rounded* value**, so `-0.04`
+under `"+0.0;-0.0"` prints as **`-+0.0`** — the positive section supplies the plus and the
+runtime prepends the minus. `ReportNeighbours` had it in every signed column. Signed figures are
+built by hand now.
 
 **Everything built so far is done.** P0–P12, P13.1–P13.6 and P14–P16, and **all four of §0's
 original goals are delivered**: solo play against the computer (P10), a console worth sitting at
@@ -459,8 +526,8 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P14** Game journals — record and replay | P12 | done 2026-08-19 — a run and its replay produce byte-identical CSV |
 | ☑ | **P15** A skill ladder | P12 | done 2026-08-19 — four rungs, **three** separated skill levels |
 | ☑ | **P16** Does the player before you decide your game? | P15 | done 2026-08-19 — **no**, not between thinking players: −1.0 ± 2.1 pts |
-| ☐ | **P17** The tournament: a harness that ranks players | P15, P16 | **next** — intervals on every figure, paired comparisons, Holm, a null test, `suite` |
-| ☐ | **P18** One catalog: the same players everywhere | — | `BotCatalog` in Domain; console, browser and harness resolve one list of names |
+| ☑ | **P17** The tournament: a harness that ranks players | P15, P16 | done 2026-08-19 — **a win rate is a ratio over games, not a mean of ratios**; pairing widens within a cell by √2 |
+| ☐ | **P18** One catalog: the same players everywhere | — | **next** — `BotCatalog` in Domain; console, browser and harness resolve one list of names |
 | ☐ | **P19** Difficulty as a dial, not a list | P17, P18 | **goal 5's product, finished here** — a mistake rate over the strongest rung, calibrated |
 | ☐ | **P20** Memory: the card-counting rung | P17, P18 | droppable — the first packet to ask the engine for anything; raises a rules question |
 | ☐ | **P21** Outs: the first rung that looks ahead | P17, P18 | droppable — P15 specified it; the ~100× cost is the packet |
@@ -512,6 +579,50 @@ harness prints today would be a guess wearing a number.
 ---
 
 ## Notes for the next session
+
+**P18 is next, and P17 left it one new thing to hold.** The null cell seats one strategy twice
+under `"{name}#mirror"` (`Tournament.MirrorSuffix`) — that is a **label**, not a rung. When
+`BotCatalog` arrives it must refuse a name containing `#`, and it must not be the thing that
+resolves a mirror; a front end offering `greedy#mirror` as an opponent would be absurd, and the
+suffix was chosen to be unusable so this is easy to hold. Everything else in P18 is as planned:
+`Sim.StrategyCatalog` becomes an adapter, the four existing names may not change (§3.8 item 4),
+and `scripts/drive-console.py` at a fixed seed is what proves it a refactor.
+
+**What P17 built, in one paragraph.** Six new files in `BurmesePoker.Sim` — `GameValue`,
+`Normal`, `Holm`, `StrategySeries`, `Tournament`, `TournamentCsv`, `Suite` (with `SuiteCsv`) —
+plus a rewritten `Measurement`, `SeatingPlan.HeadToHead`, two verbs and intervals on the ordinary
+report. **`BurmesePoker.Domain` is unchanged, and so are `Simulator`, `GameRunner` and
+`Replay`** — the fourth packet in a row to add a whole capability over seams that already
+existed (§3.7/§3.8 paying off again).
+
+⚠️ **The two things most likely to be got wrong by a future session.**
+
+1. 🔥 **A win rate is `Σwins / Σseat-rounds`, not the average of the per-game rates.** They differ
+   by about a point at four seats whenever a strategy holds a different number of seats in
+   different games, and only the first is comparable with P12, P15 and P16. `GameValue` carries a
+   **total and its trials** so that a measurement cannot accidentally become a mean of ratios;
+   `Measurement.Of` is the ratio estimator and reduces exactly to the per-game mean when the
+   denominator is constant. `SuiteTests.AMeasuredWinRateIsTheSameNumberTheHarnessHasAlwaysPublished`
+   is the pin, and it deliberately runs a **crossed** seating, because under a rotation the two
+   readings agree and the test would be vacuous.
+2. 🔥 **`Measurement.Paired` takes per-game values and not two finished `Measurement`s, and joins
+   on the game's *seed* rather than its index.** Two cells of one master seed deal game *i* from
+   the same shoe and may be paired; two runs of different master seeds share nothing, and pairing
+   those by position is silently wrong. The seed join makes that mistake *fail* instead. ⚠️ And
+   the across-cell comparison only buys anything if **both cells seat the strategy the same way
+   round** — a head-to-head cell enumerates its seatings as an odometer over its two players, so
+   comparing a cell it leads with one it follows in moves it round the table and throws the
+   shared shoe away. That is why `Tournament.PairingChecks` picks two opponents from the same
+   side of the field.
+
+**Regenerating the published numbers** costs about 15 minutes and ~64,000 games:
+
+```
+dotnet run -c Release --project BurmesePoker.Sim -- suite --strategies random,simple,greedy,cautious --games 8000 --seed 20260819
+```
+
+**Do not hand-edit `docs/strategy/measurements.csv`.** `docs/STRATEGY.md` quotes it, and P23
+turns "quotes it" into a test.
 
 *Anything a cold context would need: decisions taken, surprises, deliberate leftovers.*
 
@@ -1536,6 +1647,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-19 | P17 | ☑ Done. **The tournament — and the first honest interval this harness has printed.** `BurmesePoker.Sim -- tournament` plays every unordered pair head to head at every seating in which both are at the table, reports the fully crossed free-for-all beside it (P16's lesson that they answer different questions), ranks the field by mean margin, and puts all six comparisons through **Holm–Bonferroni**; `-- suite` generates **`docs/strategy/measurements.csv`**, and **`docs/STRATEGY.md` is created and quotes that file rather than a session's console** (§3.12). **Two independent 15-minute, ~64,000-game runs of the suite wrote a byte-identical file.** 🔥 **The finding that changed the code was a number that should not have moved:** built as the packet literally said — "a mean over games, one value per game" — the balanced headline came back **30.6/19.3** where P16 published **29.6/20.4**. Neither is wrong; they are **two different estimands**. A strategy holds a different number of seats in different games of a crossed run, so the unweighted average of per-game *ratios* over-weights the games it held fewest seats in — which, for a strong strategy, are the games it does best in. ⚠️ **The gap was 1.05 points, the size of P16's whole seating effect**, and adding an interval to a figure must not change the figure (§3.8 item 4). So `GameValue` carries **a total and the trials it is out of**, and `Measurement.Of` is the **ratio estimator** — totals divided, standard error from the per-game residual `total − ratio × trials`, the game still the trial, and *exactly* the per-game mean when the denominator is constant. The balanced headline now reads **29.75 ± 0.47 / 20.25 ± 0.47**. 🔥 **The second finding: "paired is narrower" is half backwards.** Across cells (one strategy, two tables, same shoes) pairing narrows — ratios **0.57–0.95**. Within a cell (two strategies, one table) **exactly one seat declares**, the series are strongly negatively correlated, and pairing **widens** — measured **1.408 / 1.409 / 1.414**, √2 to three digits — so the add-the-variances formula is **anti**-conservative on a head-to-head margin by 41%. P17 acceptance 3 amended to say so. **The measured ladder at 8,008 games a cell:** `random` loses by 49.7–49.9 ± 0.4; `simple` loses to `greedy` by **11.2 ± 1.0** and to `cautious` by **10.8 ± 1.0**; 🔥 **`greedy` vs `cautious` is `−0.2 ± 1.0`, p = 0.70 — P15's negative result confirmed under a design P15 never ran.** Free-for-all (8,192 games, 256 seatings): 0.1/27.3/35.8/36.5 ± 0.9. ⚠️ `cautious` leads `greedy` in one table and trails it in the other, both inside the interval — **exactly what the correction exists to stop a reader promoting to a rung.** ✅ **The null test passes**: `cautious` against a copy of itself is 25.1 ± 0.5 / 24.9 ± 0.5 against a fair 25.0%, margin +0.3 ± 1.0, each label in each seat exactly 4,004 times — and `sim suite` exits non-zero if it ever fails. **Resolution stated for P19–P22: 1.02 points at 8,000 games a cell; half a point costs ~34,000, four hours** — so a rung worth less than a point is not promotable at the default size. Seven new files in Sim (`GameValue`, `Normal`, `Holm`, `StrategySeries`, `Tournament`, `TournamentCsv`, `Suite`), plus `SeatingPlan.HeadToHead` and a rewritten `Measurement`; **`BurmesePoker.Domain`, `Simulator`, `GameRunner` and `Replay` are all unchanged.** Build clean, **461 passed / 0 failed** (23 new: 9 in `Sim/StatisticsTests`, 10 in `Sim/TournamentTests`, 4 in `Sim/SuiteTests`); ⚠️ the suite now takes **~60 s** against 18 s, because the tournament tests play real simulations. ⚠️ **One display defect fixed in passing** — a .NET two-section format picks its section from the **rounded** value, so `-0.04` under `"+0.0;-0.0"` prints `-+0.0`; `ReportNeighbours` had it in every signed column and signed figures are built by hand now. No new rules question — measurement is not a rule, so `RULES.md` stays at **rev 14**. Amended BUILD-PLAN §0, P17 (acceptance 3 and a "What P17 found" section), **P18 (the mirror label is not a rung), P19 (the family is the adjacent pairs, and the spacing has a 1-point floor), P20 (the promotion bar and its price) and P23 (STRATEGY.md now exists; what it still owes)**. |
 | 2026-08-19 | — (planning) | 🔥 **Goal 5 stated and planned: a designed difficulty system and a settled answer to what works.** No packet executed and no code changed — the deliverable is the plan. Added **§3.12** (*difficulty is a dial, skill is a ladder, and they are not the same axis*), **§0's fifth goal** with the three architecture rows it demands, **seven packets P17–P23** in §5, a second branch on the §4 graph, and **five risk rows** in §7. Baseline verified first: build clean, **438 passed / 0 failed**. 🔥 **Two findings drove the ordering.** (1) A balanced 2,048-game run gave `random` 0.0% / `simple` 26.7% / `greedy` 36.1% / `cautious` 36.8% — **and the ordinary report prints no interval at all**, so P17 (statistics) precedes P19 (calibration); `Measurement` already exists and is reachable from one verb only. (2) **Four independent notions of *which bot*** across Sim, Console, Web and Server, and **the browser has no difficulty setting** — so P18 unifies the catalog before any new rung is written. ⚠️ **P19 finishes the difficulty product with today's rungs**; P20–P22 are droppable in preference order, which is P15's +0.5 ± 0.55 lesson applied in advance. ⚠️ **P20 will need a rules answer** — whether a discard pile is inspectable or only its top card (`RULES.md` §9 #9 stops being moot once a bot counts cards); the safe default is *only what this seat has been shown*, which errs towards a weak bot rather than a cheating one. |
 | 2026-08-19 | P13.6 | ☑ Done. **The lobby, a second person, and §0's goal 4 — the plan is finished.** `Lobby` (singleton) holds `HostedTable`s by id, opened from a `TablePlan`; `Pages/Tables.razor` is the lobby at `/` (static SSR, two real forms) and `/table/{Id}` names one table. **`TableHost` is gone.** 🔥 **A `SeatBoard` belongs to a viewer**: `TableView` sits down, holds it, hands it to `YourSeat` as a parameter and stands up in `Dispose` — the one thing P13.4 said had to change rather than be added to. **`TableSession` learned who is sitting where** (`SitDown`, `StandUp`, `RemoteSeats`, `WaitingFor`, `IsFull`, `SeatTaken`/`SeatLeft`), because two viewers handed one `SeatConnection` are two people answering one question and a seat is a property of a table. 🔥 **The table deals while somebody is at it** — a viewer attending *and* every seat accounted for — which is P13.4's leftover, answerable at last, **without shortening the patience**. **Acceptance met:** `TwoPeopleTests.TwoPeopleAndTwoBotsPlayARound` settles round 1 with both people asked their own questions, hands pairwise disjoint a round at a time, banks summing to zero; **and it was played for real in two browser tabs**, Nick and Mya Lay, a whole round each answering their own prompts with `Tab`/`Enter`. §3.11 C16 finished: the felt marks a seat the computer is standing in at, and a reload takes your own seat back off your own ghost. **18 new tests, 438 passed / 0 failed, 0 warnings; five mutations applied, five red.** 🔥 **Findings: a test that a stood-up seat refuses is vacuous unless a question is standing — found by mutating `Dispose` and watching it stay green; two `<AntiforgeryToken />`s are worse than none and the page renders perfectly either way, found by pressing the button; a marker that means "away" has to stop meaning it, so standing-in is per turn and cleared at the next `TurnBegan`; the sit-down form must not hide itself when the table is full, because the person locked out is the one who just reloaded; a claim on a table must not be made while prerendering, and there are two of them now; a parameter to an interactive root is serialised, so the page passes an id; a settlement is not a resting state; and `FocusOnNavigate` beats §3.11 B7 on a reconnect, deliberately left alone.** |
 | 2026-08-19 | P13.4 | ☑ Done. **A seat you can play — solo browser play, complete, and a legitimate stopping point.** `BurmesePoker.Web` gains `SeatBoard` (your seat, folded out of **your own** `SeatConnection`: the question standing, the hand it is about, and the hand you kept between turns) and three components — `YourSeat`, `TurnPrompt`, `HandPanel` — **all inside P13.3's single interactive island**, so §3.11 C12 is untouched. `TableHost` seats you: `--seat` (1 by default, 0 to only watch), `--name`, `--hints`, `--patience`. **All three acceptance criteria met.** ✅ **1:** a match played from the seats themselves — three rounds, four connected seats, banks carrying over and summing to zero, asserted in `SeatBoardTests` through `ClickingPlayer` (the browser's `ScriptedSeat`, which drives a `SeatBoard` so everything it sees is something a page would draw); and five rounds played for real in headless Chromium. ✅ **2 — a round played end to end with no pointer at all:** 86 questions answered with `Tab` and `Enter` over five rounds, **393 tab presses walking the hand**, and focus was already on a `<button>` at every prompt before a key was pressed (§3.11 B7); a second run on the final build played three rounds, **went out from the seat**, and so exercised all four branches of `TurnPrompt` in a browser. ✅ **3:** `NoSeatEverHeldACardFromAnotherSeatsHand` asserts every hand that was ever on any of four pages pairwise disjoint **a round at a time**, and `MarkupStandardsTests.NoComponentFindsASecondRouteToTheTable` forbids any component naming `TableSession`, `MatchEngine`, `TableState`, `TurnContext`, `PartialCover`, `HandEvaluator` or `ConnectionFor`. **§3.11 B6, B7 and B11 shipped**, and **A4 stopped passing vacuously** — it counts what it scanned now (eight handlers). **18 new tests, 389 passed / 0 failed**, and **eight mutations applied, eight red.** 🔥 **Findings: a `CardId` names a card in a *round's* shoe, which is rebuilt every deal, so hands are compared across seats a round at a time; your hand between turns is not stale and is worth rebuilding, with ownership read back off the `CardView`s you were sent rather than recomputed; a refusal must not raise "something changed", or a client answering on the change event answers the same refused question for ever; and only the first control may capture a `@ref`, because Blazor captures on insertion and not on every diff.** ⚠️ **A seated table no longer deals from boot** — an unanswered seat spends its whole patience on every question — and `TableHost.Yours` is one `SeatBoard` shared by every circuit, which P13.5 must change. 🔥 **And one thing only reading a control's accessible name out of the browser found: `CardChip`'s hidden words needed a full stop.** A card sits next to whatever else is said about it, and without one a screen reader ran the two together into *"five of clubs melds nothing"* — a sentence that means the opposite of itself. `docs/PLAYING.md` gained a browser section; `BUILD-PLAN.md` P13.4, P13.5, §2 and §3.11 (A4, B6, B7, B11) amended. |

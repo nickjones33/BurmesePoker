@@ -70,7 +70,7 @@ here because they change decisions taken *before* the packets that need them.
 | Browser UI | Accessibility and render mode decided **before** the first component | **§3.11, taken 2026-08-19.** P11 proved *look* needs nothing structural; keyboard operability, focus and render mode are not look, and retrofitting them is a rewrite |
 
 | Difficulty and strategy (goal 5) | **A ladder that is a research instrument and a menu that is a product, built from one mechanism and never confused for one another** | **§3.12, taken 2026-08-19, before P17.** The rungs are 0.0%/26.7%/36.1% apart and a lower rung plays a *different* idea rather than the right one badly — neither is what a difficulty menu needs |
-| Difficulty and strategy, cont. | **Statistics honest enough to survive a round-robin** — intervals on every figure, paired comparisons, and a correction for the number of comparisons made | **P17.** ⚠️ The gap is real today: the default report prints **no interval at all**, and a balanced run separates `greedy` 36.1% from `cautious` 36.8% — two numbers P15 needed 32,000 games to establish are the same number |
+| Difficulty and strategy, cont. | **Statistics honest enough to survive a round-robin** — intervals on every figure, paired comparisons, and a correction for the number of comparisons made | ✅ **Delivered by P17.** `tournament` ranks the field with a Holm-corrected verdict on every margin, `suite` generates `docs/strategy/measurements.csv`, and every figure in the ordinary report carries a 95% interval. 🔥 Adding the interval **moved a published number by a point** until the estimator was made a ratio over games rather than a mean of per-game ratios — see "What P17 found" |
 | Difficulty and strategy, cont. | **A bot named in one place**, so a new rung reaches the console, the browser and the harness at once | **P18.** Today there are four independent notions of *which bot*, and the browser has no difficulty setting at all |
 
 **All four are done, and none of them demanded architecture.** P12 was the one that could
@@ -79,6 +79,11 @@ have: it did not, being a fourth project that references Domain and asks it for 
 the bots play and a pause that must not exist in the domain, went in as presentation over the
 seams that were already there. **P13 was the one that had always looked like it might change the
 shape of things, and it changed the shape of the client instead** (§3.10, §3.11).
+
+✅ **P17 shipped on 2026-08-19 and asked the engine for nothing either** — a fifth and sixth
+verb, a ratio estimator, a family-wise correction and a generated measurements file, all over
+seams P12 and P16 already had. `Simulator`, `GameRunner` and `Replay` are unchanged; so is
+`BurmesePoker.Domain`.
 
 ⚠️ **Goal 5 is the first thing in this plan that is expected to ask the engine for something** —
 P20's counting rung wants what `TurnContext` conceals and the rules do not (RULES.md §6.3 makes
@@ -3188,6 +3193,14 @@ one verb. **A ladder built on point estimates is a ladder built on nothing.**
 3. **Paired intervals are narrower than unpaired ones on the same data, and the two means agree
    to rounding.** State the ratio. If pairing does not narrow them, the pairing is wrong and
    *that* is the finding.
+   ⚠️ **Amended by P17, which found this half right and half backwards.** Pairing does not mean
+   *narrower*; it means *the correlation that is actually there*. **Across cells** — one strategy
+   at two tables of the same master seed — the shoes are shared, the correlation is positive and
+   the interval narrows, which is the variance reduction this bullet was written about. **Within
+   a cell** — two strategies at the *same* table — exactly one seat declares, so the two series
+   are strongly negatively correlated and the paired interval is **wider**: there the
+   add-the-variances formula is not conservative but *anti-conservative*, and the paired one is
+   the honest answer. Both directions are measured and reported; see "What P17 found".
 4. The comparison count and the corrected threshold are printed. A raw "separated" that does not
    survive Holm is shown as not surviving it.
 5. Deterministic: the same seed writes a byte-identical CSV, and `--serial` agrees with parallel.
@@ -3196,6 +3209,115 @@ one verb. **A ladder built on point estimates is a ladder built on nothing.**
 
 **Done when.** One command produces the ranking table `docs/STRATEGY.md` quotes, and re-running
 it reproduces the file's data byte-for-byte.
+
+---
+
+#### What P17 found
+
+**Built and every acceptance met, one of them by correcting the acceptance.** `tournament` and
+`suite` are the fifth and sixth verbs, the ordinary report carries an interval on every figure,
+and `docs/strategy/measurements.csv` is **generated**: two independent runs of
+
+```
+dotnet run -c Release --project BurmesePoker.Sim -- suite --strategies random,simple,greedy,cautious --games 8000 --seed 20260819
+```
+
+wrote a **byte-identical** file, at 15 minutes and ~64,000 games each. `docs/STRATEGY.md` quotes
+that file and nothing else.
+
+🔥 **The finding that changed the code, and it was found by reading a number that should not have
+moved.** "Every figure becomes a `Measurement` — a mean over games, one value per game" was built
+literally, and the balanced headline came back **30.6% / 19.3%** where P16 published **29.6% /
+20.4%**. Neither was wrong: they are **two different estimands**. A strategy holds a different
+number of seats in different games of a crossed run, so the *unweighted average of the per-game
+ratios* is not the *ratio of the totals*, and it over-weights the games where the strategy held
+fewest seats — which for a strong strategy are the games it does best in. ⚠️ **The gap was 1.05
+points, the same size as P16's entire rotated-versus-balanced effect.** Adding an interval to a
+figure must not change the figure (§3.8 item 4), so `GameValue` carries **a total and the trials
+it is out of**, and `Measurement.Of` is the textbook **ratio estimator**: the totals divided,
+with a standard error built from the per-game residual `total − ratio × trials`. The game is
+still the trial. Where the denominator is constant it reduces *exactly* to the per-game mean, so
+a rotated run reads the same either way — and the balanced headline now reproduces
+**29.75% / 20.25%**, P16's number, with an interval on it for the first time.
+
+🔥 **Acceptance 3 was half backwards, and the correction is a real fact about this game.**
+Pairing is not a synonym for a narrower interval; it measures the correlation that is there.
+
+- **Within a cell** — two strategies at the *same* table — **exactly one seat declares**, so the
+  two series are strongly negatively correlated and the paired interval is **wider**. Measured
+  across the three cells of thinking players the ratio is **1.408, 1.409 and 1.414** — √2 to
+  three digits, which is what a perfectly opposed pair of equal-variance series predicts. ⚠️ **So
+  the add-the-variances formula is not conservative here but *anti*-conservative**, understating
+  a four-seat head-to-head margin by 41%. (In the cells containing `random` the ratio is 1.01:
+  a series that is almost always zero has almost nothing to correlate with.)
+- **Across cells** — one strategy at two tables of the same master seed — the shoes are shared,
+  the correlation is positive, and pairing **narrows**: **0.57 to 0.95**. That is free variance
+  reduction, and it is what common random numbers are for. ⚠️ **Both cells must seat the strategy
+  the same way round**; a head-to-head cell enumerates its seatings as an odometer over its two
+  players, so comparing a cell it leads with one it follows in moves it round the table and
+  throws the shared shoe away.
+
+**The measured ladder, 8,008 games a head-to-head cell, 95% intervals, points of win rate:**
+
+| | random | simple | greedy | cautious |
+|---|---:|---:|---:|---:|
+| **random** | · | −49.74 ± 0.43\* | −49.86 ± 0.42\* | −49.88 ± 0.42\* |
+| **simple** | +49.74 ± 0.43\* | · | −11.24 ± 0.99\* | −10.75 ± 0.99\* |
+| **greedy** | +49.86 ± 0.42\* | +11.24 ± 0.99\* | · | −0.20 ± 1.02 |
+| **cautious** | +49.88 ± 0.42\* | +10.75 ± 0.99\* | +0.20 ± 1.02 | · |
+
+\* survives Holm at α = 0.05 over the family of six.
+
+⚠️ **`greedy` and `cautious` are `−0.20 ± 1.02` apart under a design P15 never ran, which is the
+strongest confirmation of P15's finding yet**: the two rungs are level head to head, level in the
+free-for-all (35.8 ± 0.9 against 36.5 ± 0.9) and level in the ranking (+20.30 against +20.28
+mean margin). **Three separated skill levels, four rungs**, and the corrected verdict says so
+rather than a reader's eye.
+
+🔥 **The correction earns its place on this very run.** Six comparisons, thresholds
+0.05/6 … 0.05/1. Five p-values are below 1e-99 and the sixth is **0.70** — so nothing was
+demoted here. ⚠️ **That is the point, not a reason to drop it**: the same run reports
+`cautious` ahead of `greedy` in the free-for-all by 0.66 points and behind it in the ranking by
+0.02, and a reader who ranks point estimates would have read a rung out of two coin flips.
+
+**The harness's own null test passes.** `cautious` against a copy of itself under another name:
+**25.15% ± 0.51 and 24.85% ± 0.51** of 8,008 games, both containing the fair share of 25.0%,
+with the paired margin inside its interval. It costs one cell out of eight and it is checked on
+every run — and on every `suite`, which exits non-zero if it ever fails.
+
+**P12's headline, re-measured with an interval for the first time** (seed 20260819, 8,000 games
+rotated and 7,500 balanced):
+
+| seating | greedy | simple | gap |
+|---|---:|---:|---:|
+| rotated `[g,s,g,s]` | **31.00 ± 0.53** | 19.00 ± 0.53 | 12.0 |
+| balanced — all 16 assignments | **29.75 ± 0.47** | 20.25 ± 0.47 | 9.5 |
+
+P16's figures were 30.7/19.3 and 29.6/20.4 at a different master seed; both reproduce inside the
+intervals this packet can now print, and **the rotation flatters `greedy` by 1.25 points**
+against P16's 1.1.
+
+**What this apparatus can and cannot resolve.** At 8,008 games a cell the standard error on a
+head-to-head margin between two thinking rungs is **0.52 points**, so the 95% half-width is
+**1.02** and anything smaller than about a point is reported as inside the interval. ⚠️ **To
+resolve half a point — the size of P15's `cautious` effect — costs about 34,000 games a cell**,
+which is four hours of the machine this was measured on and is exactly the 32,000 P15 had to
+run. **Any later rung worth less than a point is not promotable at the default run size**, and
+the packet that proposes one has to say what it will cost to measure.
+
+⚠️ **Two things left for a later packet, deliberately.** (1) `neighbours` still computes its
+effects with `Measurement.Difference`, whose own remark says it is being conservative about a
+pairing it could have taken — `Measurement.Paired` exists now and would narrow P16's intervals,
+but re-running would change published numbers and belongs with a re-measurement, not with this
+packet. (2) `NeighbourCell.TakeRate` averages per-game ratios unweighted, which is the estimand
+this packet just moved away from everywhere else; its win rate is unaffected, because a cell has
+exactly one focal seat and so a constant denominator.
+
+⚠️ **One display defect fixed in passing, because it is one shared helper and it changes no
+number.** A .NET two-section format picks its section from the **rounded** value, so `-0.04`
+under `"+0.0;-0.0"` prints as **`-+0.0`** — the positive section supplies the plus and the
+runtime prepends the minus. `ReportNeighbours` had the same latent bug in every signed column.
+Signed figures are now built by hand.
 
 ---
 
@@ -3226,6 +3348,11 @@ still would not offer it.
   names them; no I/O, so it breaks no layering rule.
 - `Sim.StrategyCatalog` becomes an adapter over it. ⚠️ **The four existing names may not
   change** — §3.8 item 4: rename a strategy and yesterday's numbers stop joining.
+  ⚠️ **Added by P17: a bot name is not the only thing wearing a strategy name.** The null cell
+  seats one strategy twice under `"{name}#mirror"` (`Tournament.MirrorSuffix`), which is a
+  *label* and not a rung. The catalog must refuse a name containing `#`, and `BotCatalog` must
+  not be the thing that resolves a mirror — a front end offering `greedy#mirror` as an opponent
+  would be absurd, and the suffix was chosen to be unusable precisely so this is easy to hold.
 - Console's `Difficulty` enum is **deleted**; the prompt is built from the catalog, and the
   journal header's bot name comes from the same place it already writes (`"simple"`/`"greedy"`).
 - Web: `TablePlan.Difficulty`, a `--difficulty` argument, and **the choice on the lobby's
@@ -3297,6 +3424,19 @@ rung with a **mistake rate**, and the ladder is what the mistakes are made *agai
    ordered, and adjacent levels are separated by more than their **paired, Holm-corrected**
    intervals. ⚠️ **A level that is not separated from its neighbour is deleted, not shipped** —
    P15's lesson applied in advance. Three real levels beat five imaginary ones.
+   ⚠️ **Amended by P17, which built the instrument and measured what it costs.** Three things
+   follow and all three are cheap to get wrong. (a) `tournament --strategies easy,medium,hard`
+   is the check, and the margin it prints is already the **paired** one — within a cell that is
+   *wider* than the independent formula by about √2, so a level pair that looks separated under
+   the old arithmetic may not be. (b) **The family is the adjacent pairs, not the round-robin.**
+   Only "does *n+1* beat *n*" is a claim the menu makes, so correct over the *k−1* adjacent
+   comparisons; correcting over all *k(k−1)/2* is a needless power loss, and `Holm.Correct`
+   takes whatever family it is handed. (c) **The spacing has a floor.** At 8,008 games a cell
+   the 95% half-width on a margin between two thinking players is **1.02 points**, so ε values
+   whose levels are closer than about a point cannot be separated at the default run size —
+   space them further apart, or state the games. ⚠️ **This is the acceptance most likely to
+   fail**, because ε is a dial that can be turned to any value and the temptation is five
+   levels.
 2. A test asserts the **published** calibration's ordering against a re-run at a size a test can
    afford. The ladder may not silently invert.
 3. **ε = 0 is byte-identical to the undecorated rung.** A decorator that does nothing must be
@@ -3365,6 +3505,12 @@ what the rules conceal**. Be wrong in the direction that does not cheat.
 1. Measured against greedy, **paired**, with an interval, at a stated *N*. ⚠️ **A null result is
    a result and gets published** — `cautious` is already such an entry and its *why* is worth
    more than its number.
+   ⚠️ **P17 fixed the bar and the price.** `tournament --strategies greedy,counting` is the
+   measurement, and the margin it prints is the paired one. At the default 8,000 games a cell
+   the 95% half-width between two thinking rungs is **1.02 points**, so **a rung worth less than
+   about a point is not promotable at that size** — and buying half a point of resolution costs
+   about **34,000 games a cell**, roughly four hours. The packet must say up front which it is
+   asking for. The same applies to P21 and P22.
 2. The bot's information set is a strict subset of a watcher's, asserted by test.
 3. Nothing carries across a round boundary, asserted by playing two rounds and mutating the
    reset to watch the test go red.
@@ -3485,6 +3631,12 @@ difficulty ladder re-calibrated against the ladder the programme actually ended 
   and a short entry per rung — **including the ones that failed.** `cautious` is already such an
   entry, and P15's account of *why* denial and self-interest point the same way is worth more
   than its number ever was.
+  ⚠️ **P17 created the document and `sim suite` behind it, so this packet extends rather than
+  writes.** What it still owes: the difficulty calibration section (P19's), an entry per rung
+  that P20–P22 added, and acceptance 2 — the test that the levels published are the levels
+  offered. ⚠️ **The suite's standing set is a list in `Suite.Run` and it is the thing that goes
+  stale**: a rung added to the catalog does not appear in the document until it is added there
+  too, and P23 is where that stops being a habit.
 - ⚠️ **Every figure carries the command that produced it and the games it came from**, and
   `sim suite` regenerates the data behind it. The same discipline `RULES.md` applies to
   provenance: a number without its origin is not evidence (§3.12).

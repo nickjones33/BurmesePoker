@@ -20,6 +20,16 @@ try
         return Neighbours(args[1..]);
     }
 
+    if (args.Length > 0 && args[0] == "tournament")
+    {
+        return RunTournament(args[1..]);
+    }
+
+    if (args.Length > 0 && args[0] == "suite")
+    {
+        return RunSuite(args[1..]);
+    }
+
     return args.Length > 0 && args[0] == "replay" ? Replay(args[1..]) : Run(args);
 }
 catch (ArgumentException problem)
@@ -185,9 +195,9 @@ static void ReportNeighbours(NeighbourReport report)
     {
         Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
             $"{effect.Arm.ToString().ToLowerInvariant(),-11}{effect.Level,-10}"
-            + $"{effect.WinRate.Mean * 100,13:+0.0;-0.0} ± {effect.WinRate.Interval * 100,4:0.0}"
-            + $"{effect.TakeRate.Mean * 100,13:+0.0;-0.0} ± {effect.TakeRate.Interval * 100,4:0.0}"
-            + $"{effect.NetPerRound.Mean,11:+0.00;-0.00} ± {effect.NetPerRound.Interval,4:0.00}"));
+            + $"{Signed(effect.WinRate.Mean * 100, "0.0"),13} ± {effect.WinRate.Interval * 100,4:0.0}"
+            + $"{Signed(effect.TakeRate.Mean * 100, "0.0"),13} ± {effect.TakeRate.Interval * 100,4:0.0}"
+            + $"{Signed(effect.NetPerRound.Mean, "0.00"),11} ± {effect.NetPerRound.Interval,4:0.00}"));
     }
 
     Console.WriteLine();
@@ -201,10 +211,221 @@ static void ReportNeighbours(NeighbourReport report)
 
         Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
             $"{level.Name,-10}"
-            + $"{winRate.Mean * 100,13:+0.0;-0.0} ± {winRate.Interval * 100,4:0.0}"
-            + $"{takeRate.Mean * 100,13:+0.0;-0.0} ± {takeRate.Interval * 100,4:0.0}"
+            + $"{Signed(winRate.Mean * 100, "0.0"),13} ± {winRate.Interval * 100,4:0.0}"
+            + $"{Signed(takeRate.Mean * 100, "0.0"),13} ± {takeRate.Interval * 100,4:0.0}"
             + $"  {(winRate.IsSeparatedFromZero ? "separated" : "inside the interval")}"));
     }
+}
+
+// The round-robin BUILD-PLAN P17 asks for: every unordered pair head to head, the free-for-all
+// beside it because the two answer different questions (P16), a null cell in which the harness
+// measures itself, and a family-wise correction because k(k-1)/2 comparisons at a 95% interval
+// is a machine for promoting noise to a rung.
+static int RunTournament(string[] args)
+{
+    var arguments = Arguments.Parse(args);
+    var strategies = Ladder(arguments.Value("strategies", "random,simple,greedy,cautious"));
+
+    var options = new TournamentOptions
+    {
+        Strategies = strategies,
+        Seats = arguments.Number("seats", 4),
+        GamesPerCell = arguments.Number("games", 2000),
+        MasterSeed = arguments.Number("seed", 20260819),
+        TurnCap = arguments.Number("turn-cap", 400),
+        Parallel = !arguments.Flag("serial"),
+        NullTest = arguments.Has("null") ? arguments.Value("null", "") : null
+    }.Validated();
+
+    var names = string.Join(",", strategies.Select(strategy => strategy.Name));
+
+    Console.WriteLine(
+        $"tournament: {string.Join(", ", strategies.Select(strategy => strategy.Name))} at "
+        + $"{options.Seats} seats, {strategies.Count * (strategies.Count - 1) / 2} pair(s) "
+        + $"+ free-for-all + null, {options.GamesPerCell} games a cell, seed {options.MasterSeed}");
+    Console.WriteLine(
+        $"reproduce with: BurmesePoker.Sim -- tournament --strategies {names} "
+        + $"--seats {options.Seats} --games {options.GamesPerCell} --seed {options.MasterSeed}");
+
+    var report = Tournament.Run(options);
+
+    ReportTournament(report);
+
+    if (arguments.Has("csv"))
+    {
+        var path = arguments.Value("csv", "tournament.csv");
+        TournamentCsv.WriteTo(path, report);
+        Console.WriteLine($"Cells, comparisons and the ranking written to {path}");
+    }
+
+    return 0;
+}
+
+static void ReportTournament(TournamentReport report)
+{
+    var field = report.Options.Strategies;
+
+    Console.WriteLine();
+    Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+        $"{report.Games} games in {report.Elapsed.TotalSeconds:0.0} s, "
+        + $"{report.Pairs.Sum(cell => cell.Abandoned) + report.FreeForAll.Abandoned + report.NullCell.Abandoned}"
+        + $" abandoned at the turn cap"));
+
+    Console.WriteLine();
+    Console.WriteLine("Head to head — the row's win rate less the column's, game by game, in points.");
+    Console.WriteLine("A star is a margin that survived the family-wise correction below.");
+    Console.WriteLine();
+    Console.Write($"{"",-12}");
+
+    foreach (var column in field)
+    {
+        Console.Write($"{column.Name,16}");
+    }
+
+    Console.WriteLine();
+
+    foreach (var row in field)
+    {
+        Console.Write($"{row.Name,-12}");
+
+        foreach (var column in field)
+        {
+            if (row.Name == column.Name)
+            {
+                Console.Write($"{"·",16}");
+                continue;
+            }
+
+            var (margin, verdict) = report.Head(row.Name, column.Name);
+
+            // A star marks a margin that survived the correction, so the matrix and the
+            // verdict table cannot disagree with one another.
+            var cell = string.Create(CultureInfo.InvariantCulture,
+                $"{Signed(margin.Mean * 100, "0.0")} ± {margin.Interval * 100:0.0}{(verdict.Survives ? "*" : "")}");
+
+            Console.Write($"{cell,16}");
+        }
+
+        Console.WriteLine();
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("Ranking, by mean head-to-head margin over the field:");
+    Console.WriteLine();
+    Console.WriteLine($"{"#",-3}{"strategy",-12}{"mean margin",14}{"free-for-all win %",22}{"beat/lost/undecided",22}");
+
+    var place = 0;
+
+    foreach (var standing in report.Ranking)
+    {
+        place++;
+
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"{place,-3}{standing.Name,-12}{Signed(standing.MeanMargin * 100, "0.0"),14}"
+            + $"{standing.FreeForAllWinRate.Mean * 100,15:0.0} ± {standing.FreeForAllWinRate.Interval * 100,4:0.0}"
+            + $"{standing.Beaten + "/" + standing.LostTo + "/" + standing.Undecided,22}"));
+    }
+
+    Console.WriteLine();
+    Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+        $"{report.Comparisons} comparison(s) in the family. Holm-Bonferroni at alpha "
+        + $"{report.Options.Alpha:0.###}: a raw \"separated\" that does not survive is not a finding."));
+    Console.WriteLine();
+    Console.WriteLine($"{"comparison",-26}{"margin",16}{"p",13}{"threshold",13}  {"raw",-12}{"corrected",-18}");
+
+    foreach (var verdict in report.Verdicts.OrderBy(v => v.Rank))
+    {
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"{verdict.Label,-26}{Signed(verdict.Difference.Mean * 100, "0.0"),9} ± {verdict.Difference.Interval * 100,4:0.0}"
+            + $"{verdict.PValue,13:0.00e+00}{verdict.Threshold,13:0.00000}  "
+            + $"{(verdict.Separated ? "separated" : "inside"),-12}{(verdict.Survives ? "survives" : "does not survive"),-18}"));
+    }
+
+    Console.WriteLine();
+    Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+        $"Null test — {report.NullCell.Row} against a copy of itself. A fair table gives each "
+        + $"{1.0 / report.Options.Seats * 100:0.0}%:"));
+    Console.WriteLine();
+
+    foreach (var player in report.NullCell.Players)
+    {
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"{player.Name,-24}{player.WinRate.Mean * 100,9:0.0} ± {player.WinRate.Interval * 100,4:0.0}"
+            + $"   seats {string.Join('/', player.SeatRounds)}"));
+    }
+
+    Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+        $"{"margin",-24}{Signed(report.NullCell.Margin.Mean * 100, "0.0"),9} ± "
+        + $"{report.NullCell.Margin.Interval * 100,4:0.0}   "
+        + $"{(report.NullTestHolds ? "the harness finds no difference where there is none" : "⚠️ THE HARNESS IS BIASED")}"));
+
+    Console.WriteLine();
+    Console.WriteLine("Pairing — the per-game difference against the add-the-variances formula, same data:");
+    Console.WriteLine();
+    Console.WriteLine($"{"scope",-14}{"comparison",-40}{"paired se",12}{"independent",13}{"ratio",8}");
+
+    foreach (var check in report.Pairing)
+    {
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"{check.Scope,-14}{check.Label,-40}{check.Paired.StandardError * 100,12:0.000}"
+            + $"{check.Independent.StandardError * 100,13:0.000}{check.Ratio,8:0.00}"));
+    }
+
+    Console.WriteLine();
+    Console.WriteLine(
+        "⚠️ Within a cell pairing WIDENS the interval and that is correct: exactly one seat "
+        + "declares, so two strategies at one table are negatively correlated and the "
+        + "independent formula understates the margin. Across cells it narrows, which is the "
+        + "variance reduction common random numbers were for.");
+}
+
+// The standing set of numbers the documentation quotes, generated rather than transcribed
+// (BUILD-PLAN §3.12, P17).
+static int RunSuite(string[] args)
+{
+    var arguments = Arguments.Parse(args);
+
+    var options = new SuiteOptions
+    {
+        Strategies = Ladder(arguments.Value("strategies", "random,simple,greedy,cautious")),
+        Seats = arguments.Number("seats", 4),
+        GamesPerCell = arguments.Number("games", 2000),
+        MasterSeed = arguments.Number("seed", 20260819),
+        TurnCap = arguments.Number("turn-cap", 400),
+        Parallel = !arguments.Flag("serial")
+    };
+
+    var path = arguments.Value("out", Suite.DefaultPath);
+
+    Console.WriteLine(
+        $"suite: {options.GamesPerCell} games a cell, {options.Seats} seats, seed {options.MasterSeed} "
+        + $"-> {path}");
+
+    var report = Suite.Run(options);
+
+    SuiteCsv.WriteTo(path, report);
+
+    Console.WriteLine();
+    Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+        $"{report.Measurements.Count} measurement(s) in {report.Elapsed.TotalSeconds:0.0} s, written to {path}"));
+    Console.WriteLine();
+    Console.WriteLine($"{"id",-46}{"subject",-24}{"value",18}{"verdict",-24}");
+
+    foreach (var measurement in report.Measurements)
+    {
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"{measurement.Id,-46}{measurement.Subject,-24}"
+            + $"{measurement.Value.Mean,11:0.0000} ± {measurement.Value.Interval,5:0.000}"
+            + $"  {measurement.Verdict,-24}"));
+    }
+
+    if (!report.Tournament.NullTestHolds)
+    {
+        Console.Error.WriteLine("⚠️ The null test failed: the harness measures a difference where there is none.");
+        return 1;
+    }
+
+    return 0;
 }
 
 static IReadOnlyList<Strategy> Ladder(string names) =>
@@ -238,6 +459,10 @@ static JournalFidelity Fidelity(string name) => name.ToLowerInvariant() switch
     _ => throw new ArgumentException($"--fidelity is thin or rich, not '{name}'.")
 };
 
+// ⚠️ Every figure carries an interval (BUILD-PLAN P17). Two win rates a reader will rank —
+// 36.1% and 36.8% — took 32,000 games to establish were the same number (P15), and a table of
+// point estimates invites exactly that ranking. The unit of independence is the game, never
+// the seat or the turn: see Measurement and StrategySeries.
 static void Report(SimulationReport report)
 {
     Console.WriteLine();
@@ -247,18 +472,46 @@ static void Report(SimulationReport report)
         + $"{report.Reshuffles} reshuffle(s), {report.AbandonedGames} game(s) abandoned at the turn cap");
     Console.WriteLine();
 
+    var series = StrategySeries.Of(report).ToDictionary(one => one.Name, StringComparer.Ordinal);
+
     Console.WriteLine(
-        $"{"strategy",-10}{"rounds",8}{"wins",8}{"win %",8}{"$/round",10}{"side $/r",10}"
-        + $"{"turns",8}{"covered",9}{"take %",8}{"claim %",9}");
+        $"{"strategy",-10}{"rounds",8}{"wins",7}{"win %",14}{"$/round",15}{"side $/r",15}"
+        + $"{"turns",14}{"covered",13}{"take %",14}{"claim %",14}   95% intervals, over games");
 
     foreach (var strategy in report.Strategies)
     {
+        var one = series[strategy.Name];
+
         Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
-            $"{strategy.Name,-10}{strategy.Rounds,8}{strategy.Wins,8}{strategy.WinRate * 100,8:0.0}"
-            + $"{strategy.NetPerRound,10:0.00}{strategy.SideBetPerRound,10:0.00}{strategy.TurnsToWin,8:0.0}"
-            + $"{strategy.CoveredWhenLosing,9:0.0}{strategy.TakeRate * 100,8:0.0}{strategy.ClaimRate * 100,9:0.0}"));
+            $"{strategy.Name,-10}{strategy.Rounds,8}{strategy.Wins,7}"
+            + $"{Percent(one.WinRate),14}{Money(one.NetPerRound),15}{Money(one.SideBetPerRound),15}"
+            + $"{Count(one.TurnsToWin),14}{Count(one.CoveredWhenLosing),13}"
+            + $"{Percent(one.TakeRate),14}{Percent(one.ClaimRate),14}"));
     }
+
+    Console.WriteLine();
+    Console.WriteLine($"{report.Games.Count} game(s) are the trials; a seat is not one.");
 }
+
+static string Percent(IReadOnlyList<GameValue> values) => Show(Measurement.Of(values), 100, "0.0");
+
+static string Money(IReadOnlyList<GameValue> values) => Show(Measurement.Of(values), 1, "0.00");
+
+static string Count(IReadOnlyList<GameValue> values) => Show(Measurement.Of(values), 1, "0.0");
+
+// ⚠️ A two-section format picks its section from the *rounded* value, so -0.04 under
+// "+0.0;-0.0" prints as "-+0.0": the positive section supplies the plus and the runtime
+// prepends the minus. Every signed figure here is built by hand instead.
+static string Signed(double value, string format) =>
+    string.Create(CultureInfo.InvariantCulture,
+        $"{(value < 0 ? "-" : "+")}{Math.Abs(value).ToString(format, CultureInfo.InvariantCulture)}");
+
+static string Show(Measurement measurement, double scale, string format) =>
+    measurement.Count == 0
+        ? "-"
+        : string.Create(CultureInfo.InvariantCulture,
+            $"{(measurement.Mean * scale).ToString(format, CultureInfo.InvariantCulture)} "
+            + $"± {(measurement.Interval * scale).ToString(format, CultureInfo.InvariantCulture)}");
 
 // The measurement pass P12 asks for before anything is optimised (BUILD-PLAN §3.7 item 4):
 // the bot's inner loop is the partial cover, and the engine's is the exact-cover evaluator.
@@ -312,6 +565,8 @@ static string Usage() => """
       dotnet run --project BurmesePoker.Sim -- bench [--hands N] [--seed N]
       dotnet run --project BurmesePoker.Sim -- replay PATH [--csv PATH]
       dotnet run --project BurmesePoker.Sim -- neighbours [options]
+      dotnet run --project BurmesePoker.Sim -- tournament [options]
+      dotnet run --project BurmesePoker.Sim -- suite [options]
 
       --strategies a,b   who is playing, rotated through the seats  (greedy,simple)
                          the ladder, weakest first: random, simple, greedy, cautious
@@ -338,6 +593,25 @@ static string Usage() => """
       --reference NAME   the level the others are reported against  (greedy)
       --games N          games in each of the 2 x |levels| cells    (2000)
       --seats N, --seed N, --turn-cap N, --serial, --csv PATH  as above
+
+    tournament — rank every player against every other, with an interval you can trust.
+    Every unordered pair plays a head-to-head cell at every seating in which both are at
+    the table; the free-for-all is reported beside it because the two answer different
+    questions; one cell plays a strategy against a copy of itself, which is the harness
+    measuring its own bias. k(k-1)/2 comparisons are Holm-corrected, and a raw "separated"
+    that does not survive the correction is shown as not surviving it.
+
+      --strategies a,b,c the field                (random,simple,greedy,cautious)
+      --games N          games a cell, rounded up to a whole number of seatings  (2000)
+      --null NAME        who plays the null cell          (the last one named)
+      --seats N, --seed N, --turn-cap N, --serial, --csv PATH  as above
+
+    suite — play the standing set of measurements the documentation quotes and write them
+    out. A published number carries the command that made it (BUILD-PLAN §3.12), so
+    docs/STRATEGY.md quotes this file rather than a session's console.
+
+      --out PATH         where to write         (docs/strategy/measurements.csv)
+      --strategies, --games, --seats, --seed, --turn-cap, --serial  as above
 
     A journal replays against any build; a seed only replays against the one that wrote it.
     """;

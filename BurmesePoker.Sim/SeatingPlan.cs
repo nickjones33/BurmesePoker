@@ -83,6 +83,49 @@ public static class SeatingPlan
     }
 
     /// <summary>
+    /// Every balanced assignment in which <b>each named strategy takes at least one seat</b> —
+    /// the head-to-head cell of a tournament (BUILD-PLAN P17).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Why the restriction.</b> <see cref="Balanced"/> across two strategies at four seats
+    /// includes <c>[A,A,A,A]</c> and <c>[B,B,B,B]</c>, in which one of the two is not at the
+    /// table at all. Those games say nothing about A against B, and worse, they break the
+    /// pairing: a per-game difference between the two needs both of them to have played that
+    /// game (<see cref="Measurement.Paired"/>). Dropping them makes every game of the cell a
+    /// game both played, so the paired and unpaired means are over the same games and can be
+    /// compared.
+    /// </para>
+    /// <para>
+    /// <b>Still balanced by seat, which is the property that matters.</b> The surviving
+    /// assignments are closed under rotation, so each strategy sits in each seat equally often
+    /// — seat 0 opens and is the only seat offered the turned-up money card (P12), and that is
+    /// removed by arithmetic rather than by hope. What varies is the <i>mix</i>: a two-strategy
+    /// cell plays one-against-three, two-against-two and three-against-one, symmetrically.
+    /// </para>
+    /// </remarks>
+    public static IReadOnlyList<IReadOnlyList<Strategy>> HeadToHead(
+        IReadOnlyList<Strategy> strategies, int seats)
+    {
+        ArgumentNullException.ThrowIfNull(strategies);
+
+        if (strategies.Count > seats)
+        {
+            throw new ArgumentException(
+                $"{strategies.Count} strategies cannot all be seated at {seats} seats.",
+                nameof(strategies));
+        }
+
+        var names = strategies.Select(strategy => strategy.Name).ToHashSet(StringComparer.Ordinal);
+
+        var assignments = Balanced(strategies, seats)
+            .Where(assignment => assignment.Select(s => s.Name).ToHashSet(StringComparer.Ordinal).Count == names.Count)
+            .ToList();
+
+        return assignments;
+    }
+
+    /// <summary>
     /// One pattern, walked round the table — assignment <c>r</c> puts <c>pattern[0]</c> in
     /// seat <c>r</c> and keeps everyone in the same order behind them.
     /// </summary>

@@ -19,17 +19,17 @@ seats with paced, named bots and plays round after round with the banks carrying
 compare strategies, and `dotnet run --project BurmesePoker.Web` is **a browser lobby you sit down
 in and play other people at**.
 
-⚠️ **A fifth goal was stated on 2026-08-19 and is planned but unbuilt: a designed difficulty
-system, and a settled answer to what actually works.** That is **P17–P23**, and **P17 is the next
-packet.** It is two jobs kept apart on purpose — a *product* (difficulty as a table setting, per
+⚠️ **A fifth goal was stated on 2026-08-19: a designed difficulty
+system, and a settled answer to what actually works.** That is **P17–P23**; **P17 is done and
+P18 is the next packet.** It is two jobs kept apart on purpose — a *product* (difficulty as a table setting, per
 seat, in both front ends; **the browser has none at all today**) and a *programme* (analysis and
 simulation enough to say which ways of playing are better, by how much, and with an interval).
 ⚠️ **Read `BUILD-PLAN.md` §3.12 first**: *difficulty is a dial, skill is a ladder, and they are
 not the same axis* — which is what keeps the difficulty menu from being a list of research
 instruments, and what makes the product independent of whether any given rung is worth anything.
-🔥 **Two facts set the order.** The ordinary `Sim` report **prints no interval at all**
-(`Measurement` exists and exactly one verb uses it), so P17 — statistics and ranking — comes
-before P19 — calibration. And there are **four independent notions of *which bot*** across Sim,
+🔥 **Two facts set the order.** ✅ The first is discharged: the ordinary `Sim` report used to
+print no interval at all, so P17 — statistics and ranking — came before P19 — calibration.
+⚠️ The second still stands: there are **four independent notions of *which bot*** across Sim,
 Console, Web and Server, so P18 makes it one catalog before any new rung is written.
 ⚠️ **P19 finishes the difficulty product with today's rungs; P20–P22 are droppable in preference
 order** — P15 spent a whole packet on a plausible rung worth +0.5 ± 0.55 points, and that
@@ -101,6 +101,10 @@ use the skill, read these first:
    cold-start protocol.
 3. **`docs/RULES.md`** — **the only rules authority.** Every rule is tagged with provenance
    and confidence.
+4. **`docs/STRATEGY.md`** — **the only measurement authority.** Which way of playing is better,
+   by how much, and with an interval. ⚠️ **Never quote a strategy number from a session log or
+   from this file's prose** — quote `docs/strategy/measurements.csv`, which `sim suite`
+   regenerates and which two runs of one seed write byte-identically.
 
 `BUILD-PLAN.md` **§0** records where this is heading beyond a playable game — solo play against
 the computer, a console worth sitting at, strategy simulation at scale, and a multiplayer app
@@ -142,8 +146,20 @@ scripts/drive-console.py    drives the console under a pty and writes down every
                             front-end refactor can be proved with `cmp`. built in P13.1.
 ```
 
-⚠️ **P17–P23 are planned and unbuilt** (goal 5, above). See BUILD-PLAN §2 for how the seven
-projects fit together — the strategy programme adds no eighth project.
+✅ **P17 shipped 2026-08-19: the tournament.** `BurmesePoker.Sim -- tournament` ranks every
+player against every other with a **paired** margin, a Holm-corrected verdict and a null cell in
+which the harness measures its own bias; `-- suite` generates `docs/strategy/measurements.csv`,
+which `docs/STRATEGY.md` quotes. Every figure in the ordinary report now carries an interval.
+🔥 **Adding the interval moved a published number by a point** until the estimator was made a
+*ratio over games* rather than a mean of per-game ratios — a strategy holds a different number of
+seats in different games of a crossed run, and the two are not the same quantity. 🔥 **And
+"paired is narrower" turned out to be half backwards**: across cells it narrows (0.57–0.95),
+within a cell it *widens by exactly √2*, because only one seat declares — so the independent
+formula was **anti**-conservative on every head-to-head margin.
+
+⚠️ **P18–P23 are planned and unbuilt** (goal 5, above). **P18 is the next packet.** See
+BUILD-PLAN §2 for how the seven projects fit together — the strategy programme adds no eighth
+project.
 
 ## Rules of engagement
 
@@ -175,6 +191,8 @@ dotnet run -c Release --project BurmesePoker.Sim -- --games 100 --journal run.js
 dotnet run -c Release --project BurmesePoker.Sim -- replay run.jsonl                  # play them back
 dotnet run -c Release --project BurmesePoker.Sim -- neighbours --games 2000          # does the seat before you matter?
 dotnet run -c Release --project BurmesePoker.Sim -- --games 2000 --seating balanced  # every seating, not one rotated pattern
+dotnet run -c Release --project BurmesePoker.Sim -- tournament --games 2000          # rank every player against every other
+dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv
 
 python3 scripts/drive-console.py --out before.raw --seed 20260819   # capture a scripted match
 python3 scripts/drive-console.py --out after.raw  --seed 20260819   # …after a front-end change
@@ -227,6 +245,7 @@ verified bug to show for it.
 | `docs/STATUS.md` | Cross-session progress. Read first, update last. |
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
+| `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict. Every figure is generated from `docs/strategy/measurements.csv`, never transcribed. |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
 | `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it. Written for a person at the keyboard, not for a build session. |
 | `docs/RULES-TECHNICAL.md` | What the **old** code does and where it diverges. Defect list. Historical reference. |
