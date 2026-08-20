@@ -36,7 +36,7 @@ public class SkillLadderTests
     private static readonly PlayerId[] FourPlayers = [.. Enumerable.Range(0, 4).Select(seat => new PlayerId(seat))];
 
     /// <summary>Every rung, by the name the command line knows it as.</summary>
-    public static TheoryData<string> Rungs => ["random", "simple", "greedy", "cautious"];
+    public static TheoryData<string> Rungs => ["random", "simple", "greedy", "cautious", "counting"];
 
     /// <summary>Twelve that partition, and the Q♣, which joins nothing — the P10 fixture.</summary>
     private static readonly string[] TwelveAndADeadQueen =

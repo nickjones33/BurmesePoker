@@ -116,9 +116,13 @@ public class SeatingPlanTests
     [Fact]
     public void BalancedSeatingRefusesToBecomeASamplingScheme()
     {
-        // Six seats of four strategies is 4,096 assignments and six is 16,384 — past the point
-        // where "balanced" would mean "the first few thousand of them".
-        var ladder = StrategyCatalog.All;
+        // Six seats of four strategies is 4,096 assignments and seven is 16,384 — past the
+        // point where "balanced" would mean "the first few thousand of them".
+        //
+        // ⚠️ Four of the catalog rather than all of it, since P20 made it five: the cap is a
+        // property of the plan, and a test that read the whole ladder would change what it
+        // asserted every time a rung was added.
+        var ladder = StrategyCatalog.All.Take(4).ToList();
 
         Assert.Equal(4096, SeatingPlan.Balanced(ladder, 6).Count);
         Assert.Throws<ArgumentException>(() => SeatingPlan.Balanced(ladder, 7));

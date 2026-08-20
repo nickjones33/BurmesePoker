@@ -38,38 +38,16 @@ namespace BurmesePoker.Domain.Agents;
 /// is the directional test of the upstream hypothesis. The caveat above is a prediction about
 /// that experiment too — a weak denier can only produce a weak intervention.
 /// </para>
+/// <para>
+/// ⚠️ <b>The measure itself moved to <see cref="ThreatScore"/> in P20 and did not change.</b>
+/// This rung still estimates what is left in the shoe from its own hand alone
+/// (<see cref="ThreatScore.NotInThisHand"/>); <see cref="CountingBotAgent"/> is the same rung
+/// estimating it from everything it has been shown, and that one substitution is all that
+/// separates them.
+/// </para>
 /// </remarks>
 public sealed class CautiousBotAgent : IPlayerAgent, IRanksDiscards
 {
-    /// <summary>
-    /// Every legal three-card window of consecutive ranks, in run order.
-    /// </summary>
-    /// <remarks>
-    /// The ace is high or low but never both, so <c>A-2-3</c> and <c>Q-K-A</c> are here and
-    /// <c>K-A-2</c> is not (RULES.md §6.1). Written out rather than computed, because the
-    /// wrap-around this excludes is the exact defect the 2023 code shipped.
-    /// </remarks>
-    private static readonly Rank[][] RunWindows =
-    [
-        [Rank.Ace, Rank.Two, Rank.Three],
-        [Rank.Two, Rank.Three, Rank.Four],
-        [Rank.Three, Rank.Four, Rank.Five],
-        [Rank.Four, Rank.Five, Rank.Six],
-        [Rank.Five, Rank.Six, Rank.Seven],
-        [Rank.Six, Rank.Seven, Rank.Eight],
-        [Rank.Seven, Rank.Eight, Rank.Nine],
-        [Rank.Eight, Rank.Nine, Rank.Ten],
-        [Rank.Nine, Rank.Ten, Rank.Jack],
-        [Rank.Ten, Rank.Jack, Rank.Queen],
-        [Rank.Jack, Rank.Queen, Rank.King],
-        [Rank.Queen, Rank.King, Rank.Ace]
-    ];
-
-    private static readonly Suit[] Suits = [Suit.Clubs, Suit.Diamonds, Suit.Hearts, Suit.Spades];
-
-    /// <summary>How many copies of one card the two decks hold.</summary>
-    private const int CopiesInTheShoe = 2;
-
     /// <inheritdoc cref="GreedyBotAgent.ChooseAction"/>
     public TurnAction ChooseAction(TurnContext context)
     {
@@ -127,96 +105,8 @@ public sealed class CautiousBotAgent : IPlayerAgent, IRanksDiscards
     {
         var potential = CoverScore.Potential(card, hand);
 
-        return potential == int.MaxValue ? long.MaxValue : ((long)potential << 8) + Threat(card, hand);
+        return potential == int.MaxValue
+            ? long.MaxValue
+            : ((long)potential << 8) + ThreatScore.Of(card, ThreatScore.NotInThisHand(hand));
     };
-
-    /// <summary>
-    /// How many still-unseen pairs of cards would put this one into a meld — the use it is to
-    /// whoever picks it up.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// A meld needs three cards, so a card handed away is worth having only in company: the
-    /// count is over <b>pairs</b>, not partners, which is what makes it more than
-    /// <see cref="CoverScore.Potential"/> rewritten. A rank whose set is blocked in two suits
-    /// at once scores lower than the sum of the two blockages suggests, and a rank at the end
-    /// of the ladder sits in fewer runs however the hand falls.
-    /// </para>
-    /// <para>
-    /// <b>Unseen means "not in this hand", and nothing else.</b> The turned-up cards on the
-    /// table are public, and are deliberately not counted: reading them would make which card
-    /// designates money an input to a discard, which RULES.md §4.4 says it must never be.
-    /// Discards already thrown are not reachable from a <c>TurnContext</c> at all.
-    /// </para>
-    /// </remarks>
-    private static int Threat(Card card, IReadOnlyList<Card> hand)
-    {
-        if (card.IsJoker)
-        {
-            return int.MaxValue;
-        }
-
-        var rank = card.Rank!.Value;
-        var suit = card.Suit!.Value;
-        var threat = 0;
-
-        // Sets: any two of the three suits this card is not, since duplicate suits are
-        // forbidden (RULES.md §6.2).
-        for (var one = 0; one < Suits.Length; one++)
-        {
-            if (Suits[one] == suit)
-            {
-                continue;
-            }
-
-            for (var other = one + 1; other < Suits.Length; other++)
-            {
-                if (Suits[other] == suit)
-                {
-                    continue;
-                }
-
-                threat += Unseen(rank, Suits[one], hand) * Unseen(rank, Suits[other], hand);
-            }
-        }
-
-        // Runs: every window this rank falls in, needing the two ranks it does not hold.
-        foreach (var window in RunWindows)
-        {
-            if (Array.IndexOf(window, rank) < 0)
-            {
-                continue;
-            }
-
-            var ways = 1;
-
-            foreach (var needed in window)
-            {
-                if (needed != rank)
-                {
-                    ways *= Unseen(needed, suit, hand);
-                }
-            }
-
-            threat += ways;
-        }
-
-        return threat;
-    }
-
-    /// <summary>How many copies of one value are not in this hand.</summary>
-    private static int Unseen(Rank rank, Suit suit, IReadOnlyList<Card> hand)
-    {
-        var held = 0;
-
-        foreach (var card in hand)
-        {
-            if (card.Rank == rank && card.Suit == suit)
-            {
-                held++;
-            }
-        }
-
-        return Math.Max(0, CopiesInTheShoe - held);
-    }
 }

@@ -8,21 +8,26 @@ origin is worse, because it looks like a fact**. So every number below is *gener
 transcribed, out of `docs/strategy/measurements.csv`, which is written by one command:
 
 ```bash
-dotnet run -c Release --project BurmesePoker.Sim -- suite --strategies random,simple,greedy,cautious --games 8000 --seed 20260819
+dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seed 20260819
 ```
 
-Last generated **2026-08-19** (BUILD-PLAN P19). That run played **~120,000 games in 34 minutes**
-— the ladder ranked, the difficulty dial calibrated beside it, and P12's headline under both
-seatings. ⚠️ **P17's run of the same seed wrote every ladder figure identically**, which is the
-only reason a document may quote a simulation at all; §10 is what P19 added.
+Last generated **2026-08-20** (BUILD-PLAN P20). **52 measurements in 35 minutes** — the ladder
+ranked, the difficulty dial calibrated beside it, and P12's headline under both seatings.
+⚠️ **P17's run of the same seed wrote every ladder figure identically**, which is the only reason
+a document may quote a simulation at all; §10 is what P19 added.
+
+⚠️ **The `--strategies` list is gone from that command, and its absence is the point.** P20 added
+a fifth rung and had to spell the field out in three places to make it appear; the default is now
+`BotCatalog` itself (P18), so **the suite measures every rung there is** and a rung cannot be
+added without being measured.
 
 The fuller report the tables below are drawn from comes from the same seed:
 
 ```bash
-dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies random,simple,greedy,cautious --games 8000 --seed 20260819
+dotnet run -c Release --project BurmesePoker.Sim -- tournament --games 8000 --seed 20260819
 ```
 
-> **64,248 games in 767.7 s, 31 abandoned at the turn cap.**
+> **96,213 games in 1,476.1 s, 13 abandoned at the turn cap.**
 
 ---
 
@@ -54,7 +59,7 @@ this project at least once.**
 
 ## 2. The ladder
 
-Four rungs, ordered, each differing from the one below it in **exactly one decision** — which is
+Five rungs, ordered, each differing from the one below it in **exactly one decision** — which is
 what makes a difference in results attribute to that decision and to nothing else.
 
 | rung | what it decides differently | packet |
@@ -63,6 +68,7 @@ what makes a difference in results attribute to that decision and to nothing els
 | `simple` | throws whatever costs it the fewest melded cards. | P12 |
 | `greedy` | `simple`, plus a tie-break towards the cards worth keeping. | P10 |
 | `cautious` | `greedy`, plus the remaining ties decided by what the discard is worth to whoever picks it up. | P15 |
+| `counting` | `cautious`, plus a **memory**: what is left in the shoe is estimated from every card it has been shown this round, not from its own thirteen. | P20 |
 
 ⚠️ **A skill ladder is a research instrument, not a difficulty menu.** Its rungs are unevenly
 spaced and one of them plays a *different and worse idea* rather than the right idea badly. See
@@ -79,64 +85,100 @@ exactly 4,004 times *by construction*.
 
 **The row's win rate less the column's, in points, game by game:**
 
-| | random | simple | greedy | cautious |
-|---|---:|---:|---:|---:|
-| **random** | · | −49.7 ± 0.4 \* | −49.9 ± 0.4 \* | −49.9 ± 0.4 \* |
-| **simple** | +49.7 ± 0.4 \* | · | −11.2 ± 1.0 \* | −10.8 ± 1.0 \* |
-| **greedy** | +49.9 ± 0.4 \* | +11.2 ± 1.0 \* | · | −0.2 ± 1.0 |
-| **cautious** | +49.9 ± 0.4 \* | +10.8 ± 1.0 \* | +0.2 ± 1.0 | · |
+| | random | simple | greedy | cautious | counting |
+|---|---:|---:|---:|---:|---:|
+| **random** | · | −49.7 ± 0.4 \* | −49.9 ± 0.4 \* | −49.9 ± 0.4 \* | −49.8 ± 0.4 \* |
+| **simple** | +49.7 ± 0.4 \* | · | −11.2 ± 1.0 \* | −10.8 ± 1.0 \* | −11.0 ± 1.0 \* |
+| **greedy** | +49.9 ± 0.4 \* | +11.2 ± 1.0 \* | · | −0.2 ± 1.0 | +0.3 ± 1.0 |
+| **cautious** | +49.9 ± 0.4 \* | +10.8 ± 1.0 \* | +0.2 ± 1.0 | · | +0.8 ± 1.0 |
+| **counting** | +49.8 ± 0.4 \* | +11.0 ± 1.0 \* | −0.3 ± 1.0 | −0.8 ± 1.0 | · |
 
-\* survives Holm at α = 0.05 over the family of six.
+\* survives Holm at α = 0.05 over the family of ten.
 
 | # | strategy | mean margin over the field | free-for-all win % | beat / lost / undecided |
 |---|---|---:|---:|---:|
-| 1 | `greedy` | +20.3 | 35.8 ± 0.9 | 2 / 0 / 1 |
-| 2 | `cautious` | +20.3 | 36.5 ± 0.9 | 2 / 0 / 1 |
-| 3 | `simple` | +9.2 | 27.3 ± 0.8 | 1 / 2 / 0 |
-| 4 | `random` | −49.8 | 0.1 ± 0.1 | 0 / 3 / 0 |
+| 1 | `cautious` | +15.4 | 34.3 ± 1.0 | 2 / 0 / 2 |
+| 2 | `greedy` | +15.3 | 32.8 ± 1.0 | 2 / 0 / 2 |
+| 3 | `counting` | +14.9 | 33.5 ± 1.0 | 2 / 0 / 2 |
+| 4 | `simple` | +4.2 | 24.2 ± 0.9 | 1 / 3 / 0 |
+| 5 | `random` | −49.8 | 0.1 ± 0.1 | 0 / 4 / 0 |
 
-**Three skill levels, four rungs.** *Nothing* ≪ *cover count* < *cover count + tie-break*, and
-then a fourth strategy that plays differently to no measurable advantage.
+⚠️ **The mean margin and the free-for-all win rates are not comparable with the four-rung run
+above them in git history** — both depend on who else is in the field, and the field gained a
+rung. **The head-to-head margins do not**, and every one of them reproduced to the digit.
+
+**Three skill levels, five rungs.** *Nothing* ≪ *cover count* < *cover count + tie-break*, and
+then **two** further strategies that play differently to no measurable advantage.
+
+🔥 **`counting` is the second of them, and it is the sharper result.** A memory of every card
+this seat has been shown is worth **+0.3 ± 1.0 points to `greedy`'s side of the margin** — the
+point estimate does not merely fail to separate, it points the *wrong way*, and `cautious` is
+0.8 ± 1.0 ahead of it. See §8 for what that costs and why it was predictable.
 
 🔥 **`greedy` and `cautious` are `−0.2 ± 1.0` apart, and that is the strongest confirmation of
 P15's finding yet** — it comes from a design P15 never ran. The two are level head to head, level
-in the free-for-all (35.8 ± 0.9 against 36.5 ± 0.9) and level in the ranking (+20.30 against
-+20.28). **Why**, from P15: *denial and self-interest point the same way.* The partners a hand
+in the free-for-all (32.8 ± 1.0 against 34.3 ± 1.0) and level in the ranking (+15.30 against
++15.42). **Why**, from P15: *denial and self-interest point the same way.* The partners a hand
 holds are exactly the partners an opponent cannot hold, so "least use to me" and "least use to
 them" are very nearly one ordering, and the cover score has already spent that information.
 ⚠️ And every *pairwise-additive* tie-break is greedy again — partnership is symmetric, so
 "throw the card with the fewest partners" and "keep the best-connected twelve" are the same rule.
 **A rung that improves on greedy has to be combinatorial.**
 
+🔥 **P20 tested that sentence and it held.** `counting` changes no decision rule at all: it
+supplies a *better number* to the same pairwise-additive measure — how many copies of a card are
+really left, rather than how many are not in this hand. **Better arithmetic inside a tie-break
+that is worth nothing is still worth nothing.** The information is genuine and the estimate it
+produces is genuinely sharper (§8); it enters at the only place in the decision where it cannot
+be paid for.
+
 **The family, and what the correction cost:**
 
 | comparison | margin | p | Holm threshold | raw | corrected |
 |---|---:|---:|---:|---|---|
-| `random` vs `cautious` | −49.9 ± 0.4 | < 1e-300 | 0.00833 | separated | **survives** |
-| `random` vs `greedy` | −49.9 ± 0.4 | < 1e-300 | 0.01000 | separated | **survives** |
-| `random` vs `simple` | −49.7 ± 0.4 | < 1e-300 | 0.01250 | separated | **survives** |
-| `simple` vs `greedy` | −11.2 ± 1.0 | 2.1e-109 | 0.01667 | separated | **survives** |
-| `simple` vs `cautious` | −10.8 ± 1.0 | 3.3e-100 | 0.02500 | separated | **survives** |
+| `random` vs `cautious` | −49.9 ± 0.4 | < 1e-300 | 0.00500 | separated | **survives** |
+| `random` vs `counting` | −49.8 ± 0.4 | < 1e-300 | 0.00556 | separated | **survives** |
+| `random` vs `greedy` | −49.9 ± 0.4 | < 1e-300 | 0.00625 | separated | **survives** |
+| `random` vs `simple` | −49.7 ± 0.4 | < 1e-300 | 0.00714 | separated | **survives** |
+| `simple` vs `greedy` | −11.2 ± 1.0 | 2.1e-109 | 0.00833 | separated | **survives** |
+| `simple` vs `counting` | −11.0 ± 1.0 | 7.8e-105 | 0.01000 | separated | **survives** |
+| `simple` vs `cautious` | −10.8 ± 1.0 | 3.3e-100 | 0.01250 | separated | **survives** |
+| `cautious` vs `counting` | +0.8 ± 1.0 | 0.11 | 0.01667 | inside | does not survive |
+| `greedy` vs `counting` | +0.3 ± 1.0 | 0.55 | 0.02500 | inside | does not survive |
 | `greedy` vs `cautious` | −0.2 ± 1.0 | 0.70 | 0.05000 | inside | does not survive |
 
 ⚠️ **Nothing was demoted here, and that is not an argument for dropping the correction.** The
-same run puts `cautious` 0.66 points ahead of `greedy` in the free-for-all and 0.02 points behind
-it in the ranking. **A reader who ranks point estimates would have read a rung out of two coin
+same run puts `cautious` 1.4 points ahead of `greedy` in the free-for-all and 0.1 points behind
+it head to head. **A reader who ranks point estimates would have read a rung out of two coin
 flips**; the corrected verdict is what says not to.
+
+🔥 **P20 doubled the cost of the correction and it is worth paying.** The family went from six
+comparisons to ten, so the strictest threshold tightened from `0.00833` to `0.00500` — and the
+three margins that matter are the three at the bottom, **all inside the interval and none
+surviving**. ⚠️ **`cautious` vs `counting` is the one to watch**: at `p = 0.11` it is the closest
+any pair of thinking rungs has come to separating, and it is a rung *losing* to the one below it.
+**Read uncorrected and unstarred, that table has a reader concluding memory makes a bot worse.**
+It does not say that; it says the harness cannot tell them apart.
 
 ---
 
 ## 4. Everybody at one table
 
-The fully crossed four-way table — all 256 assignments of four strategies across four seats,
-8,192 games, so a given strategy is at the table in about 5,600 of them.
+The fully crossed table — every assignment of the field across four seats, 8,192 games, so a
+given strategy is at the table in about 4,800 of them.
 
 | strategy | win rate |
 |---|---:|
-| `cautious` | 36.5 ± 0.9 |
-| `greedy` | 35.8 ± 0.9 |
-| `simple` | 27.3 ± 0.8 |
+| `cautious` | 34.3 ± 1.0 |
+| `counting` | 33.5 ± 1.0 |
+| `greedy` | 32.8 ± 1.0 |
+| `simple` | 24.2 ± 0.9 |
 | `random` | 0.1 ± 0.1 |
+
+⚠️ **Every figure here moved when P20 added a rung, and none of it is a change in play.** Five
+strategies crossed over four seats is a different field from four, so each is at the table less
+often and against a stronger average opponent. **This is the column to distrust when a rung is
+added; §3's margins are the column that survives it.**
 
 ⚠️ **This answers a different question from §3 and the two are not interchangeable.** A
 free-for-all win rate depends on *who else is in the field*; a head-to-head margin weights every
@@ -168,18 +210,22 @@ unless they are not really playing.*
 
 ## 6. The harness measuring itself
 
-**The null test.** `cautious` against a copy of itself under another name, 8,008 games. Two
-labels of one strategy differ in *nothing*, so any gap between them is the apparatus — a seat
+**The null test.** The strongest rung against a copy of itself under another name, 8,008 games.
+Two labels of one strategy differ in *nothing*, so any gap between them is the apparatus — a seat
 that opens first, a seating that is not balanced, an estimator that counts seats as trials.
 
 | | win rate | seats sat in |
 |---|---:|---|
-| `cautious` | 25.1 ± 0.5 | 4004 / 4004 / 4004 / 4004 |
-| `cautious#mirror` | 24.9 ± 0.5 | 4004 / 4004 / 4004 / 4004 |
-| **margin** | **+0.3 ± 1.0** | inside the interval |
+| `counting` | 25.1 ± 0.5 | 4004 / 4004 / 4004 / 4004 |
+| `counting#mirror` | 24.9 ± 0.5 | 4004 / 4004 / 4004 / 4004 |
+| **margin** | **+0.1 ± 1.0** | inside the interval |
 
 A fair four-seat table gives each 25.0%. ✅ **It holds, and `sim suite` exits non-zero if it ever
-stops holding.**
+stops holding.** ⚠️ **The subject changed with the field** — P17 ran this on `cautious` and got
+`+0.3 ± 1.0`; the rung is whichever the catalog ends with, so **a rung added is a rung the null
+test moves to**. That it holds for a bot carrying *within-round state* is worth more than the
+earlier pass: `counting` is the first rung that could have made a game depend on the order the
+harness happened to schedule it in.
 
 **What pairing is worth, and which way it points.** The per-game difference against the
 add-the-variances formula, on identical data:
@@ -188,11 +234,15 @@ add-the-variances formula, on identical data:
 |---|---|---:|---:|---:|
 | within-cell | `simple` vs `greedy` | 0.506 | 0.359 | **1.41** |
 | within-cell | `simple` vs `cautious` | 0.506 | 0.359 | **1.41** |
+| within-cell | `simple` vs `counting` | 0.508 | 0.360 | **1.41** |
 | within-cell | `greedy` vs `cautious` | 0.523 | 0.370 | **1.41** |
+| within-cell | `greedy` vs `counting` | 0.521 | 0.368 | **1.41** |
+| within-cell | `cautious` vs `counting` | 0.520 | 0.368 | **1.41** |
 | within-cell | `random` vs anything | 0.214–0.218 | 0.212–0.214 | 1.01–1.02 |
+| across-cells | `greedy`: vs `cautious` less vs `counting` | 0.194 | 0.369 | **0.52** |
 | across-cells | `simple`: vs `greedy` less vs `cautious` | 0.203 | 0.359 | **0.57** |
 | across-cells | `random`: vs `simple` less vs `greedy` | 0.028 | 0.035 | 0.79 |
-| across-cells | `greedy`: vs `random` less vs `simple` | 0.312 | 0.331 | 0.94 |
+| across-cells | `counting`: vs `random` less vs `simple` | 0.312 | 0.332 | 0.94 |
 | across-cells | `cautious`: vs `random` less vs `simple` | 0.313 | 0.331 | 0.95 |
 
 🔥 **Pairing is not a synonym for a narrower interval. It measures the correlation that is
@@ -205,7 +255,7 @@ there, and here it points both ways.**
   here but *anti*-conservative.** (Against `random` the ratio collapses to 1.01: a series that
   is almost always zero has almost nothing to correlate with.)
 - **Across cells**, one strategy plays two different tables dealt from the *same shoes*, the
-  correlation is positive, and pairing **narrows** — down to 0.57. That is free variance
+  correlation is positive, and pairing **narrows** — down to 0.52. That is free variance
   reduction, and it is what common random numbers are for.
 
 ---
@@ -236,6 +286,25 @@ the reasoning that made it plausible is worth more than its number.**
   seat it cost that seat `−0.3 ± 1.4` points and cost itself nothing (P16). **Denial and
   self-interest point the same way**, and what is left over is only what a hand cannot influence
   — how many runs a rank sits in at all, and second-order blockages.
+- **`counting` — remember every card you have been shown.** Worth **`+0.3 ± 1.0` points to
+  `greedy`**, i.e. not separated and pointing the wrong way; `cautious` is `+0.8 ± 1.0` ahead of
+  it (P20, 8,008 games a cell). 🔥 **It is not that the memory does not work — it does, and a
+  test says so.** A counting seat's estimate of what is left really does fall below what
+  `cautious` would say for every card it has watched go by, and stays at the full two copies for
+  every value it has not.
+  ⚠️ **Two reasons it cannot pay, and both were visible in advance.**
+  **(1) The information set is tiny.** Under the cautious default — a seat counts only what it
+  has *actually been shown* (RULES.md §9 #15 is open, so the alternative would have been to let
+  it read what the rules may conceal) — the memory runs **12 → 23 cards across a whole round, out
+  of 108**. It ends the round having learned about **ten cards beyond its own hand**, roughly one
+  a turn, and knowing a fifth of the shoe.
+  **(2) It enters where nothing is paid.** The estimate feeds `ThreatScore`, which is
+  `cautious`'s tie-break — and §3 already measured that tie-break at `−0.2 ± 1.0`. **A sharper
+  input to a decision rule worth nothing is worth nothing**, and the two nulls compound rather
+  than add. ⚠️ **The lesson for P21 and P22: the next rung must change *which question is asked*,
+  not improve an answer to a question already shown not to matter.**
+  ✅ It costs nothing to run — **77 rounds/s against `cautious`'s 76 and `greedy`'s 88** (P12's
+  baseline: 51 serial, 85–92 parallel), so the memory is free and only the idea is not.
 - **The upstream-neighbour hypothesis** — *the main factor is the skill of the player before
   you.* **False between thinking players** (`−1.0 ± 2.1`), true only across the gulf to someone
   not really playing (`+9.1 ± 2.1`). ⚠️ **Without the downstream control arm the answer would
@@ -311,11 +380,12 @@ deliberately unreachable from a menu, a form field or `--difficulty`.
 ## 10. Regenerating this document's data
 
 ```bash
-# the standing set — writes docs/strategy/measurements.csv
-dotnet run -c Release --project BurmesePoker.Sim -- suite --strategies random,simple,greedy,cautious --games 8000 --seed 20260819
+# the standing set — writes docs/strategy/measurements.csv. No --strategies: it measures
+# every rung in BotCatalog, so a rung cannot be added without being measured.
+dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seed 20260819
 
 # the full report the tables above are drawn from
-dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies random,simple,greedy,cautious --games 8000 --seed 20260819 --csv tournament.csv
+dotnet run -c Release --project BurmesePoker.Sim -- tournament --games 8000 --seed 20260819 --csv tournament.csv
 
 # one ordinary run, now with an interval on every figure
 dotnet run -c Release --project BurmesePoker.Sim -- --strategies greedy,simple --seating balanced --games 4096 --seed 20260819
@@ -325,6 +395,12 @@ dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy
 ```
 
 `measurements.csv` carries, for every row, the **command that produced it**, the games it came
-from, the seed, the mean, the standard error and the 95% half-width. ⚠️ **The standing set is a
-list in `Suite.Run`**: a rung added to the catalog does not appear here until it is added there
-too. BUILD-PLAN **P23** is where that stops being a habit and becomes a test.
+from, the seed, the mean, the standard error and the 95% half-width.
+
+✅ **P20 closed half of the gap this section used to warn about.** The ladder field was a list
+written out in three places, and adding a fifth rung made every one of them wrong at once — so
+`--strategies` now **defaults to `BotCatalog`** for both `tournament` and `suite`, and the
+standing set follows the catalog by construction. ⚠️ **What is still a habit** is that a *new
+kind of measurement* has to be added to `Suite.Run` by hand, and that P12's headline row is
+deliberately `greedy` against `simple` and not the field. BUILD-PLAN **P23** is where the
+catalog-follows-the-suite half becomes a test rather than a default.

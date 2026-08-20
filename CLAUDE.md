@@ -11,7 +11,7 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-**Every packet built so far is done — P0–P12, P13.1–P13.6 and P14–P19** — and **all four of §0's
+**Every packet built so far is done — P0–P12, P13.1–P13.6 and P14–P20** — and **all four of §0's
 original goals are delivered**: the 2023 implementation is deleted, the
 whole rules core is built and tested, `dotnet run --project BurmesePoker.Console` fills the empty
 seats with paced, named bots and plays round after round with the banks carrying over,
@@ -20,8 +20,8 @@ compare strategies, and `dotnet run --project BurmesePoker.Web` is **a browser l
 in and play other people at**.
 
 ⚠️ **A fifth goal was stated on 2026-08-19: a designed difficulty
-system, and a settled answer to what actually works.** That is **P17–P23**; **P17, P18 and P19
-are done and P20 is the next packet — and P20–P22 are droppable.** It is two jobs kept apart on
+system, and a settled answer to what actually works.** That is **P17–P23**; **P17, P18, P19 and P20
+are done and P21 is the next packet — and P21–P22 are droppable.** It is two jobs kept apart on
 purpose — a *product* (difficulty as a table setting, per seat, in both front ends: **finished in
 P19**) and a *programme* (analysis and simulation enough to say which ways of playing are better,
 by how much, and with an interval).
@@ -40,9 +40,11 @@ P18 made it one catalog before any new rung is written: **`Domain/Agents/BotCata
 only place a bot is named**, `LayeringTests` fails the build if any project outside
 `Domain/Agents` constructs a rung, and a new rung reaches the console prompt, the browser lobby
 and the harness with no front-end work at all.
-⚠️ **P19 finished the difficulty product with today's rungs; P20–P22 are droppable in preference
+⚠️ **P19 finished the difficulty product with today's rungs; P21–P22 are droppable in preference
 order** — P15 spent a whole packet on a plausible rung worth +0.5 ± 0.55 points, and that
-precedent is designed into the plan. 🔥 **A new rung is not free of the dial**: every level is
+precedent is designed into the plan. 🔥 **P20 spent another one and got less**: `counting` is
+`+0.3 ± 1.0` the *wrong* way. **Two of three research rungs have returned nothing**, and the plan
+expects the third to as well. 🔥 **A new rung is not free of the dial**: every level is
 `BotCatalog.Hardest` with an ε, so a rung stronger than `greedy` re-bases all four levels the day
 it lands and the ε values stop being the ones that were measured. `sim suite` exits non-zero if
 the dial stops being monotone, and **P23 owns re-spacing it.**
@@ -189,7 +191,20 @@ in the test project, found by writing the test. ⚠️ **`--pairs adjacent`** wa
 planned: a dial claims only that *n+1* beats *n*, so the family is k−1 comparisons and only k−1
 cells are played.
 
-⚠️ **P20–P23 are planned and unbuilt** (goal 5, above). **P20 is the next packet, and it is
+✅ **P20 shipped 2026-08-20: memory, and the answer is no.** `counting` is `cautious` with one
+substitution — what is left in the shoe estimated from every card it has been shown rather than
+from its own thirteen — and it measures **`+0.3 ± 1.0` points the wrong way** against `greedy`.
+**A null result, published** (`docs/STRATEGY.md` §8), which the packet demanded in advance.
+🔥 **The *why* is the deliverable and it constrains P21.** The memory works, but **(1)** the
+information set is tiny — **12 → 23 cards a round out of 108** under the cautious default — and
+**(2)** it sharpens `ThreatScore`, which *is* `cautious`'s tie-break, already measured at
+`−0.2 ± 1.0`. ⚠️ **A sharper input to a decision rule that does not matter is worth nothing, and
+the two nulls compound.** The next rung must change **which question is asked**. 🔥 **It also
+found the ladder written out in three places**: `tournament` and `suite` defaulted `--strategies`
+to a hand-typed list, so a fifth rung was measured only if somebody named it — **the default is
+`BotCatalog` now**, which is P18's defect one layer up.
+
+⚠️ **P21–P23 are planned and unbuilt** (goal 5, above). **P21 is the next packet, and it is
 droppable.** See BUILD-PLAN §2 for how the seven projects fit together — the strategy programme
 adds no eighth project.
 

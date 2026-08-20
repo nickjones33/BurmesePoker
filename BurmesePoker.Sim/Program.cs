@@ -224,7 +224,7 @@ static void ReportNeighbours(NeighbourReport report)
 static int RunTournament(string[] args)
 {
     var arguments = Arguments.Parse(args);
-    var strategies = Ladder(arguments.Value("strategies", "random,simple,greedy,cautious"));
+    var strategies = Ladder(arguments.Value("strategies", WholeLadder()));
 
     var options = new TournamentOptions
     {
@@ -403,7 +403,7 @@ static int RunSuite(string[] args)
 
     var options = new SuiteOptions
     {
-        Strategies = Ladder(arguments.Value("strategies", "random,simple,greedy,cautious")),
+        Strategies = Ladder(arguments.Value("strategies", WholeLadder())),
         Seats = arguments.Number("seats", 4),
         GamesPerCell = arguments.Number("games", 2000),
         MasterSeed = arguments.Number("seed", 20260819),
@@ -454,6 +454,12 @@ static int RunSuite(string[] args)
 
     return 0;
 }
+
+// ⚠️ The default field is the catalog rather than a list written out here (BUILD-PLAN P18,
+// P20). Four of these names were spelled out in three places until P20 added a fifth rung and
+// none of them saw it — which is the same defect P18 fixed one layer down, in a front end
+// nobody thinks of as one.
+static string WholeLadder() => string.Join(",", StrategyCatalog.All.Select(strategy => strategy.Name));
 
 static IReadOnlyList<Strategy> Ladder(string names) =>
 [
@@ -618,6 +624,7 @@ static string Usage() => """
 
       --focal NAME       the seat being measured                    (greedy)
       --levels a,b,c     what goes beside it       (random,simple,greedy,cautious)
+                         — P16's arm, written out rather than the whole ladder
       --filler NAME      the seats that are neither                 (simple)
       --reference NAME   the level the others are reported against  (greedy)
       --games N          games in each of the 2 x |levels| cells    (2000)
@@ -630,7 +637,7 @@ static string Usage() => """
     measuring its own bias. k(k-1)/2 comparisons are Holm-corrected, and a raw "separated"
     that does not survive the correction is shown as not surviving it.
 
-      --strategies a,b,c the field                (random,simple,greedy,cautious)
+      --strategies a,b,c the field                       (the whole ladder)
       --pairs P          every unordered pair, or only each against the next
                          one named — which is all a monotone dial claims
                          (all | adjacent)                             (all)

@@ -138,7 +138,12 @@ public static class BotCatalog
             "cautious",
             "Plays like the last one, and thinks about what the card it is throwing is worth to whoever picks it up.",
             Strength: 2,
-            _ => new CautiousBotAgent())
+            _ => new CautiousBotAgent()),
+        new(
+            "counting",
+            "Plays like the last one, and remembers the cards it has watched go by.",
+            Strength: 2,
+            _ => new CountingBotAgent())
     ];
 
     /// <summary>

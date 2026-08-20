@@ -32,10 +32,10 @@ public class BotCatalogTests
     /// Written out rather than derived: a test that reads the catalog to check the catalog
     /// would agree with any rename at all.
     /// </remarks>
-    private static readonly string[] Ladder = ["random", "simple", "greedy", "cautious"];
+    private static readonly string[] Ladder = ["random", "simple", "greedy", "cautious", "counting"];
 
     [Fact]
-    public void TheLadderIsTheFourRungsInTheOrderTheyWereBuilt()
+    public void TheLadderIsTheFiveRungsInTheOrderTheyWereBuilt()
     {
         Assert.Equal(Ladder, BotCatalog.All.Select(rung => rung.Name));
     }
@@ -49,6 +49,7 @@ public class BotCatalogTests
     [InlineData("simple")]
     [InlineData("random")]
     [InlineData("cautious")]
+    [InlineData("counting")]
     public void AnOlderFileNamingARungStillResolvesToOne(string written)
     {
         var rung = BotCatalog.Resolve(written);
