@@ -1,4 +1,5 @@
 using BurmesePoker.Domain.Abstractions;
+using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Play;
 
@@ -25,6 +26,19 @@ internal sealed class RecordingAgent(IPlayerAgent inner) : IPlayerAgent
     /// <summary>The hand held when each discard was chosen — fourteen cards.</summary>
     public List<Card[]> HandsWhenDiscarding { get; } = [];
 
+    /// <summary>
+    /// What the seat would have thrown, in its own order, each time it was asked — empty for a
+    /// player that does not rank.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Taken during the turn and never afterwards</b> (BUILD-PLAN P19). A
+    /// <c>TurnContext</c>'s hand is the engine's own list, so a context kept and asked later is
+    /// asked about the <em>thirteen</em> — which is P13.1's finding ("a view model that aliases
+    /// the engine's hand list is not a view model") arriving in the test project. Found by
+    /// writing the test that compares a slip with the ranking it came off.
+    /// </remarks>
+    public List<Card[]> Rankings { get; } = [];
+
     /// <summary>How the card was taken, each time there was a choice about it.</summary>
     public List<TurnAction> Actions { get; } = [];
 
@@ -41,6 +55,7 @@ internal sealed class RecordingAgent(IPlayerAgent inner) : IPlayerAgent
     public Card ChooseDiscard(TurnContext context)
     {
         HandsWhenDiscarding.Add([.. context.Hand]);
+        Rankings.Add(_inner is IRanksDiscards ranker ? [.. ranker.RankDiscards(context)] : []);
         var discard = _inner.ChooseDiscard(context);
         Discards.Add(discard);
         return discard;

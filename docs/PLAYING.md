@@ -24,7 +24,7 @@ Then it asks four things:
 |---|---|
 | **How many at the table?** | 4 to 6. A round is not played with fewer or more (`RULES.md` §2.1). |
 | **How many of you are people?** | **1**, for solo play. The rest of the seats are filled by named bots — *Ruby (bot)*, *Sable (bot)*, … **0 is allowed**, and leaves the computer playing itself, which is worth watching once. |
-| **How well should the computer play?** | A list of four players, **hardest first**, each with a line saying how it plays. *greedy* and *cautious* are the two strong ones and nothing can tell them apart; *simple* wins about a fifth of rounds against *greedy*'s third; *random* knows only the rules. See [Playing better](#playing-better). Pressing return takes the top of the list, which is the hardest. |
+| **How hard should the computer be?** | Four settings, **hardest first**: *expert*, *hard*, *medium*, *easy*. They are the same player throughout — the best one there is — differing only in how often it slips and throws the wrong one of two good cards. At a table of all four, *expert* wins about **36%** of rounds and *easy* about **14%**, with *hard* and *medium* spread between them five to nine points apart (`STRATEGY.md` §9). Pressing return takes the top of the list, which is *expert*. |
 | **What do the stakes pay?** | A **round value** and a **money card value**, defaulting to $5 and $1. Both matter; the second is the whole side bet. |
 
 Seating is shuffled, so you will not always open. The seat that opens is announced, and so is
@@ -180,6 +180,12 @@ then keeps:
 - cards with **partners** — another suit of the same rank, or a neighbour in the same suit;
 - **jokers over everything**, since a joker fits anywhere.
 
+**And what separates the four difficulty settings is only how often it gets that tie-break
+wrong.** Every setting is the strong bot; *easy* throws the wrong one of two good cards nine
+times in ten, *medium* seven, *hard* one in two, and *expert* never. That is why a weaker
+setting still plays a game you recognise instead of a stranger's — it plays the right idea and
+slips, which is what a weaker person does.
+
 Two things worth knowing at the table:
 
 - **A fresh hand melds about 4 of its 13**, and about one hand in five melds nothing at all.
@@ -220,9 +226,12 @@ seats, at the same pace the console uses.
 
 Each card in the lobby is a table: what it is called, how many seats it has and how many of them
 are for people, and what it is doing. **Sit down** takes a seat; **Watch this table** takes none.
-*Open another table* opens a second one — and that form is where you say **how well the
-computer plays**, from the same list of four the console offers. Each open table says which one
-it is playing. You can be at both tables in two windows.
+*Open another table* opens a second one — and that form is where you say **how hard the computer
+is**, from the same four settings the console offers, and whether you want a **mixed table**:
+tick it and each computer seat plays at a different setting instead of all of them playing at
+one. Each open table says what its computer seats are playing, and **each computer seat is named
+for how it plays** — *Mya Lay (expert)*, *Cobra (hard)* — so you can see who the easy one is. You
+can be at both tables in two windows.
 
 ⚠️ **A table waits for everybody it was opened for.** The one the site starts with has **one**
 seat for a person, so it deals as soon as you sit down; start the site with `--people 2` and it
@@ -310,7 +319,8 @@ Useful options — all of them plain configuration, so `--` then the flag:
 | `--between 5` | Seconds between the settlement and the next deal. |
 | `--patience 120` | Seconds a question waits for you before the computer plays your seat. |
 | `--seats 5` | Four to six players (RULES.md §2.1). |
-| `--difficulty simple` | How well the computer plays at the table the site opens: `greedy`, `cautious`, `simple` or `random`. A name nobody knows opens the table on the hardest one rather than refusing to start. |
+| `--difficulty medium` | How hard the computer is at the table the site opens: `expert`, `hard`, `medium` or `easy`. A name nobody knows opens the table on `expert` rather than refusing to start. ⚠️ These are difficulty settings and not the *rungs* the simulator ranks — `--difficulty greedy` is a name this does not know. |
+| `--mixed true` | Give each computer seat a different setting instead of all of them the same. ⚠️ It takes a value, like `--hints`: a bare `--mixed` is silently ignored. |
 
 ⚠️ **If you walk away, the computer plays your seat** — the log says so and so does your seat, with
 a **⟳**. Come back and the next question is yours again.

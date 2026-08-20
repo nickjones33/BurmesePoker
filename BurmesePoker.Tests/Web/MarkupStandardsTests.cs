@@ -496,15 +496,22 @@ public class MarkupStandardsTests
             .First();
 
     /// <summary>
-    /// ✅ <b>P18 acceptance 1 — the lobby offers the whole ladder, from the one list.</b>
+    /// ✅ <b>P18 acceptance 1 — the lobby offers the whole list and keeps none of its own;
+    /// P19 — the list is the difficulty dial and not the skill ladder.</b>
     /// </summary>
     /// <remarks>
     /// <para>
-    /// 🔥 <b>The browser had no difficulty setting at all until this packet</b> — two hard-coded
+    /// 🔥 <b>The browser had no difficulty setting at all until P18</b> — two hard-coded
     /// <c>new GreedyBotAgent()</c>s — so this is the acceptance criterion rather than a
     /// decoration. What is checked is that the choice is <em>generated</em> from
-    /// <see cref="BotCatalog"/>: a page that listed the rungs itself would offer today's four
-    /// for ever, which is the failure the packet exists to end.
+    /// <see cref="DifficultyLadder"/>: a page that listed the levels itself would offer today's
+    /// four for ever, which is the failure P18 exists to end.
+    /// </para>
+    /// <para>
+    /// 🔥 <b>And that no <em>rung</em> is offered here at all</b> (BUILD-PLAN §3.12). A skill
+    /// ladder is a research instrument — unevenly spaced, entitled to be incomplete, and its
+    /// lower rungs play a different and worse idea rather than the right idea badly. A menu
+    /// with both lists in it is the one thing that design decision forbids.
     /// </para>
     /// <para>
     /// A source scan because a static SSR page is unreachable from here any other way — the
@@ -512,18 +519,20 @@ public class MarkupStandardsTests
     /// </para>
     /// </remarks>
     [Fact]
-    public void TheLobbyOffersEveryRungAndKeepsNoListOfItsOwn()
+    public void TheLobbyOffersEveryLevelAndKeepsNoListOfItsOwn()
     {
         var lobby = Sources.Read("Components/Pages/Tables.razor");
 
-        Assert.Contains("BotCatalog.ByStrength", lobby, StringComparison.Ordinal);
+        Assert.Contains("DifficultyLadder.ByStrength", lobby, StringComparison.Ordinal);
         Assert.Contains("Wanted!.Difficulty", lobby, StringComparison.Ordinal);
+        Assert.DoesNotContain("BotCatalog", lobby, StringComparison.Ordinal);
 
-        // ⚠️ And no rung is named in the markup, which is what makes the loop the only source
-        // of the list. `BotCatalog.Hardest` is a fallback rather than a name, so it is allowed.
+        // ⚠️ And no level is named in the markup, which is what makes the loop the only source
+        // of the list. `DifficultyLadder.Default` is a fallback rather than a name, so it is
+        // allowed.
         Assert.All(
-            BotCatalog.All,
-            rung => Assert.DoesNotContain($"\"{rung.Name}\"", lobby, StringComparison.Ordinal));
+            DifficultyLadder.All,
+            level => Assert.DoesNotContain($"\"{level.Name}\"", lobby, StringComparison.Ordinal));
     }
 
     /// <summary>

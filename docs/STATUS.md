@@ -10,51 +10,82 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-⚠️ **The next packet is P19 — difficulty as a dial.** Nothing is in progress and the tree is
-green at **477 passed / 0 failed**. ⚠️ **The suite takes about a minute** (18 s before P17): the
-tournament tests play real simulations, and they share `WallClockBudgets.Collection` so the two
-timing budgets are not starved.
+⚠️ **The next packet is P20 — memory: the card-counting rung, and it is droppable.** Nothing is
+in progress and the tree is green at **506 passed / 0 failed**. ⚠️ **The suite takes about two
+minutes** (one before P19, 18 s before P17): `DifficultyCalibrationTests` plays a 256-game
+reference table and two small tournaments, and it shares `WallClockBudgets.Collection` with the
+other heavy classes so the two timing budgets are not starved.
 
-✅ **P18 is done (2026-08-19): one catalog, and a difficulty default that had been lying since
-P10.** `BurmesePoker.Domain/Agents/BotCatalog.cs` is the ladder — four `BotRung`s carrying a
-name, a line of description written for somebody choosing an opponent, a `Strength` and a
-factory taking a seat seed — and it is now the only place a bot is named. `Sim.StrategyCatalog`
-is an adapter over it; the console's private two-value `Difficulty` enum is **deleted**; and the
-browser, which had **no difficulty setting at all** (two hard-coded `new GreedyBotAgent()`s),
-takes `--difficulty`, carries it on `TablePlan`, and **offers the whole ladder on the lobby's
-open-a-table form**.
+✅ **P19 is done (2026-08-19): the difficulty dial, calibrated — and §0's fifth goal now has its
+*product* half finished.** `BurmesePoker.Domain/Agents/DifficultyLadder.cs` holds four
+`DifficultyLevel`s — `easy`, `medium`, `hard`, `expert` — each the **strongest rung there is
+(`greedy`) with a measured mistake rate**: with probability ε it throws the card that rung ranked
+*second* rather than the one it ranked first, and nothing else about it changes.
+`FallibleAgent` is the decorator, `IRanksDiscards` is what makes a plausible mistake possible,
+and `CoverScore.Discard` is now **defined as the head of `CoverScore.Ranking`** rather than as a
+second loop that agrees with one. Both front ends offer **levels only**; `BotCatalog` stays the
+research instrument and is what the harness ranks (§3.12).
 
-🔥 **The finding, and it was a user-facing bug rather than a tidiness one: a
-`SelectionPrompt<T>` opens on `default(T)` when that value is one of the choices.** The deleted
-enum was `Easy = 0`, so the console listed *Hard* first, read as though hard were the default,
-and gave `SimpleBotAgent` to everybody who pressed return — **since P10**. ⚠️ **Found because
-the refactor's byte-comparison failed**: the same seed played a different game before and after,
-and the journal header (which now writes the catalog name) is what said which bot was in the
-seat. Confirmed with a probe prompt offering `(7, 0, 5)`, which comes back `0`. A rung is a
-reference type, so `default` is null, it is not in the list, and the cursor stays on the first
-entry — the hardest. ⚠️ **P19 inherits this the moment a level becomes an enum**, and it would
-be a difficulty dial silently defaulting to its bottom.
+🔥 **The calibration, and it is the packet.** ε turns out to be a far bigger dial than anything
+on the skill ladder — `greedy@0` against `greedy@1` is **+33.3 ± 1.6** points head to head,
+three times the whole `simple`-to-`greedy` gulf — **and violently non-linear**: the sweep put
+ε = 0 → 0.5 at about **8** points of win rate and ε = 0.5 → 1 at about **17**. ⚠️ **So levels
+spaced evenly in ε would not be spaced evenly in play**, and the shipped values are spaced by the
+measurement instead: **0.9, 0.7, 0.5, 0.0**. At the reference table (all four at one table, 256
+assignments, 8,192 games) they measure **14.50 ± 0.69 / 22.17 ± 0.79 / 27.22 ± 0.83 /
+36.11 ± 0.87**, and head to head at 8,008 games a step the margins are **+10.79 ± 1.00**,
+**+5.69 ± 1.01**, **+9.90 ± 1.00** — **every one separated under Holm**, the narrowest of them
+5.7× the half-width. **Four levels rather than three, and the count is a measurement.**
 
-🔥 **Second finding: a record's `with` expression does not re-run a property initialiser.**
-`BotRung` refuses a name containing `#`, because the tournament labels a copy `"{name}#mirror"`
-and a menu offering `greedy#mirror` as an opponent would be absurd. Validated in an initialiser
-it refused one in a constructor and allowed one in `rung with { Name = … }` — **exactly how
-`Tournament` makes that copy**. The check lives in the `init` accessor now, and it was found by
-writing the test rather than by reading the code.
+⚠️ **`--pairs adjacent` was needed and was not in the plan's build list.** Acceptance 1b asks
+that the family be the k−1 steps rather than the round-robin — only "n+1 beats n" is a claim the
+menu makes — so `TournamentOptions.Pairs` decides which pairs are *played* as well as which are
+corrected, and a four-level dial costs three head-to-head cells instead of six. 🔥 **It found a
+latent assumption**: `PairingChecks` read the *field* to choose the two cells it compares across
+and threw `Sequence contains no matching element` on a run where most pairs never met. It reads
+the **cells that were played** now, which is the same answer for a round-robin.
 
-⚠️ **How a console change is proved a refactor now.** The whole capture cannot match — the
-prompt went from two entries to four, which is the packet — so compare **from the `Seating:`
-line on**, and pass `--pick n` so both captures chose the same rung (`0` greedy, `1` cautious,
-`2` simple, `3` random). It is byte-identical: **6,625 bytes for `--script bots`, 89,233 for
-`--script human`.** ⚠️ **The difficulty question is the third prompt with `bots` and the fourth
-with `human`** — a match with a person in it asks that person's name first — so a `--pick` that
-is right for one does *nothing at all* for the other rather than failing.
+🔥 **A `TurnContext`'s hand is the engine's own list, and P13.1's finding arrived in the test
+project.** The obvious way to test "the mistake is the card the rung ranked second" is to keep
+the context and ask the rung for its ranking afterwards — which asks it about the **thirteen**
+that were kept rather than the fourteen it chose from, and yields a confidently wrong expected
+card. `RecordingAgent` records the ranking **during** the turn now. Found by writing the test.
 
-⚠️ **One thing seen and deliberately not fixed:** `sim -- replay` of a single-game journal prints
-`± Infinity` and runs its columns together, because one game gives no interval. It predates this
-packet (P17 added the intervals, P18 changed no report code) and belongs with P23.
+⚠️ **The mistake has exactly one site, deliberately.** Taking the discard, claiming the turned-up
+card and declaring are all strict-improvement or must-answer questions with no plausible
+second-best, so ε is one dial rather than three — which is what makes "about seven points a step"
+attributable to anything. A `FallibleAgent` **refuses an inner player that cannot rank its own
+discards**, so `random` can never carry an ε that silently does nothing.
 
-✅ **P17 is done (2026-08-19): the tournament, and the first honest interval this harness has
+✅ **Acceptance 3 verified end to end.** `expert` (ε = 0) plays the match `greedy` plays, byte
+for byte: **7,371 bytes for `--script bots` and 90,726 for `--script human`, identical from the
+`Seating:` line on**, captured from `HEAD` and from this tree with `--pick 0` in both. ⚠️ **The
+`--pick` map has changed**: it is now `0` expert, `1` hard, `2` medium, `3` easy.
+
+⚠️ **`sim suite` gained a second standing check.** It already exited non-zero when the harness's
+null test failed; it now also fails if **the dial stops being monotone** — a rung that raises the
+ceiling (P20–P22) raises every level and moves the calibration, so the menu cannot go stale
+quietly. The suite is **41 measurements in 34 minutes at `--games 8000`** (~120,000 games), and
+**every ladder figure reproduced P17's exactly**.
+
+⚠️ **Three things only pressing the buttons found** (§3.11 B — "only playing it finds these").
+(1) The mixed-table **checkbox row inherited the form's ten-rem label column** — its label is the
+question rather than the caption, and it wrapped onto three lines; `.opening .mixed` is the
+override. (2) 🔥 **`--mixed` is silently ignored without a value.** The command-line
+configuration provider records a switch only when it carries one, so the site booted, said
+nothing, and gave every seat `expert`; it is **`--mixed true`**, exactly as `--hints false` is.
+(3) A seat name is truncated with an ellipsis at the panel's width, and `Aung Aung (medium)` now
+reaches it — the whole name is on a `title` so a hover says it, which helps every long name and
+not only these.
+
+⚠️ **Two things P19 deliberately left.** (1) A computer seat in the browser is now named for how
+it plays — `Mya Lay (expert)` rather than `Mya Lay (bot)` — because a mixed table nobody can tell
+apart is a mix nobody asks for twice; the console's bot names are untouched, which is what keeps
+the byte-comparison above meaningful. (2) The console offers one level for the whole table; only
+the browser can open a **mixed** one (`--mixed`, or the lobby form's checkbox), which is all
+acceptance 6 asks for.
+
+✅ **P17 is done (2026-08-19): the tournament✅ **P17 is done (2026-08-19): the tournament, and the first honest interval this harness has
 printed.** `BurmesePoker.Sim -- tournament` plays every unordered pair head to head, reports the
 free-for-all beside it, ranks the field, and puts every margin through a **Holm–Bonferroni**
 correction; `-- suite` generates `docs/strategy/measurements.csv`; `docs/STRATEGY.md` is created
@@ -567,8 +598,8 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P16** Does the player before you decide your game? | P15 | done 2026-08-19 — **no**, not between thinking players: −1.0 ± 2.1 pts |
 | ☑ | **P17** The tournament: a harness that ranks players | P15, P16 | done 2026-08-19 — **a win rate is a ratio over games, not a mean of ratios**; pairing widens within a cell by √2 |
 | ☑ | **P18** One catalog: the same players everywhere | — | done 2026-08-19 — `BotCatalog` in Domain; **the console's difficulty default had been the *easy* bot since P10** |
-| ☐ | **P19** Difficulty as a dial, not a list | P17, P18 | **next** — **goal 5's product, finished here**: a mistake rate over the strongest rung, calibrated |
-| ☐ | **P20** Memory: the card-counting rung | P17, P18 | droppable — the first packet to ask the engine for anything; raises a rules question |
+| ☑ | **P19** Difficulty as a dial, not a list | P17, P18 | done 2026-08-19 — **goal 5's product, finished**: four levels, one mistake rate each, **calibrated to ~7 points a step** |
+| ☐ | **P20** Memory: the card-counting rung | P17, P18 | **next**, and droppable — the first packet to ask the engine for anything; raises a rules question |
 | ☐ | **P21** Outs: the first rung that looks ahead | P17, P18 | droppable — P15 specified it; the ~100× cost is the packet |
 | ☐ | **P22** Money: is there a strategy in the side bet? | P17, P18 | droppable — judged on `$/round`, not win rate |
 | ☐ | **P23** The standing answer | P17, P19 | `docs/STRATEGY.md`, re-calibrated against whichever rungs landed |
@@ -619,33 +650,48 @@ harness prints today would be a guess wearing a number.
 
 ## Notes for the next session
 
-**P19 is next, and P18 has laid its plumbing.** A level is a `BotRung` — name, one line of
-description written for somebody choosing an opponent, a `Strength`, and a factory taking a seat
-seed — and *everything* already resolves one by name: the console prompt, `--difficulty`, the
-lobby form, `TablePlan`, `HostedTable`, `Sim.StrategyCatalog`, the journal header. **A level
-added to `BotCatalog` arrives in all of them with no front-end work.**
+**P20 is next, and it is the first of three droppable packets.** P19 finished the difficulty
+*product*; P20–P22 widen the *ladder*, and §3.12 item 1 is the reason none of them is required:
+a new rung raises the ceiling and moves the calibration, but a person already gets a good,
+measured opponent without any of them. ⚠️ **P15's precedent is designed into the plan** — a whole
+packet on a plausible rung worth +0.5 ± 0.55 points — and P17 priced it: at 8,008 games a cell a
+rung worth less than about a point is not promotable, and half a point costs ~34,000 games a
+cell.
 
-⚠️ **Four things P19 has to decide or inherit, all of them written up in BUILD-PLAN P19.**
+⚠️ **What P19 leaves for whoever adds a rung.**
 
-1. 🔥 **`BotCatalog` holds one kind of thing today and P19 makes it two.** Rungs are a research
-   instrument ordered by what was added; levels are a product ordered by measurement. §3.12 says
-   they are different jobs. **Decide which list each front end offers** — the strong default is
-   levels to the console and the lobby, rungs to the harness — and do not ship a menu with both
-   in it.
-2. 🔥 **A `SelectionPrompt<T>` opens on `default(T)` when that value is one of the choices.**
-   This is what P18 found: the deleted enum was `Easy = 0`, the list read *Hard* first, and
-   every person who pressed return got the easy bot. **If a level is an enum, the bug is back** —
-   and it would be a difficulty dial silently defaulting to its bottom.
-3. ⚠️ **`TablePlan.Difficulty` is one name for the whole table.** P19 wants it per seat, so that
-   field is the single-value shorthand and the assignment is the new thing.
-4. ⚠️ **`ComputerAdvice` and `TableOptions.StandIn` are `BotCatalog.Hardest` deliberately**, and
-   say so in three places. That expression must go on meaning *play as well as you can* when the
-   hardest thing in the catalog becomes a level.
+1. 🔥 **A new rung changes the difficulty dial, whether or not anybody meant it to.** Every level
+   is `BotCatalog.Hardest` with an ε, so a rung stronger than `greedy` becomes the base of all
+   four levels the day it lands, and the ε values stop being the ones that were measured. **`sim
+   suite` fails the run if the dial stops being monotone**, which catches the worst case but not
+   a dial that has merely gone uneven — re-run the calibration and re-space it (P23 owns this).
+2. ⚠️ **A rung that a level can be built on has to implement `IRanksDiscards`.** Three of the
+   four do; `random` does not, and `FallibleAgent` refuses it rather than accepting an ε that
+   does nothing. A rung whose discard does not come out of `CoverScore.Ranking` gets the
+   interface for free only if it is written that way.
+3. ⚠️ **`ComputerAdvice` and `TableOptions.StandIn` are `BotCatalog.Hardest` — the *rung*, not a
+   level — and now say so in three places.** A hint that got worse as you lowered the difficulty
+   would be absurd, and a seat the computer took over for somebody should not start playing
+   badly.
+4. ⚠️ **`--strategies` resolves three vocabularies now**: a rung, a difficulty level, and a
+   calibration probe such as `greedy@0.35`. `LayeringTests` bans constructing either a rung or a
+   `FallibleAgent` outside `Domain/Agents`.
+
+**What P19 built, in one paragraph.** Three new files in `BurmesePoker.Domain/Agents` —
+`DifficultyLadder.cs` (with `DifficultyLevel`), `FallibleAgent.cs`, `IRanksDiscards.cs` — a
+`Ranking` on `CoverScore` that `Discard` is now the head of, `PairFamily` and
+`TournamentReport.Met` in the harness, a second tournament inside `Suite`, and the two front ends
+rewired from `BotCatalog` to `DifficultyLadder`. **`TablePlan` gained `Difficulties`** — a level
+per computer seat, with the existing single-value `Difficulty` as its shorthand. **Nothing in the
+engine changed**, which is the fifth packet in a row to add a whole capability over seams that
+already existed.
 
 **How to prove a console change is a refactor, now that the prompt is a list.** Capture before
 and after and compare **from the `Seating:` line on** — the prompt above it is allowed to differ
-— and pass `--pick n` so both captures chose the same rung: `--pick 0` is `greedy`, `1`
-`cautious`, `2` `simple`, `3` `random`. ⚠️ **The difficulty question is the third prompt with
+— and pass `--pick n` so both captures chose the same setting: `--pick 0` is `expert`, `1` `hard`,
+`2` `medium`, `3` `easy`. ⚠️ **P19 changed that map** — before it the list was the ladder
+(`greedy`, `cautious`, `simple`, `random`) — which is why a capture is only comparable with one
+that made the same choice *in the same build*. ⚠️ **The difficulty question is the third prompt with
 `--script bots` and the fourth with `--script human`**, because a match with a person in it asks
 that person's name first; `DIFFICULTY_KEY` in the driver holds both, and getting it wrong makes
 `--pick` do nothing at all rather than fail.
@@ -1709,6 +1755,7 @@ designates its value and whether you may throw back the card you just took. `QUE
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-19 | P19 | ☑ Done. **Difficulty as a dial — four levels, one mistake rate each, and every step measured.** `Domain/Agents/DifficultyLadder.cs` holds `easy`, `medium`, `hard`, `expert`; each is `BotCatalog.Hardest` wrapped in a `FallibleAgent` that, with probability ε, throws the card that rung ranked **second** rather than first. `IRanksDiscards` is what makes that a *plausible* mistake rather than a random one (§3.12 item 3 — a bot that threw jokers away would read as broken, not weak), and `CoverScore.Discard` is now **defined as the head of `CoverScore.Ranking`** so the winner and the runner-up cannot drift apart. Both front ends offer levels only; the ladder stays the research instrument (§3.12). **506 tests, up from 477.** 🔥 **The calibration is the packet, and ε is violently non-linear**: `greedy@0` vs `greedy@1` is **+33.3 ± 1.6** points head to head — three times the whole `simple`-to-`greedy` gulf — with ε = 0→0.5 worth about 8 points and ε = 0.5→1 worth about 17. **So the four are spaced evenly in *results* and not in ε**: 0.9, 0.7, 0.5, 0.0, measuring **14.50 / 22.17 / 27.22 / 36.11** at the reference table and **+10.79 ± 1.00, +5.69 ± 1.01, +9.90 ± 1.00** head to head at 8,008 games a step — **all three separated under Holm**, the narrowest 5.7× the half-width. **Four levels rather than three, and the count is a measurement rather than a taste.** ⚠️ **`--pairs adjacent` had to be built and was not in the plan's build list**: acceptance 1b wants the family to be the k−1 steps, so `TournamentOptions.Pairs` decides which pairs are *played* as well as corrected — and 🔥 it exposed a latent assumption, `PairingChecks` reading the *field* rather than the *cells played* to pick its across-cell comparison, which threw on any run where most pairs never meet. 🔥 **Second finding, and it is P13.1's arriving in the test project: a `TurnContext`'s hand is the engine's own list**, so keeping a context and asking the rung for its ranking afterwards asks about the **thirteen** kept rather than the fourteen it chose from — `RecordingAgent` records the ranking during the turn now, and this was found by writing the test. ✅ **Acceptance 3 verified end to end**: `expert` at ε = 0 plays the match `greedy` plays, **7,371 bytes (`bots`) and 90,726 (`human`) identical from the `Seating:` line on**, captured from `HEAD` and from this tree at `--pick 0`. ⚠️ **The `--pick` map changed** — `0` expert, `1` hard, `2` medium, `3` easy. ⚠️ **`sim suite` gained a second standing check** and exits non-zero if the dial stops being monotone, beside the null test; the regenerated suite is **41 measurements, ~120,000 games, 34 minutes**, and every ladder figure reproduced P17's exactly. ⚠️ A computer seat in the browser is now named for how it plays (`Mya Lay (expert)`), because a mixed table nobody can tell apart is a mix nobody asks for twice; the console's names are untouched, which is what keeps the byte-comparison meaningful. ⚠️ **Three defects found only by opening the lobby in Chrome and pressing the buttons**: the new checkbox row inherited the form's ten-rem label column and wrapped onto three lines; 🔥 **`--mixed` without a value is silently ignored** by the command-line configuration provider, so it is `--mixed true` like `--hints false`, found by reading the seat names and seeing four `expert`s; and a seat name is ellipsised at the panel's width, which `Aung Aung (medium)` now reaches — the full name went onto a `title`. |
 | 2026-08-19 | P18 | ☑ Done. **One catalog — a bot is named in one place, and every front end resolves the name.** `BurmesePoker.Domain/Agents/BotCatalog.cs` holds the four rungs as `BotRung`s (name, a line written for somebody choosing an opponent, a `Strength`, a factory taking a seat seed); `Sim.StrategyCatalog` is an adapter over it, the console's private two-value `Difficulty` enum is **deleted**, `ComputerAdvice` and `TableOptions.StandIn` ask it for the hardest rung, and the browser — which had **no difficulty setting at all**, just two hard-coded `new GreedyBotAgent()`s — gained `--difficulty`, `TablePlan.Difficulty` and **the whole ladder on the lobby's open-a-table form**. **477 tests, up from 461.** 🔥 **The finding: the console's difficulty default had been the *easy* bot since P10.** A `SelectionPrompt<T>` opens on `default(T)` when that value is one of the choices, and the enum was `Easy = 0` — so the list read *Hard* first, read as though hard were the default, and handed `SimpleBotAgent` to everybody who pressed return. **Found because the refactor's byte-comparison failed**: the pre- and post-P18 captures played different games at the same seed, and the journal header — which now writes the catalog name — is what finally said which bot was in the seat. Confirmed rather than guessed with a probe prompt offering `(7, 0, 5)`, which comes back `0`. A rung is a reference type, so `default` is null and the cursor stays on the first entry. ⚠️ **P19 inherits the bug the moment it makes a level a value type.** 🔥 **Second finding: a record's `with` does not re-run a property initialiser.** `BotRung.Name` refuses a `#` because the tournament's null cell labels a copy `"{name}#mirror"` and a front end offering `greedy#mirror` as an opponent would be absurd — but validating in an initialiser refused it in a constructor and *allowed* it in `rung with { Name = … }`, which is exactly how `Tournament` makes that copy. The check moved into the `init` accessor; **found by writing the test, not by reading the code.** ⚠️ **Acceptance 2 was amended twice**: the whole capture cannot be byte-identical because acceptance 1 changes the prompt, so the comparison is of the match — **6,625 bytes (`bots`) and 89,233 (`human`), identical from the `Seating:` line on** — and `--pick n` was added to `drive-console.py` so a capture names the rung it played. ⚠️ The difficulty question is the **third** prompt with `--script bots` and the **fourth** with `--script human` (a person is asked their name first), which made a `--pick` that worked for one silently do nothing for the other. Acceptance 4's grep test went into `LayeringTests` rather than `MarkupStandardsTests` — it is a claim about seven projects, not about markup — and it bans constructing a **rung**, with the types taken from the catalog so a fifth one is covered the day it is added. Verified end to end in the real browser: the house table opened with `--difficulty simple` says so, and a table opened from the form on `random` deals `random`. |
 | 2026-08-19 | P17 | ☑ Done. **The tournament — and the first honest interval this harness has printed.** `BurmesePoker.Sim -- tournament` plays every unordered pair head to head at every seating in which both are at the table, reports the fully crossed free-for-all beside it (P16's lesson that they answer different questions), ranks the field by mean margin, and puts all six comparisons through **Holm–Bonferroni**; `-- suite` generates **`docs/strategy/measurements.csv`**, and **`docs/STRATEGY.md` is created and quotes that file rather than a session's console** (§3.12). **Two independent 15-minute, ~64,000-game runs of the suite wrote a byte-identical file.** 🔥 **The finding that changed the code was a number that should not have moved:** built as the packet literally said — "a mean over games, one value per game" — the balanced headline came back **30.6/19.3** where P16 published **29.6/20.4**. Neither is wrong; they are **two different estimands**. A strategy holds a different number of seats in different games of a crossed run, so the unweighted average of per-game *ratios* over-weights the games it held fewest seats in — which, for a strong strategy, are the games it does best in. ⚠️ **The gap was 1.05 points, the size of P16's whole seating effect**, and adding an interval to a figure must not change the figure (§3.8 item 4). So `GameValue` carries **a total and the trials it is out of**, and `Measurement.Of` is the **ratio estimator** — totals divided, standard error from the per-game residual `total − ratio × trials`, the game still the trial, and *exactly* the per-game mean when the denominator is constant. The balanced headline now reads **29.75 ± 0.47 / 20.25 ± 0.47**. 🔥 **The second finding: "paired is narrower" is half backwards.** Across cells (one strategy, two tables, same shoes) pairing narrows — ratios **0.57–0.95**. Within a cell (two strategies, one table) **exactly one seat declares**, the series are strongly negatively correlated, and pairing **widens** — measured **1.408 / 1.409 / 1.414**, √2 to three digits — so the add-the-variances formula is **anti**-conservative on a head-to-head margin by 41%. P17 acceptance 3 amended to say so. **The measured ladder at 8,008 games a cell:** `random` loses by 49.7–49.9 ± 0.4; `simple` loses to `greedy` by **11.2 ± 1.0** and to `cautious` by **10.8 ± 1.0**; 🔥 **`greedy` vs `cautious` is `−0.2 ± 1.0`, p = 0.70 — P15's negative result confirmed under a design P15 never ran.** Free-for-all (8,192 games, 256 seatings): 0.1/27.3/35.8/36.5 ± 0.9. ⚠️ `cautious` leads `greedy` in one table and trails it in the other, both inside the interval — **exactly what the correction exists to stop a reader promoting to a rung.** ✅ **The null test passes**: `cautious` against a copy of itself is 25.1 ± 0.5 / 24.9 ± 0.5 against a fair 25.0%, margin +0.3 ± 1.0, each label in each seat exactly 4,004 times — and `sim suite` exits non-zero if it ever fails. **Resolution stated for P19–P22: 1.02 points at 8,000 games a cell; half a point costs ~34,000, four hours** — so a rung worth less than a point is not promotable at the default size. Seven new files in Sim (`GameValue`, `Normal`, `Holm`, `StrategySeries`, `Tournament`, `TournamentCsv`, `Suite`), plus `SeatingPlan.HeadToHead` and a rewritten `Measurement`; **`BurmesePoker.Domain`, `Simulator`, `GameRunner` and `Replay` are all unchanged.** Build clean, **461 passed / 0 failed** (23 new: 9 in `Sim/StatisticsTests`, 10 in `Sim/TournamentTests`, 4 in `Sim/SuiteTests`); ⚠️ the suite now takes **~60 s** against 18 s, because the tournament tests play real simulations. ⚠️ **One display defect fixed in passing** — a .NET two-section format picks its section from the **rounded** value, so `-0.04` under `"+0.0;-0.0"` prints `-+0.0`; `ReportNeighbours` had it in every signed column and signed figures are built by hand now. No new rules question — measurement is not a rule, so `RULES.md` stays at **rev 14**. Amended BUILD-PLAN §0, P17 (acceptance 3 and a "What P17 found" section), **P18 (the mirror label is not a rung), P19 (the family is the adjacent pairs, and the spacing has a 1-point floor), P20 (the promotion bar and its price) and P23 (STRATEGY.md now exists; what it still owes)**. |
 | 2026-08-19 | — (planning) | 🔥 **Goal 5 stated and planned: a designed difficulty system and a settled answer to what works.** No packet executed and no code changed — the deliverable is the plan. Added **§3.12** (*difficulty is a dial, skill is a ladder, and they are not the same axis*), **§0's fifth goal** with the three architecture rows it demands, **seven packets P17–P23** in §5, a second branch on the §4 graph, and **five risk rows** in §7. Baseline verified first: build clean, **438 passed / 0 failed**. 🔥 **Two findings drove the ordering.** (1) A balanced 2,048-game run gave `random` 0.0% / `simple` 26.7% / `greedy` 36.1% / `cautious` 36.8% — **and the ordinary report prints no interval at all**, so P17 (statistics) precedes P19 (calibration); `Measurement` already exists and is reachable from one verb only. (2) **Four independent notions of *which bot*** across Sim, Console, Web and Server, and **the browser has no difficulty setting** — so P18 unifies the catalog before any new rung is written. ⚠️ **P19 finishes the difficulty product with today's rungs**; P20–P22 are droppable in preference order, which is P15's +0.5 ± 0.55 lesson applied in advance. ⚠️ **P20 will need a rules answer** — whether a discard pile is inspectable or only its top card (`RULES.md` §9 #9 stops being moot once a bot counts cards); the safe default is *only what this seat has been shown*, which errs towards a weak bot rather than a cheating one. |

@@ -49,14 +49,23 @@ public sealed class HostedTable : IAsyncDisposable
     ];
 
     /// <summary>
-    /// How well the computer plays at this table, resolved once out of the one list there is.
+    /// How hard each of the computer's seats is, in seating order, resolved once out of the
+    /// one dial there is.
     /// </summary>
     /// <remarks>
-    /// ⚠️ <b>The plan carries a name and this carries the rung</b> (BUILD-PLAN P18). Resolving
-    /// it here means an unknown name is dealt with when the table is opened rather than on the
+    /// <para>
+    /// ⚠️ <b>The plan carries names and this carries the levels</b> (BUILD-PLAN P18). Resolving
+    /// here means an unknown name is dealt with when the table is opened rather than on the
     /// first turn of the first round.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>One entry per computer seat, even when they are all the same</b> (P19). A table
+    /// may mix levels, so "the table's difficulty" is a list; the single-value shorthand on
+    /// the plan fills it, and <see cref="Difficulty"/> reads the first back for a lobby that
+    /// wants one word.
+    /// </para>
     /// </remarks>
-    private readonly BotRung _rung;
+    private readonly IReadOnlyList<DifficultyLevel> _levels;
 
     private readonly Lock _gate = new();
     private readonly CancellationTokenSource _stopping = new();
@@ -77,7 +86,7 @@ public sealed class HostedTable : IAsyncDisposable
         Id = id;
         Plan = plan;
         _log = log ?? throw new ArgumentNullException(nameof(log));
-        _rung = BotCatalog.Find(plan.Difficulty) ?? BotCatalog.Hardest;
+        _levels = Levelled(plan);
 
         if (plan.People < 0 || plan.People > plan.Seats)
         {
@@ -129,8 +138,21 @@ public sealed class HostedTable : IAsyncDisposable
     /// <summary>Whether the computer's suggestions are shown to begin with.</summary>
     public bool Hints => Plan.Hints;
 
-    /// <summary>How well the computer plays here.</summary>
-    public BotRung Difficulty => _rung;
+    /// <summary>How hard the computer's seats are here, in seating order.</summary>
+    /// <remarks>Empty at a table with no computer seats at all.</remarks>
+    public IReadOnlyList<DifficultyLevel> Difficulties => _levels;
+
+    /// <summary>
+    /// How hard this table is in one word — the level its first computer seat plays.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A mixed table has no one answer</b> (BUILD-PLAN P19), which is what
+    /// <see cref="IsMixed"/> is for; a lobby that shows one word must say so.
+    /// </remarks>
+    public DifficultyLevel Difficulty => _levels.Count > 0 ? _levels[0] : DifficultyLadder.Default;
+
+    /// <summary>Whether the computer's seats are not all at the same level.</summary>
+    public bool IsMixed => _levels.Distinct().Count() > 1;
 
     /// <summary>The seats still waiting for somebody, in seating order.</summary>
     public IReadOnlyList<PlayerId> WaitingFor => _table.WaitingFor;
@@ -379,15 +401,43 @@ public sealed class HostedTable : IAsyncDisposable
     /// ⚠️ <b>A person's seat is named when somebody sits in it</b> (P13.6) — a lobby opens a
     /// table before it knows who is coming, so all it can put here is a placeholder.
     /// </remarks>
+    /// <summary>
+    /// A level for each computer seat, out of the plan's list or its single-value shorthand.
+    /// </summary>
+    /// <remarks>
+    /// <b>Resolved and never trusted</b>: a name that is not on the dial falls back to the
+    /// plan's own setting, and that to the default. A table opens on a typo rather than
+    /// failing to (P18).
+    /// </remarks>
+    private static IReadOnlyList<DifficultyLevel> Levelled(TablePlan plan)
+    {
+        var shorthand = DifficultyLadder.Find(plan.Difficulty) ?? DifficultyLadder.Default;
+        var computers = Math.Max(0, plan.Seats - plan.People);
+
+        return plan.Difficulties is not { Count: > 0 } named
+            ? [.. Enumerable.Repeat(shorthand, computers)]
+            :
+            [
+                .. Enumerable.Range(0, computers)
+                    .Select(index => DifficultyLadder.Find(named[index % named.Count]) ?? shorthand)
+            ];
+    }
+
+    /// <remarks>
+    /// 🔥 <b>A computer seat is named for how it plays</b> (BUILD-PLAN P19: a seat should read
+    /// as a character rather than as a setting). It used to read <c>Mya Lay (bot)</c> at every
+    /// seat of every table, which says nothing once a table can mix levels — and a mix nobody
+    /// can see is a mix nobody asked for twice.
+    /// </remarks>
     private TableSeat Fill(int seat) => seat <= Plan.People
         ? TableSeat.Person(new PlayerId(seat), $"Seat {seat}")
         : TableSeat.Computer(
             new PlayerId(seat),
-            $"{BotNames[(seat - 1) % BotNames.Length]} (bot)",
+            $"{BotNames[(seat - 1) % BotNames.Length]} ({_levels[seat - Plan.People - 1].Name})",
             // ⚠️ A seed per seat, out of the table's own (§3.9): a rung that decides anything
             // at random — only `random` does today — must still be reproducible from the one
             // number the table carries, and two seats of it must not play the same game.
-            PacedAgent.Wrap(_rung.Create(Plan.Seed + seat), Plan.Pace));
+            PacedAgent.Wrap(_levels[seat - Plan.People - 1].Create(Plan.Seed + seat), Plan.Pace));
 
     /// <summary>
     /// Folds everything the watcher has been told since last time into the board.

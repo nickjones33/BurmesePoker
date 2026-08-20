@@ -233,6 +233,46 @@ public class LayeringTests
         Assert.Equal(BotCatalog.All.Count, found);
     }
 
+    /// <summary>
+    /// ✅ <b>P19 — a difficulty level is built in one place too.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The same rule as above, one layer up.</b> A level is a rung with a measured mistake
+    /// rate, so anything that wrapped its own <see cref="FallibleAgent"/> would be an
+    /// uncalibrated opponent wearing a level's clothes — and the ε values are the whole of the
+    /// calibration (BUILD-PLAN §3.12).
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>It bans the wrapper, not the interface.</b> A rung that can be asked for its own
+    /// ranking is a property of the rung; only the decorator that acts on that ranking is a
+    /// difficulty setting.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void NothingOutsideTheDialWrapsAMistakeRateOfItsOwn()
+    {
+        var catalog = Path.Combine("BurmesePoker.Domain", "Agents") + Path.DirectorySeparatorChar;
+        var found = 0;
+
+        foreach (var (path, text) in Sources.Production)
+        {
+            foreach (Match built in Regex.Matches(text, @"\bnew\s+FallibleAgent\s*\("))
+            {
+                found++;
+
+                Assert.True(
+                    path.StartsWith(catalog, StringComparison.Ordinal),
+                    $"{path}: builds a FallibleAgent directly. A difficulty level is named once, in "
+                    + "DifficultyLadder, with a mistake rate that measurement put there (BUILD-PLAN P19) — "
+                    + $"anything else is an uncalibrated opponent. Found: {built.Value}");
+            }
+        }
+
+        // A guard on the guard: the one legitimate construction is in DifficultyLevel.Create.
+        Assert.Equal(1, found);
+    }
+
     /// <remarks>
     /// A guard on the guards above: <see cref="Assembly.GetReferencedAssemblies"/> lists only
     /// what the compiler kept, so a test that passed because the list was empty would be

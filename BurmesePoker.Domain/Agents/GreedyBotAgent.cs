@@ -39,7 +39,7 @@ namespace BurmesePoker.Domain.Agents;
 /// agent fell into.
 /// </para>
 /// </remarks>
-public sealed class GreedyBotAgent : IPlayerAgent
+public sealed class GreedyBotAgent : IPlayerAgent, IRanksDiscards
 {
     /// <summary>
     /// Take the discard only if it melds more of the hand than what is already held.
@@ -76,6 +76,19 @@ public sealed class GreedyBotAgent : IPlayerAgent
         ArgumentNullException.ThrowIfNull(context);
 
         return CoverScore.Discard(context.Hand, Preference);
+    }
+
+    /// <summary>The same ordering the discard is the head of (BUILD-PLAN P19).</summary>
+    /// <remarks>
+    /// <b>One call, not two.</b> <see cref="ChooseDiscard"/> is defined as the first of these, so a level built on
+    /// this rung slips to a card this rung genuinely considered rather than to one somebody
+    /// thought it might have.
+    /// </remarks>
+    public IReadOnlyList<Card> RankDiscards(TurnContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        return CoverScore.Ranking(context.Hand, Preference);
     }
 
     /// <summary>

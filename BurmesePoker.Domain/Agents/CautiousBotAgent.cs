@@ -39,7 +39,7 @@ namespace BurmesePoker.Domain.Agents;
 /// that experiment too — a weak denier can only produce a weak intervention.
 /// </para>
 /// </remarks>
-public sealed class CautiousBotAgent : IPlayerAgent
+public sealed class CautiousBotAgent : IPlayerAgent, IRanksDiscards
 {
     /// <summary>
     /// Every legal three-card window of consecutive ranks, in run order.
@@ -87,6 +87,19 @@ public sealed class CautiousBotAgent : IPlayerAgent
         ArgumentNullException.ThrowIfNull(context);
 
         return CoverScore.Discard(context.Hand, Preference);
+    }
+
+    /// <summary>The same ordering the discard is the head of (BUILD-PLAN P19).</summary>
+    /// <remarks>
+    /// <b>One call, not two.</b> <see cref="ChooseDiscard"/> is defined as the first of these, so a level built on
+    /// this rung slips to a card this rung genuinely considered rather than to one somebody
+    /// thought it might have.
+    /// </remarks>
+    public IReadOnlyList<Card> RankDiscards(TurnContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        return CoverScore.Ranking(context.Hand, Preference);
     }
 
     /// <inheritdoc cref="GreedyBotAgent.ClaimTurnedUpMoneyCard"/>

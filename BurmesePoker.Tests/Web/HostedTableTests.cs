@@ -42,27 +42,81 @@ public class HostedTableTests
     }
 
     /// <summary>
-    /// ✅ <b>P18 — a table is opened on a rung of the one catalog, by name.</b>
+    /// ✅ <b>P19 — a table is opened on a level of the one dial, by name.</b>
     /// </summary>
     /// <remarks>
+    /// <para>
     /// ⚠️ <b>An unknown name is fallen back from and never thrown over.</b> A difficulty comes
     /// off a command line or out of a form field, and neither is worth failing to open a table
-    /// for; the hardest rung is what a table plays at when nobody has said otherwise.
+    /// for; the default level is what a table plays at when nobody has said otherwise.
+    /// </para>
+    /// <para>
+    /// 🔥 <b>A rung is not a level, so a rung's name is a name the dial does not know</b>
+    /// (BUILD-PLAN §3.12). Asking for <c>greedy</c> here gets the default rather than the
+    /// greedy rung, which is the whole point of the two lists being two lists.
+    /// </para>
     /// </remarks>
     [Fact]
-    public async Task TheComputerPlaysTheRungTheTableWasOpenedOn()
+    public async Task TheComputerPlaysTheLevelTheTableWasOpenedOn()
     {
-        await using var easy = Open(seats: 4, people: 0, difficulty: "simple");
+        await using var gentle = Open(seats: 4, people: 0, difficulty: "easy");
         await using var strange = Open(seats: 4, people: 0, difficulty: "thoughtful");
+        await using var rung = Open(seats: 4, people: 0, difficulty: BotCatalog.Hardest.Name);
         await using var silent = Open(seats: 4, people: 0);
 
-        Assert.Equal("simple", easy.Difficulty.Name);
-        Assert.Equal(BotCatalog.Hardest.Name, strange.Difficulty.Name);
-        Assert.Equal(BotCatalog.Hardest.Name, silent.Difficulty.Name);
+        Assert.Equal("easy", gentle.Difficulty.Name);
+        Assert.Equal(DifficultyLadder.Default.Name, strange.Difficulty.Name);
+        Assert.Equal(DifficultyLadder.Default.Name, rung.Difficulty.Name);
+        Assert.Equal(DifficultyLadder.Default.Name, silent.Difficulty.Name);
 
-        // Case is the person's; the name kept is the catalog's own spelling.
-        await using var shouted = Open(seats: 4, people: 0, difficulty: "SIMPLE");
-        Assert.Equal("simple", shouted.Difficulty.Name);
+        // Case is the person's; the name kept is the ladder's own spelling.
+        await using var shouted = Open(seats: 4, people: 0, difficulty: "EASY");
+        Assert.Equal("easy", shouted.Difficulty.Name);
+
+        // One level per computer seat, even where they are all the same.
+        Assert.Equal(4, gentle.Difficulties.Count);
+        Assert.False(gentle.IsMixed);
+    }
+
+    /// <summary>
+    /// ✅ <b>P19 acceptance 6 — a table can be opened with a different level in each computer
+    /// seat.</b>
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>And you can see which is which</b>, because a computer seat is named for how it
+    /// plays. A mix nobody can tell apart is a mix nobody asked for twice.
+    /// </remarks>
+    [Fact]
+    public async Task ATableCanMixLevels()
+    {
+        await using var mixed = Open(
+            seats: 4,
+            people: 1,
+            difficulties: [.. DifficultyLadder.Spread(4).Select(level => level.Name)]);
+
+        Assert.True(mixed.IsMixed);
+        Assert.Equal(
+            [.. DifficultyLadder.ByStrength.Take(3).Select(level => level.Name)],
+            mixed.Difficulties.Select(level => level.Name));
+
+        foreach (var level in mixed.Difficulties)
+        {
+            Assert.Contains(
+                mixed.Board.Names.Values,
+                name => name.EndsWith($"({level.Name})", StringComparison.Ordinal));
+        }
+
+        // ⚠️ A shorter list than there are seats is cycled rather than being a shape error: the
+        // shape is Seats and People, and this only says who is in what is left.
+        await using var two = Open(seats: 5, people: 0, difficulties: ["easy", "expert"]);
+
+        Assert.Equal(["easy", "expert", "easy", "expert", "easy"], two.Difficulties.Select(level => level.Name));
+
+        // ⚠️ A name the dial does not know falls back to the table's own setting, one seat at a
+        // time — a typo in a mix does not take the other seats down with it.
+        await using var typo = Open(seats: 4, people: 0, difficulty: "hard", difficulties: ["easy", "rubbish"]);
+
+        Assert.Equal(["easy", "hard", "easy", "hard"], typo.Difficulties.Select(level => level.Name));
     }
 
     /// <remarks>
@@ -77,7 +131,9 @@ public class HostedTableTests
 
         Assert.Empty(table.WaitingFor);
         Assert.Null(table.SitDown("Nick"));
-        Assert.All(table.Board.Names.Values, name => Assert.EndsWith("(bot)", name, StringComparison.Ordinal));
+        Assert.All(
+            table.Board.Names.Values,
+            name => Assert.EndsWith($"({DifficultyLadder.Default.Name})", name, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -86,7 +142,10 @@ public class HostedTableTests
         await using var table = Open(seats: 5, people: 2);
 
         Assert.Equal([new PlayerId(1), new PlayerId(2)], table.WaitingFor);
-        Assert.Equal(3, table.Board.Names.Count(name => name.Value.EndsWith("(bot)", StringComparison.Ordinal)));
+        Assert.Equal(
+            3,
+            table.Board.Names.Count(name =>
+                name.Value.EndsWith($"({DifficultyLadder.Default.Name})", StringComparison.Ordinal)));
     }
 
     /// <remarks>
@@ -249,7 +308,8 @@ public class HostedTableTests
         int seed = 20260819,
         int betweenSeconds = 0,
         int patienceSeconds = 0,
-        string? difficulty = null) => new(
+        string? difficulty = null,
+        IReadOnlyList<string>? difficulties = null) => new(
         "test",
         new TablePlan
         {
@@ -266,7 +326,8 @@ public class HostedTableTests
             // ⚠️ Zero patience is how a test makes a takeover deterministic (P13.2); a test
             // that wants a question to *stand* in front of a seat has to give it time to.
             Patience = TimeSpan.FromSeconds(patienceSeconds),
-            Difficulty = difficulty ?? BotCatalog.Hardest.Name
+            Difficulty = difficulty ?? DifficultyLadder.Default.Name,
+            Difficulties = difficulties
         },
         Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance);
 }

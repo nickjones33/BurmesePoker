@@ -105,7 +105,7 @@ internal static class Program
         var matchSeed = setup.Next();
 
         var (names, bots) = AskWhoIsPlaying(console);
-        var difficulty = bots.Count > 0 ? AskDifficulty(console) : BotCatalog.Hardest;
+        var difficulty = bots.Count > 0 ? AskDifficulty(console) : DifficultyLadder.Default;
         var stakes = AskStakes(console);
         var seating = Seat(names, setup);
 
@@ -198,7 +198,7 @@ internal static class Program
         IReadOnlyList<PlayerId> seating,
         IReadOnlyDictionary<PlayerId, string> names,
         IReadOnlySet<PlayerId> bots,
-        BotRung difficulty,
+        DifficultyLevel difficulty,
         Stakes stakes,
         int rounds)
     {
@@ -361,40 +361,36 @@ internal static class Program
     }
 
     /// <summary>
-    /// How well the computer should play, from the one list there is.
+    /// How hard the computer should be to beat, from the one dial there is.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// ⚠️ <b>The whole ladder, out of <see cref="BotCatalog"/></b> (BUILD-PLAN P18). It used to
-    /// be a private two-value enum here, which is why the browser had no difficulty setting at
-    /// all and why a fifth rung would have meant editing four places. <b>Nothing about a bot is
-    /// written down in this project any more</b> — not its name, not what it plays like, not
-    /// how to build one.
+    /// 🔥 <b>Levels, not rungs</b> (BUILD-PLAN §3.12, P19). Until this packet this prompt
+    /// offered <see cref="BotCatalog"/> — the skill ladder — which is a research instrument
+    /// wearing a menu's clothes: its rungs are far apart (0.0%, 26.7%, 36.1% at four balanced
+    /// seats), there is no way to ask for <em>a bit easier</em>, and a lower rung plays a
+    /// different and worse idea rather than the right idea badly. <b>A weaker player plays the
+    /// right idea and slips</b>, which is what <see cref="DifficultyLadder"/> is. The ladder is
+    /// still there and is still what the harness ranks; it is simply not what a person is shown.
     /// </para>
     /// <para>
-    /// ⚠️ <b>Strongest first, which is the order a menu wants and not the ladder's</b>
-    /// (<see cref="BotCatalog.ByStrength"/>). <b>This list is not the difficulty dial</b> —
-    /// §3.12 is why it is a list of players rather than a row of levels, and P19 is where it
-    /// stops being one.
-    /// </para>
-    /// <para>
-    /// 🔥 <b>A <c>SelectionPrompt&lt;T&gt;</c> opens on <c>default(T)</c> if it is one of the
-    /// choices, and the two-value enum this replaced was <em>Easy = 0</em>.</b> So the old
-    /// prompt listed <em>Hard</em> first, read as though hard were the default, and handed the
-    /// easy bot to everybody who pressed return. Measured rather than guessed: a probe prompt
-    /// offering <c>(7, 0, 5)</c> comes back with <c>0</c>. A rung is a reference type, so
-    /// <c>default</c> is null, is not in the list, and the cursor stays where it is drawn — on
-    /// the first entry, which is the hardest. ⚠️ <b>Anything later that makes the choice a
-    /// value type again inherits the bug</b>, which is why this is written down here rather
-    /// than in a session log.
+    /// ⚠️ <b>Strongest first, and the first entry is the default.</b>
+    /// 🔥 A <c>SelectionPrompt&lt;T&gt;</c> opens on <c>default(T)</c> if it is one of the
+    /// choices, and the two-value enum P18 deleted was <em>Easy = 0</em> — so the prompt listed
+    /// <em>Hard</em> first, read as though hard were the default, and handed the easy bot to
+    /// everybody who pressed return. Measured rather than guessed: a probe prompt offering
+    /// <c>(7, 0, 5)</c> comes back with <c>0</c>. A level is a reference type, so <c>default</c>
+    /// is null, is not in the list, and the cursor stays on the first entry drawn.
+    /// ⚠️ <b>Anything later that makes this choice a value type inherits the bug</b>, and it
+    /// would now be a difficulty dial silently defaulting to its bottom.
     /// </para>
     /// </remarks>
-    private static BotRung AskDifficulty(IAnsiConsole console) =>
+    private static DifficultyLevel AskDifficulty(IAnsiConsole console) =>
         console.Prompt(
-            new SelectionPrompt<BotRung>()
-                .Title("How well should the computer play?")
-                .UseConverter(rung => $"{rung.Name} [{Palette.Quiet}]({rung.Description})[/]")
-                .AddChoices(BotCatalog.ByStrength));
+            new SelectionPrompt<DifficultyLevel>()
+                .Title("How hard should the computer be?")
+                .UseConverter(level => $"{level.Name} [{Palette.Quiet}]({level.Description})[/]")
+                .AddChoices(DifficultyLadder.ByStrength));
 
     private static Stakes AskStakes(IAnsiConsole console)
     {

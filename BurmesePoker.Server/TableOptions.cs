@@ -55,7 +55,7 @@ public sealed record TableOptions
     /// server hosting many tables. The hardest bot is the default, on P13.1's principle that a
     /// stand-in playing worse than the table does would be worth less than no stand-in.
     /// <para>
-    /// ⚠️ <b>The default is <see cref="BotCatalog.Hardest"/> and not the table's difficulty</b>
+    /// ⚠️ <b>The default is <see cref="BotCatalog.Hardest"/> — <em>the rung</em>, and not the table's difficulty level</b>
     /// (BUILD-PLAN P18). It is the same argument as the hint's: a seat the computer took over
     /// because nobody was answering should not also start playing badly, and a host that wants
     /// the table's own setting here says so by supplying this factory.

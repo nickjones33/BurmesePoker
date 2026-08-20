@@ -40,7 +40,7 @@
 
                 <p class="shape">
                     <span class="glyph" aria-hidden="true">🤖</span>
-                    <span>The computer plays @table.Difficulty.Name</span>
+                    <span>@Opponents(table)</span>
                 </p>
 
                 <p class="state">@State(table)</p>
@@ -95,28 +95,41 @@
             </p>
 
             @*
-                🔥 The whole ladder, out of BotCatalog, strongest first (P18). Until this packet
-                the browser had no difficulty setting at all — two hard-coded `new
-                GreedyBotAgent()`s — while the console had a private two-value enum of its own.
-                One list now, so a new rung arrives here without this file being touched.
+                🔥 The difficulty dial, out of DifficultyLadder, strongest first (P19). P18 put
+                the skill ladder here — which is a research instrument wearing a menu's clothes,
+                because its rungs are far apart, cannot be asked for "a bit easier", and play a
+                different and worse idea rather than the right idea badly. These are levels: the
+                strongest rung there is, with a measured mistake rate (§3.12).
 
-                ⚠️ A <select> and not a slider: this is a list of players, and §3.12 is why it
-                is not yet a dial. P19 is where it becomes one.
+                ⚠️ Levels only. A menu with rungs in it as well would be the one thing §3.12
+                forbids, and BotCatalog is still what the harness ranks.
             *@
             <p>
                 <label for="new-difficulty">The computer plays</label>
                 <InputSelect id="new-difficulty" @bind-Value="Wanted!.Difficulty">
-                    @foreach (var rung in BotCatalog.ByStrength)
+                    @foreach (var level in DifficultyLadder.ByStrength)
                     {
-                        <option @key="rung.Name" value="@rung.Name">@rung.Name — @rung.Description</option>
+                        <option @key="level.Name" value="@level.Name">@level.Name — @level.Description</option>
                     }
                 </InputSelect>
             </p>
 
+            @*
+                🔥 Difficulty is per seat, and this is how a person asks for that (P19). A table
+                of four identical bots is the least interesting table in the game. A checkbox
+                rather than one <select> per seat, because the seat count is chosen in this same
+                form and a static SSR page cannot grow controls as you type (§3.11 C12).
+            *@
+            <p class="mixed">
+                <InputCheckbox id="new-mixed" @bind-Value="Wanted!.Mixed" />
+                <label for="new-mixed">A mixed table — a different level in each computer seat</label>
+            </p>
+
             <p class="note">
-                The rest are played by the computer. A table with no people at it still deals,
-                and is worth watching. A seat the computer takes over for somebody who has
-                stopped answering plays as well as it can, whatever this says.
+                The rest are played by the computer, and each is named for how it plays. A table
+                with no people at it still deals, and is worth watching. A seat the computer
+                takes over for somebody who has stopped answering plays as well as it can,
+                whatever this says.
             </p>
 
             <p>
@@ -148,7 +161,8 @@
         {
             Seats = Lobby.Opening.Seats,
             People = Lobby.Opening.People,
-            Difficulty = Lobby.Opening.Difficulty
+            Difficulty = Lobby.Opening.Difficulty,
+            Mixed = Lobby.Opening.Difficulties is { Count: > 0 }
         };
 
         _tables = Lobby.Tables;
@@ -168,7 +182,13 @@
                 Seats = seats,
                 People = people,
                 // A name off a form is a name off a wire: resolved, never trusted (P18).
-                Difficulty = (BotCatalog.Find(wanted.Difficulty) ?? BotCatalog.Hardest).Name,
+                Difficulty = (DifficultyLadder.Find(wanted.Difficulty) ?? DifficultyLadder.Default).Name,
+                // ⚠️ The spread is strongest first and cycles, so it fits whatever the table's
+                // shape turns out to be — HostedTable takes as many of it as it has computer
+                // seats (P19).
+                Difficulties = wanted.Mixed
+                    ? [.. DifficultyLadder.Spread(seats).Select(level => level.Name)]
+                    : null,
                 Seed = Lobby.NextSeed()
             });
 
@@ -183,6 +203,22 @@
 
     private static string Shape(HostedTable table) =>
         $"{table.Seats} seats, {table.Plan.People} for people";
+
+    /// <summary>
+    /// How hard the computer is here — one word, or the mix itself.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A mixed table has no one answer</b> (P19), so it is not given one: the levels are
+    /// listed in the order the seats are dealt them, which is what the seat names on the table
+    /// itself will say.
+    /// </remarks>
+    private static string Opponents(HostedTable table) => table.Difficulties switch
+    {
+        { Count: 0 } => "Every seat is for a person",
+        { } levels when table.IsMixed =>
+            "The computer plays " + string.Join(", ", levels.Select(level => level.Name)),
+        { } levels => $"The computer plays {levels[0].Name}"
+    };
 
     /// <remarks>
     /// <b>What the table is doing, and why.</b> A table waits for the seats it was opened with —
@@ -208,7 +244,10 @@
 
         public int People { get; set; } = 1;
 
-        /// <summary>Which rung of <c>BotCatalog</c> the computer's seats play.</summary>
-        public string Difficulty { get; set; } = BotCatalog.Hardest.Name;
+        /// <summary>Which level of <c>DifficultyLadder</c> the computer's seats play.</summary>
+        public string Difficulty { get; set; } = DifficultyLadder.Default.Name;
+
+        /// <summary>Whether to spread the dial across the computer's seats instead (P19).</summary>
+        public bool Mixed { get; set; }
     }
 }

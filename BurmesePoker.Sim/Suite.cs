@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Diagnostics;
 
+using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Money;
 using BurmesePoker.Domain.Play;
 
@@ -11,6 +12,18 @@ public sealed record SuiteOptions
 {
     /// <summary>The ladder, weakest first.</summary>
     public IReadOnlyList<Strategy> Strategies { get; init; } = StrategyCatalog.All;
+
+    /// <summary>
+    /// The difficulty dial, weakest first (BUILD-PLAN P19).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A second tournament and not more rows in the first one.</b> Every level is the
+    /// hardest rung with a handicap, so <c>expert</c> and <c>greedy</c> are the same player
+    /// under two names — put in one field they would be a null cell dressed up as a
+    /// comparison, and the free-for-all that gives each level its reference win rate would be
+    /// diluted by four rungs nobody is offered.
+    /// </remarks>
+    public IReadOnlyList<Strategy> Levels { get; init; } = StrategyCatalog.Levels;
 
     /// <summary>Seats at the table (RULES.md §2.1).</summary>
     public int Seats { get; init; } = RoundEngine.MinimumPlayers;
@@ -50,12 +63,33 @@ public sealed record SuiteMeasurement(
     Measurement Value,
     string Verdict);
 
-/// <summary>What the suite measured, and the tournament it mostly came from.</summary>
+/// <summary>What the suite measured, and the tournaments it mostly came from.</summary>
+/// <param name="Options">What it was run with.</param>
+/// <param name="Measurements">Every published number.</param>
+/// <param name="Tournament">The ladder ranked — the research instrument.</param>
+/// <param name="Difficulty">The dial calibrated — the product (BUILD-PLAN P19).</param>
+/// <param name="Elapsed">How long it took.</param>
 public sealed record SuiteReport(
     SuiteOptions Options,
     IReadOnlyList<SuiteMeasurement> Measurements,
     TournamentReport Tournament,
-    TimeSpan Elapsed);
+    TournamentReport Difficulty,
+    TimeSpan Elapsed)
+{
+    /// <summary>
+    /// Whether every step of the dial beat the one below it, correction and all.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>A level that is not separated from its neighbour is a lie told to everybody who
+    /// reads the menu</b> (BUILD-PLAN §3.12 item 2), so this is checked on every run rather
+    /// than at the packet that set the values. It is the same standing as the null test: the
+    /// suite exits non-zero if it ever stops holding.
+    /// </remarks>
+    public bool DialIsSeparated =>
+        Difficulty.Verdicts.Count == Difficulty.Options.Strategies.Count - 1
+        && Difficulty.Verdicts.All(verdict => verdict.Survives)
+        && Difficulty.Pairs.All(cell => cell.Margin.Mean < 0);
+}
 
 /// <summary>
 /// The standing set of measurements the documentation quotes (BUILD-PLAN P17).
@@ -90,6 +124,21 @@ public static class Suite
         var tournament = Tournament.Run(new TournamentOptions
         {
             Strategies = options.Strategies,
+            Seats = options.Seats,
+            GamesPerCell = options.GamesPerCell,
+            MasterSeed = options.MasterSeed,
+            TurnCap = options.TurnCap,
+            Stakes = options.Stakes,
+            Parallel = options.Parallel
+        });
+
+        // ⚠️ Only the adjacent pairs, because only "n+1 beats n" is a claim the menu makes
+        // (BUILD-PLAN P19 acceptance 1b). Correcting a dial over the whole round-robin is a
+        // power loss paid for comparisons nobody is making.
+        var difficulty = Tournament.Run(new TournamentOptions
+        {
+            Strategies = options.Levels,
+            Pairs = PairFamily.Adjacent,
             Seats = options.Seats,
             GamesPerCell = options.GamesPerCell,
             MasterSeed = options.MasterSeed,
@@ -194,10 +243,69 @@ public static class Suite
             }
         }
 
+        var levels = string.Join(",", options.Levels.Select(level => level.Name));
+
+        var difficultyCommand = string.Create(CultureInfo.InvariantCulture,
+            $"BurmesePoker.Sim -- tournament --strategies {levels} --pairs adjacent "
+            + $"--seats {options.Seats} --games {options.GamesPerCell} --seed {options.MasterSeed}");
+
+        foreach (var player in difficulty.FreeForAll.Players)
+        {
+            measurements.Add(new SuiteMeasurement(
+                $"difficulty.reference-table.{player.Name}",
+                "The reference table: every difficulty level at one table, fully crossed. This is "
+                + "the ordering the menu claims, and it is what a person actually sits down to.",
+                difficultyCommand,
+                player.Name,
+                "win rate",
+                player.WinRate,
+                string.Empty));
+        }
+
+        for (var index = 0; index < difficulty.Pairs.Count; index++)
+        {
+            var cell = difficulty.Pairs[index];
+            var verdict = difficulty.Verdicts[index];
+
+            measurements.Add(new SuiteMeasurement(
+                $"difficulty.step.{cell.Column}-over-{cell.Row}",
+                "One step of the dial, head to head. ⚠️ The family is the k−1 adjacent steps and "
+                + "not the round-robin, because 'n+1 beats n' is the only claim a monotone dial "
+                + "makes (BUILD-PLAN P19).",
+                difficultyCommand,
+                $"{cell.Column} over {cell.Row}",
+                "win rate margin",
+                cell.Margin with { Mean = -cell.Margin.Mean },
+                verdict.Survives ? "separated (Holm)" : verdict.Separated ? "raw only" : "inside the interval"));
+        }
+
+        foreach (var level in options.Levels)
+        {
+            measurements.Add(new SuiteMeasurement(
+                $"difficulty.mistake-rate.{level.Name}",
+                "ε — how often this level throws the second-best card off its own ranking rather "
+                + "than the best. Placed so the levels are evenly spaced in results, which is not "
+                + "evenly spaced in ε (BUILD-PLAN P19).",
+                difficultyCommand,
+                level.Name,
+                "mistake rate",
+                new Measurement(0, Rate(level.Name), 0),
+                string.Empty));
+        }
+
         clock.Stop();
 
-        return new SuiteReport(options, measurements, tournament, clock.Elapsed);
+        return new SuiteReport(options, measurements, tournament, difficulty, clock.Elapsed);
     }
+
+    /// <summary>
+    /// What ε a level carries, out of the one list there is.
+    /// </summary>
+    /// <remarks>
+    /// A calibration probe answers too, because a sweep is a legitimate thing to run the suite
+    /// over — and a name that is neither is not a level, so it carries no rate.
+    /// </remarks>
+    private static double Rate(string level) => DifficultyLadder.FindOrProbe(level)?.MistakeRate ?? 0;
 
     /// <summary>P12's headline run, under one seating plan or the other.</summary>
     private static (int Games, IReadOnlyList<StrategySeries> Series) Headline(SuiteOptions options, bool balanced)

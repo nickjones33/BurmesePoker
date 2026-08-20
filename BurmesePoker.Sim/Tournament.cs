@@ -22,6 +22,26 @@ public enum CellKind
 }
 
 /// <summary>
+/// Which pairs are played, and so which comparisons the correction is over.
+/// </summary>
+/// <remarks>
+/// 🔥 <b>The family is the claim being made, not the cells that happen to exist</b> (BUILD-PLAN
+/// P19 acceptance 1b). A ladder of rungs makes every pairwise claim, so its family is the
+/// round-robin. A <em>difficulty dial</em> makes exactly one claim per step — that level
+/// <em>n+1</em> beats level <em>n</em> and a person can tell — so its family is the k−1
+/// adjacent comparisons, and correcting over all k(k−1)/2 would be a power loss paid for
+/// nothing. It also saves the cells: four levels cost three head-to-head runs rather than six.
+/// </remarks>
+public enum PairFamily
+{
+    /// <summary>Every unordered pair. What ranking a field means.</summary>
+    RoundRobin,
+
+    /// <summary>Only each strategy against the next one named. What a monotone dial claims.</summary>
+    Adjacent
+}
+
+/// <summary>
 /// A round-robin: every strategy against every other, with an interval on every difference and
 /// the family of comparisons accounted for (BUILD-PLAN P17).
 /// </summary>
@@ -58,6 +78,12 @@ public sealed record TournamentOptions
 
     /// <summary>The family-wise error rate the correction controls.</summary>
     public double Alpha { get; init; } = Holm.DefaultAlpha;
+
+    /// <summary>
+    /// Which pairs are played and corrected over. <b>The order the strategies are named in is
+    /// what "adjacent" means</b>, so a dial has to be listed in dial order.
+    /// </summary>
+    public PairFamily Pairs { get; init; } = PairFamily.RoundRobin;
 
     /// <summary>
     /// Which strategy plays the null cell. Null takes the last one named, which in ladder order
@@ -277,6 +303,11 @@ public static class Tournament
         {
             for (var column = row + 1; column < options.Strategies.Count; column++)
             {
+                if (options.Pairs == PairFamily.Adjacent && column != row + 1)
+                {
+                    continue;
+                }
+
                 pairs.Add(Play(options, CellKind.Pair, options.Strategies[row], options.Strategies[column]));
             }
         }
@@ -491,35 +522,33 @@ public static class Tournament
             checks.Add(new PairingCheck(cell.Label, "within-cell", cell.Margin, cell.IndependentMargin));
         }
 
-        if (options.Strategies.Count < 3)
+        foreach (var strategy in options.Strategies)
         {
-            return checks;
-        }
-
-        for (var index = 0; index < options.Strategies.Count; index++)
-        {
-            var strategy = options.Strategies[index];
-
             // ⚠️ Both cells must seat this strategy the same way round. A head-to-head cell
             // enumerates its seatings as an odometer over its two players in list order, so the
             // strategy named *first* sits in the same seats in assignment k of every cell it
             // leads. Comparing a cell it leads with one it follows in would move it round the
             // table between the two, and the shoes being shared would buy nothing — the
             // measurement would be honest and the demonstration pointless.
-            var after = options.Strategies.Skip(index + 1).ToList();
-            var before = options.Strategies.Take(index).ToList();
-            var matched = after.Count >= 2 ? after : before;
+            //
+            // ⚠️ Asked of the cells that were played rather than of the field (BUILD-PLAN P19):
+            // under --pairs adjacent most pairs never meet, and every strategy leads at most
+            // one cell — so this check simply has nothing to compare and says so by being
+            // absent, rather than by throwing on a cell that is not there.
+            var led = pairs.Where(cell => cell.Row == strategy.Name).Select(cell => cell.Column).ToList();
+            var followed = pairs.Where(cell => cell.Column == strategy.Name).Select(cell => cell.Row).ToList();
+            var matched = led.Count >= 2 ? led : followed;
 
             if (matched.Count < 2)
             {
                 continue;
             }
 
-            var first = SeriesOf(pairs, strategy.Name, matched[0].Name);
-            var second = SeriesOf(pairs, strategy.Name, matched[1].Name);
+            var first = SeriesOf(pairs, strategy.Name, matched[0]);
+            var second = SeriesOf(pairs, strategy.Name, matched[1]);
 
             checks.Add(new PairingCheck(
-                $"{strategy.Name}: vs {matched[0].Name} less vs {matched[1].Name}",
+                $"{strategy.Name}: vs {matched[0]} less vs {matched[1]}",
                 "across-cells",
                 Measurement.Paired(first.Values, second.Values),
                 Measurement.Difference(first.Summary, second.Summary)));
@@ -614,4 +643,16 @@ public sealed record TournamentReport(
 
         throw new ArgumentException($"'{row}' and '{column}' did not meet.", nameof(row));
     }
+
+    /// <summary>
+    /// Whether those two played a cell at all.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>They always do in a round-robin and mostly do not under
+    /// <see cref="PairFamily.Adjacent"/></b>, so a report that draws the matrix has to ask
+    /// before it reads a cell (BUILD-PLAN P19).
+    /// </remarks>
+    public bool Met(string row, string column) =>
+        Pairs.Any(cell =>
+            (cell.Row == row && cell.Column == column) || (cell.Row == column && cell.Column == row));
 }

@@ -234,17 +234,25 @@ static int RunTournament(string[] args)
         MasterSeed = arguments.Number("seed", 20260819),
         TurnCap = arguments.Number("turn-cap", 400),
         Parallel = !arguments.Flag("serial"),
-        NullTest = arguments.Has("null") ? arguments.Value("null", "") : null
+        NullTest = arguments.Has("null") ? arguments.Value("null", "") : null,
+        // ⚠️ The family is the claim, not the cells that could exist (BUILD-PLAN P19): a dial
+        // claims only that each level beats the one below it, so correcting a dial over the
+        // whole round-robin throws power away for comparisons nobody is making.
+        Pairs = arguments.Value("pairs", "all").Equals("adjacent", StringComparison.OrdinalIgnoreCase)
+            ? PairFamily.Adjacent
+            : PairFamily.RoundRobin
     }.Validated();
 
     var names = string.Join(",", strategies.Select(strategy => strategy.Name));
 
     Console.WriteLine(
         $"tournament: {string.Join(", ", strategies.Select(strategy => strategy.Name))} at "
-        + $"{options.Seats} seats, {strategies.Count * (strategies.Count - 1) / 2} pair(s) "
-        + $"+ free-for-all + null, {options.GamesPerCell} games a cell, seed {options.MasterSeed}");
+        + $"{options.Seats} seats, "
+        + $"{(options.Pairs == PairFamily.Adjacent ? strategies.Count - 1 : strategies.Count * (strategies.Count - 1) / 2)}"
+        + $" pair(s) + free-for-all + null, {options.GamesPerCell} games a cell, seed {options.MasterSeed}");
     Console.WriteLine(
         $"reproduce with: BurmesePoker.Sim -- tournament --strategies {names} "
+        + $"{(options.Pairs == PairFamily.Adjacent ? "--pairs adjacent " : string.Empty)}"
         + $"--seats {options.Seats} --games {options.GamesPerCell} --seed {options.MasterSeed}");
 
     var report = Tournament.Run(options);
@@ -293,6 +301,14 @@ static void ReportTournament(TournamentReport report)
             if (row.Name == column.Name)
             {
                 Console.Write($"{"·",16}");
+                continue;
+            }
+
+            // ⚠️ Under --pairs adjacent most of the matrix is empty, and an empty cell is a
+            // pair that was never played rather than a dead heat (BUILD-PLAN P19).
+            if (!report.Met(row.Name, column.Name))
+            {
+                Console.Write($"{"",16}");
                 continue;
             }
 
@@ -422,6 +438,17 @@ static int RunSuite(string[] args)
     if (!report.Tournament.NullTestHolds)
     {
         Console.Error.WriteLine("⚠️ The null test failed: the harness measures a difference where there is none.");
+        return 1;
+    }
+
+    // 🔥 A level that is not separated from the one below it is a lie told to everybody who
+    // reads the menu (BUILD-PLAN §3.12 item 2), so the dial is checked here rather than only
+    // in the packet that calibrated it — a new rung raises the ceiling and moves every level.
+    if (!report.DialIsSeparated)
+    {
+        Console.Error.WriteLine(
+            "⚠️ The difficulty dial is not monotone: some level is not separated from the one below it. "
+            + "Re-space the mistake rates, or delete the level (BUILD-PLAN §3.12 item 2).");
         return 1;
     }
 
@@ -570,6 +597,8 @@ static string Usage() => """
 
       --strategies a,b   who is playing, rotated through the seats  (greedy,simple)
                          the ladder, weakest first: random, simple, greedy, cautious
+                         the difficulty dial: easy, medium, hard, expert
+                         a calibration probe: greedy@0.35 — a rung with a mistake rate
       --seating S        rotate one pattern, or play every balanced
                          assignment of the strategies across the seats
                          (rotate | balanced)                        (rotate)
@@ -602,13 +631,18 @@ static string Usage() => """
     that does not survive the correction is shown as not surviving it.
 
       --strategies a,b,c the field                (random,simple,greedy,cautious)
+      --pairs P          every unordered pair, or only each against the next
+                         one named — which is all a monotone dial claims
+                         (all | adjacent)                             (all)
       --games N          games a cell, rounded up to a whole number of seatings  (2000)
       --null NAME        who plays the null cell          (the last one named)
       --seats N, --seed N, --turn-cap N, --serial, --csv PATH  as above
 
     suite — play the standing set of measurements the documentation quotes and write them
     out. A published number carries the command that made it (BUILD-PLAN §3.12), so
-    docs/STRATEGY.md quotes this file rather than a session's console.
+    docs/STRATEGY.md quotes this file rather than a session's console. It ranks the skill
+    ladder, calibrates the difficulty dial over its adjacent steps, and exits non-zero if
+    the null test fails or the dial stops being monotone.
 
       --out PATH         where to write         (docs/strategy/measurements.csv)
       --strategies, --games, --seats, --seed, --turn-cap, --serial  as above

@@ -37,25 +37,47 @@ public class LobbyTests
     }
 
     /// <summary>
-    /// ✅ <b>P18 — <c>--difficulty</c>, which the browser did not have at all.</b>
+    /// ✅ <b>P18 — <c>--difficulty</c>, which the browser did not have at all; P19 — it names a
+    /// level of the dial rather than a rung of the ladder.</b>
     /// </summary>
     /// <remarks>
-    /// The site's own command line names the rung the house table plays on, exactly as
+    /// The site's own command line names how hard the house table is, exactly as
     /// <c>--people</c> names how many seats are waiting. A name nobody knows opens the table
-    /// anyway, on the hardest rung: a site that refused to boot over a typo in a difficulty
-    /// would be a poor trade.
+    /// anyway, on the default level: a site that refused to boot over a typo in a difficulty
+    /// would be a poor trade. ⚠️ <b>A rung's name is one the dial does not know</b> (§3.12).
     /// </remarks>
     [Fact]
-    public async Task TheCommandLineNamesHowWellTheComputerPlays()
+    public async Task TheCommandLineNamesHowHardTheComputerIs()
     {
-        await using var easy = Open(("difficulty", "simple"));
+        await using var gentle = Open(("difficulty", "easy"));
         await using var strange = Open(("difficulty", "thoughtful"));
+        await using var rung = Open(("difficulty", BotCatalog.Hardest.Name));
         await using var silent = Open();
 
-        Assert.Equal("simple", easy.Opening.Difficulty);
-        Assert.Equal("simple", easy.OpenTheHouseTable().Difficulty.Name);
-        Assert.Equal(BotCatalog.Hardest.Name, strange.Opening.Difficulty);
-        Assert.Equal(BotCatalog.Hardest.Name, silent.Opening.Difficulty);
+        Assert.Equal("easy", gentle.Opening.Difficulty);
+        Assert.Equal("easy", gentle.OpenTheHouseTable().Difficulty.Name);
+        Assert.Equal(DifficultyLadder.Default.Name, strange.Opening.Difficulty);
+        Assert.Equal(DifficultyLadder.Default.Name, rung.Opening.Difficulty);
+        Assert.Equal(DifficultyLadder.Default.Name, silent.Opening.Difficulty);
+    }
+
+    /// <summary>
+    /// ✅ <b>P19 — <c>--mixed</c> spreads the dial across the computer's seats.</b>
+    /// </summary>
+    /// <remarks>
+    /// The spread is longer than any table, and <c>HostedTable</c> takes as many of it as it
+    /// has computer seats — so one flag is right whatever <c>--seats</c> and <c>--people</c>
+    /// turn out to be.
+    /// </remarks>
+    [Fact]
+    public async Task TheCommandLineCanAskForAMixedTable()
+    {
+        await using var mixed = Open(("mixed", "true"), ("people", "0"));
+        await using var plain = Open(("people", "0"));
+
+        Assert.True(mixed.OpenTheHouseTable().IsMixed);
+        Assert.False(plain.OpenTheHouseTable().IsMixed);
+        Assert.Null(plain.Opening.Difficulties);
     }
 
     [Fact]

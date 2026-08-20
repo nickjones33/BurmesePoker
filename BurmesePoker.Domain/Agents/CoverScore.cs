@@ -57,6 +57,21 @@ internal static class CoverScore
     /// preference — lower wins, and an equal preference leaves the first card seen.
     /// </summary>
     /// <remarks>
+    /// <b>The head of <see cref="Ranking"/>, and defined as it</b> rather than as a second loop
+    /// that agrees with it by inspection. P19 needed the runner-up as well as the winner, and
+    /// two orderings that had to match would have been two places for the answer to drift —
+    /// which is the reason this file exists at all.
+    /// </remarks>
+    internal static Card Discard(IReadOnlyList<Card> hand, Func<Card, IReadOnlyList<Card>, long> tieBreak) =>
+        Ranking(hand, tieBreak) is [var best, ..]
+            ? best
+            : throw new InvalidOperationException("Asked to discard from an empty hand.");
+
+    /// <summary>
+    /// Every card worth considering throwing, <b>best first</b>: fewest melded cards lost,
+    /// ties to the given preference, and an equal preference leaving the first card seen.
+    /// </summary>
+    /// <remarks>
     /// <para>
     /// <b>Two copies of one value are one candidate.</b> They leave the same thirteen behind,
     /// so the second is the first's answer already — and skipping it costs a
@@ -64,15 +79,29 @@ internal static class CoverScore
     /// </para>
     /// <para>
     /// The tie-break is a <see cref="long"/> so that a rung can pack more than one key into
-    /// it; <see cref="NoPreference"/> is the constant that makes the loop "first one wins".
+    /// it; <see cref="NoPreference"/> is the constant that makes the order "first one wins".
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The sort has to be stable, and that is load-bearing rather than tidy.</b> Where
+    /// cost and preference both tie the order is the hand's own, which is what
+    /// <see cref="SimpleBotAgent"/> plays by and what every seed published before P19 was
+    /// dealt against. <see cref="Enumerable.OrderBy{TSource,TKey}(IEnumerable{TSource},Func{TSource,TKey})"/>
+    /// is stable; <see cref="List{T}.Sort()"/> is not.
+    /// </para>
+    /// <para>
+    /// 🔥 <b>Why a ranking and not just a winner</b> (BUILD-PLAN P19): a difficulty level is the
+    /// strongest rung with a mistake rate, and a mistake that is worth making is <em>the next
+    /// move down the agent's own ordering</em> rather than a random legal one. A bot that threw
+    /// a joker away would read as broken instead of as weak, and second-best by the rung's own
+    /// key can never be that unless the whole hand is jokers.
     /// </para>
     /// </remarks>
-    internal static Card Discard(IReadOnlyList<Card> hand, Func<Card, IReadOnlyList<Card>, long> tieBreak)
+    internal static IReadOnlyList<Card> Ranking(
+        IReadOnlyList<Card> hand,
+        Func<Card, IReadOnlyList<Card>, long> tieBreak)
     {
-        Card? best = null;
-        var bestScore = int.MinValue;
-        var bestPreference = 0L;
         var judged = new List<Card>(hand.Count);
+        var scored = new List<(Card Card, int Cost, long Preference)>(hand.Count);
 
         foreach (var card in hand)
         {
@@ -82,21 +111,16 @@ internal static class CoverScore
             }
 
             judged.Add(card);
-
-            var score = Covered(Without(hand, card));
-            var preference = tieBreak(card, hand);
-
-            if (best is null
-                || score > bestScore
-                || (score == bestScore && preference < bestPreference))
-            {
-                best = card;
-                bestScore = score;
-                bestPreference = preference;
-            }
+            scored.Add((card, Covered(Without(hand, card)), tieBreak(card, hand)));
         }
 
-        return best ?? throw new InvalidOperationException("Asked to discard from an empty hand.");
+        return
+        [
+            .. scored
+                .OrderByDescending(candidate => candidate.Cost)
+                .ThenBy(candidate => candidate.Preference)
+                .Select(candidate => candidate.Card)
+        ];
     }
 
     /// <summary>A tie-break that breaks no ties: the first card of equal cost wins.</summary>

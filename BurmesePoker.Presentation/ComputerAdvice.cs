@@ -10,7 +10,7 @@ namespace BurmesePoker.Presentation;
 /// </summary>
 /// <remarks>
 /// <para>
-/// ⚠️ <b>Every answer here is the hardest rung's (<see cref="BotCatalog.Hardest"/>), put to it
+/// ⚠️ <b>Every answer here is the hardest <em>rung</em>'s (<see cref="BotCatalog.Hardest"/>) and never a difficulty level's, put to it
 /// on the very
 /// <see cref="TurnContext"/> the player is looking at</b> (BUILD-PLAN P11, P13.1). It costs one
 /// call and it cannot drift from how the bots at this table actually play. <b>Do not re-derive

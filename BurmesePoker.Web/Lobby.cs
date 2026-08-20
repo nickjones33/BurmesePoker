@@ -66,10 +66,22 @@ public sealed class Lobby : IAsyncDisposable
             // time to look at fourteen cards and decide which one is worth the least.
             Patience = TimeSpan.FromSeconds(configuration.GetValue<int?>("patience") ?? 90),
             Hints = configuration.GetValue<bool?>("hints") ?? true,
-            // ⚠️ Resolved through the catalog rather than trusted (P18): `--difficulty rubbish`
-            // opens the house table on the hardest rung rather than failing to boot, and the
-            // name kept is the catalog's own spelling whatever case was typed.
-            Difficulty = (BotCatalog.Find(configuration.GetValue<string>("difficulty")) ?? BotCatalog.Hardest).Name
+            // ⚠️ Resolved through the dial rather than trusted (P18, P19): `--difficulty
+            // rubbish` opens the house table on the default level rather than failing to boot,
+            // and the name kept is the ladder's own spelling whatever case was typed.
+            Difficulty = (DifficultyLadder.Find(configuration.GetValue<string>("difficulty"))
+                ?? DifficultyLadder.Default).Name,
+            // ⚠️ `--mixed true` is the command-line half of P19's per-seat difficulty: a spread
+            // of levels across the computer's seats, strongest first. The lobby form offers the
+            // same thing as a checkbox.
+            //
+            // ⚠️ It takes a value, exactly as `--hints` does, and a bare `--mixed` is *silently*
+            // ignored — the command-line configuration provider records a switch only when it
+            // carries one. Found by starting the site with the bare flag and reading the seat
+            // names, which all said `expert`.
+            Difficulties = configuration.GetValue<bool?>("mixed") is true
+                ? [.. DifficultyLadder.Spread(RoundEngine.MaximumPlayers).Select(level => level.Name)]
+                : null
         };
 
         You = configuration.GetValue<string>("name") ?? "You";

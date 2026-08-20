@@ -11,7 +11,7 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-**Every packet built so far is done — P0–P12, P13.1–P13.6 and P14–P16** — and **all four of §0's
+**Every packet built so far is done — P0–P12, P13.1–P13.6 and P14–P19** — and **all four of §0's
 original goals are delivered**: the 2023 implementation is deleted, the
 whole rules core is built and tested, `dotnet run --project BurmesePoker.Console` fills the empty
 seats with paced, named bots and plays round after round with the banks carrying over,
@@ -20,13 +20,19 @@ compare strategies, and `dotnet run --project BurmesePoker.Web` is **a browser l
 in and play other people at**.
 
 ⚠️ **A fifth goal was stated on 2026-08-19: a designed difficulty
-system, and a settled answer to what actually works.** That is **P17–P23**; **P17 and P18 are
-done and P19 is the next packet.** It is two jobs kept apart on purpose — a *product* (difficulty as a table setting, per
-seat, in both front ends; **the browser has a per-table one since P18**) and a *programme* (analysis and
-simulation enough to say which ways of playing are better, by how much, and with an interval).
+system, and a settled answer to what actually works.** That is **P17–P23**; **P17, P18 and P19
+are done and P20 is the next packet — and P20–P22 are droppable.** It is two jobs kept apart on
+purpose — a *product* (difficulty as a table setting, per seat, in both front ends: **finished in
+P19**) and a *programme* (analysis and simulation enough to say which ways of playing are better,
+by how much, and with an interval).
 ⚠️ **Read `BUILD-PLAN.md` §3.12 first**: *difficulty is a dial, skill is a ladder, and they are
 not the same axis* — which is what keeps the difficulty menu from being a list of research
 instruments, and what makes the product independent of whether any given rung is worth anything.
+✅ **The product half is finished.** `Domain/Agents/DifficultyLadder.cs` holds four levels —
+`easy`, `medium`, `hard`, `expert` — each the strongest rung there is with a **measured mistake
+rate** (0.9, 0.7, 0.5, 0.0), and both front ends offer **levels only**. See §9 of
+`docs/STRATEGY.md` for the calibration.
+
 🔥 **Two facts set the order, and both are now discharged.** The ordinary `Sim` report used to
 print no interval at all, so P17 — statistics and ranking — came before P19 — calibration. And
 there were **four independent notions of *which bot*** across Sim, Console, Web and Server, so
@@ -34,9 +40,12 @@ P18 made it one catalog before any new rung is written: **`Domain/Agents/BotCata
 only place a bot is named**, `LayeringTests` fails the build if any project outside
 `Domain/Agents` constructs a rung, and a new rung reaches the console prompt, the browser lobby
 and the harness with no front-end work at all.
-⚠️ **P19 finishes the difficulty product with today's rungs; P20–P22 are droppable in preference
+⚠️ **P19 finished the difficulty product with today's rungs; P20–P22 are droppable in preference
 order** — P15 spent a whole packet on a plausible rung worth +0.5 ± 0.55 points, and that
-precedent is designed into the plan.
+precedent is designed into the plan. 🔥 **A new rung is not free of the dial**: every level is
+`BotCatalog.Hardest` with an ε, so a rung stronger than `greedy` re-bases all four levels the day
+it lands and the ε values stop being the ones that were measured. `sim suite` exits non-zero if
+the dial stops being monotone, and **P23 owns re-spacing it.**
 
 ⚠️ **Before touching the browser client, read `BUILD-PLAN.md` §3.10 and §3.11.** The engine runs
 **server-side, always** (a hand is fully concealed with money on it, so a client-side engine cannot
@@ -168,9 +177,21 @@ choices, and the console's enum was `Easy = 0`** — so the menu said *Hard* fir
 everybody who pressed return the easy bot. ⚠️ **A console capture is only comparable with one
 that made the same choice**: pass `--pick n` and compare from the `Seating:` line on.
 
-⚠️ **P19–P23 are planned and unbuilt** (goal 5, above). **P19 is the next packet.** See
-BUILD-PLAN §2 for how the seven projects fit together — the strategy programme adds no eighth
-project.
+✅ **P19 shipped 2026-08-19: difficulty as a dial, not a list.** A level is the strongest rung
+with a mistake rate — `FallibleAgent` substitutes the card the rung ranked **second**, which is
+why `CoverScore.Discard` is now *defined as the head of* `CoverScore.Ranking` and why
+`IRanksDiscards` exists. 🔥 **ε is a far bigger dial than the whole skill ladder and violently
+non-linear**: `greedy@0` beats `greedy@1` by **+33.3 ± 1.6** points, with ε = 0→0.5 worth ~8 and
+ε = 0.5→1 worth ~17 — so the four levels are spaced evenly in *results*, not in ε, and all three
+steps survive Holm at 8,008 games a cell. 🔥 **A `TurnContext`'s hand is the engine's own list**,
+so a context kept and asked afterwards is asked about the *thirteen* — P13.1's finding arriving
+in the test project, found by writing the test. ⚠️ **`--pairs adjacent`** was needed and was not
+planned: a dial claims only that *n+1* beats *n*, so the family is k−1 comparisons and only k−1
+cells are played.
+
+⚠️ **P20–P23 are planned and unbuilt** (goal 5, above). **P20 is the next packet, and it is
+droppable.** See BUILD-PLAN §2 for how the seven projects fit together — the strategy programme
+adds no eighth project.
 
 ## Rules of engagement
 
@@ -196,7 +217,8 @@ dotnet run --project BurmesePoker.Web           # a browser lobby at http://loca
 dotnet run --project BurmesePoker.Web -- --people 1                   # …a solo table; it deals as soon as you sit
 dotnet run --project BurmesePoker.Web -- --people 0                   # …just watch; every seat is a bot
 dotnet run --project BurmesePoker.Web -- --seed 20260819 --pace 400   # …the same table, faster
-dotnet run --project BurmesePoker.Web -- --difficulty simple          # …how well the computer plays; the lobby form offers the same list
+dotnet run --project BurmesePoker.Web -- --difficulty medium          # …how hard the computer is: easy, medium, hard, expert; the lobby form offers the same list
+dotnet run --project BurmesePoker.Web -- --mixed true                # …a different level in each computer seat (it takes a value, like --hints)
 dotnet run -c Release --project BurmesePoker.Sim -- --games 2000   # compare strategies
 dotnet run -c Release --project BurmesePoker.Sim -- bench          # time the cover searches
 dotnet run -c Release --project BurmesePoker.Sim -- --games 100 --journal run.jsonl   # keep every decision
@@ -204,10 +226,11 @@ dotnet run -c Release --project BurmesePoker.Sim -- replay run.jsonl            
 dotnet run -c Release --project BurmesePoker.Sim -- neighbours --games 2000          # does the seat before you matter?
 dotnet run -c Release --project BurmesePoker.Sim -- --games 2000 --seating balanced  # every seating, not one rotated pattern
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --games 2000          # rank every player against every other
+dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy,medium,hard,expert --pairs adjacent --games 8000   # calibrate the difficulty dial
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv
 
-python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 2   # capture a scripted match
-python3 scripts/drive-console.py --out after.raw  --seed 20260819 --pick 2   # …after a front-end change
+python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0   # capture a scripted match (0 expert, 1 hard, 2 medium, 3 easy)
+python3 scripts/drive-console.py --out after.raw  --seed 20260819 --pick 0   # …after a front-end change
 cmp before.raw after.raw                                                    # prove it was a refactor
 ```
 
@@ -257,7 +280,7 @@ verified bug to show for it.
 | `docs/STATUS.md` | Cross-session progress. Read first, update last. |
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
-| `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict. Every figure is generated from `docs/strategy/measurements.csv`, never transcribed. |
+| `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, and **§9 the difficulty calibration**. Every figure is generated from `docs/strategy/measurements.csv`, never transcribed. |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
 | `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it. Written for a person at the keyboard, not for a build session. |
 | `docs/RULES-TECHNICAL.md` | What the **old** code does and where it diverges. Defect list. Historical reference. |

@@ -16,7 +16,14 @@
 <li class="seat @Place @(Seat.IsTheirTurn ? "turn" : null) @(Yours ? "yours" : null) @(Seat.PlayedByTheComputer ? "away" : null)">
     <p class="who">
         <span class="marker" aria-hidden="true">@Marker</span>
-        <span class="name">@Seat.Name</span>
+        @*
+            ⚠️ The name is allowed to be cut short — a person may type twenty-four characters and
+            a computer seat is named for how it plays since P19 (Aung Aung (medium)) — so the
+            whole of it is on the element for a hover and for anything reading the page. The
+            visible text is still the accessible name, so this adds a tooltip and takes nothing
+            away (§3.11 A).
+        *@
+        <span class="name" title="@Seat.Name">@Seat.Name</span>
         <span class="said">@State(Seat)</span>
     </p>
 

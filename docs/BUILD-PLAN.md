@@ -3432,7 +3432,7 @@ house table says *the computer plays simple*, and a table opened from the form o
 
 ---
 
-### P19 — Difficulty as a dial, not a list ☐
+### P19 — Difficulty as a dial, not a list ☑ done 2026-08-19
 
 **Goal.** A difficulty setting a person can **feel**, monotone by construction, calibrated by
 measurement rather than by assertion, and **independent of whether any later research packet
@@ -3534,6 +3534,49 @@ produced it**.
 ⚠️ **P20–P22 are independently droppable, in preference order.** They widen the ladder; none of
 them is required for the difficulty system to exist and be good. Stopping after P19 leaves a
 finished, calibrated, honest difficulty setting — not a half-built one.
+
+#### What P19 found
+
+🔥 **ε is a far bigger dial than anything on the skill ladder, and it is violently non-linear.**
+`greedy@0` against `greedy@1` head to head is **+33.3 ± 1.6** points — three times the whole
+`simple`-to-`greedy` gulf (11.2), from a decorator that only ever substitutes the *second* card
+on the rung's own ranking. The sweep that placed the levels
+(`--strategies greedy@0,greedy@0.1,greedy@0.2,greedy@0.35,greedy@0.5,greedy@0.75,greedy@1
+--seating balanced --games 4802`) came back **33.7 / 31.7 / 28.6 / 28.5 / 25.5 / 18.3 / 8.6** —
+about 8 points across the first half of ε and about 17 across the second. ⚠️ **So levels spaced
+evenly in ε would not be spaced evenly in results**, and the shipped values are spaced by the
+measurement instead: **ε = 0.9, 0.7, 0.5, 0.0**, which is about seven points a step.
+
+⚠️ **The packet shipped four levels rather than three, and the count is a measurement rather
+than a taste.** §3.12 warns that "the temptation is five levels"; the discipline it asks for is
+that a level unseparated from its neighbour is deleted. At the reference table the four measure
+**~7 points apart against a 95% half-width of about a point**, which is seven times the floor —
+so a fourth level is a real setting and a fifth would be arguable. The names are `easy`,
+`medium`, `hard`, `expert`; the plan's own illustration said `easy,medium,hard`, and `hard` is
+still the third of them.
+
+🔥 **A `TurnContext`'s hand is the engine's own list, and P13.1's finding arrived in the test
+project.** The obvious way to test "the mistake is the card the rung ranked second" is to record
+the context and ask the rung for its ranking afterwards — which asks it about the **thirteen**
+that were kept rather than the fourteen it chose from, and produces a confidently wrong expected
+value. `RecordingAgent` records the ranking **during** the turn now. Found by writing the test.
+
+⚠️ **The mistake has exactly one site, and that was a design decision rather than an omission.**
+Taking the discard, claiming the turned-up card and declaring are all strict-improvement or
+must-answer questions with no plausible second-best, so ε is one dial rather than three — which
+is what makes "seven points a step" attributable to anything at all.
+
+⚠️ **`--pairs adjacent` was needed and was not in the plan's build list.** Acceptance 1b asks for
+the family to be the k−1 steps rather than the round-robin; the tournament corrected over every
+pair it played, so the family and the cells had to become the same choice. It also halves the
+cost of calibrating a four-level dial. 🔥 **It found a latent assumption**: `PairingChecks` read
+the field to decide which two cells to compare across, and threw `Sequence contains no matching
+element` on a run where most pairs never met. It reads the **cells that were played** now, and
+that is the same answer for a round-robin.
+
+⚠️ **`sim suite` now fails the run if the dial is not monotone**, alongside the null test. A rung
+that raises the ceiling (P20–P22) raises every level and moves the calibration, so this is a
+standing check rather than a one-off in the packet that set the values.
 
 ---
 
@@ -3717,10 +3760,13 @@ difficulty ladder re-calibrated against the ladder the programme actually ended 
   and a short entry per rung — **including the ones that failed.** `cautious` is already such an
   entry, and P15's account of *why* denial and self-interest point the same way is worth more
   than its number ever was.
-  ⚠️ **P17 created the document and `sim suite` behind it, so this packet extends rather than
-  writes.** What it still owes: the difficulty calibration section (P19's), an entry per rung
-  that P20–P22 added, and acceptance 2 — the test that the levels published are the levels
-  offered. ⚠️ **The suite's standing set is a list in `Suite.Run` and it is the thing that goes
+  ⚠️ **P17 created the document and `sim suite` behind it, and P19 added §10 and the
+  `difficulty.*` rows, so this packet extends rather than writes.** What it still owes: an entry
+  per rung that P20–P22 added, and acceptance 2 — the test that the levels published are the
+  levels offered. ⚠️ **P19 got half of acceptance 2 for nothing**: `sim suite` exits non-zero if
+  the dial stops being monotone, so a *stale* calibration now fails the run rather than the
+  proofreading. What is still missing is the join between the CSV's `difficulty.*` rows and the
+  menu the front ends draw. ⚠️ **The suite's standing set is a list in `Suite.Run` and it is the thing that goes
   stale**: a rung added to the catalog does not appear in the document until it is added there
   too, and P23 is where that stops being a habit.
 - ⚠️ **Every figure carries the command that produced it and the games it came from**, and

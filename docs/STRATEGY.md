@@ -11,9 +11,10 @@ transcribed, out of `docs/strategy/measurements.csv`, which is written by one co
 dotnet run -c Release --project BurmesePoker.Sim -- suite --strategies random,simple,greedy,cautious --games 8000 --seed 20260819
 ```
 
-Last generated **2026-08-19** (BUILD-PLAN P17). That run played **~64,000 games in 15 minutes**,
-and **two independent runs of it wrote a byte-identical file** — which is the only reason a
-document may quote a simulation at all.
+Last generated **2026-08-19** (BUILD-PLAN P19). That run played **~120,000 games in 34 minutes**
+— the ladder ranked, the difficulty dial calibrated beside it, and P12's headline under both
+seatings. ⚠️ **P17's run of the same seed wrote every ladder figure identically**, which is the
+only reason a document may quote a simulation at all; §10 is what P19 added.
 
 The fuller report the tables below are drawn from comes from the same seed:
 
@@ -65,7 +66,7 @@ what makes a difference in results attribute to that decision and to nothing els
 
 ⚠️ **A skill ladder is a research instrument, not a difficulty menu.** Its rungs are unevenly
 spaced and one of them plays a *different and worse idea* rather than the right idea badly. See
-`BUILD-PLAN.md` §3.12; the difficulty dial is built from these but is not these.
+`BUILD-PLAN.md` §3.12; **the difficulty dial is built from these but is not these — it is §9.**
 
 ---
 
@@ -242,7 +243,72 @@ the reasoning that made it plausible is worth more than its number.**
 
 ---
 
-## 9. Regenerating this document's data
+## 9. The difficulty dial
+
+**Not the ladder.** A person choosing an opponent is offered these four and never the rungs
+above, and `BUILD-PLAN.md` §3.12 is why: a ladder is a research instrument — unevenly spaced,
+entitled to be incomplete, and its lower rungs play a *different and worse idea* rather than the
+right idea badly. **A weaker player plays the right idea and slips.** So every level is the
+strongest rung there is (`greedy`) wearing a **mistake rate** — with probability ε it throws the
+card that rung ranked *second* instead of the one it ranked first, and nothing else about it
+changes.
+
+| level | ε | what it is |
+|---|--:|---|
+| `expert` | 0.00 | throws the best card it can see, every turn |
+| `hard` | 0.50 | slips about half the time on the cards it is choosing between |
+| `medium` | 0.70 | throws the wrong one of two good cards more often than not |
+| `easy` | 0.90 | gets it wrong nearly every time |
+
+⚠️ **ε is not the dial; results are.** Measured over a sweep of seven mistake rates, ε = 0 to
+0.5 costs about **8 points** of win rate and ε = 0.5 to 1 costs about **17** — so levels spaced
+evenly in ε would not be spaced evenly in play. These four are spaced by the measurement.
+
+### The reference table — all four levels at one table, fully crossed
+
+256 assignments across four seats, 8,192 games, 5,600 of them holding any one level.
+
+| level | win % | step |
+|---|--:|--:|
+| `expert` | **36.11 ± 0.87** | — |
+| `hard` | **27.22 ± 0.83** | −8.9 |
+| `medium` | **22.17 ± 0.79** | −5.1 |
+| `easy` | **14.50 ± 0.69** | −7.7 |
+
+### The steps, head to head
+
+**The family is the three adjacent steps and not the round-robin**, because *"n+1 beats n"* is
+the only claim a monotone dial makes — correcting over all six pairs would throw power away for
+comparisons nobody is making. Each cell is 8,008 games at every seating in which both levels are
+at the table, and each margin is the **paired** one (§1 rule 4).
+
+| step | margin | Holm |
+|---|--:|---|
+| `expert` over `hard` | **+9.90 ± 1.00** | separated |
+| `hard` over `medium` | **+5.69 ± 1.01** | separated |
+| `medium` over `easy` | **+10.79 ± 1.00** | separated |
+
+✅ **Every step clears the correction, and the narrowest of them is 5.7× the half-width.** A
+level that could not be separated from its neighbour would be deleted rather than shipped
+(§3.12 item 2) — that is why there are four and not five. ⚠️ **`sim suite` exits non-zero if the
+dial ever stops being monotone**, which is how a rung that raises the ceiling (P20–P22) is
+stopped from quietly invalidating the menu.
+
+```bash
+# the calibration, on its own
+dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy,medium,hard,expert --pairs adjacent --games 8000 --seed 20260819
+
+# the sweep that placed the four values
+dotnet run -c Release --project BurmesePoker.Sim -- --strategies greedy@0,greedy@0.1,greedy@0.2,greedy@0.35,greedy@0.5,greedy@0.75,greedy@1 --seating balanced --games 4802 --seed 20260819
+```
+
+⚠️ **`greedy@0.35` is a calibration probe, not a level** — a rung at an arbitrary mistake rate,
+nameable by the harness so that the sweep above can be re-run by somebody who doubts it. It is
+deliberately unreachable from a menu, a form field or `--difficulty`.
+
+---
+
+## 10. Regenerating this document's data
 
 ```bash
 # the standing set — writes docs/strategy/measurements.csv
@@ -253,6 +319,9 @@ dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies rand
 
 # one ordinary run, now with an interval on every figure
 dotnet run -c Release --project BurmesePoker.Sim -- --strategies greedy,simple --seating balanced --games 4096 --seed 20260819
+
+# the difficulty dial on its own — §9
+dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy,medium,hard,expert --pairs adjacent --games 8000 --seed 20260819
 ```
 
 `measurements.csv` carries, for every row, the **command that produced it**, the games it came

@@ -32,6 +32,18 @@ public sealed record Strategy(string Name, Func<int, IPlayerAgent> Create)
 {
     /// <summary>The same rung, as the harness names it.</summary>
     internal static Strategy Of(BotRung rung) => new(rung.Name, rung.Create);
+
+    /// <summary>
+    /// The same difficulty level, as the harness names it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The harness ranks levels as well as rungs, and that is not the same as offering
+    /// both in a menu</b> (BUILD-PLAN §3.12, P19). A level's whole claim — that <em>n+1</em>
+    /// beats <em>n</em> and a person can tell — is a measurement, so it has to be measurable by
+    /// the instrument that measures everything else. What §3.12 forbids is a <em>front end</em>
+    /// showing a person a list of research instruments beside a list of settings.
+    /// </remarks>
+    internal static Strategy Of(DifficultyLevel level) => new(level.Name, level.Create);
 }
 
 /// <summary>
@@ -59,9 +71,30 @@ public static class StrategyCatalog
     /// </remarks>
     public static IReadOnlyList<Strategy> All { get; } = [.. BotCatalog.All.Select(Strategy.Of)];
 
-    /// <summary>Looks a strategy up by name, case-insensitively.</summary>
+    /// <summary>
+    /// The difficulty dial, <b>weakest first</b> — the product rather than the instrument
+    /// (BUILD-PLAN §3.12).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Not part of <see cref="All"/>, which is what a report defaults to.</b> A run that
+    /// silently mixed rungs and levels would be ranking a research instrument against a product
+    /// built out of it, and every level is the hardest rung with a handicap — so <c>hard</c>
+    /// and <c>greedy</c> are the same player under two names, which is a null cell, not a
+    /// comparison.
+    /// </remarks>
+    public static IReadOnlyList<Strategy> Levels { get; } = [.. DifficultyLadder.All.Select(Strategy.Of)];
+
+    /// <summary>
+    /// Looks a strategy up by name, case-insensitively: a rung, a difficulty level, or a
+    /// calibration probe such as <c>greedy@0.35</c>.
+    /// </summary>
     public static Strategy Resolve(string name) =>
         All.FirstOrDefault(strategy => string.Equals(strategy.Name, name, StringComparison.OrdinalIgnoreCase))
-        ?? throw new ArgumentException(
-            $"No strategy called '{name}'. Known: {string.Join(", ", All.Select(s => s.Name))}.", nameof(name));
+        ?? (DifficultyLadder.FindOrProbe(name) is { } level
+            ? Strategy.Of(level)
+            : throw new ArgumentException(
+                $"No strategy called '{name}'. Known: {string.Join(", ", All.Select(s => s.Name))}; "
+                + $"the difficulty levels {string.Join(", ", Levels.Select(s => s.Name))}; and a probe such "
+                + $"as {BotCatalog.Hardest.Name}{DifficultyLevel.Reserved}0.35.",
+                nameof(name)));
 }

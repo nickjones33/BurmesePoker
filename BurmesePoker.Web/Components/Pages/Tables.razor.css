@@ -150,6 +150,30 @@
     font: inherit;
 }
 
+/*
+    🔥 The one row whose control comes before its label, so the ten-rem label column above is
+    exactly wrong for it: the label is the question here rather than the caption, and squeezed
+    into that column it wrapped onto three lines. §3.11 B11's forty pixels stay on the row,
+    which is what you press — a checkbox label is part of its own target.
+*/
+.opening .mixed {
+    min-height: 40px;
+}
+
+.opening .mixed label {
+    flex: 1 1 auto;
+    color: var(--on-surface);
+    font-size: 1rem;
+}
+
+.opening .mixed input {
+    flex: 0 0 auto;
+    min-height: 0;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0;
+}
+
 .opening .note {
     display: block;
     color: var(--on-surface-muted);
