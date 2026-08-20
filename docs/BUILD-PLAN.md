@@ -965,10 +965,10 @@ P0 ─► P1 ─┬─► P2 ──────────┐                  
                                                           P13.5  a table, not a document   ← the layout pass
                                                           P13.6  the lobby                 ← goal 4
 
-P15 ─┬─► P17  the tournament ☑ ┬─► P19  difficulty as a dial  ← goal 5's product, finished here
-     │   (stats + ranking)     ├─► P20  counting rung   (memory)      ─┐
-P16 ─┘                         ├─► P21  outs rung       (lookahead)   ─┼─► P23  the standing answer
-          P18  one catalog ☑ ──┘   P22  prospector rung (the money)   ─┘
+P15 ─┬─► P17  the tournament ☑ ┬─► P19  difficulty as a dial ☑ ← goal 5's product, finished here
+     │   (stats + ranking)     ├─► P20  counting rung   (memory)   ☑ ─┐
+P16 ─┘                         ├─► P21  outs rung       (lookahead)  ☑ ─┼─► P23  the standing answer
+          P18  one catalog ☑ ──┘   P22  prospector rung (the money)  ☑ ─┘
               (all front ends)
 ```
 
@@ -1001,13 +1001,14 @@ and a control, and nothing in the domain, the engine or the round row changed to
 
 ⚠️ **The P12 branch reopened on 2026-08-19 as goal 5, and it is now the only live one.**
 **P17 (statistics and ranking) and P18 (one catalog) are independent of each other**; both feed
-**P19**, which finishes the difficulty product with the rungs that exist today. ✅ **All of P17, P18, P19 and
-P20 are done.** **P20, P21 and
-P22 are independent of one another and of P19**, and are droppable in that preference order —
-each adds one rung and one measured answer. ⚠️ **P20 landed 2026-08-20 and returned a null**
-(`counting`, `+0.3 ± 1.0` the wrong way), so **P21 is next** and is the last rung the programme
-has a reason to try. **P23 closes the branch** by re-calibrating against
-whichever of them landed. 🔥 **The dependency that matters is P17 before P19**: a difficulty
+**P19**, which finishes the difficulty product with the rungs that exist today. ✅ **P17–P22 are
+all done, and only P23 is left.** The three research rungs were independent of one another and of
+P19 and were droppable in preference order; all three were built. ⚠️ **Two returned nothing**
+(`cautious` before them, then `counting` at `+0.3 ± 1.0` the wrong way), **`outs` separated at
+`+3.1 ± 1.0`**, and **`prospector` answered a different question entirely** — the side bet is not
+worth playing for at $5/$1 and is worth `+7.3 ± 3.3` a round at $5/$40 (P22, STRATEGY §10).
+**P23 closes the branch** by re-calibrating against the ladder that actually landed — and P22
+made that re-run three times longer, so read P22's note before starting it. 🔥 **The dependency that matters is P17 before P19**: a difficulty
 ladder calibrated with the interval-free report today's harness prints would be a guess wearing
 a number.
 **P13 is now the only outstanding packet — the only one that would change the architecture,
@@ -3849,7 +3850,33 @@ does not and says what it cost to find out. Both are publishable.
 
 ---
 
-### P22 — Money: is there a strategy in the side bet? ☐
+### P22 — Money: is there a strategy in the side bet? ☑ done 2026-08-20
+
+🔥 **The answer is "no, and here is how far away yes lives".** `prospector` is `outs` with one
+change — a card taken from anywhere but the deck must be worth more than the ownership a blind
+draw would have conferred (RULES.md §4.4) — and at **$5/$1 the rule never fires at all**. It is
+not "measured as no difference": it is the *same player under two names*, proved by playing two
+tables of one rung each from the same shoes and getting the same rounds card for card. The
+head-to-head cell at the standard stakes is therefore a null cell, and at **`+0.01 ± 0.22`** a
+round it is the tightest one this harness has produced.
+
+🔥 **And the yes, which is what makes it a sweep and not a cell.** At **$5/$40** — a money card
+worth eight rounds — the rung all but stops taking (0.1% against `outs`' 24.9%), wins **20.1 ±
+0.9 points fewer rounds**, and banks **`+7.34 ± 3.29` a round**, surviving Holm at `p = 1.3e-05`.
+The four cells are monotone in the stakes, with $5/$20 at `+0.95 ± 1.63` (break-even, inside the
+interval) and $5/$10 at `−0.86 ± 0.82` (raw only). ⚠️ **This is the first published divergence
+between money and win rate in the programme** — a reader ranking the $5/$40 cell by win rate
+would rank the better player last — and P12 split the two columns three packets before anybody
+needed them apart.
+
+⚠️ **What it cost the standing suite, and P23 inherits the bill.** `prospector` is one entry in
+`BotCatalog` (P18), so the suite's ladder field picks it up by construction — **21 head-to-head
+cells against 15**, taking `sim suite` from an hour and three quarters to about **three and a
+quarter hours**. It has therefore **not been re-run**: `docs/strategy/measurements.csv` is one
+rung behind the catalog, §10 of `docs/STRATEGY.md` is generated from `docs/strategy/money.csv`
+instead, and **P23's re-run is where the two rejoin**. ⚠️ **Six of those 21 cells are known in
+advance to be `outs` against itself**, which is an argument for `--pairs adjacent` and against
+adding a rung to a round-robin merely because it exists.
 
 **Goal.** The one strategy axis in this game that is **not rummy**, and the first question in the
 programme whose answer is not a win rate.
@@ -3900,7 +3927,30 @@ P12 without anybody asking it this.
 4. Deterministic, journals, replays.
 
 **Done when.** `docs/STRATEGY.md` answers *"should you draw blind for the money?"* with a number
-and the stakes it depends on.
+and the stakes it depends on. ✅ **§10 does, at four ratios.**
+
+**What it actually found, beyond the headline.**
+
+- 🔥 **A rung's strength stopped being a property of the rung.** Every rung before this plays the
+  same game whatever the table is played for; `prospector`'s one decision reads
+  `Stakes.MoneyCardValue` against `Stakes.RoundValue`, so *"how good is it"* has no answer until
+  somebody says what the stakes are. That is why `BotCatalog.Strength` is an ordinal and not a
+  score, and it is why this rung shares `outs`' number rather than being ranked above or below it.
+- 🔥 **A `DERIVED` rules note fell out of the arithmetic and is now RULES.md §4.1 rev 15**: a
+  designation that lands on a **permanent** money card leaves the deck with *less* money in it,
+  not more. Turning up a 7♦ makes that value a double but takes the physical card out of the deck
+  (§3 step 4), so one 7♦ worth $2 is left where an ordinary designation leaves a partner worth $1
+  **and** the 7♦s untouched. **Doubling one value is not the same as designating a second.**
+  Found by writing a test that asserted the opposite and watching it fail.
+- ⚠️ **The exchange rate is the rung's one free parameter and it is a constant on purpose.** A
+  rung with a knob is a *family* of rungs and a family cannot be measured against the one below
+  it in a single cell (P15). It is documented as a model, and its bias is stated: it overvalues
+  early melded cards, so it takes the discard more often than a sharper model would, which moves
+  the crossover **down** rather than up.
+- ⚠️ **The identity at $5/$1 cannot be shown from a head-to-head cell.** Two labels of one player
+  sit in different seats there, so their aggregates differ by seat luck however identical they
+  are — the small-`n` version of that test failed exactly this way. What settles it is two
+  *homogeneous* tables dealt from the same shoes.
 
 ---
 
@@ -3952,6 +4002,24 @@ difficulty ladder re-calibrated against the ladder the programme actually ended 
   its inner rung to *rank*, so even `easy` runs the outs search —
   and `DifficultyCalibrationTests` went from seconds to **3m 51s**, which is most of the test
   suite's wall clock. If P22 adds a stronger rung still, this compounds.
+  ✅ **P22 did not.** `prospector` shares `outs`' `Strength`, so `BotCatalog.Hardest` is still
+  `outs`, the dial is still built on the rung P19 measured, and **nothing about the difficulty
+  calibration moved.** What P22 changed is only what P23 has to *pay*, below.
+  🔥 **And that bill is now the packet's biggest single risk.** Seven rungs is **21 head-to-head
+  cells against 15**, and `sim suite` went from an hour and three quarters to roughly **three and
+  a quarter hours** — so `docs/strategy/measurements.csv` was left at the six-rung field and P23
+  is where it is caught up. ⚠️ **Six of the new cells are `outs` against itself in all but name**
+  (P22: `prospector` and `outs` play the same rounds card for card at `Stakes.Standard`), which
+  is roughly three quarters of an hour spent reproducing a fact a unit test already asserts.
+  **Consider `--pairs adjacent` for the ladder as well as for the dial**, or a suite that ranks
+  the field once and measures a stakes-sensitive rung only where it is not a duplicate — but
+  ⚠️ **do not fix it by hand-typing a shorter field**, which is the exact defect P18 and P20
+  each had to remove one layer at a time.
+- **The money sweep is in the standing set already** (P22): `Suite.Run` plays it and writes
+  `money.net-per-round.*`, `money.win-rate.*` and `money.take-rate.*` rows, so the regeneration
+  picks it up with no work. What P23 owes it is the **join** — §10 of `docs/STRATEGY.md` quotes
+  `docs/strategy/money.csv` today because the suite has not been re-run, and after the re-run it
+  should quote `measurements.csv` like every other section.
 - The final exposure: level names, descriptions and honest one-line explanations in both front
   ends, **read from the catalog** rather than typed into a UI.
 - `docs/PLAYING.md` gains how to choose an opponent.
@@ -4009,9 +4077,10 @@ For picking up in a fresh session with no memory of this conversation.
 | ~~**A measured result is really a seating artifact**~~ (new 2026-08-19, **retired the same day by P16**). Turn order is a directed cycle — only the immediately-previous player's discard is available (`RULES.md` §5) — so who sits behind whom is a variable, and P12's rotation holds it fixed rather than varying it. | **Measured, and it is real but small and not directional.** A weaker player anywhere at the table is worth 4–5 points of win rate to you; which *side* of you they sit costs nothing between two thinking strategies (−1.0 ± 2.1 pts) and 9.1 ± 2.1 points only across the random-to-greedy gulf. The size of the artifact in P12's own headline is now known: **the rotation flatters greedy by 1.1 points a seat, 2.2 of the 11.4-point gap.** The mitigation is permanent: `--seating balanced` plays every assignment, and every CSV row names `upstream_strategy` and `downstream_strategy`, so a rotated result and a balanced one can both be quoted and told apart. |
 | **Journalling slows the harness** (new 2026-08-19). §3.7 measured the work as allocation-bound, and a per-decision recorder allocates. | P14 keeps two fidelity levels and makes the rich one opt-in, and its acceptance criteria include measuring the throughput cost against P12's recorded 51/85–92 rounds a second rather than assuming it is small. If thin journalling costs more than a few percent it is built wrong. |
 | **A round-robin manufactures findings** (new 2026-08-19, P17). *k* strategies is *k(k−1)/2* comparisons, so at 95% intervals roughly one in twenty clears zero by chance — a six-way tournament makes a false rung likelier than not. | **Holm correction reported beside the raw verdict, and the comparison count printed** (P17 acceptance 4). Plus the harness's own null test: **a strategy against itself must measure 1/seats**, which costs one cell and would have caught P16's seating artifact from the inside. |
-| **A research rung is worth nothing** (new 2026-08-19). `cautious` cost a packet and measured +0.5 ± 0.55 points; there is no reason to expect the next one to fare better. | **§3.12: the difficulty system does not depend on research succeeding.** P19 finishes it with the rungs that exist today, and **P20–P22 are independently droppable in preference order**. A null result is published rather than buried (P20 acceptance 1), because *why* `cautious` failed was worth more than its number. ⚠️ **P20 is the second such rung and it happened exactly as this row predicted** — `counting` measured `+0.3 ± 1.0` the wrong way, was published as a failure, and its *why* narrowed P21: **better information fed to a decision rule that does not matter is worth nothing**, so the remaining rung has to change the question rather than the answer. **Two of three research rungs returned nothing.** 🔥 **P21 is the third and it did not** — `outs` measured `+3.1 ± 1.0` over `greedy` and beat every rung in the field, which is the first time this row has been wrong. ⚠️ **It does not retire the row, it sharpens it**: the two that failed both refined the *residue* greedy leaves behind, worth about half a point against an instrument that resolves one; the one that paid changed the question asked *before* greedy's tie-break spoke. **Plan a research rung by asking where its key sits, not by how clever the idea is.** ⚠️ And note the cost of success: a rung that separates becomes `Hardest`, re-bases every difficulty level onto itself, and made both the suite and the test tree three times slower. |
+| **A research rung is worth nothing** (new 2026-08-19). `cautious` cost a packet and measured +0.5 ± 0.55 points; there is no reason to expect the next one to fare better. | **§3.12: the difficulty system does not depend on research succeeding.** P19 finishes it with the rungs that exist today, and **P20–P22 are independently droppable in preference order**. A null result is published rather than buried (P20 acceptance 1), because *why* `cautious` failed was worth more than its number. ⚠️ **P20 is the second such rung and it happened exactly as this row predicted** — `counting` measured `+0.3 ± 1.0` the wrong way, was published as a failure, and its *why* narrowed P21: **better information fed to a decision rule that does not matter is worth nothing**, so the remaining rung has to change the question rather than the answer. **Two of three research rungs returned nothing.** 🔥 **P21 is the third and it did not** — `outs` measured `+3.1 ± 1.0` over `greedy` and beat every rung in the field, which is the first time this row has been wrong. ⚠️ **It does not retire the row, it sharpens it**: the two that failed both refined the *residue* greedy leaves behind, worth about half a point against an instrument that resolves one; the one that paid changed the question asked *before* greedy's tie-break spoke. **Plan a research rung by asking where its key sits, not by how clever the idea is.** ⚠️ And note the cost of success: a rung that separates becomes `Hardest`, re-bases every difficulty level onto itself, and made both the suite and the test tree three times slower. 🔥 **P22 is the fourth and it broke the row's frame rather than confirming or refuting it.** `prospector` did not ask "is this a better way to play rummy" at all — it asked what the *side bet* is worth, so it is judged on `$/round`, and its answer is **a function of the stakes**: nothing at $5/$1 (where it is literally the same player as `outs`), `+7.3 ± 3.3` a round at $5/$40. ⚠️ **The new lesson is about cost rather than about odds.** A rung that measures nothing at the standard stakes still joins the catalog, still costs six head-to-head cells in every future suite run, and took `sim suite` from 1h45 to about 3h15 — **so the question to ask of the next rung is not only where its key sits but whether the standing instrument is the right place to measure it.** |
 | **The outs rung makes the programme too slow to run** (new 2026-08-19, P21). A live-outs measure costs a `PartialCover.Best` per value per candidate — ~100× a decision, which turns P12's 34-second run into a quarter of an hour. | **A budget stated in advance: no more than 10× greedy's rounds a second, measured** — over it, the rung is built wrong. The optimisation is the one §3.7 has pointed at since P12: **attack allocation**, and put every speed-up **around** the evaluator, never inside it, because `IsWinning` is the win authority (§3.4) and its answers may not change. |
 | **A counting bot sees what the rules conceal** (new 2026-08-19, P20). It is the first strategy to want information beyond its own hand, and `TurnContext` is the concealment rule expressed as a type. | **The information set is decided and asserted before the bot is written**, and the safe default is *only what this seat has actually been shown* — wrong in the direction that makes the bot weak rather than the direction that makes it cheat. ⚠️ Whether a discard pile is inspectable is a **rules** question and goes to §9 and to Mya Lay, not into code. ✅ **Discharged by P20 as designed**: §9 #15 stayed open, the question went to Mya Lay flat, and the bot counts only what it was shown — **12 → 23 cards a round out of 108**. 🔥 **The cost of the cautious default is now a measured quantity rather than a worry**, and it is one of the two reasons the rung returned nothing. If the answer comes back *the piles may be read*, the rung deserves re-measuring before it is written off. |
+| **A standing suite that nobody re-runs** (new 2026-08-20, P22). `sim suite` is the join between the code and every number the docs quote, and it grew from 18 s (P17) to 35 min (P20) to 1h45 (P21) to **about 3h15** (P22) — at which point "regenerate it" stops being something a session does casually and `measurements.csv` starts drifting behind the catalog, which is exactly what it did here. | ⚠️ **The drift is recorded rather than hidden**: `docs/STRATEGY.md` §11 says which tables are the six-rung field and why, and P23 owns the catch-up. The structural answers are `--pairs adjacent` for the ladder as well as the dial (P19 built it), and **not measuring a rung in a cell where it is a known duplicate** — six of P22's new cells are `outs` against itself under another name. ⚠️ **What must not happen is a hand-typed shorter field**: P18 and P20 each removed exactly that defect, one layer apart. |
 | **The difficulty ladder becomes a lie** (new 2026-08-19). Levels are calibrated against a ladder that later packets widen, so a published calibration is stale the moment a rung lands. | P23 re-runs the suite and re-calibrates, and **a test asserts that the levels published are the levels offered** — proofreading is not a mitigation. A level not separated from its neighbour is **deleted rather than shipped** (P19 acceptance 1). |
 | Rules drift as more is recalled. | `RULES.md` provenance tags make revisiting cheap; §9 tracks what is still unrecorded. |
 | Three projects is over-engineering. | Noted in §2. The enforcement is the point, but a single project with `IGameObserver` is an acceptable fallback. |

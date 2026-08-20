@@ -1,3 +1,5 @@
+using BurmesePoker.Domain.Money;
+
 using BurmesePoker.Sim;
 
 using BurmesePoker.Tests;
@@ -105,6 +107,10 @@ public class SuiteTests
         var report = Suite.Run(new SuiteOptions
         {
             Strategies = [.. new[] { "simple", "greedy" }.Select(StrategyCatalog.Resolve)],
+            // ⚠️ Three ratios rather than the shipped four, and only because the sweep's rungs
+            // are the expensive ones: what is under test here is that the rows carry their
+            // command, not what the sweep found (BUILD-PLAN P22).
+            Ratios = [new(5, 1), new(5, 20), new(5, 40)],
             Seats = 4,
             GamesPerCell = 32,
             MasterSeed = 20260819,
@@ -129,6 +135,13 @@ public class SuiteTests
         Assert.Contains(ids, id => id.StartsWith("headline.rotate.", StringComparison.Ordinal));
         Assert.Contains(ids, id => id.StartsWith("headline.balanced.", StringComparison.Ordinal));
         Assert.Contains(ids, id => id.StartsWith("ladder.rank.", StringComparison.Ordinal));
+
+        // ⚠️ And P22's rows, which are the only ones in the file not played at the standard
+        // stakes: a published money figure is meaningless without the ratio it was played at,
+        // so the ratio is in the id rather than in the prose beside it.
+        Assert.Contains(ids, id => id == "money.net-per-round.5-1");
+        Assert.Contains(ids, id => id == "money.win-rate.5-40");
+        Assert.Contains(ids, id => id.StartsWith("money.take-rate.", StringComparison.Ordinal));
 
         var path = Path.Combine(Path.GetTempPath(), $"burmese-poker-{Guid.NewGuid():N}", "measurements.csv");
 

@@ -65,7 +65,7 @@ this project at least once.**
 
 ## 2. The ladder
 
-Six rungs, ordered, each differing from the one below it in **exactly one decision** — which is
+Seven rungs, ordered, each differing from the one below it in **exactly one decision** — which is
 what makes a difference in results attribute to that decision and to nothing else.
 
 | rung | what it decides differently | packet |
@@ -76,6 +76,7 @@ what makes a difference in results attribute to that decision and to nothing els
 | `cautious` | `greedy`, plus the remaining ties decided by what the discard is worth to whoever picks it up. | P15 |
 | `counting` | `cautious`, plus a **memory**: what is left in the shoe is estimated from every card it has been shown this round, not from its own thirteen. | P20 |
 | `outs` | `greedy`, plus a **look ahead**: where the cover count ties, keep the thirteen that more of the values still out there would improve. | P21 |
+| `prospector` | `outs`, plus the only decision money may touch: take a card from anywhere but the deck only when it is worth more than the ownership a blind draw confers. ⚠️ **At $5/$1 that is never, so it is `outs` — see §10.** | P22 |
 
 🔥 **Where a rung's new key goes is not a detail, and §3 is about to make that the headline.**
 `cautious` and `counting` both slide theirs in **beneath** greedy's tie-break, so they decide
@@ -86,6 +87,12 @@ third is the only rung that has ever beaten `greedy`.**
 ⚠️ **A skill ladder is a research instrument, not a difficulty menu.** Its rungs are unevenly
 spaced and one of them plays a *different and worse idea* rather than the right idea badly. See
 `BUILD-PLAN.md` §3.12; **the difficulty dial is built from these but is not these — it is §9.**
+
+⚠️ **And `prospector` is the first rung whose strength is not a property of the rung alone.** Its
+one decision reads the **stakes**, which are fixed at the start of a game and not by the rules
+(RULES.md §4.3), so *how well it plays* is a different question at $5/$1 and at $5/$40 — §10 is
+where it is measured, and it is the only rung in this document ranked on money rather than on win
+rate.
 
 ---
 
@@ -449,7 +456,85 @@ deliberately unreachable from a menu, a form field or `--difficulty`.
 
 ---
 
-## 10. Regenerating this document's data
+## 10. The side bet — should you draw blind for the money?
+
+**The one strategy axis in this game that is not rummy, and the first question in the programme
+whose answer is not a win rate** (P22, 32,032 games, `docs/strategy/money.csv`).
+
+**The question.** Ownership of a money card is permanent and never transfers (RULES.md §4.4), so
+holding one is worth nothing and throwing one away costs nothing — which is why every rung's
+*discard* is money-blind and why a test says so. What that rule does **not** settle is where a
+card comes **from**: *"you own a money card if — and only if — the deck gave it to you"*, so a
+blind draw confers ownership and picking a card off the pile beside you never does. A seat that
+digs in the deck therefore acquires more money while playing a worse hand, and **nobody had
+measured what that trade is worth.** `greedy` concedes exactly one tie-break to it and nothing
+else.
+
+**The rung.** `prospector` is `outs` with one change: it takes a card from anywhere but the deck
+only when the melded cards it buys are worth more than the ownership the blind draw would have
+conferred. The ownership value is public arithmetic — the stakes (§4.3), the designation (§4.1),
+how many players pay, and how much of the shoe this seat can see. The exchange rate from *melded
+cards* to *money* is the rung's **one modelling assumption**, stated rather than tuned: thirteen
+melded cards is the round, so one card is a thirteenth of it.
+
+### The sweep
+
+Head to head against `outs`, 8,008 games a cell, every seating in which both are at the table,
+paired margins (§1 rule 4), Holm-corrected over the four cells. ⚠️ **The money column is the
+verdict and the win rate is beside it**, because a rung that wins fewer rounds and banks more is
+the better player.
+
+| stakes | money card is worth | `prospector` take % | **$ a round** | win % | Holm |
+|---|--:|--:|--:|--:|---|
+| **$5/$1** — as played | 0.2 rounds | 25.0 | **+0.01 ± 0.22** | +0.3 ± 1.0 | inside |
+| $5/$10 | 2 rounds | 16.8 | **−0.86 ± 0.82** | −6.6 ± 1.0 | raw only |
+| $5/$20 | 4 rounds | 8.4 | **+0.95 ± 1.63** | −13.2 ± 1.0 | inside |
+| $5/$40 | 8 rounds | 0.1 | **+7.34 ± 3.29** | −20.1 ± 0.9 | **separated** |
+
+`outs` takes 24.9–25.1% of its cards off the pile in every cell, which is the control: the only
+thing moving down that column is the rule firing.
+
+### The answer
+
+🔥 **No — at the stakes this game is actually played for, and by a wide margin.** At $5/$1 the
+rule **never fires at all**: one melded card is worth about $1.15 at a four-handed table and the
+ownership a blind draw confers is worth about 20 cents, so the comparison is never close.
+`prospector` and `outs` are **the same player under two names at $5/$1**, and that is an
+identity rather than a measurement — two tables of one rung each, dealt from the same shoes, play
+the same rounds card for card
+(`MoneySweepTests.AtTheStandardStakesTheTwoRungsPlayOneGameUnderTwoNames`). The top row above is
+therefore a **null cell**, and at `+0.01 ± 0.22` it is the tightest one this harness has produced
+— which is what a null cell of two genuinely identical players should look like.
+
+🔥 **Yes — from about a money card worth eight rounds, and the crossover is somewhere near four.**
+At $5/$40 the rung stops taking almost entirely (0.1%), wins **20 points fewer rounds**, and
+banks **$7.34 ± 3.29 more a round** — surviving Holm at `p = 1.3e-05`. The side bet alone moves
+`+11.36 ± 3.29`, so it buys the whole of the win rate it gives away and more. Below that: $5/$20
+is `+0.95 ± 1.63`, positive and inside its interval — *break-even, as far as this apparatus can
+see* — and $5/$10 is `−0.86 ± 0.82`, separated raw but not surviving the correction. **The order
+of the four is monotone in the stakes**, which is the shape the hypothesis predicted.
+
+⚠️ **This is the first published divergence between money and win rate in the programme**, and
+the reporting has split the flat prize from the side bet since P12 precisely so it could be seen.
+At $5/$40 a reader ranking by win rate would rank `prospector` last and be wrong.
+
+⚠️ **What it does not say.** The exchange rate above is a model, and a crude one — the thirteenth
+melded card is worth far more than the third, so the rung takes the discard rather more often
+than a sharper model would. The bias runs **towards playing the hand**, which is the conservative
+direction for a rung claiming the money is worth chasing: a better exchange rate would move the
+crossover **down**, not up. And the crossover is nowhere near $5/$1 either way — **at the real
+stakes the side bet is not worth one melded card, and the right way to play it is not to play it
+at all.** RULES.md §4.4's `DERIVED` remark said the money layer is *"not meant to be played for,
+only settled"*; this is that claim measured.
+
+```bash
+# the sweep, on its own — writes docs/strategy/money.csv
+dotnet run -c Release --project BurmesePoker.Sim -- money --games 8000 --seed 20260819
+```
+
+---
+
+## 11. Regenerating this document's data
 
 ```bash
 # the standing set — writes docs/strategy/measurements.csv. No --strategies: it measures
@@ -467,7 +552,20 @@ dotnet run -c Release --project BurmesePoker.Sim -- bench --rounds 200
 
 # the difficulty dial on its own — §9
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy,medium,hard,expert --pairs adjacent --games 8000 --seed 20260819
+
+# the money sweep on its own — §10
+dotnet run -c Release --project BurmesePoker.Sim -- money --games 8000 --seed 20260819 --csv docs/strategy/money.csv
 ```
+
+⚠️ **`measurements.csv` is one rung behind the catalog as of 2026-08-20, and P23 owns catching it
+up.** P22 added `prospector`, and `sim suite` now measures it — the money sweep is part of the
+standing set (`money.*` rows) and the ladder field is `BotCatalog` by construction — but the
+suite has not been re-run since, because seven rungs is **21 head-to-head cells against 15** and
+the run went from an hour and three quarters to about **three and a quarter hours**. So §3 and
+§4's tables are the six-rung field, and §10's table is generated separately from
+`docs/strategy/money.csv`. ⚠️ **Nothing here is stale in the sense of being wrong** — every
+number quoted was produced by the command printed beside it — but the ranking does not yet list
+`prospector`, which at these stakes would be `outs` under a second name (§10).
 
 `measurements.csv` carries, for every row, the **command that produced it**, the games it came
 from, the seed, the mean, the standard error and the 95% half-width.

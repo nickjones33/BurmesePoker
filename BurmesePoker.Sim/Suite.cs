@@ -25,6 +25,29 @@ public sealed record SuiteOptions
     /// </remarks>
     public IReadOnlyList<Strategy> Levels { get; init; } = StrategyCatalog.Levels;
 
+    /// <summary>
+    /// The money sweep's stakes ratios, cheapest side bet first (BUILD-PLAN P22).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A third run and not more rows in either of the other two.</b> Every other cell in
+    /// this suite is played at <see cref="Stakes.Standard"/>, and the whole point of this one is
+    /// that the stakes are the independent variable — a ratio mixed into a field would be a
+    /// different game seated beside the one being ranked.
+    /// </remarks>
+    public IReadOnlyList<Stakes> Ratios { get; init; } = MoneySweep.DefaultRatios;
+
+    /// <summary>
+    /// The rung whose take decision reads the side bet, and the rung it is one change from.
+    /// </summary>
+    /// <remarks>
+    /// Named rather than assumed, because P21 moved the top of the ladder and P22's rung sits
+    /// one change from whatever is there now.
+    /// </remarks>
+    public string MoneyChallenger { get; init; } = "prospector";
+
+    /// <inheritdoc cref="MoneyChallenger"/>
+    public string MoneyReference { get; init; } = "outs";
+
     /// <summary>Seats at the table (RULES.md §2.1).</summary>
     public int Seats { get; init; } = RoundEngine.MinimumPlayers;
 
@@ -68,12 +91,14 @@ public sealed record SuiteMeasurement(
 /// <param name="Measurements">Every published number.</param>
 /// <param name="Tournament">The ladder ranked — the research instrument.</param>
 /// <param name="Difficulty">The dial calibrated — the product (BUILD-PLAN P19).</param>
+/// <param name="Money">The side bet swept — the one axis that is not rummy (BUILD-PLAN P22).</param>
 /// <param name="Elapsed">How long it took.</param>
 public sealed record SuiteReport(
     SuiteOptions Options,
     IReadOnlyList<SuiteMeasurement> Measurements,
     TournamentReport Tournament,
     TournamentReport Difficulty,
+    MoneyReport Money,
     TimeSpan Elapsed)
 {
     /// <summary>
@@ -144,6 +169,21 @@ public static class Suite
             MasterSeed = options.MasterSeed,
             TurnCap = options.TurnCap,
             Stakes = options.Stakes,
+            Parallel = options.Parallel
+        });
+
+        // ⚠️ The stakes are the independent variable here and are Stakes.Standard everywhere
+        // else in this suite, which is why it is a third run rather than more cells in the
+        // first (BUILD-PLAN P22).
+        var money = MoneySweep.Run(new MoneySweepOptions
+        {
+            Challenger = StrategyCatalog.Resolve(options.MoneyChallenger),
+            Reference = StrategyCatalog.Resolve(options.MoneyReference),
+            Ratios = options.Ratios,
+            Seats = options.Seats,
+            GamesPerCell = options.GamesPerCell,
+            MasterSeed = options.MasterSeed,
+            TurnCap = options.TurnCap,
             Parallel = options.Parallel
         });
 
@@ -293,9 +333,56 @@ public static class Suite
                 string.Empty));
         }
 
+        var ratios = string.Join(
+            ",", options.Ratios.Select(stakes => $"{stakes.RoundValue}:{stakes.MoneyCardValue}"));
+
+        var moneyCommand = string.Create(CultureInfo.InvariantCulture,
+            $"BurmesePoker.Sim -- money --challenger {options.MoneyChallenger} "
+            + $"--reference {options.MoneyReference} --ratios {ratios} --seats {options.Seats} "
+            + $"--games {options.GamesPerCell} --seed {options.MasterSeed}");
+
+        for (var index = 0; index < money.Cells.Count; index++)
+        {
+            var cell = money.Cells[index];
+            var verdict = money.Verdicts[index];
+
+            var reading = verdict.Survives ? "separated (Holm)" : verdict.Separated ? "raw only" : "inside the interval";
+
+            measurements.Add(new SuiteMeasurement(
+                $"money.net-per-round.{cell.Id}",
+                "Should you draw blind for the money? A blind draw confers ownership of a money "
+                + "card and a take never does (RULES.md §4.4). ⚠️ This is the verdict figure and "
+                + "it is money, not win rate.",
+                moneyCommand,
+                $"{money.Options.Challenger.Name} over {money.Options.Reference.Name} at {cell.Label}",
+                "net per round margin",
+                cell.NetMargin,
+                reading));
+
+            measurements.Add(new SuiteMeasurement(
+                $"money.win-rate.{cell.Id}",
+                "The same margin in win rate, reported beside the money because this is the "
+                + "first packet where the two can come apart (BUILD-PLAN P22 acceptance 2).",
+                moneyCommand,
+                $"{money.Options.Challenger.Name} over {money.Options.Reference.Name} at {cell.Label}",
+                "win rate margin",
+                cell.WinMargin,
+                cell.MoneyAndWinRateDisagree ? "points the other way to the money" : string.Empty));
+
+            measurements.Add(new SuiteMeasurement(
+                $"money.take-rate.{cell.Id}.{money.Options.Challenger.Name}",
+                "The mechanism. The rule can only act by refusing takes, so a cell in which this "
+                + "has not moved from the reference's is a cell in which nothing happened.",
+                moneyCommand,
+                $"{money.Options.Challenger.Name} at {cell.Label}",
+                "take rate",
+                cell.Player(money.Options.Challenger.Name).TakeRate,
+                string.Empty));
+        }
+
         clock.Stop();
 
-        return new SuiteReport(options, measurements, tournament, difficulty, clock.Elapsed);
+        return new SuiteReport(options, measurements, tournament, difficulty, money, clock.Elapsed);
     }
 
     /// <summary>

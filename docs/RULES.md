@@ -4,11 +4,13 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-19 (rev 14 — §9 #15 added while planning the strategy programme: is a
-discard pile inspectable, or only its top card? No rule changed. Rev 13 measured §4.3's `DERIVED`
-balance argument — 600 simulated five-player rounds put the side-bet at 42% of the round prize,
-against the 40% the derivation guessed; rev 12 added §9 #14, raised while building the match
-engine, and the P9 defaults for §9 #4 and #5).
+Last revised: 2026-08-20 (rev 15 — §4.1 gained a `DERIVED` note that fell out of P22: **a
+designation that lands on a permanent money card leaves the deck with *less* money in it, not
+more.** No rule changed; it is a consequence of §4.1 and §3 step 4 together. Rev 14 added §9 #15
+while planning the strategy programme: is a discard pile inspectable, or only its top card? Rev
+13 measured §4.3's `DERIVED` balance argument — 600 simulated five-player rounds put the side-bet
+at 42% of the round prize, against the 40% the derivation guessed; rev 12 added §9 #14, raised
+while building the match engine, and the P9 defaults for §9 #4 and #5).
 
 ---
 
@@ -124,6 +126,18 @@ The distinguishing mechanic of the game.
 
 > **`OPEN` — why 7♦ and A♠?** No source explains this and Nick doesn't recall. It may be
 > arbitrary house tradition. Recorded as-is.
+
+> 🔥 **`DERIVED` — a designation that lands on a permanent money card leaves *less* money in
+> the deck, not more** (packet P22, 2026-08-20). It reads backwards and it is simply these rules
+> put together. A turned-up card is **removed from the deck** to act as the designator (§3 step
+> 4), so an ordinary designation — say a turned-up 5♥ — leaves **one** partner 5♥ in the deck
+> paying $1, *and* the 7♦s and A♠s are untouched. Turning up a 7♦ instead makes that value a
+> **double** and leaves **one** 7♦ in the deck paying $2 — but the card that would have been the
+> second $1 designator is the one now lying on the table. Doubling one value is not the same as
+> designating a second, and a player drawing blind in the hope of *acquiring* money (§4.4) has
+> less to draw for. **This says nothing new about what the rule is** — it is what the existing
+> rules already mean — and it is asserted as a test in
+> `ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe`.
 
 > **`OPEN` — what if a turned-up card is a joker?** 4 of the 108 cards are jokers, so one of
 > the two cards turned up at setup is a joker roughly one round in fourteen, and no source

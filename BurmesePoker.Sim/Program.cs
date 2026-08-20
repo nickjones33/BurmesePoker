@@ -3,6 +3,7 @@ using System.Globalization;
 using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
+using BurmesePoker.Domain.Money;
 using BurmesePoker.Domain.Play;
 using BurmesePoker.Sim;
 
@@ -24,6 +25,11 @@ try
     if (args.Length > 0 && args[0] == "tournament")
     {
         return RunTournament(args[1..]);
+    }
+
+    if (args.Length > 0 && args[0] == "money")
+    {
+        return RunMoney(args[1..]);
     }
 
     if (args.Length > 0 && args[0] == "suite")
@@ -396,6 +402,137 @@ static void ReportTournament(TournamentReport report)
         + "variance reduction common random numbers were for.");
 }
 
+// The one strategy axis in this game that is not rummy (BUILD-PLAN P22): a blind draw confers
+// ownership and a take does not (RULES.md §4.4), so a seat that digs in the deck acquires more
+// money cards while playing a worse hand. What that trade is worth is a fact about the ratio of
+// the two stakes, so the stakes are the independent variable and the answer is judged on
+// $/round rather than on win rate.
+static int RunMoney(string[] args)
+{
+    var arguments = Arguments.Parse(args);
+
+    var options = new MoneySweepOptions
+    {
+        Challenger = StrategyCatalog.Resolve(arguments.Value("challenger", "prospector")),
+        Reference = StrategyCatalog.Resolve(arguments.Value("reference", BotCatalog.Hardest.Name)),
+        Ratios = Ratios(arguments.Value("ratios", string.Empty)),
+        Seats = arguments.Number("seats", 4),
+        GamesPerCell = arguments.Number("games", 2000),
+        MasterSeed = arguments.Number("seed", 20260819),
+        TurnCap = arguments.Number("turn-cap", 400),
+        Parallel = !arguments.Flag("serial")
+    }.Validated();
+
+    var ratios = string.Join(
+        ",", options.Ratios.Select(stakes => $"{stakes.RoundValue}:{stakes.MoneyCardValue}"));
+
+    Console.WriteLine(
+        $"money: {options.Challenger.Name} against {options.Reference.Name} at {options.Seats} seats, "
+        + $"{options.Ratios.Count} stakes ratio(s) {ratios}, {options.GamesPerCell} games a cell, "
+        + $"seed {options.MasterSeed}");
+    Console.WriteLine(
+        "reproduce with: BurmesePoker.Sim -- money "
+        + $"--challenger {options.Challenger.Name} --reference {options.Reference.Name} "
+        + $"--ratios {ratios} --seats {options.Seats} --games {options.GamesPerCell} "
+        + $"--seed {options.MasterSeed}");
+
+    var report = MoneySweep.Run(options);
+
+    ReportMoney(report);
+
+    if (arguments.Has("csv"))
+    {
+        var path = arguments.Value("csv", MoneySweep.DefaultPath);
+        MoneyCsv.WriteTo(path, report);
+        Console.WriteLine($"Cells written to {path}");
+    }
+
+    return 0;
+}
+
+// ⚠️ round:money, in that order, because that is the order RULES.md §4.3 states the stakes in
+// and the order the tables are headed.
+static IReadOnlyList<Stakes> Ratios(string named) =>
+    named.Length == 0
+        ? MoneySweep.DefaultRatios
+        : [
+            .. named
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(pair => pair.Split(':', StringSplitOptions.TrimEntries) is [var round, var money]
+                    && int.TryParse(round, CultureInfo.InvariantCulture, out var roundValue)
+                    && int.TryParse(money, CultureInfo.InvariantCulture, out var moneyValue)
+                        ? new Stakes(roundValue, moneyValue)
+                        : throw new ArgumentException($"--ratios wants round:money pairs, not '{pair}'."))
+        ];
+
+static void ReportMoney(MoneyReport report)
+{
+    var challenger = report.Options.Challenger.Name;
+    var reference = report.Options.Reference.Name;
+
+    Console.WriteLine();
+    Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+        $"{report.Games} games in {report.Elapsed.TotalSeconds:0.0} s, "
+        + $"{report.Cells.Sum(cell => cell.Abandoned)} abandoned at the turn cap"));
+
+    Console.WriteLine();
+    Console.WriteLine("Each cell, both players. take % is the mechanism: the rule can only act by drawing more.");
+    Console.WriteLine();
+    Console.WriteLine($"{"stakes",-12}{"player",-12}{"win %",16}{"$/round",16}{"side $/r",16}{"take %",16}");
+
+    foreach (var cell in report.Cells)
+    {
+        foreach (var player in cell.Players)
+        {
+            Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+                $"{(player.Name == challenger ? cell.Label : string.Empty),-12}{player.Name,-12}"
+                + $"{player.WinRate.Mean * 100,10:0.0} ± {player.WinRate.Interval * 100,4:0.0}"
+                + $"{player.NetPerRound.Mean,10:0.00} ± {player.NetPerRound.Interval,4:0.00}"
+                + $"{player.SideBetPerRound.Mean,10:0.00} ± {player.SideBetPerRound.Interval,4:0.00}"
+                + $"{player.TakeRate.Mean * 100,10:0.0} ± {player.TakeRate.Interval * 100,4:0.0}"));
+        }
+    }
+
+    Console.WriteLine();
+    Console.WriteLine(
+        $"{challenger} less {reference}, game by game. ⚠️ The money is the verdict and the win "
+        + "rate is beside it:");
+    Console.WriteLine();
+    Console.WriteLine($"{"stakes",-12}{"money/round",18}{"side bet",18}{"win %",18}{"p",13}  {"corrected",-18}");
+
+    for (var index = 0; index < report.Cells.Count; index++)
+    {
+        var cell = report.Cells[index];
+        var verdict = report.Verdicts[index];
+
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"{cell.Label,-12}"
+            + $"{Signed(cell.NetMargin.Mean, "0.00"),11} ± {cell.NetMargin.Interval,4:0.00}"
+            + $"{Signed(cell.SideMargin.Mean, "0.00"),11} ± {cell.SideMargin.Interval,4:0.00}"
+            + $"{Signed(cell.WinMargin.Mean * 100, "0.0"),11} ± {cell.WinMargin.Interval * 100,4:0.0}"
+            + $"{verdict.PValue,13:0.00e+00}  "
+            + $"{(verdict.Survives ? "survives" : verdict.Separated ? "raw only" : "inside"),-18}"));
+    }
+
+    Console.WriteLine();
+
+    foreach (var cell in report.Divergences)
+    {
+        // 🔥 P22 acceptance 2: a rung that wins fewer rounds and banks more money is the better
+        // player, and the report says so rather than leaving it to be noticed.
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"⚠️ At {cell.Label} the two disagree: {challenger} is "
+            + $"{Signed(cell.NetMargin.Mean, "0.00")} a round on money and "
+            + $"{Signed(cell.WinMargin.Mean * 100, "0.0")} points on win rate. The money is the verdict."));
+    }
+
+    Console.WriteLine(report.PaysFrom is { } stakes
+        ? $"Should you draw blind for the money? Yes, from ${stakes.RoundValue}/${stakes.MoneyCardValue} "
+          + $"— a money card worth {(double)stakes.MoneyCardValue / stakes.RoundValue:0.#} rounds — and no below it."
+        : "Should you draw blind for the money? No, at every ratio swept. The side bet is not "
+          + "worth one melded card.");
+}
+
 // The standing set of numbers the documentation quotes, generated rather than transcribed
 // (BUILD-PLAN §3.12, P17).
 static int RunSuite(string[] args)
@@ -657,6 +794,7 @@ static string Usage() => $"""
       dotnet run --project BurmesePoker.Sim -- replay PATH [--csv PATH]
       dotnet run --project BurmesePoker.Sim -- neighbours [options]
       dotnet run --project BurmesePoker.Sim -- tournament [options]
+      dotnet run --project BurmesePoker.Sim -- money [options]
       dotnet run --project BurmesePoker.Sim -- suite [options]
 
       --strategies a,b   who is playing, rotated through the seats  (greedy,simple)
@@ -702,6 +840,20 @@ static string Usage() => $"""
       --games N          games a cell, rounded up to a whole number of seatings  (2000)
       --null NAME        who plays the null cell          (the last one named)
       --seats N, --seed N, --turn-cap N, --serial, --csv PATH  as above
+
+    money — should you draw blind for the money? A blind draw confers ownership of a money
+    card and a take never does (RULES.md §4.4), so a seat that digs in the deck banks more
+    side bet while playing a worse hand. What that trade is worth depends on the ratio of the
+    two stakes, so the stakes are swept. ⚠️ Judged on $/round, with the win rate beside it —
+    a rung that wins fewer rounds and banks more money is the better player.
+
+      --challenger NAME  the rung whose take reads the side bet        (prospector)
+      --reference NAME   the rung it is one change away from      (the strongest rung)
+      --ratios R         round:money pairs, cheapest side bet first
+                         (5:1,5:10,5:20,5:40)
+      --games N          games a cell, rounded up to a whole number of seatings  (2000)
+      --csv PATH         where to write                     (docs/strategy/money.csv)
+      --seats N, --seed N, --turn-cap N, --serial  as above
 
     suite — play the standing set of measurements the documentation quotes and write them
     out. A published number carries the command that made it (BUILD-PLAN §3.12), so

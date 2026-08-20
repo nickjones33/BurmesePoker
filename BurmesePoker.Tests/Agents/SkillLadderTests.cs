@@ -36,12 +36,21 @@ public class SkillLadderTests
     private static readonly PlayerId[] FourPlayers = [.. Enumerable.Range(0, 4).Select(seat => new PlayerId(seat))];
 
     /// <summary>Every rung, by the name the command line knows it as.</summary>
-    public static TheoryData<string> Rungs => ["random", "simple", "greedy", "cautious", "counting", "outs"];
+    public static TheoryData<string> Rungs =>
+        ["random", "simple", "greedy", "cautious", "counting", "outs", "prospector"];
 
     /// <summary>Twelve that partition, and the Q♣, which joins nothing — the P10 fixture.</summary>
     private static readonly string[] TwelveAndADeadQueen =
         ["2H", "3H", "4H", "5H", "6H", "7H", "8D", "9D", "10D", "KC", "KH", "KS", "QC"];
 
+    /// <remarks>
+    /// ⚠️ <b>It still holds of <c>prospector</c>, which is the only rung money reaches at all</b>
+    /// (P22 acceptance 3). That rung weighs the side bet when it decides how to <em>take</em> a
+    /// card, because a blind draw confers ownership and a take does not (RULES.md §4.4) — and it
+    /// is money-blind everywhere else, which is what this test is. See
+    /// <see cref="ProspectorBotAgentTests"/> for the sharper form, where the take really does
+    /// differ between the two rounds and the discard still does not.
+    /// </remarks>
     [Theory]
     [MemberData(nameof(Rungs))]
     public void MoneyCardsDoNotChangeWhatABotThrowsAway(string rung)

@@ -32,10 +32,11 @@ public class BotCatalogTests
     /// Written out rather than derived: a test that reads the catalog to check the catalog
     /// would agree with any rename at all.
     /// </remarks>
-    private static readonly string[] Ladder = ["random", "simple", "greedy", "cautious", "counting", "outs"];
+    private static readonly string[] Ladder =
+        ["random", "simple", "greedy", "cautious", "counting", "outs", "prospector"];
 
     [Fact]
-    public void TheLadderIsTheSixRungsInTheOrderTheyWereBuilt()
+    public void TheLadderIsTheSevenRungsInTheOrderTheyWereBuilt()
     {
         Assert.Equal(Ladder, BotCatalog.All.Select(rung => rung.Name));
     }
@@ -51,6 +52,7 @@ public class BotCatalogTests
     [InlineData("cautious")]
     [InlineData("counting")]
     [InlineData("outs")]
+    [InlineData("prospector")]
     public void AnOlderFileNamingARungStillResolvesToOne(string written)
     {
         var rung = BotCatalog.Resolve(written);
@@ -182,6 +184,14 @@ public class BotCatalogTests
 
         Assert.True(BotCatalog.Resolve("outs").Strength > BotCatalog.Resolve("greedy").Strength);
         Assert.Equal("outs", BotCatalog.Hardest.Name);
+
+        // 🔥 And the case P22 added: two rungs that play the *same cards* at the stakes the game
+        // is actually played for share a level by construction rather than by measurement.
+        // `prospector` differs from `outs` only in what it does when the side bet is worth more
+        // than a melded card, which at $5/$1 it never is (docs/STRATEGY.md §10), so the two are
+        // one player at this table and the menu must not pretend otherwise. Ladder order breaks
+        // the tie, which is why `outs` is still what a stand-in seat and a hint are built on.
+        Assert.Equal(BotCatalog.Resolve("outs").Strength, BotCatalog.Resolve("prospector").Strength);
     }
 
     /// <remarks>

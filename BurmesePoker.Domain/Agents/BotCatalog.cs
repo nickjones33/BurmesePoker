@@ -148,7 +148,12 @@ public static class BotCatalog
             "outs",
             "Thinks about what it is still waiting for, and keeps the hand that more of the pack would help.",
             Strength: 3,
-            _ => new OutsBotAgent())
+            _ => new OutsBotAgent()),
+        new(
+            "prospector",
+            "Plays like the last one, and would sooner dig in the deck than take what you threw — the deck's cards pay it and yours never will.",
+            Strength: 3,
+            _ => new ProspectorBotAgent())
     ];
 
     /// <summary>

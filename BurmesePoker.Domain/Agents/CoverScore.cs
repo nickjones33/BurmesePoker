@@ -34,8 +34,19 @@ internal static class CoverScore
     /// answer for a fourteenth of the work, because any improvement must use the new card, and
     /// every fourteen-card arrangement has a meld of four or more to give a card back from.
     /// </remarks>
-    internal static bool Improves(IReadOnlyList<Card> hand, Card card) =>
-        Covered([.. hand, card]) > Covered(hand);
+    internal static bool Improves(IReadOnlyList<Card> hand, Card card) => Gain(hand, card) > 0;
+
+    /// <summary>
+    /// <em>How much</em> taking this card would raise the count by — zero when it would not.
+    /// </summary>
+    /// <remarks>
+    /// <b>The size of the same answer <see cref="Improves"/> gives, and defined as it</b> so
+    /// that the two cannot disagree about whether a card is worth taking (BUILD-PLAN P22). A
+    /// card that completes a run out of two loose ones is worth three melded cards and not one,
+    /// which is the difference <see cref="ProspectorBotAgent"/> weighs the side bet against.
+    /// </remarks>
+    internal static int Gain(IReadOnlyList<Card> hand, Card card) =>
+        Covered([.. hand, card]) - Covered(hand);
 
     /// <summary>The hand without that exact card — instance identity, not value (BUILD-PLAN §3.1).</summary>
     internal static List<Card> Without(IReadOnlyList<Card> hand, Card card)
