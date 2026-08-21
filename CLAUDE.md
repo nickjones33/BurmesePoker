@@ -12,8 +12,10 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 over ad-hoc changes.
 
 🔥 **The plan has a third branch, opened by the owner on 2026-08-21 after P29: verify, then arm,
-then move the table.** ✅ **The next packet is `P30.1` — a thorough code review, on Fable 5** —
-then **`P30.2`** the conformance harness and the front-end tests (**also Fable 5**), then
+then move the table.** ✅ **P30.1 — the review — shipped 2026-08-21 on Fable 5:
+`docs/REVIEW-2026-08.md`, 37 triaged findings, and its triage table is the next packet's work
+list.** ✅ **The next packet is `P30.2` — the conformance harness and the front-end tests
+(**Fable 5**)**, then
 **`P31`** (`warden`, the feeding ban played offensively) and **`P32`** (five seats as the default
 table), **both back on Opus**. ⚠️ **Set the model with `/model` before the session; the packet
 records which one and cannot choose it.** ⚠️ **`P24` was split**: **P24.1** is a journal for the

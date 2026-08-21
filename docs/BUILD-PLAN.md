@@ -987,7 +987,7 @@ P16 ─┘                         ├─► P21  outs rung       (lookahead)  �
                                                          rules as they are
                                                               │
                                                               ▼
-   P30.1  a thorough code ☐ ──┐        ← Fable 5
+   P30.1  a thorough code ☑ ──┐        ← Fable 5
           review               │
                               ▼
    P24.1  a journal for the ☐ ──► P30.2  conformance: the rules ☐   ← Fable 5
@@ -1171,7 +1171,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P27** | **The feeding ban** | — | L — ☑ done 2026-08-21 — **the first work since P0 that changed what a legal turn is**; a bot's cover count can now fall |
 | **P28** | **The claim, the permission, and the seat you sit in** | **P27** ✅ | M — ☑ **done 2026-08-21** — a fifth `IPlayerAgent` question, the only one asked off turn; the seats re-draw every deal |
 | **P29** | **Re-measure, under the rules as they are** | P25 ✅, P26 ✅, P27 ✅, P28 ✅ | L — ☑ **done 2026-08-21**: 91 measurements in 9,981 s, **4 rows reproduced**, two of three predictions held ⚠️ the suite is **2h45**, not five hours |
-| **P30.1** | **A thorough code review** | — | M — ☐ **new 2026-08-21** · **Fable 5** — writes a document, not code; its findings are P30.2's checklist |
+| **P30.1** | **A thorough code review** | — | M — ☑ **done 2026-08-21** · **Fable 5** — `docs/REVIEW-2026-08.md`: 37 triaged findings; its P30.2 buckets are P30.2's checklist |
 | **P30.2** | **Conformance — the rules as *played*** | **P30.1**, P24.1 (browser half only) | L — ☐ **new 2026-08-21** · **Fable 5** — every Settled rule checked against ordinary played rounds, and both front ends driven to a declaration for the first time |
 | **P31** | **`warden` — the feeding ban as a weapon** | P27 ✅, P30.2 | L — ☐ **new 2026-08-21** · **Opus** — the first rung that plays §5.1 *offensively*; ⚠️ regenerates the suite at 4 seats to stay comparable |
 | **P32** | **Five-handed is the default table** | P30.2, P31 | L — ☐ **new 2026-08-21** · **Opus** — the whole standing set moves to 5 seats, and **the difficulty dial is re-fitted there** |
@@ -4953,7 +4953,12 @@ which is what a re-measurement packet is for.
 
 ---
 
-### P30.1 — A thorough code review ☐ — **Fable 5**
+### P30.1 — A thorough code review ☑ — **Fable 5**
+
+> ✅ **Done 2026-08-21.** `docs/REVIEW-2026-08.md` — 37 findings, every one triaged, none
+> unassigned; the baseline was 672/0 and no code changed. **All three acceptance criteria are
+> met** (a prioritised list with file/line/severity/class; every finding assigned; the unread
+> boundary stated). The spec below is kept as the record of what it was run against.
 
 **Goal.** A written, prioritised findings list over the whole tree, from a reader who is not the
 author, with `docs/RULES.md` open beside the code.
@@ -5033,8 +5038,24 @@ and checked **through both front ends**, not only through the engine.
 **Read first.** `docs/RULES.md` §§4–7 and §10; `Tests/Server/ConcealmentTests.cs`;
 `scripts/drive-console.py`; BUILD-PLAN §3.8.
 
-**Depends on.** **P30.1** — its findings are this packet's checklist — and **P24.1** for the
+**Depends on.** **P30.1** ✅ — its findings are this packet's checklist — and **P24.1** for the
 browser half (a hosted table that writes down what it did).
+
+> ✅ **P30.1 ran 2026-08-21 and the checklist exists: `docs/REVIEW-2026-08.md`, triage table at
+> the bottom.** What it adds to the build list below, named so a cold session cannot miss it:
+> **(1) R1** — §5.1 exception 2 is offered but never bound to the declaration; fix in this
+> packet (a discard legal *only* under exception 2 commits the seat to declaring) and make
+> `RuleConformance`'s §5.1 item read *"a discard is never a closed rank unless the floor
+> applied **or the round ended on it**"*. **(2) R2** — set `JournalHeader.CurrentRulesRevision`
+> to the current rev and **bind it to `RULES.md`'s header in the P23 idiom** so it cannot go
+> stale again. **(3) R3** — pair the claim cell's money margin (a `NetPerRoundByGame` on
+> `CellPlayer`); annotate `STRATEGY.md` §12 now, and let **P31's suite run** regenerate the row.
+> **(4) R6/R7** — the fifth-question coverage holes and the §7.1.1-sensitive exception-2
+> fixture are conformance tests this packet writes. **(5) R8** — fix seat-handover revocation
+> server-side, then let the browser half test handover. **(6) The 29 P30.2-fix items** are
+> small and safe; land them here, each with the review id in the commit message. ⚠️ **R13's
+> new `SideMargin` rows also wait for P31's regeneration** — do not run the suite from this
+> packet.
 
 🔥 **Why this is worth a packet, in one sentence: everything in the tree today proves a rule
 *can* hold, and nothing proves it *does*.** Every rules test is a scripted fixture — a deal built
