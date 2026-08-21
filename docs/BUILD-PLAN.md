@@ -968,9 +968,51 @@ P0 ─► P1 ─┬─► P2 ──────────┐                  
 P15 ─┬─► P17  the tournament ☑ ┬─► P19  difficulty as a dial ☑ ← goal 5's product, finished here
      │   (stats + ranking)     ├─► P20  counting rung   (memory)   ☑ ─┐
 P16 ─┘                         ├─► P21  outs rung       (lookahead)  ☑ ─┼─► P23  the standing answer ☑
-          P18  one catalog ☑ ──┘   P22  prospector rung (the money)  ☑ ─┘        ← the last packet
-              (all front ends)
+          P18  one catalog ☑ ──┘   P22  prospector rung (the money)  ☑ ─┘   ← the last *planned* packet
+
+                    the experts, 2026-08-20/21  ←  not from §0, and not from the code
+                              │
+        ┌─────────────────────┼──────────────────────┬─────────────────────┐
+        ▼                     ▼                      ▼                     │
+   P25  win condition    P26  the money         P27  the feeding ban       │
+        by table size         layer as it is         (a legal turn         │
+        (§7.1.1)              (§4, ×3 and ×5)         changes)             │
+        │                     │                      │                     │
+        │                     │                      └─► P28  the claim, the permission,
+        │                     │                               and the seat you sit in
+        │                     │                               (§3, §4.5)   │
+        └─────────────────────┴──────────────────────────────────┬─────────┘
+                                                                 ▼
+                                                    P29  re-measure, under the
+                                                         rules as they are
+
+   P24  the computer's reasoning ☐  ← re-sequenced after P29; see below
 ```
+
+🔥 **P25–P29 are new on 2026-08-21 and they are the first packets in this plan that came from
+neither §0 nor the code.** Four sessions with **Mya Lay and Aung Aung** on 2026-08-20/21 closed
+twenty-three questions in `RULES.md` §9 and left **four settled rules with no implementation at
+all** — the win condition by table size, the money layer's ×3 and ×5 with jokers permanent, the
+feeding ban, and per-round seating with the claim's permission rule. ⚠️ **This is a different kind
+of work from everything above it**: P11 through P23 added capability to a correct engine, and
+**P25–P28 make a working engine play a different game.**
+
+⚠️ **P25, P26 and P27 are independent of one another** and can be taken in any order or in
+separate sessions — they touch `Melds/`, `Money/` and the turn respectively, and nothing crosses.
+**P28 depends on P27** because the objection predicate *is* the feeding ban's predicate (rank
+alone, `RULES.md` §9 #30) and writing it twice is the defect to avoid. **P29 depends on all
+four**, because each of them changes what a round is worth.
+
+⚠️ **P24 was re-sequenced on 2026-08-21, and its own reason for going first is spent.** It was
+placed ahead of the §5.1 work deliberately — *"§5.1 filters the very ranking P24 renders, but it
+is blocked on §9 #16–#19, and P24 is what makes that conversation productive."* **That conversation
+happened and §5.1 is fully specified**, so the argument has expired. 🔥 **And the case for moving
+it is stronger than the case for leaving it**: P24 explains *why the computer chose this card*, and
+P25–P27 change what a good card is at three of the four table sizes, what a card is worth, and
+which cards are legal to throw at all. **Shipping an explanation of decisions that are about to
+change means writing the sentence twice and believing it once.** ⚠️ **This is a sequencing
+recommendation, not a decision taken** — P24's scope was set by Nick on 2026-08-20 and moving it
+is his call.
 
 ⚠️ **P13.1–P13.4 are strictly sequential**, which nothing else in this plan has been. Each one
 is the ground the next stands on: the view model before anything renders it, the seat and the
@@ -1019,15 +1061,23 @@ a number.
 and the only one that is purely optional.** ⚠️ **Stale since 2026-08-19: P13 is done, and so is
 everything else through P23.**
 
-🔥 **A third branch opened on 2026-08-20, and it did not come from the plan — it came from a
-playtest.** **P24** (the computer's reasoning, said out loud) hangs off **P13.6, P14, P18 and
-P21**: it is a debug instrument for playing beside an expert, and it needs the browser seat, the
-journal format, one catalog, and the rung that actually advises. Beside it sits the **unwritten
-§5.1 packet** (the feeding ban), which is blocked on `RULES.md` §9 #16–#19, #25 and #27 and is
-the first work
-since P0 that changes what a legal turn *is*. ⚠️ **They are not independent in one direction**:
-§5.1 filters every agent's discard ranking, which is the very ranking P24 renders — so P24 first
-means one small amendment later, and §5.1 first means waiting on a conversation. **P24 first.**
+🔥 **A third branch opened on 2026-08-20 and grew into five packets on 2026-08-21, and none of it
+came from the plan — it came from four sessions with the experts.** **P25–P29** implement rules
+that are **settled and unbuilt**: the win condition by table size (§7.1.1), the money layer's
+permanent jokers and its ×3 and ×5 (§4), the feeding ban (§5.1), per-round seating and the claim's
+permission rule (§3, §4.5), and then a re-measurement of everything, because every figure in
+`docs/STRATEGY.md` was produced under rules this project no longer holds. **See §4 for how they
+depend on one another** — P25, P26 and P27 are independent, P28 needs P27, P29 needs all four.
+
+⚠️ **The sequencing note that used to stand here is spent, and is corrected rather than deleted.**
+It read: *"§5.1 filters every agent's discard ranking, which is the very ranking P24 renders — so
+P24 first means one small amendment later, and §5.1 first means waiting on a conversation. **P24
+first.**"* **The conversation happened**, so waiting costs nothing, and the amendment is no longer
+small: P25–P27 change what a good card is at three of four table sizes, what a card is worth, and
+which cards may be thrown at all. 🔥 **Shipping an explanation of decisions that are about to
+change means writing the sentence twice and believing it once.** ⚠️ **P24 is therefore recorded
+after P29 as a recommendation, not a decision** — its scope was set by Nick on 2026-08-20 and
+moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 
 | Packet | Title | Depends on | Size |
 |---|---|---|---|
@@ -1054,6 +1104,18 @@ means one small amendment later, and §5.1 first means waiting on a conversation
 | P14 | Game journals — record and replay | P12 | L — ☑ done 2026-08-19 |
 | P15 | A skill ladder | P12 | M — ☑ done 2026-08-19 |
 | P16 | Does the player before you decide your game? | P15 (**P14 ☑, so rich journals are available**) | M — ☑ done 2026-08-19 |
+| P17–P23 | The strategy programme | P15, P16, P18 | ☑ all done 2026-08-19/20 — see §4's second graph |
+| P24 | The computer's reasoning, said out loud | P13.6, P14, P18, P21 | M — ☐ **re-sequenced after P29 on 2026-08-21** |
+| **P25** | **The win condition is a function of the table size** | — | L — ☐ **the largest single divergence in the tree** |
+| **P26** | **The money layer as it actually is** | — | M — ☐ ⚠️ **one shipped test is expected red before it starts** |
+| **P27** | **The feeding ban** | — | L — ☐ **the first work since P0 that changes what a legal turn is** |
+| **P28** | **The claim, the permission, and the seat you sit in** | **P27** | M — ☐ a third kind of agent decision |
+| **P29** | **Re-measure, under the rules as they are** | P25, P26, P27, P28 | L — ☐ ⚠️ `sim suite` was five hours *before* P25 |
+
+⚠️ **P25–P29 are the only packets in this table that do not descend from §0.** They come from
+`RULES.md` — four sessions with Mya Lay and Aung Aung on 2026-08-20/21 that closed twenty-three
+open questions and left four settled rules with no implementation. **P11–P23 added capability to a
+correct engine; P25–P28 make a working engine play a different game.**
 
 ---
 
@@ -1684,6 +1746,17 @@ packet — surface each round's `TableState`, and put `Turns` on `RoundResult`.
 > deltas correctly*: `MatchEngine` adds each round's deltas to the running banks and nothing
 > else. If a match-level conservation test ever fails, the fault is in the banking, not in
 > settlement.
+
+> ⚠️ **Superseded in one respect on 2026-08-21: `MatchEngine` holds *one* seating and should
+> re-draw it every round.** `RULES.md` §9 #14 was open when this was built and its recommendation
+> was *nothing moves*; the answer came back the other way — **seats are re-randomised between
+> games, and a game is a round** (§3, `EXPERT`). This is the only place in the tree that actively
+> contradicts a recorded rule rather than merely lacking one, and it is recorded as `RULES.md`
+> §10 #16. ✅ **It moves no published measurement** — every experiment in `BurmesePoker.Sim` runs
+> `RoundsPerGame = 1`, so no measured game has a second round to re-seat for. ⚠️ **The bill is in
+> the two front ends**, which deal round after round with the banks carrying over, and in
+> `TableRing`, which draws *you at the front whichever seat you were dealt* (§3.11) and has never
+> been asked to rearrange a table between rounds. **The rest of the note below stands.**
 
 > **As built (2026-08-18).** `MatchEngine` holds the seating, the stakes, the banks and one
 > `Random`; `PlayRound()` shuffles and `PlayRound(drawOrder)` is the scriptable twin, both
@@ -3956,6 +4029,17 @@ and the stakes it depends on. ✅ **§10 does, at four ratios.**
   `Stakes.MoneyCardValue` against `Stakes.RoundValue`, so *"how good is it"* has no answer until
   somebody says what the stakes are. That is why `BotCatalog.Strength` is an ordinal and not a
   score, and it is why this rung shares `outs`' number rather than being ranked above or below it.
+- ❌ **WITHDRAWN 2026-08-21 by `RULES.md` rev 20 — the premise moved, not the reasoning.** A shown
+  7♦, A♠ or joker **can never be owned** and its **partner copy pays ×3**, not the double this note
+  was derived from — so a designation on a permanent money card leaves **exactly as much** live
+  money as any other designation, and the note below is false in its conclusion.
+  ⚠️ **`MoneyCardRegistry.Multiplier` caps at 2 and must return 3** (`RULES.md` §10 #17);
+  `MoneyOdds` prices a blind draw from it; and **§10 of `docs/STRATEGY.md` — the money sweep — was
+  measured under the struck rule.** ✅ **`WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe` asserts
+  the withdrawn direction and will go red**, which is the argument for asserting a derivation
+  rather than writing it down: **its last assertion should invert to an equality**, and that is a
+  prediction nobody has run. **The note is kept unaltered below as the record of what was believed
+  and why.**
 - 🔥 **A `DERIVED` rules note fell out of the arithmetic and is now RULES.md §4.1 rev 15**: a
   designation that lands on a **permanent** money card leaves the deck with *less* money in it,
   not more. Turning up a 7♦ makes that value a double but takes the physical card out of the deck
@@ -4262,10 +4346,17 @@ the file that lists every turn on which she and it chose differently.
 wholly unimplemented**: `RoundEngine` accepts any of the fourteen, so `CoverScore.Ranking` can
 rank — and this feature would then **confidently justify** — a discard the rule forbids. Beside an
 expert that produces disagreements which are noise about a rule rather than signal about
-strategy — the opposite of what the instrument is for. **Build P24 first anyway**: §5.1 is
-blocked on six unanswered specification questions (§9 **#16–#19, #25 and #27**, `QUESTIONS-FOR-MYA-LAY.md`
-**Q4**), and this is the thing that makes the next conversation with the person who raised the
-rule productive, those six included. 🔥 **But when §5.1 lands, it lands here too** — Nick's two
+strategy — the opposite of what the instrument is for.
+
+⚠️ **This paragraph's conclusion was reversed on 2026-08-21 and the reasoning is kept because it
+was right.** It read: ***Build P24 first anyway** — §5.1 is blocked on six unanswered specification
+questions (§9 #16–#19, #25 and #27), and this is the thing that makes the next conversation with
+the person who raised the rule productive.* ✅ **That conversation happened and all six are
+answered**, so waiting costs nothing — and P25–P27 have since made the concern above much larger
+than one rule: they change **what a good card is** at three of four table sizes, **what a card is
+worth**, and **which cards are legal to throw**. 🔥 **An explanation of decisions that are about to
+change is a sentence written twice and believed once.** **P24 is recorded after P29 in §4 — a
+recommendation, not a decision.** 🔥 **But when §5.1 lands, it lands here too** — Nick's two
 rulings of 2026-08-20 are that a banned card is *not a legal discard* and that **where nothing is
 legal the ban yields for that turn** (§9 #20, raised and closed the same day). So **every agent's
 ranking is filtered to legal cards** — *the hand minus the banned ranks, or the whole hand if that
@@ -4275,6 +4366,210 @@ there is**: under the floor every card is legal again, so an explanation that ha
 *"not throwable"* all round must not keep saying it — the filter is per turn, and a rationale
 computed from a stale ban would be confidently wrong in exactly the situation nobody has seen
 before.
+
+
+---
+
+### P25 — The win condition is a function of the table size ☐
+
+**Goal.** `HandEvaluator` stops answering the five-handed question at every table. What thirteen
+cards must contain — and how many of their series must be joker-free — becomes a function of the
+player count (`RULES.md` §7.1.1).
+
+**Read first.** `RULES.md` §7.1, **§7.1.1**, §9's resolved entries for #7, #22, #23, #28, #29.
+In the tree: `Domain/Melds/HandEvaluator.cs`, `Domain/Melds/PartialCover.cs`,
+`Domain/Melds/MeldCandidates.cs`, `Domain/Engine/RoundEngine.cs`.
+
+**Depends on.** Nothing. Domain only, and it is the largest single divergence in the tree.
+
+🔥 **This is not a filter over the existing search, and that is the whole difficulty.** §9 #23's
+answer makes the requirement a property of **the partition chosen**: a hand can have one cover
+that satisfies the table's series count and another that does not, so `TryFindCover` may no
+longer return the first cover it finds. The search has to be asked a **harder question** —
+*is there a cover with at least N series, of which at least N are joker-free?* — not asked for a
+cover and then audited.
+
+⚠️ **Two-handed is a constraint of a different kind.** Sets are **illegal as melds** (§9 #22), so
+there the requirement prunes the candidate set before the search starts, and is cheap. Three- and
+four-handed are the expensive cases.
+
+**Build.**
+
+- `TableRules.For(playerCount)` — the §7.1.1 table as data: required series, required clean
+  series, sets legal or not. One place, because it is quoted in three.
+- `HandEvaluator.IsWinning(hand, rules)`; the parameterless overload goes.
+- The cover search carries **counts along the partition** rather than auditing a finished one.
+- `Meld.IsClean` — a run with no joker in it. ⚠️ A joker-only meld is a series and is never clean
+  (§9 #29), which is the boundary case worth a test of its own.
+
+**Done when.** A three-handed hand that covers only with a set is **not** a win; the same
+thirteen with a clean `3+3` split **is**; a two-handed hand containing a set is not a win however
+its runs fall; and a five-handed hand is judged exactly as it is today, byte for byte.
+
+⚠️ **Cost, stated in advance.** Every strategy figure in `docs/STRATEGY.md` was measured at four
+seats under the five-handed rule, so **P29 re-measures**. And `outs` reasons about *cover count*
+(P21) — a rung whose objective is now the wrong objective at four seats, which is a finding to
+publish rather than a bug to fix.
+
+---
+
+### P26 — The money layer as it actually is ☐
+
+**Goal.** Settlement pays what `RULES.md` §4 now says: jokers are permanent money cards, a
+designation landing on a permanent card pays **×3**, and a 7♦/A♠ turn-up whose partners are owned
+by **one player** pays **×5** each.
+
+**Read first.** `RULES.md` §4.1, §4.3, §4.4, §10 #17, and §9 #32 — **which is open, and bounds
+this packet.** In the tree: `Domain/Money/MoneyCardRegistry.cs`, `Domain/Money/Settlement.cs`,
+`Domain/Money/CardOwnership.cs`, `Domain/Agents/MoneyOdds.cs`,
+`Tests/Agents/ProspectorBotAgentTests.cs`.
+
+**Depends on.** Nothing. Domain only.
+
+🔥 **The third rule changes the shape of the function, and that is the packet.** (a) and (b) are
+edits to `Permanent` and to `Multiplier`'s arithmetic. **(c) cannot be computed from the
+designators at all** — the ×5 depends on *who owns what*, so `Multiplier(Card)` gains the round's
+ownership and `Settlement` stops asking the registry about a card in isolation. ✅ **The design
+decision in `CLAUDE.md` survives intact** — money status is still computed and never stored — but
+say so in the code, because a reviewer will read a widened signature as the decision being
+abandoned.
+
+⚠️ **`ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe` is expected to be
+red before this packet starts.** It asserts P22's withdrawn derivation. 🔥 **Its last assertion
+should invert to an equality** — a designation on the 7♦ and one on an ordinary card leave the
+same money loose in the shoe, because ×3 is exactly what conserves it. **That is a prediction and
+it has not been run**; if it does not come out equal, the arithmetic in `RULES.md` §4.1 is wrong
+and the rule needs re-asking before the code is changed to match.
+
+**Build.**
+
+- `Permanent` gains the jokers. ⚠️ A joker's identity is its **colour** (§4.2), so the
+  permanence test is `SameValueAs` and needs no special case — but the *count* changes from 4
+  cards to 8, which is what moves every derived figure.
+- `Multiplier(card, ownership)` → 1, 3 or 5.
+- `Settlement` computes the ownership configuration once a round, not once a card.
+- Re-derive the two stale `DERIVED` notes with a number rather than an argument: §4.3's *"the
+  side-bet is 42% of the round prize"* (measured at rev 13 with four permanent cards) and §4.4's
+  *"~4 of the 6 are owned when the deal ends"*.
+
+**Done when.** A round in which one player owns both partners of a 7♦/A♠ turn-up settles at $40 a
+head at standard stakes; the same round with the partners split settles at $24; and the two stale
+notes carry measured numbers.
+
+⚠️ **Scope fence: do not generalise the ×5 past the 7♦/A♠ pair.** §9 #32 asks whether two jokers,
+or a 7♦ and a joker, do the same thing, and it is unanswered. **Write the narrow rule and a test
+that pins the narrowness**, so widening it later is a visible change.
+
+---
+
+### P27 — The feeding ban ☐
+
+**Goal.** §5.1 becomes real: you may not discard a rank the next player has taken in the open —
+**enforced by construction**, so a banned card is never offered and cannot be chosen.
+
+**Read first.** `RULES.md` **§5.1** entire, §9's resolved entries for #16–#20, #25 and #27, and
+§10 #13. In the tree: `Domain/Engine/RoundEngine.cs`, `Domain/Agents/TurnContext.cs`,
+`Domain/Agents/CoverScore.cs`, `Domain/Agents/FallibleAgent.cs`, `Domain/Cards/Card.cs`.
+
+**Depends on.** Nothing in code. It is the first work since P0 that changes **what a legal turn
+is**.
+
+🔥 **Three things this needs that the domain does not have.**
+
+1. **A rank-only predicate.** `==` is instance identity and `SameValueAs` is rank *and* suit *and*
+   colour. **Reaching for `SameValueAs` here implements the wrong rule** — it would leave the Q♣
+   Mya Lay actually objected to perfectly legal. ⚠️ **And a joker has no rank at all**: taking one
+   closes *the other jokers*, all four (§9 #27) — a `PLAYER` house ruling, so mark it in code as
+   the one line here that is not `EXPERT`.
+2. **A released-rank set per seat.** The release is *"has this player thrown that rank this
+   round?"*, and §5's reshuffle sweeps the pile that would answer it — so the set is **kept, not
+   read back off the table** (§9 #19).
+3. **The floor.** The legal discards are *the hand minus the banned ranks, **or the whole hand if
+   that is empty*** — never empty by construction, so a turn cannot deadlock. ⚠️ Reachable on two
+   ranks, because two decks put eight copies of a rank in the shoe.
+
+⚠️ **Every agent's ranking is filtered, `FallibleAgent`'s runner-up included** — a mistake still
+has to be a legal move. ✅ **It costs nothing against the concealment model**: every fact the ban
+is computed from is already public (§9 #15).
+
+**Done when.** A seat is never offered a banned discard; a released rank stays released across a
+reshuffle; a hand of nothing but banned ranks completes its turn; and a difficulty level's mistake
+is always a legal card.
+
+**Done when, second.** ✅ **The card a player just took is filtered like any other** (§9 #13) —
+*"yes, as long as you aren't violating any other discard rules"* — so there is no special case for
+it, and a test says so.
+
+---
+
+### P28 — The claim, the permission, and the seat you sit in ☐
+
+**Goal.** Two rules the engine currently contradicts rather than lacks: **the seating is
+re-randomised every round** (§3), and **claiming the turned-up money card needs the upstream
+player's permission** (§4.5).
+
+**Read first.** `RULES.md` §3, §4.5, §10 #16 and #18, §9's resolved #5, #14 and #30. In the tree:
+`Domain/Engine/MatchEngine.cs`, `Domain/Engine/RoundEngine.cs`, `Domain/Agents/IPlayerAgent.cs`,
+`Server/SeatPrompt.cs`, `Server/TableSession.cs`, `Web/Components/Table/TableRing.razor`.
+
+**Depends on.** **P27** — the objection predicate *is* §5.1's predicate (rank alone, §9 #30) and
+writing it twice is the defect to avoid.
+
+🔥 **The permission rule needs a third kind of agent decision, the first new one since the engine
+was built.** Not *what do I take* or *what do I throw* but **do I object** — and ⚠️ **it is asked
+of a seat that is not on turn**, which no `SeatPrompt` in `BurmesePoker.Server` does. The hosted
+table needs an out-of-turn question and the browser needs somewhere to put it.
+
+🔥 **And the answer is a disclosure.** Only a holder may object, so an objection tells the table
+that seat holds that rank — **the first thing in this concealed game a player reveals by choice**,
+everything else being hidden until the declaration. That is a `TableEvent`, public by
+construction, and it belongs in `ConcealmentTests` as a decision rather than in the UI as a
+detail.
+
+⚠️ **Re-seating is small in the engine and awkward in the browser.** `MatchEngine` holds one
+seating for a whole match; it should re-draw before every deal, and the round engine already takes
+its seating as given. **But P13.5 puts *you at the front whichever seat you were dealt***, so
+re-seating means the table visibly rearranges itself around a fixed viewer every round, and
+`TableRing` has never been asked to do that. ⚠️ **It also rebuilds every §5.1 ordered pair each
+round** — harmless, since the ban is per round anyway, but the banned-rank sets are keyed to a
+seating that ceases to exist the moment the round ends.
+
+**Done when.** Seats differ between consecutive rounds of one match; a claim is refused when the
+upstream seat holds that rank and it chooses to refuse; the refusal is visible to every watcher;
+and a bot in the upstream seat answers the question without being on turn.
+
+---
+
+### P29 — Re-measure, under the rules as they are ☐
+
+**Goal.** `docs/strategy/measurements.csv` regenerated under P25–P28, and `docs/STRATEGY.md`
+saying plainly which of its published numbers moved and why.
+
+**Read first.** `docs/STRATEGY.md` §§4, 9, 10, 11; `Tests/Sim/StandingAnswerTests.cs`; §3.8.
+
+**Depends on.** P25, P26, P27, P28 — all four, because each changes what a round is worth.
+
+⚠️ **Every figure in `STRATEGY.md` was measured under rules this document no longer holds**: four
+seats judged by the five-handed win condition (P25), a money model without permanent jokers or the
+×3 (P26), and no feeding ban at all (P27). **The money sweep is the worst affected** — `prospector`
+is the one rung whose decision reads the money.
+
+🔥 **Three predictions, written down before the run so the packet can be wrong.**
+1. **The difficulty dial survives.** ε is a property of *the mistake*, not of the rung (P23), and
+   §5.1 filters both the winner and the runner-up. **If the four levels stop being ordered, that
+   is the finding.**
+2. **`outs` loses some of its margin at four seats.** Its objective is cover count, which is no
+   longer sufficient for a win — so a rung that looks ahead at the wrong target should narrow
+   against `greedy`.
+3. **`prospector` separates at lower stakes than $5/$40.** There is more money on the table (8
+   permanent cards, not 4) and a ×5 case worth $40 a head.
+
+⚠️ **`sim suite` was five hours at P23** and P25 makes the evaluator's question harder. **Budget
+it, measure the new per-round cost with `sim bench` first, and say in the packet what was
+dropped** if anything is.
+
+**Done when.** `measurements.csv` regenerates from one command, `StandingAnswerTests` is green,
+and §11 records which rows moved, in which direction, and whether each was predicted.
 
 ---
 

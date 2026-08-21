@@ -28,20 +28,40 @@ structural point (see `RULES.md` §8).
   leaves too thin a draw pile. **[✓]** **[⚠ engine's minimum is 4]**
 - **13 cards** each, dealt one at a time.
 - Then **two money cards are turned up** — one from the bottom of the deck, one from the top.
+- **Re-draw for seats before every deal.** A "game" is one round — from the turn-up to somebody
+  going out — and the seating is randomised between games, so your neighbours change each time.
+  **[✓]** **[⚠ engine seats you once and keeps it]**
 
 ## Money cards
 
 Two ways a card becomes one:
 
-1. **Permanently** — the **7♦** and **A♠**, every round, all copies. **[~]**
+1. **Permanently** — the **7♦**, the **A♠** and **every joker**, every round, all copies out of
+   both decks. **That's eight cards paying before you turn anything up.** **[✓]**
+   **[⚠ engine has only the 7♦ and the A♠]**
 2. **For this round** — the two turned-up cards, and their matching copies. **[✓]**
 
-A turned-up card that *is* the 7♦ or A♠ becomes a **double** money card. Doubling is the
-ceiling. **[~]**
+🔥 **Turn up a 7♦, an A♠ or a joker and the *other copy* pays triple.** The one on the table is
+worth nothing — nobody can own a turned-up card, whether they take it or not — so its value moves
+to its partner: **×3**. For a joker, "the other copy" means **the other joker of the same
+colour**. **[✓]**
+
+*Why three: one for the partner's own value, one for the designation, one inherited from the card
+that can no longer be paid for. It makes turning up a permanent money card worth exactly what
+turning up any other card is worth.*
+
+🔥 **And the jackpot. If the two cards flipped are the 7♦ and the A♠, and one player ends up owning
+both of the other copies — they pay ×5 each instead of ×3.** At standard stakes that is **$40 from
+a five-player table**, against a $5 round prize. It's the only place in the game where what a card
+pays depends on who's holding what. **[✓]** **[? whether two jokers, or a 7♦ and a joker, do the
+same thing has never been asked — assume not]**
+
+**The two turned-up cards stay on the table all round** — they're designators, nobody owns them,
+and they do **not** go back in when the deck runs out and the discards are gathered. **[✓]**
 
 **Payout: each money card pays its *owner* the money card value from every other
-player** — $1 each, at standard stakes. Own two in a 5-player game → **$8**. A double
-counts as two. This settles regardless of who won the round. **[✓]**
+player** — $1 each, at standard stakes. Own two in a 5-player game → **$8**. A tripled card
+counts as three, so owning one in a 5-player game is **$12**. This settles regardless of who won the round. **[✓]**
 
 **Ownership, not possession — and ownership is permanent.** Two parts, the second
 counterintuitive:
@@ -65,7 +85,8 @@ the fives. **[✓]**
 ## A turn **[✓]**
 
 1. Take either the previous player's discard, or the top of the deck blind.
-2. Discard one card.
+2. Discard one card. **You may throw straight back the card you just took** — as long as no other
+   discard rule stops you, which in practice means the feeding ban below. **[✓]**
 
 **You may not feed the next player. [✓] [⚠ not implemented]** If the player after you has
 taken a card in the open, you may not discard **that rank** again — *any* suit — for the rest
@@ -77,14 +98,25 @@ throw, **the ban yields** for that turn: you must discard, so you may. See `RULE
 
 **The opening turn is special:** that player may take the turned-up top money card instead
 of drawing — taking the **actual card**, which leaves the table. **[~]** **[⚠ code clones it]**
-Whether this needs another player's permission, and whether it recurs each round, is
-unknown. **[?]**
+**It is offered every round** **[✓]**, and taking it does **not** stop that value paying — the
+other copy still pays whoever the deck gave it to. **[✓]**
+
+🔥 **But you must ask permission first — from the player who plays *before* you**, the last one
+round the table, the one who discards to you. **[✓]** **[⚠ engine asks nobody]** They may say no
+**only if they're holding that card**: your taking it in the open closes that rank to them under
+the feeding ban, and they'd be stuck with it all round. So the opener's free card comes out of
+that player's hand, and that player gets a veto.
+
+→ **Objecting shows your hand.** Only a holder may object, so saying no tells the table you've got
+one. It's the only thing in this game you reveal on purpose.
 
 ## Melds
 
 **Runs** — 3+ cards, same suit, consecutive. **[✓]**
 - **Aces don't wrap.** `A-2-3` ✓ · `Q-K-A` ✓ · `K-A-2` ✗ **[✓]** **[⚠ code allows K-A-2, and it causes a verified infinite loop]**
-- Jokers substitute for a missing card. **[✓]**
+- Jokers substitute for a missing card, with **no limit on how many** in one meld. **[~]**
+- **Three jokers on their own are a run.** But it is never a *clean* one, so it can only ever be
+  a run you did **not** need — never one the table size requires. **[✓]**
 
 **Sets** — 3+ cards of the same rank, **all different suits**. `9♥ 9♥ 9♠` is **not** a set,
 even though two decks make it holdable. A set therefore caps at **4 cards**. **[✓]**
@@ -109,7 +141,7 @@ forget, and **the runs you are *required* to have must be clean** (no jokers in 
 
 | Players | Your hand must contain | …clean? |
 |---:|---|---|
-| **2** | **runs only** — sets aren't allowed at all | doesn't matter |
+| **2** | **runs only** — a set isn't just unnecessary, it's **not allowed** | doesn't matter |
 | **3** | at least **two runs** | **both of them** |
 | **4** | at least **one run** | **that one** |
 | **5+** | anything — no requirement | doesn't matter |
@@ -134,19 +166,26 @@ should be deleted.
 
 ## What's still unrecorded
 
-⚠️ **This section is stale** — both items below were settled long ago (deck exhaustion: gather
-the discards and shuffle; match end: there isn't one, banks carry over and you stop when you
-stop). **It is kept only so the rot is visible**; the live list is `RULES.md` §9, which currently
-has **twenty** open items, none of which blocks play.
+✅ **Every question about the money layer is answered.** `RULES.md` §9 is the live list, and what
+is on it now was raised *by* those answers rather than left over from before:
 
-1. ~~**What happens when the deck runs out?**~~
-2. ~~**What ends a match** — a money target, a fixed number of rounds, or last player standing?~~
+1. **Does the ×5 need the 7♦ and the A♠ specifically**, or would any two tripled cards do — a 7♦
+   and a joker, two jokers of opposite colours? Nobody has asked, and the combination only exists
+   because jokers turned out to be permanent money cards.
 
-Everything else has a safe default. Full list in `RULES.md` §9 — Mya Lay may be able to
-settle several of them.
+The two items this section used to carry were settled long ago and are kept struck through so the
+rot stays visible:
 
-**One rule is settled but unwritten:** the feeding ban above (§5.1) is `EXPERT`-confirmed and
-nothing in the code enforces it. Six details of it are unrecorded — `RULES.md` §9 #16–#19, #25
-and #27 — and unlike everything else in §9 they are not optional: they are what the rule *means*.
+1. ~~**What happens when the deck runs out?**~~ Gather the discards and shuffle.
+2. ~~**What ends a match?**~~ Nothing does — banks carry over and you stop when you stop.
+
+⚠️ **What is left is the opposite problem: rules that are settled and unbuilt.** Three of them,
+and they are the whole of the gap between this page and the program.
+
+- **The feeding ban** (above, §5.1) — `EXPERT`, fully specified since 2026-08-20, and nothing
+  enforces it.
+- **The win condition by player count** (*Winning*, §7.1.1) — the engine plays every table as if
+  it were five-handed.
+- **Re-drawing for seats every round** (*Setup*, §3) — the engine seats you once and keeps it.
 
 Full list in `RULES.md` §9. Algorithms, edge cases and verified bugs in `RULES-TECHNICAL.md`.

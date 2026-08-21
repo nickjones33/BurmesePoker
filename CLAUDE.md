@@ -11,7 +11,24 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-**Every packet in the plan is done — P0–P12, P13.1–P13.6 and P14–P23.**
+🔥 **The plan has a second half again: P25–P29, planned 2026-08-21, none started.** Every packet
+from §0 is done — P0–P12, P13.1–P13.6 and P14–P23 — but **four sessions with Mya Lay and Aung Aung
+on 2026-08-20/21 closed twenty-three questions in `RULES.md` §9 and left four settled rules with no
+implementation at all.** **P25** the win condition by table size (§7.1.1), **P26** the money layer
+as it actually is (§4 — jokers permanent, ×3 and ×5), **P27** the feeding ban (§5.1), **P28** the
+claim's permission and per-round seating (§3, §4.5), **P29** re-measure everything under them.
+⚠️ **This is a different kind of work from everything above it — P11–P23 added capability to a
+correct engine; P25–P28 make a working engine play a different game.** ✅ P25, P26 and P27 are
+independent (`Melds/`, `Money/`, the turn); **P28 needs P27**, because the objection predicate *is*
+the ban's predicate; **P29 needs all four.** ⚠️ **P24 is re-sequenced after P29 — a recommendation,
+not a decision** (`BUILD-PLAN.md` §4): its reason for going first is spent, and it explains
+decisions P25–P27 are about to change.
+
+⚠️ **The tree is green at 548 tests and green against rules this document no longer holds.** One
+test — `ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe` — asserts a
+derivation that has been **withdrawn**, and it is expected to be red before P26 starts.
+
+**Every packet in the plan was done — P0–P12, P13.1–P13.6 and P14–P23.**
 🔥 **P24 is the next one, planned 2026-08-20 and not started**: *the computer's reasoning, said
 out loud* — the browser's hint arrow grows a **why**, and the hosted table gains a journal that
 records **where an expert disagreed with it**. Browser only, all four questions, winner versus
@@ -34,16 +51,87 @@ runner-up included**, because a mistake still has to be a legal move.
 ban would leave a player **no legal discard at all**, the ban **yields for that turn**. So the legal
 set is *the hand minus the banned ranks, **or the whole hand if that is empty*** — **never empty by
 construction**, and a turn cannot deadlock. The discard is mandatory (§7.1); the ban is not. ⚠️ It
-is **not** the unrecovered exception to the mandatory discard in §9 #6 — it is the reverse, and #6
-is still open.
-⚠️ **Do not write the packet yet.** Six details are unrecorded (`RULES.md` §9 **#16–#19, #25 and
-#27**) and,
-unlike the rest of §9, they are not fidelity questions with safe defaults — they are the rule's
-specification. `QUESTIONS-FOR-MYA-LAY.md` **Q4** carries them for the person who raised the rule.
+is **not** the unrecovered exception to the mandatory discard in §9 #6 — it is the reverse. ⚠️ **#6
+is closed: there is no exception, you always discard**, which makes the floor the only way §5.1 and
+the mandatory discard can both hold.
+✅ **The packet can be written now.** All six details — `RULES.md` §9 **#16–#19, #25 and #27** —
+were closed on 2026-08-20 with **Mya Lay and Aung Aung**: the ban binds **only the seat above
+you**, is armed **only by a public take**, covers **any rank**, and is **the same rule at every
+table size**, including two-handed where the mutual lock is a legal state. ⚠️ **Two of the six are
+`PLAYER` house rulings and stay flagged**: that a release survives the reshuffle (*"nobody really
+knows"*) and that taking a joker closes the other jokers (*"I'd assume"*).
 🔥 **And the ban matches on *rank alone* — a third identity notion the domain has not got.** `==`
 on `Card` is instance identity; `SameValueAs` is rank **and** suit **and** colour, which is what
 §4.2's money designation needs. **Reaching for `SameValueAs` here implements the wrong rule** — it
 would leave the Q♣ Mya Lay actually objected to perfectly legal.
+
+🔥 **A second unimplemented rule outranks it, and it is the largest divergence in the tree: the
+win condition is a function of the table size** — `RULES.md` **§7.1.1**, `EXPERT`, from the same
+sessions. Two-handed is **series only and a set is illegal as a meld**; three-handed needs **two**
+series, four-handed **one**, five-or-more none — and **the series a table size *requires* must be
+joker-free**, while surplus ones need not be (an all-joker meld is a legal series and never a clean
+one). **A longer run may be laid down split**, so `3+3` out of a six-card run counts as two series.
+⚠️ **`HandEvaluator` implements none of it** — it asks only whether thirteen cards partition into
+disjoint melds, which is the five-or-more rule. ⚠️ **And it is not a filter over the existing
+search**: the requirement is a property of *the partition chosen*, so the evaluator may no longer
+return the first cover it finds. ⚠️ **Every figure in `docs/STRATEGY.md` was measured at four seats
+under the wrong condition**, and §2's "four players minimum" was wrong — `RoundEngine.MinimumPlayers`
+is 4. See `RULES.md` §10 #14 and §7. ✅ **Nothing in §9 is open against it** (rev 18 closed the last
+two: sets are illegal two-handed, and an all-joker meld is a surplus series only).
+
+🔥 **A third settled rule has no code behind it, and it is the only one the engine actively
+contradicts: seats are re-randomised every round** — `RULES.md` §3 and §10 #16, `EXPERT`, rev 19.
+A *game* means from the turn-up to somebody going out — **a game is a round** — and the seating is
+re-drawn between games, so a player's neighbours change every deal. ⚠️ **`MatchEngine` randomises
+once at setup and holds it for a whole match**, which is what P9 chose while the question was open.
+✅ **No published measurement moves** — every experiment in `BurmesePoker.Sim` runs
+`RoundsPerGame = 1`. ⚠️ **The front ends are where it shows, and it is a UX question as much as a
+loop**: P13.5 puts *you at the front whichever seat you were dealt*, so the table would visibly
+rearrange itself around a fixed viewer every deal, which `TableRing` has never been asked to do.
+
+🔥 **Jokers are permanent money cards, and there is a jackpot — `RULES.md` rev 21.** *"7 of
+diamonds, ace of spades, AND jokers are always money cards"*, so **the permanent side-bet is eight
+cards, not four**, and §4.3's measured *42% of the round prize* and §4.4's *~4 of 6 owned at the
+deal* are stale. **And if the two turned-up cards are the 7♦ and the A♠ and one player owns both
+partners, they pay ×5 each instead of ×3** — $40 a head at standard stakes against a $5 round
+prize. ⚠️ **It is the first rule in this game where a card's value depends on who holds what**, so
+`MoneyCardRegistry.Multiplier(Card)` needs the round's **ownership** and can no longer answer
+alone. ✅ **Design decision 2 survives** — money status is still *computed, never stored*; the
+inputs widen, the principle does not move. ⚠️ **`RULES.md` §9 holds one question, #32**: whether
+the ×5 needs the 7♦/A♠ pair specifically or any two tripled values — a combination that exists only
+because jokers became permanent. **Do not generalise it in code.**
+
+🔥 **A fourth unbuilt rule, and the first rules change that invalidates a published measurement —
+`RULES.md` rev 20, 2026-08-21.** **(1) Claiming the turned-up money card needs the permission of
+the seat that plays *before* you**, who may refuse **only if they hold that card**, because your
+public take arms §5.1 against them and locks them into holding it (§4.5). **The first rule tying
+the money layer to the feeding ban**, and it independently confirms §9 #16 and #17 — both of which
+were only recommendations when they were written, so a permission rule naming the upstream seat is
+strong evidence §5.1 is an old rule. ⚠️ **It needs a third kind of agent decision — *do I object* —
+asked of a seat that is not on turn**, which no `SeatPrompt` in `BurmesePoker.Server` does, and
+**the answer is a disclosure**, since only a holder may object (§10 #18). **(2) A turned-up 7♦, A♠
+or joker can never be owned, claimed or not, and its partner copy pays ×3** — superseding the
+*double* recorded from the same people the day before, because *worth double* was said before the
+ownership framing arrived. A turned-up **joker** designates the other joker of **its own colour**,
+which `SameValueAs` already computes.
+
+❌ **`MoneyCardRegistry.Multiplier` caps at 2 and must return 3** (§10 #17). `MoneyOdds` prices a
+blind draw from it, `prospector` is the one rung whose decision reads the money, and
+**`docs/STRATEGY.md` §10's money sweep was measured under the struck rule.** ⚠️ **P22's `DERIVED`
+note is withdrawn** — *a designation landing on a permanent money card leaves less money in the
+deck* — the reasoning was sound and the premise moved. ✅ **The claim was asserted as a test
+rather than written as prose, so it goes red rather than passing silently**:
+`ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe`.
+
+✅ **Both of rev 20's own questions closed in rev 21.** An objection turns on the **rank alone** —
+which is §5.1's own predicate, so the claim's test and the ban's test are **one predicate and must
+not be written twice** (#30) — and a turned-up joker's partner really is ×3, #31 closing because
+its premise was wrong. 🔥 **Four consecutive revisions have each answered past the question asked,
+and three changed a rule nobody was asking about.** ⚠️ **This game's rules are recalled as wholes,
+not as answers** — asking narrowly and recording only the narrow answer has lost material three
+times. 🔥 **Everything else
+about the money layer is now confirmed by a person** (rev 19–20), including that 7♦ and A♠ are what
+they are by **"tradition"** — a question recorded as unrecoverable since rev 1.
 
 **All five of §0's goals are delivered**: the 2023 implementation is deleted, the
 whole rules core is built and tested, `dotnet run --project BurmesePoker.Console` fills the empty

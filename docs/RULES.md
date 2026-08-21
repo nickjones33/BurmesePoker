@@ -4,7 +4,57 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-20 (rev 17 — 🔥 **the win condition is no longer one rule.** §7.1.1 is
+Last revised: 2026-08-21 (rev 21 — 🔥 **jokers are permanent money cards, and there is a
+jackpot.** Asked how much a turned-up joker's partner pays, the answer went behind the question:
+**"7 of diamonds, ace of spades, AND jokers are always money cards"** — so the permanent side-bet
+is **eight cards, not four** (§4.1), and two `DERIVED` arguments built on the old count are stale
+(§4.3, §4.4). It also makes rev 20's ×3 list stop looking arbitrary: it was never a list of special
+cards, it is **the list of permanent money cards**, and ×3 is what a designation landing on one
+does. 🔥 **And a rule nobody asked for: if the two turned-up cards are the 7♦ and the A♠ and one
+player owns *both* partners, they pay ×5 each rather than ×3** — **the first rule in this game
+where a card's value depends on who holds what**, so a multiplier is a property of *(value,
+ownership)* and `MoneyCardRegistry.Multiplier(Card)` can no longer answer alone (§10 #17). ✅ **§9
+#30 is closed — an objection turns on the *rank*, which is §5.1's own predicate** — and #31 closed
+by its premise turning out to be wrong. ⚠️ **One question left, §9 #32**: whether the ×5 needs the
+7♦/A♠ pair specifically or any two tripled values — a combination that exists only because jokers
+became permanent. Rev 20 — 🔥 **the money layer's last two questions closed, and both
+answers reached past the question.** **(1) Claiming the turned-up money card needs the permission
+of the player who goes *before* you in turn order — and they may refuse only if they hold that
+card**, because your public take would lock them into holding it under §5.1 (§4.5, `EXPERT`).
+**This is the first rule tying the money layer to the feeding ban**, and it independently confirms
+two §5.1 rulings that were only recommendations when they were made — that the ban binds the seat
+above you, and that the §4.5 claim arms it. **(2) A turned-up joker designates the other joker of
+its own colour** — *"colour matters for jokers"* — so §4.2 applies unchanged and `SameValueAs`
+already computes it (§4.1). ⚠️ **And an answer nobody asked for supersedes one given the day
+before**: a turned-up 7♦, A♠ or joker **can never be owned, claimed or not, and its partner copy
+pays ×3** — not the *double* rev 19 recorded. ✅ **The arithmetic backs the later answer**: ×3 makes
+a designation on a permanent money card worth exactly what an ordinary designation is worth.
+❌ **It withdraws P22's `DERIVED` note**, which said the opposite, and the shipped test that asserts
+it — `MoneyCardRegistry.Multiplier` caps at 2 and must return 3, and `docs/STRATEGY.md` §10's money
+sweep was measured under the struck rule (§10 #17, #18). ⚠️ **Two new questions, §9 #30 and #31**,
+both raised by these answers and both blocking a correct implementation of them. Rev 19 — ✅ **the money layer is confirmed by a person for the first
+time, and §9 is down to two questions.** Nine closed with **Mya Lay and Aung Aung**, eight of
+which confirmed a standing default: **7♦ and A♠ are money cards in both copies out of both decks**
+and a turned-up 7♦ makes it a **double, *"worth double"*** (§4.1, `CODE` `Probable` → `EXPERT`);
+**a claimed money card's value goes on paying** — *"all 9s of hearts become money cards"* (§4.5);
+**the turned-up cards stay out of the reshuffle** (§4.5); **you may throw back the card you just
+took, *"as long as you aren't violating any other discard rules"*** (§5, which quietly settles how
+it meets §5.1); **a turned-up joker designates jokers** (§4.1 — ⚠️ *which* jokers is still open);
+and **7♦ and A♠ are what they are by "tradition"**, closing a question recorded as unrecoverable
+since rev 1. 🔥 **One answer reversed a default and one arrived as a definition, and they are the
+same answer**: *a game* means **from the turn-up to somebody going out** — a round (§3) — so the
+money-card claim is offered **every round**, and **the seats are re-randomised every round too**
+(§9 #14). `MatchEngine` holds one seating for a whole match and is now wrong about it (§10 #16).
+✅ **No published measurement moves** — every experiment runs one round a game. Rev 18 — ✅ **the win condition is now fully specified.** The two
+questions rev 17 left open against §7.1.1 are closed, both `EXPERT`, both from Mya Lay and Aung
+Aung: **at two players a set is illegal *as a meld***, not merely unnecessary — *"you must go out
+with ALL SERIES, no sets"* — so a two-handed hand must partition into runs alone (§9 #22); and
+**a meld may be nothing but jokers**, which is a series like any other **but never a clean one**,
+so it can discharge a *surplus* series and never a *required* one (§6.1, §9 #29). 🔥 **The second
+also closes §9 #8**, open since rev 1 and the only question in this document that a piece of
+reasoning got right before anybody was asked — P3 has emitted all-joker melds since rev 10 on
+exactly that argument. **No rule changed and no code changes**; §10 #14 now has nothing open
+against it. Rev 17 — 🔥 **the win condition is no longer one rule.** §7.1.1 is
 new: what a declared hand must contain **changes with the number of players** — series only at
 two, at least two series at three, at least one at four, no requirement at five or more — and **the series a table size *requires* must be
 joker-free** — both of them three-handed, the one of them four-handed, and cleanliness is
@@ -14,8 +64,7 @@ Aung** on 2026-08-20. The same session settled four more: **the discard has no e
 *against* its standing recommendation and un-mooting §9 #9); **only the immediately-previous
 player's discard is takeable** (§5, `CODE` `Tentative` → `EXPERT`); and **7♦ and A♠ really are
 permanent money cards** (§4.1, `CODE` `Probable` → `EXPERT`). ⚠️ **Two players and three players
-are real games**, so §2's "four minimum" was wrong and §2.1 now runs from two. §9 #22 and #24–#27 are what
-those answers left unspecified, and §10 #14–#15 are the code they change. Rev 16 — **§5.1 is new and is the first rule here that constrains
+are real games**, so §2's "four minimum" was wrong and §2.1 now runs from two. ✅ **Everything those answers left unspecified has since closed** — #22, #24, #25, #26 and #27 — and §10 #14–#15 are the code they change. Rev 16 — **§5.1 is new and is the first rule here that constrains
 *which* card you may discard**: you may not throw a rank the next player has taken in the open,
 until they throw one back or you are going out. `EXPERT`, ruled directly by Mya Lay at a playtest
 on 2026-08-20. It is **settled and wholly unimplemented** — §9 #16–#19 are its specification and
@@ -84,6 +133,7 @@ documentation and the lowest confidence below.
 | **Two full decks shuffled together, jokers included — 108 cards** (2 × 52 ranked + 2 × 2 jokers). | `CODE` | Settled |
 | **2 players minimum.** The game is played two- and three-handed. | `EXPERT` | Settled |
 | **What a winning hand must contain changes with the player count** (§7.1.1). | `EXPERT` | Settled |
+| **And nothing else does** — hand size, decks, money cards and stakes are the same at every table size. | `EXPERT` | Probable — ⚠️ *"not that I know of"*, rev 19 |
 | **6 players practical maximum** (see §2.1). | `DERIVED` `IR` | Probable |
 | Two stakes are agreed **before play** and hold all game: a **round value** and a **money card value** (§4.3). | `PLAYER` | Settled |
 | Typical stakes: **$5 round / $1 money card**. | `PLAYER` | Probable |
@@ -93,6 +143,13 @@ documentation and the lowest confidence below.
 
 > ⚠️ The code hardcodes **5 players** with fixed names. Player count must become
 > configurable.
+
+> ⚠️ **Only the win condition moves with the count — asked in rev 19 (§9 #26), answered with a
+> hedge.** *"Not that I know of."* It is recorded as **Probable rather than Settled** and the
+> hedge is kept verbatim, because §7.1.1 is proof that this question has a real answer at least
+> once: nobody volunteered the player-count win condition either, and it turned up on its own.
+> **The question was asked deliberately wide** — hand size, number of decks, what the money cards
+> are, what you play for — so that a second §7.1.1 had somewhere to appear. It did not.
 
 ### 2.1 Where the player limit actually falls — `DERIVED`
 
@@ -131,13 +188,32 @@ add a third deck — 162 cards — rather than reduce the hand size.
 Order matters. `CODE`, Settled:
 
 1. Shuffle both decks together.
-2. Randomize seating order.
+2. **Randomize seating order — every round, not once.** `EXPERT`, rev 19 (§9 #14).
 3. Deal **13 cards** to each player, one at a time around the table.
 4. Turn up **two money cards** — one from the **bottom** of the deck, one from the **top**.
 5. Designate money cards (§4).
 
 Because money cards are turned up **after** the deal, a player may already be holding a
 copy of a card that is about to become a money card. That appears to be the point.
+
+> 🔥 **A "game" is one round — and that definition is a rule, not a gloss.** Asked how often the
+> money-card claim is offered (§9 #5), the answer defined the unit it depends on: *"it happens at
+> the beginning of the game, if game means from the time the money card is turned up to the time a
+> player goes out."* `EXPERT`, rev 19. **So a game begins at the turn-up and ends when somebody
+> goes out**, and what this document calls a *round* is what a player calls a *game*. A session is
+> a sequence of them with the banks carrying over (§7.2), and **nothing about it is remembered
+> except the money**.
+>
+> 🔥 **This is what makes §9 #14's answer bite.** Seating is re-randomised *between games*, and
+> a game is a round — so **step 2 runs before every deal**. There is no fixed table, no dealer
+> rotation, and no persistent seat: the player on your left this round is on the far side of the
+> table the next. ⚠️ **The engine keeps the seating it was given for a whole match** and is wrong
+> about it (§10 #16).
+>
+> ⚠️ **This document keeps saying *round*** — every rule, every cross-reference, and every column
+> in `docs/strategy/measurements.csv` — because renaming the unit would break far more than it
+> clarifies. **Read *round* and *game* as the same thing.** The one place the player's word must
+> win is where a rule is stated *in terms of* it, which is exactly §9 #5 and #14.
 
 ---
 
@@ -149,23 +225,150 @@ The distinguishing mechanic of the game.
 
 | Rule | Provenance | Confidence |
 |---|---|---|
-| **7♦ and A♠ are permanent money cards** in every round. | `EXPERT` | Settled |
-| …**all copies, both decks.** | `CODE` | Probable — ⚠️ the follow-up was put and not answered, §9 #24 |
+| **7♦, A♠ and every joker are permanent money cards** in every round. | `EXPERT` | Settled — the jokers were added in rev 21 |
+| …**all copies, both decks** — 2 × 7♦, 2 × A♠, **4 jokers: eight cards before anything is turned up.** | `EXPERT` | Settled — rev 19, widened rev 21 |
 | The **two turned-up cards** are money cards for that round. | `CODE` | Settled |
-| If a turned-up money card is the 7♦ or A♠, it becomes a **double money card** instead of merely stacking. | `CODE` | Probable |
-| Doubling is the maximum. There is no triple. | `CODE` | Probable |
+| **A turned-up card is owned by nobody** — not by the table, and not by the opener who claims it. *"The ones shown cannot be owned whether you take them or not."* | `EXPERT` | Settled — rev 20 |
+| **If the turned-up card is a 7♦, an A♠ or a joker, that value pays ×3.** The shown copy is worthless, because nothing unowned pays — so in practice the **partner copy** carries all of it. | `EXPERT` | Settled — rev 20, restated rev 21 |
+| 🔥 **If the two turned-up cards are the 7♦ and the A♠, and one player owns *both* partners, the two pay ×5 each instead of ×3.** | `EXPERT` | Settled — rev 21; ⚠️ its reach is §9 #32 |
+| A turned-up **joker** designates **the other joker of its own colour**. Colour is a joker's identity, so §4.2 applies unchanged. | `EXPERT` | Settled — rev 20 |
+| ~~If a turned-up money card is the 7♦ or A♠, it becomes a **double money card**.~~ | ~~`EXPERT`~~ | ⚠️ **Superseded in rev 20**, one day after it was recorded — see below |
+| Stacking past the triple is impossible to reach in a way that pays anyone. | `DERIVED` | Settled |
 
-> **`OPEN` — why 7♦ and A♠?** No source explains this and Nick doesn't recall. It may be
-> arbitrary house tradition. Recorded as-is.
+> ✅ **Why 7♦ and A♠ — answered in rev 19, and the answer is that there is no answer.**
+> **"Tradition."** `EXPERT`. Rev 1 through 18 recorded this as *unknown, likely unrecoverable*
+> and it was neither: it was recoverable, and what came back is that the cards are arbitrary.
+> 🔥 **A question can close by confirming there is nothing behind it**, and that is worth more
+> than leaving it open — an open *why* invites a future session to go looking for a pattern in
+> `7♦`/`A♠` that does not exist.
+
+> ✅ **Both copies, both decks — closed in rev 19 (§9 #24).** Asked flat — *"the 7♦, is it both of
+> them out of the two decks, or just one?"* — **both**. It had stood at `CODE` `Probable` since
+> rev 1, read off the 2023 source, under the whole money layer. **The code was right.**
+> ✅ **And it agrees with §9 #12's answer given in the same breath** — *"all 9s of hearts become
+> money cards"* — so a **designated** value and a **permanent** one both cover both copies. Two
+> answers, one rule, and neither was asked in the other's terms.
+
+> 🔥 **Rev 20 replaced *double* with *triple, on the other copy only* — and this supersedes an
+> `EXPERT` answer given one day earlier.** Rev 19 asked what happens when a turned-up card is the
+> 7♦ and recorded **"double money card, worth double."** Rev 20 asked something else — what a
+> turned-up joker designates — and got the whole rule back with the framing that governs it:
+>
+> > *"7 of diamonds, ace of spades, any jokers, when those are shown at the start of the game,
+> > those cards become money cards but specifically the ones shown can not be owned whether you
+> > take them or not. The other copy of that card (colour matters for jokers) becomes three times
+> > as valuable, but the original is worthless as it cannot be owned."*
+>
+> ⚠️ **Both answers are `EXPERT` and they do not agree, so the later and more specific one is the
+> rule and the earlier one is struck rather than deleted.** This is the second time in this
+> document that **an answer given before the framing that governs it turned out not to be an
+> answer** — §7.1's purity ruling failed in exactly this way, and was corrected the same day by a
+> rule about player counts that nobody had asked for. 🔥 **The framing here is ownership**:
+> *"worth double"* is true of a value considered on its own, and stops being true the moment you
+> ask **which copy** is worth it.
+
+> 🔥 **Jokers are permanent money cards, and rev 21 is where the money layer got half again as
+> big.** Asked how much a turned-up joker's partner pays, the answer went behind the question:
+> **"7 of diamonds, ace of spades, AND jokers are always money cards."** `EXPERT`. Rev 1 to rev 20
+> listed two permanent values; there are **three**, and jokers come four to a shoe.
+>
+> | | cards paying before anything is turned up |
+> |---|---|
+> | **rev 1 – rev 20** | 2 × 7♦ + 2 × A♠ = **4** |
+> | **rev 21** | 4 + **4 jokers** = **8** |
+>
+> ⚠️ **This is not a detail; it doubles the permanent side-bet and moves two `DERIVED` arguments
+> built on the old count.** §4.4's *"~4 of the 6 money cards are owned the moment the deal ends"*
+> and §4.3's measured *"the side-bet is 42% of the round prize"* (rev 13, 600 rounds) were both
+> computed with four permanent cards, and neither has been re-derived. ⚠️ **§4.2's balance
+> argument is *not* re-opened by this** — it is comparative, and rank-matching would still put
+> about twice as many cards in play again — **but its stated numbers are stale.** Recorded rather
+> than silently recomputed (§10 #17).
+>
+> 🔥 **It also explains the ×3 rule's shape, which looked arbitrary until now.** Rev 20 named
+> *"7 of diamonds, ace of spades, any jokers"* as the cards whose partner triples, against a §4.1
+> that made only two of them permanent. **It was never a list of special cards — it is the list of
+> permanent money cards**, and ×3 is what happens when a designation lands on one.
+
+> 🔥 **And there is a jackpot — the first rule in this game where a card's value depends on who
+> holds what.** *"If those two flipped cards happen to be the 7♦ and the A♠, then those each
+> become triple money cards, but if you happen to own **both** of those money cards, they become
+> 5× money cards instead of 3×."* `EXPERT`, rev 21.
+>
+> **So a multiplier is not a property of a card.** It is a property of *(value, ownership
+> configuration)*: two players holding one tripled partner each are paid **×3 apiece**; one player
+> holding both is paid **×5 apiece** — ten money-card values to a single player, **$10 a head at
+> standard stakes against a $5 round prize**, which is the largest single swing in the game.
+>
+> ⚠️ **This is where one of the three headline design decisions has to widen.** *Money status is
+> computed, never stored on cards* still holds and is still right — but
+> `MoneyCardRegistry.Multiplier(Card)` **cannot answer alone any more**: it needs the round's
+> **ownership** as well as its designators. The function stays pure; its signature does not stay
+> the same (§10 #17).
+>
+> ⚠️ **Its reach was not asked, and that is §9 #32.** The rule was stated of *the 7♦ and the A♠*.
+> Rev 21 makes **jokers permanent too**, so a turn-up can now produce two tripled values other
+> ways — a 7♦ and a joker, or two jokers of opposite colours — and nobody knows whether those pay
+> ×5 to a player holding both. **Do not generalise it in code before it is asked**; what is
+> recorded is the narrow rule.
+
+> 🔥 **Three is exactly the number that conserves what a designation is worth — `DERIVED`, and it
+> is the strongest evidence that rev 20's answer is the real rule rather than a slip.** Work the
+> money through for the 7♦, at $1 a money card:
+>
+> | | 7♦ money live in the round | |
+> |---|---|---|
+> | **Not designated** | two copies × 1 = **$2** | both ownable |
+> | **Designated (turned up)** | shown copy **$0** + partner × 3 = **$3** | one ownable |
+>
+> **A designation adds exactly $1 of live money — and $1 is what an *ordinary* designation adds
+> too.** Turn up a 5♥ and both 5♥s become money cards, but one of them is the designator lying on
+> the table, so **one** reaches a player. 🔥 **Under the struck *double* rule the sum came to $2,
+> and a designation landing on a permanent money card would have made the round poorer than an
+> ordinary one.** The triple makes every designation worth the same wherever it lands. **Three is
+> not an arbitrary multiplier: it is 1 for the partner's own permanence, 1 for the designation,
+> and 1 inherited from the copy that can no longer be paid for.**
+>
+> ✅ **And it conserves for a joker too, which rev 20 could not see.** This note originally
+> flagged that a joker pays nothing until it is turned up, so ×3 would *create* $3 rather than
+> conserve $1 — recorded as §9 #31. **The premise was wrong: jokers are permanent money cards**
+> (rev 21), so a joker's arithmetic is the 7♦'s arithmetic exactly. 🔥 **The question closed by
+> its answer turning out to be about a different rule** — which is why it was asked flat, and
+> without mentioning the 7♦.
+
+> ✅ **Stacking past the triple is closed by construction, and rev 19's argument survives intact.**
+> A stack needs **both** turned-up cards to be the same value, and two decks hold exactly two 7♦.
+> In that case both copies lie on the table, there is **no partner** to be paid ×3, no player was
+> dealt one (the deal is step 3, the turn-up step 4), and the value pays nothing at all. Reachable
+> at about **one round in 5,800** — so an implementation must not assume it away, it must merely
+> not care. The same covers a 7♦ and an A♠ turned up together, which is two separate triples and
+> not a stack. `DERIVED`.
+>
+> ⚠️ **Rev 19's hedge — *"maybe… i don't think that's mechanically possible/relevant"* — was wrong
+> about *possible* and right about *relevant*, and not flattening it is what left the question
+> open long enough for rev 20 to contradict the rule it was hedging about.**
 
 > ✅ **That they *are* permanent is no longer a reading of the old code.** Rev 17: asked flat —
 > *"apart from the two you turn over, are there any cards that are always money cards?"* — and
 > answered **yes**. It had stood at `CODE` `Probable` since rev 1, which is a weak tag under the
 > whole money layer. ⚠️ **The three follow-ups behind it were not reached**: whether it is both
 > copies out of both decks, what happens when a turned-up card *is* the 7♦, and whether it can
-> stack past a double (§9 #24). Those remain `CODE` `Probable` and the doubling rules below are
-> still unconfirmed by a player.
+> stack past a double (§9 #24). ✅ **All three were reached and answered in rev 19** — see the
+> notes below; the doubling rules are `EXPERT` now, bar the ceiling itself.
 
+> ❌ **WITHDRAWN in rev 20. The claim below is false under the rule as it is now recorded, and it
+> is asserted as a shipped test.** It was derived from the *double* rule that rev 20 struck
+> (§4.1); under the **triple**, a designation landing on a permanent money card leaves the round
+> with **exactly as much** live money as any other designation — $1 more than no designation at
+> all — which is the arithmetic in the note above. 🔥 **The reasoning was sound and the premise
+> moved**, which is the difference between a mistake and a dependency. ⚠️ **It is load-bearing in
+> code**: `MoneyOdds` prices a blind draw from `MoneyCardRegistry.Multiplier`, which caps at 2,
+> and `ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe` asserts the
+> withdrawn direction outright. **Both are §10 #17.** ⚠️ **And `prospector` is the one rung whose
+> decision reads the money**, so `docs/STRATEGY.md` §10 — the money sweep — was measured under a
+> money model this document no longer holds. **The text below is kept unaltered as the record of
+> what was believed and why.**
+>
 > 🔥 **`DERIVED` — a designation that lands on a permanent money card leaves *less* money in
 > the deck, not more** (packet P22, 2026-08-20). It reads backwards and it is simply these rules
 > put together. A turned-up card is **removed from the deck** to act as the designator (§3 step
@@ -178,14 +381,26 @@ The distinguishing mechanic of the game.
 > rules already mean — and it is asserted as a test in
 > `ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe`.
 
-> **`OPEN` — what if a turned-up card is a joker?** 4 of the 108 cards are jokers, so one of
-> the two cards turned up at setup is a joker roughly one round in fourteen, and no source
-> says what that does. Three readings: it designates the **jokers of its own colour** (2
-> cards — what §4.2's exact match says if a joker's colour is read as its identity), it
-> designates **all four jokers**, or jokers **cannot be money cards** and the card is set
-> aside and another turned. **Recommend the first**, because it is §4.2 applied unchanged
-> rather than a new rule. Tracked as §9 #11; the safe default is recorded in `BUILD-PLAN.md`
-> P2.
+> ✅ **A turned-up joker designates the other joker of its own colour — closed in rev 20 (§9
+> #11).** 4 of the 108 cards are jokers, so one of the two turned up at setup is a joker roughly
+> one round in fourteen. Three readings were on the table: **the two of its own colour**, **all
+> four**, or **jokers cannot be money cards** and the card is set aside and another turned. Rev 19
+> eliminated the third — *"jokers become money cards"* — and rev 20 answered the rest in four
+> words: **"colour matters for jokers."** `EXPERT`.
+>
+> ✅ **So §4.2 applies unchanged and the recommendation standing since rev 1 was right.** A joker
+> has no rank and no suit, and `Card` tells the two of a deck apart by **colour** — so *the other
+> copy of that card* means the other joker of the same colour, and `SameValueAs` already computes
+> it. **The code needs no joker special case for designation**; what it needs is the ×3 (§10 #17).
+>
+> 🔥 **This is §5.1's #27 in a second place, and the two disagree — which was predicted and is
+> correct.** #27 asked what taking a joker *closes* and was answered *the other jokers*, all four,
+> because feeding is about what an opponent is collecting. Designation is deliberately narrow
+> (§4.2 rejects the Indian Rummy rank match precisely to keep the side-bet small). **So a red
+> joker taken in the open closes all four jokers, while a red joker turned up pays on two.** The
+> same word means four cards in one rule and two in the other, and neither is inconsistent.
+> ⚠️ **#27 is still the weaker of the two** — a `PLAYER` house ruling from *"I'd assume"*, where
+> #11 is now `EXPERT`.
 
 ### 4.2 Matching — `PLAYER`, Settled
 
@@ -225,14 +440,23 @@ takes part in it too, both collecting and paying. It resolves **independently of
 |---|---|
 | Winner collects | 4 × $5 = **$20** |
 | A player owning 2 money cards collects | 2 × $1 × 4 = **$8** |
-| A player owning 1 **double** money card collects | 2 × $1 × 4 = **$8** |
+| A player owning 1 **tripled** money card collects | 3 × $1 × 4 = **$12** |
+| A player owning **both** of a 7♦/A♠ turn-up's partners collects | (5 + 5) × $1 × 4 = **$40** |
 
 | Detail | Provenance | Confidence |
 |---|---|---|
 | Flat round value from each loser to the winner. | `PLAYER` | Settled |
 | Money card value per card, per opponent, to the **owner**. | `PLAYER` | Settled |
 | Settled on top of the round payment, not instead of it. | `PLAYER` | Settled |
-| A **double** money card counts as **two**. | `DERIVED` | Probable |
+| A **tripled** money card counts as **three**; only the ownable copy can collect it (§4.1). | `EXPERT` | Settled — rev 20 |
+| **×5 each** where one player owns both partners of a 7♦/A♠ turn-up (§4.1). | `EXPERT` | Settled — rev 21 |
+
+> ⚠️ **The `DERIVED` balance note below is stale as of rev 21 and is kept unrevised.** It counts
+> **four** permanent money cards; there are **eight** (§4.1 — jokers are permanent), and it
+> predates both the ×3 and the ×5. **The side-bet is larger than the figure below says and nobody
+> has re-derived by how much.** ✅ Its *conclusion* — that a side-bet at this order of magnitude
+> is significant without dominating — is what §4.2's matching argument leans on, and that argument
+> is comparative and survives. ❌ **Its numbers do not.** Re-measuring it is §10 #17.
 
 **`DERIVED` — the recalled stakes produce a balanced game.** Under the code's exact-match
 rule (§4.2), ~6 money cards circulate beyond the two face-up. In a 5-player round the
@@ -267,12 +491,21 @@ element of Burmese Poker"*.
 
 So at settlement the question is never *who holds this card?* but *who did the deck give it to?*
 
+> ✅ **A turned-up card is unownable, full stop — confirmed in rev 20.** *"The ones shown cannot
+> be owned whether you take them or not."* `EXPERT`. Rev 1 to rev 19 had this as `CODE` `DERIVED`,
+> reasoned from rule 1 rather than confirmed, and it was right. 🔥 **The volunteered half is the
+> half that mattered**: *whether you take them or not*. A designator does not become ownable by
+> being picked up, and it does not become ownable by being left alone — so a value with **both**
+> copies on the table pays nobody at all (§4.1), and the ×3 exists precisely because the shown
+> copy can never be paid for.
+
 | How the card reached your hand | Pays you? | Provenance |
 |---|:-:|---|
 | **Dealt** in your opening 13 | ✅ | `EXPERT` |
 | **Drawn** blind from the deck | ✅ | `EXPERT` |
 | **Picked up** from the previous player's discard | ❌ | `EXPERT` |
-| **Claimed** from the turned-up money cards (§4.5) | ❌ | `CODE` `DERIVED` — consistent with rule 1, not separately verified |
+| **Claimed** from the turned-up money cards (§4.5) | ❌ | `EXPERT` — confirmed in rev 20 |
+| **Left lying on the table** as a designator, unclaimed | ❌ | `EXPERT` — confirmed in rev 20 |
 
 This vindicates the 2023 code's design, which was more deliberate than it first appeared.
 `MoneyCardOwner` is a field **on the card**, set once when the card comes from the deck and
@@ -306,8 +539,9 @@ score for the new steward"*, which is precisely rule 1 in action.
 |---|---|---|
 | The opening player may take the top money card instead of drawing. | `CODE` | Probable |
 | They take the **actual physical card**, which leaves the table. | `PLAYER` | Probable |
-| Claiming requires **permission from another player**. | `CODE` (TODO) | Unknown |
-| Offered once per game, or once per round? | `OPEN` | Unknown |
+| **Claiming requires permission — from the player who takes their turn *before* you**, i.e. the last seat in the round order and the one that discards to you. | `EXPERT` | Settled — rev 20 |
+| **That player may refuse only if they hold that card**, because your taking it would lock them into holding it under §5.1. | `EXPERT` | Settled — rev 20 |
+| **Offered at the start of every round**, because a game *is* a round (§3). | `EXPERT` | Settled — rev 19 |
 
 > ⚠️ The code **clones** the card, creating a 109th card and leaving the original on the
 > table. Nick: *"you almost certainly do take the actual physical card, not a copy."*
@@ -318,11 +552,73 @@ score for the new steward"*, which is precisely rule 1 in action.
 > you melding utility with **no payout attached**. The code's `MoneyCardOwner = null` and its
 > *"doesn't score for the new steward"* comment encode exactly this. Confirmed as intended.
 
-> **`OPEN` — what happens to the turned-up cards afterwards?** They are removed from the
-> deck at setup and, in the code, stay in `CurrentRoundMoneyCards` forever — never
-> returned, never re-drawn. So two cards leave play each round purely to act as
-> designators (one may be claimed on the opening turn). Probably right, but unconfirmed —
-> and it matters for deck exhaustion (§5).
+> ✅ **The turned-up cards stay where they are — closed in rev 19 (§9 #4).** Asked with the
+> reshuffle in the question — *"if the deck runs out and you gather the discards up to make a new
+> deck, do those two go in as well, or do they stay where they are?"* — **they stay.** `EXPERT`.
+> So two cards leave play each round purely to act as designators, one of which may be claimed on
+> the opening turn, and the deck-exhaustion sweep (§5) takes the discard piles and nothing else.
+> **This is what the code already does** and what P9 assumed; it had stood on a recommendation
+> since rev 1.
+>
+> 🔥 **It is also why the doubling question is moot** (§4.1): a designator on the table is owned
+> by nobody and stays there, so a value whose every copy is a designator pays nothing at all.
+
+> 🔥 **Why permission is asked, and who from — closed in rev 20 (§9 #5), and it is the first
+> rule in this document that ties the money layer to the feeding ban.**
+>
+> > *"When you go to pick up that first card at the start of the game, you must ask 'permission'
+> > from the player who goes before you in turn order (last in the round), because if (and only
+> > if) that player has that card, they can object to you picking up that card, since it would
+> > lock them into holding the card via the discard rules."*
+>
+> `EXPERT`. The 2023 source had a permission check with a `TODO` against it and no explanation;
+> rev 1 to rev 19 carried it as `Unknown`, and **P9 asks nobody**. It is real, and the reason is
+> §5.1.
+>
+> 🔥 **Follow the mechanism, because it is the whole justification.** Claiming the turned-up card
+> is a **public take** (§9 #17), so it arms the feeding ban against the seat that discards to the
+> claimer (§9 #16) — and that seat is exactly *the player who goes before you in turn order*. If
+> that player holds a copy, they may now never discard it: the ban runs until the protected player
+> releases the rank themselves (§5.1), and the claimer, having just taken one, is in no hurry.
+> **So the opener's free card is paid for out of the upstream player's hand, and the rule gives
+> that player a veto.**
+>
+> 🔥 **This independently confirms two rulings that were recommendations when they were made.**
+> §9 #17 — *only a public take arms the ban, and the §4.5 claim counts as one* — and §9 #16 — *the
+> ban binds the seat above you and not the table*. Both were reasoned out in rev 16 from what
+> would make the rule enforceable, both were confirmed flat in rev 17, and **this rule cannot be
+> stated without them.** A permission rule that names the upstream seat is only sensible in a game
+> where the ban is an ordered-pair rule armed by public takes. ⚠️ **Three independent routes to
+> the same shape is the strongest structural evidence this document has that §5.1 is an old rule
+> rather than a one-off table ruling.**
+>
+> ⚠️ **It also makes the claim an *attack*, which nothing had noticed.** A claimed card confers no
+> ownership and pays nothing (§4.4) — so the opener spends their draw on melding utility alone,
+> and gets, as a side effect, a lock on the hand of the player who will discard to them all round.
+> 🔥 **The veto is what stops that being free**, and it prices the claim in a way no bot models:
+> `prospector` (P22) values the claim purely as cards and money.
+>
+> ⚠️ **An objection is public information in a game that conceals everything else.** Only a holder
+> may object, so **objecting tells the table you hold that rank** — the second public fact in the
+> game after the discard piles (§5), and the first that a player discloses by choice. Whether that
+> is a cost worth weighing is a strategy question nobody has asked; that it *is* a disclosure is
+> forced by *"if and only if."*
+>
+> ⚠️ **Two things this does not say**, and an implementation needs both — §9 #30 and the note under
+> §5.1. **Does the objection turn on the exact card or on the rank?** The rule says *"has that
+> card"*, but the lock it describes is §5.1's, and §5.1 matches on **rank alone** — so a player
+> holding the 9♣ is locked by a claimed 9♥ just as surely as one holding the other 9♥, and the
+> stated reason covers them both. **The narrow reading and the stated justification disagree**,
+> which is exactly the kind of gap this document has been wrong about before (§6.2, §7.1).
+
+> ✅ **The claim is offered every round — closed in rev 19 (§9 #5), and the answer arrived as a
+> definition.** *"It happens at the beginning of the game, if game means from the time the money
+> card is turned up to the time a player goes out."* `EXPERT`. **A game is a round**, so the claim
+> belongs to the setup that produced the card and not to the session — which is what P9 defaulted
+> to and is now confirmed. See §3 for the definition, which turned out to govern §9 #14 as well.
+>
+> ✅ **The other half of #5 — *does anyone have to agree?* — was answered in rev 20: yes, the
+> upstream player, conditionally.** See the block above; §9 #5 is closed.
 
 ---
 
@@ -346,6 +642,7 @@ You are therefore always at 13 cards between turns, and 14 during your turn.
 | Reshuffling is **rare** in practice — most rounds end first. | `PLAYER` | Settled |
 | **The discards are public.** A player may look through what has been thrown away, not merely see the top card. | `EXPERT` | Settled |
 | **Each player keeps their own discard pile** in front of them. | `EXPERT` | Settled |
+| **You may discard the very card you just took** — *"as long as you aren't violating any other discard rules."* | `EXPERT` | Settled — rev 19 |
 
 > ⚠️ Code gives every player a **private** discard list and has **no deck-exhaustion
 > handling** — it crashes when the deck empties. Private piles remain workable: at
@@ -370,6 +667,24 @@ You are therefore always at 13 cards between turns, and 14 during your turn.
 >    rule cheap to enforce, and it turned out to depend on a question nobody had thought was
 >    load-bearing. ⚠️ **The reshuffle still sweeps every pile** (§5), which is why #19 had to be
 >    ruled on rather than read off.
+
+> ✅ **Throwing back what you just took is legal — closed in rev 19 (§9 #13), and the answer came
+> with a rider that is the interesting half.** Asked flat, and answered **yes — *"as long as you
+> aren't violating any other discard rules."*** `EXPERT`. Several rummies forbid it as a null
+> move; this one does not. **P7's default was right and the engine already accepts it.**
+>
+> 🔥 **The rider names §5.1, which is the only other discard rule there is** — and it settles an
+> interaction nobody had put in writing: **the feeding ban outranks the right to throw a card
+> straight back.** Take the card the seat above you threw, find it is a rank the seat *below* you
+> has taken in the open, and you may not return it — you must throw something else. ⚠️ **So the
+> just-taken card is not a special case in either direction**: it is filtered like any other card
+> in the hand, which is exactly what impossible-move enforcement already does (§5.1, §10 #13), and
+> **an implementation needs no rule for it at all.**
+>
+> ⚠️ **It also confirms the shape of the answer rather than only its value.** The player did not
+> say *"yes"*; they said *"yes, subject to the other rules"* — which is a player describing a
+> **legal-move filter**, the same construction §5.1's enforcement takes. That is one more reason
+> to build the filter once and apply it to the whole hand.
 
 > ✅ **Built in P9.** The gather happens at the moment somebody draws into an empty pile, not
 > around the round, because there is no resume point mid-turn. Every pile is swept; the
@@ -633,7 +948,8 @@ like #19 and #27, and taken because a rule that changes shape with the table siz
 | Three or more cards, **same suit**, **consecutive rank**. | `PLAYER` `CODE` `IR` | Settled |
 | **Aces do not wrap.** `A-2-3` is legal; `Q-K-A` is legal; **`K-A-2` is not**. An ace is high or low within a run, never both. | `PLAYER` `IR` | Settled |
 | Jokers substitute for a missing card. | `CODE` `IR` | Settled |
-| Maximum jokers per meld — **including whether a meld may be nothing but jokers**. | `OPEN` | Unknown |
+| **A meld may be nothing but jokers.** Three jokers laid down together are a series — but never a *clean* one, so it can never be one of the series a table size **requires** (§7.1.1). | `EXPERT` | Settled |
+| **No maximum jokers per meld.** | `DERIVED` | Probable |
 
 > ⚠️ **The code currently allows `K-A-2`.** Its rank order is a full cycle. This both
 > contradicts the rule above *and* causes a **verified infinite loop** — a hand holding all
@@ -642,6 +958,25 @@ like #19 and #27, and taken because a rule that changes shape with the table siz
 >
 > Indian Rummy states the rule precisely: *"The ace can be next to the two (in A-2-3) or
 > next to the king (in Q-K-A), but not both at once."* (`IR`)
+
+> ✅ **The all-joker meld is legal — closed in rev 18 (§9 #29), and it confirms what P3 already
+> emits.** Asked as a table situation — *"if you were holding three jokers, could you put those
+> three down together as one of your melds?"* — and answered **"yes, but not clean"**. The
+> recommendation standing since rev 10 was *unlimited jokers, which permits an all-joker meld*,
+> and P3 took it literally; the answer confirms it, so **nothing in the code changes**.
+>
+> 🔥 **The second half of the answer is the load-bearing half, and it is a restriction, not a
+> permission.** An all-joker meld is a series that is by construction impure, so under §7.1.1 it
+> can satisfy a **surplus** series and never a required one. Three-handed, where both required
+> series must be clean, three jokers can never be one of the two. That is consistent with §9 #28
+> — purity attaches to the required count and stops there — and it means the two answers agree
+> without either having been asked in the other's terms.
+>
+> ⚠️ **The maximum-jokers half of the old question is `DERIVED`, not `EXPERT`.** Nobody was asked
+> *"how many jokers may one meld hold?"*; the answer above is deduced from the fact that a
+> three-card meld may be **entirely** jokers, which forecloses any cap below the meld's own size.
+> Four jokers exist in the shoe (§2), so the effect is bounded either way. If a cap turns out to
+> exist it is a filter in candidate generation and a rung's evaluation, not a rules restructure.
 
 ### 6.2 Sets
 
@@ -784,26 +1119,34 @@ was wrong.**
 > reason the table has the shape it does. It is reasoning *about* the rule; the rule is the
 > table above.
 
-> ⚠️ **Three things this does not say, and an implementation needs all three** — §9 #22, #23,
-> #28.
+> ✅ **Three things this did not say. All three are now answered, and the last of them closed in
+> rev 18** — §9 #22, #23, #28.
 >
-> 1. **At two players, is a set illegal *as a meld*, or merely not required?** The answer
->    recorded is *"sets are not allowed at all"*, which reads as the strong form — a declared
->    two-handed hand is runs and nothing else. It is written that way above because that is what
->    was said, but the strong form has never been put back to a player as a table situation. (#22)
-> 2. 🔥 **What counts as *two* series?** Thirteen cards holding one six-card run can be declared
->    as `3+3` or as a single `6`. If the count is of melds *as laid down*, a three-handed player
->    satisfies "at least two series" out of one run by splitting it, and the requirement is
->    nearly free. If it is a count of *distinct* runs, it is a real constraint. **The whole
->    weight of the three-handed rule sits on this and nothing settles it.** (#23)
->    ⚠️ **The purity column makes this worse, not better.** Split a clean six-card run into `3+3`
->    and you have satisfied *two clean series* out of one run — so under the permissive reading
->    the three-handed rule costs a player almost nothing, and under the strict one it is the
->    hardest condition in the game. **The gap between the two readings is now the whole rule.**
-> 3. **Does a *surplus* series have to be clean too?** Three-handed with three runs: are two
->    enough, or must all three be joker-free? The rule as recorded attaches purity to the
->    **required** count, so two — but a table that says *"both of your series must be clean"* has
->    not been asked about a third. The same question arises four-handed with two runs. (#28)
+> 1. ✅ **At two players, a set is illegal *as a meld*, not merely unnecessary — closed in rev 18
+>    (§9 #22).** The strong form was recorded on the day from one sentence and was never put back
+>    as a table situation; put back, it held: **"in 2 player, you must go out with ALL SERIES, no
+>    sets."** `EXPERT`. So a declared two-handed hand is runs and nothing else, and a hand holding
+>    three of a kind at the end is not a winning hand however its runs fall.
+>    🔥 **This is a rule about the partition, not about the cards.** Nothing stops a two-handed
+>    player *holding* three of a kind; what is forbidden is **declaring** on a partition that uses
+>    one as a meld. Those thirteen cards win if and only if they partition into runs alone.
+>    ⚠️ **It also holds up §9 #25's reasoning**, which leant on sets being illegal head-to-head
+>    when it argued the feeding ban might bite differently there. That argument was made against
+>    the unconfirmed strong form; the strong form is confirmed.
+> 2. ✅ **Two series may be counted as laid down — closed in rev 17 (§9 #23).** Thirteen cards
+>    holding one six-card run may be declared as `3+3`, and that is **two series**. So the
+>    three-handed requirement is satisfiable out of a single long run, purity included, and it is
+>    far weaker than it reads.
+>    🔥 **This is the answer that changes the shape of the win question**, because the
+>    requirement becomes a property of **the partition chosen** rather than of the hand: an
+>    evaluator may no longer return the first cover it finds, since a different cover of the same
+>    thirteen may satisfy a requirement the first one misses.
+> 3. ✅ **A surplus series need not be clean — closed in rev 17 (§9 #28).** Three-handed with
+>    three runs, two clean ones are enough. Purity attaches to the required count and stops there,
+>    which is what the second column above states.
+>    ✅ **Rev 18 supplied the extreme case from the other end (§9 #29): an all-joker meld is a
+>    legal series and is never a clean one**, so it can count as a surplus series and never as a
+>    required one (§6.1). The two answers were reached independently and agree.
 
 ### 7.2 Settlement
 
@@ -909,32 +1252,47 @@ the **7♦** — one of your two permanent money cards. Almost certainly chance.
 (§6.2), and the melding model (§6.3) — are resolved. What is left is unrecorded rather than
 disputed.
 
-⚠️ **Three groups, and they are not the same kind of question.** #4, #5 and #8–#14 are ordinary
-gaps with safe defaults, and none blocks anything. ✅ **§5.1's unwritten half — #16–#20, #25 and #27 — was written on 2026-08-20 and none of it is
-open any more**; the rule is now fully specified and still entirely unimplemented. 🔥 **#22, #24, #25 and #26 are new in rev 17** and are
-the unwritten half of the answers that came *with* §7.1.1 — a rule that changes the win condition
-by table size, recorded from the experts in one sentence per player count, with none of the edges
-put back to them.
+✅ **One question, and it exists because an answer made a combination the rule was never stated
+about.** Rev 21 closed #30 (**an objection turns on the rank alone**) and #31 (**a turned-up
+joker's partner pays ×3, same as any other permanent money card**) — and the second closed by its
+answer turning out to be about a **different rule**: *"7 of diamonds, ace of spades, AND jokers
+are always money cards."*
+
+🔥 **Four consecutive revisions have each answered past the question asked**, and three of them
+changed a rule nobody was asking about: rev 19 defined *a game* while answering how often a card
+is claimed; rev 20 gave the ownership framing while answering about jokers, superseding an
+`EXPERT` ruling one day old; rev 21 made **jokers permanent** and produced **a ×5 jackpot** while
+answering how much one pays. ⚠️ **The pattern is worth naming: this game's rules are recalled as
+wholes, not as answers.** Asking a narrow question and recording only the narrow answer has lost
+material three times.
+
+⚠️ **What is left is one row, and it does not block play — only a correct settlement.**
+
+✅ **Nothing open blocks anything.** §5.1's specification — #16–#20, #25 and #27 — was written on
+2026-08-20; rev 18 closed the win condition's last two, #22 and #29; and both survivors have a
+recorded default that a shipped packet already runs on. ⚠️ **What is left unimplemented is not a
+question but a decision already taken** — §5.1, §7.1.1 and rev 19's per-round seating are all
+settled rules with no code behind them (§10 #13, #14, #16).
+
+⚠️ **One of the two is worth more than its size.** #11's default sends a joker's money value
+somewhere §5.1's #27 sends it elsewhere — two of the four jokers against all four — and the two
+rules are deliberately scoped in opposite directions (§4.1). **The wrong guess is invisible: it
+pays the wrong person a dollar in about one round in fourteen.**
 
 | # | Question | § | Status | Blocks |
 |---:|---|---|---|---|
+| 32 | Does the **×5** need the turn-up to be the **7♦ and the A♠ specifically**, or does any two tripled values do — a 7♦ and a joker, two jokers of opposite colours? *(Raised by rev 21 making jokers permanent, which created combinations the rule was never stated about.)* | 4.1 | Unknown — recommend the **narrow** reading, which is what was said | Settlement |
 
 
-
-| 4 | Do the turned-up cards stay out of play permanently? | 4.5 | Open — recommend *yes*, **taken as the default by P9** | Deck exhaustion |
-| 5 | Is the money-card claim once per game or per round, and who approves it? | 4.5 | Unknown — **P9 defaults to *per round*, approved by nobody** | Turn logic |
-| 8 | Max jokers per meld — and may a meld be **entirely** jokers? | 6.1 | Unknown — recommend *unlimited*, which permits an all-joker meld | Meld validation |
-| 10 | Why 7♦ and A♠ specifically? | 4.1 | Unknown, likely unrecoverable | None |
-| 11 | If a **joker** is turned up as a money card, what does it designate? | 4.1 | Unknown — recommend *the two jokers of that colour* | Money designation (P2) |
-| 12 | When the opening player **claims** the turned-up money card, does that card's value still pay for the rest of the round? | 4.5 | Unknown — recommend *yes* | Money designation (P7) |
-| 13 | May a player discard the very card they just took? | 5 | Unknown — recommend *yes* | Turn logic (P7) |
-| 14 | Does anything move between rounds — the seating, the deal, who goes first? | 3 | Unknown — recommend *no* | Match setup (P9) |
-| 22 | At **two players**, are sets **illegal as melds**, or merely not required? | 7.1.1 | Unknown — recorded as *illegal*, which is what was said; the strong form was never put back | Win detection |
-| 24 | The money-card follow-ups: **both copies, both decks?** What if a turned-up card **is** the 7♦? Can it stack past a **double**? | 4.1 | Unknown — put on 2026-08-20 and not reached; the current answers are `CODE` | Money designation |
-| 26 | Does **anything else** change with the player count — hand size, number of decks, the money cards, the stakes? | 2 | Unknown — recommend *no*, but §7.1.1 is proof the question is real | Setup |
-| 29 | Does an **all-joker meld count as a series** for the §7.1.1 requirement? It can never be a *clean* one, but it may still be a surplus. | 7.1.1 | Unknown — recommend *yes, it is a run like any other*; raised by §7.1.1 meeting #8 | Win detection |
-
-
+> ✅ **#8 — closed in rev 18 by §9 #29, and the recommendation held.** The note below stands as
+> written; what it recommended is what the experts ruled. **A meld may be nothing but jokers**
+> (`EXPERT`), so no cap below a meld's own size exists (`DERIVED`) — see §6.1. 🔥 **P3 has been
+> emitting all-joker melds since rev 10 on the strength of the reasoning below, and the reasoning
+> was right**, which is the first time in this document that arguing from the generator's
+> construction beat asking. It is also the only one of the three "confident wrong answers" this
+> document warns about that came out the other way. ⚠️ **The answer arrived with a restriction
+> attached**: an all-joker series is never clean, so it can never satisfy §7.1.1's required count.
+>
 > **#8 widened in rev 10, while building P3.** "Unlimited jokers" was recorded as a bound on
 > substitution, but a window-based generator answers a sharper version of the question by
 > construction: with four jokers in hand, `🃏🃏🃏` satisfies a three-card window with nothing
@@ -943,6 +1301,13 @@ put back to them.
 > the stricter, not the safer, choice. Four jokers exist in the shoe, so a hand can hold at
 > most four; the effect is bounded and easy to reverse if Mya Lay says otherwise.
 
+> ✅ **#12 and #13 — both closed in rev 19, and both defaults were right.** #12: *"yes, all 9s of
+> hearts become money cards"* — designation is fixed at setup and does not move with the claimed
+> card (§4.5). #13: *"yes, as long as you aren't violating any other discard rules"* (§5), which
+> also settles the interaction with §5.1 that nobody had asked about. `EXPERT` both. **The note
+> below stands as written**; it is kept because the reasoning that produced the right default is
+> worth more than the default was.
+>
 > **#12 and #13 raised in rev 11, while building the round engine (P7).**
 >
 > **#12 — a claimed money card.** The two turned-up cards do two jobs at once: they *designate*
@@ -962,6 +1327,13 @@ put back to them.
 > rule it is a single guard in `RoundEngine`, and the question is really only about the
 > *pickup* — throwing back a card drawn blind is unremarkable.
 
+> ✅ **#4, #5 and #14 — closed in rev 19, and one of the three went the other way.** #4: the
+> turned-up cards **stay where they are**. #5: the claim is offered **every round**, because a
+> game *is* a round — but ⚠️ **who approves it was not answered and #5 survives, narrowed.**
+> 🔥 **#14 is the reversal: seats are re-randomised between rounds**, not held for the match, so
+> `MatchEngine` is wrong and §10 #16 is the code. `EXPERT` throughout. **The note below stands as
+> written and two thirds of its reasoning held.**
+>
 > **#4, #5 and #14 all came due in rev 12, while building the match engine (P9).** None of the
 > three blocks anything; each is one line to reverse.
 >
@@ -1097,11 +1469,112 @@ put back to them.
 > *feeding*, where §5.1 makes it deliberately broad — the two should not be assumed to agree.
 > ⚠️ Note that #18 does not settle this: *any rank* still says nothing about a card that has none.
 
-**Nothing above #16 blocks the build**; each of those has a safe default recorded in
-`BUILD-PLAN.md`, and they are worth settling for fidelity rather than for progress. **§5.1's set —
-#16–#19, #25 and #27 — is not like that**: the rule is unimplemented, and they are its
-specification.
+✅ **All of it is closed, and the paragraph that used to stand here is worth keeping as a marker of
+what changed.** It said that everything above #16 had a safe default and was worth settling for
+fidelity rather than for progress, while **§5.1's set — #16–#19, #25 and #27 — was not like that**,
+because the rule was unimplemented and those questions were its specification. **They were answered
+on 2026-08-20, and §5.1 is fully specified and still unimplemented — that is now a packet (P27),
+not a question.**
 
+> **Resolved in rev 21** — two, and 🔥 **the second answered past the question and changed §4.1
+> twice over.**
+> - **Does an objection turn on the exact card or the rank** (was #30): **rank alone.** `EXPERT`
+>   The recommendation was right, and it matters: §5.1 is rank-only, so a player holding the 9♣ is
+>   locked by a claimed 9♥ exactly as one holding the other 9♥ is. **The claim's predicate is
+>   §5.1's predicate** and must not be written twice (§10 #18).
+> - **Is a turned-up joker's partner really ×3** (was #31): **yes** — and the worry behind the
+>   question dissolved, because **jokers are permanent money cards.** `EXPERT` The question was
+>   *"×3 conserves the round's money on a 7♦ and creates it on a joker — is that intended?"*, and
+>   the premise was wrong: a joker was never worth nothing. ✅ **Asking it flat and without
+>   mentioning the 7♦ is what produced a correction instead of a confirmation.**
+>
+> 🔥 **Two rules arrived with that answer, neither of them asked for.**
+> - **Jokers are permanent money cards** — *"7 of diamonds, ace of spades, AND jokers are always
+>   money cards."* `EXPERT` **The permanent side-bet doubles, from 4 cards to 8**, and two
+>   `DERIVED` arguments built on the old count are stale (§4.3, §4.4). It also makes rev 20's ×3
+>   list stop looking arbitrary: it was never *special cards*, it is **the permanent money cards**.
+> - **A ×5 jackpot** — if the two turned-up cards are the 7♦ and the A♠ **and one player owns both
+>   partners**, they pay **×5 each** rather than ×3. `EXPERT` 🔥 **The first rule in this game where
+>   a card's value depends on who holds what**, so a multiplier is a property of *(value,
+>   ownership)* and `MoneyCardRegistry.Multiplier(Card)` cannot answer alone (§10 #17). ⚠️ **Its
+>   reach is §9 #32**; the narrow reading is what is recorded.
+>
+> **Resolved in rev 20** — the last two money questions, from Mya Lay and Aung Aung. 🔥 **Both
+> answers reached further than the questions did.**
+> - **Who approves the claim** (was #5): **the player who goes before you in turn order** — the
+>   last seat in the round, the one that discards to you — **and they may refuse only if they hold
+>   that card.** `EXPERT` 🔥 **The reason is §5.1**: claiming is a public take, so it arms the
+>   feeding ban against precisely that seat and would lock them into holding their copy. **This is
+>   the first rule tying the money layer to the feeding ban**, and it independently confirms §9
+>   #16 (the ban binds the seat above you) and §9 #17 (a public take arms it, the §4.5 claim
+>   included) — both of which were *recommendations* when they were written and could not have
+>   been guessed from this rule's existence. ⚠️ **P9 asks nobody** (§10 #18).
+> - **Which jokers** (was #11): **the other joker of its own colour** — *"colour matters for
+>   jokers."* `EXPERT` §4.2 applied unchanged, so `SameValueAs` already computes it and the
+>   designation needs no joker special case. ⚠️ **It disagrees with §5.1's #27 on purpose** — a
+>   joker taken in the open closes all four, a joker turned up pays on two.
+>
+> 🔥 **And an answer nobody asked for, which supersedes one given the day before.** The same reply
+> gave the whole shape of a turned-up special card: **the shown card can never be owned, whether
+> or not it is claimed, and its partner copy pays ×3** — not the **double** recorded in rev 19
+> (§4.1). ⚠️ **Two `EXPERT` answers, one day apart, that do not agree**; the later and more
+> specific is the rule and the earlier is struck. ✅ **The arithmetic backs the later one**: ×3
+> makes a designation on a permanent money card worth exactly what an ordinary designation is
+> worth, where ×2 would have made it worth less. ❌ **It withdraws P22's `DERIVED` note** and
+> the shipped test that asserts it (§10 #17).
+>
+> **Resolved in rev 19** — nine, from Mya Lay and Aung Aung. ✅ **Eight of the nine confirmed a
+> standing default; one reversed it.**
+> - **Why 7♦ and A♠** (was #10): **"tradition."** `EXPERT` 🔥 Recorded as *likely unrecoverable*
+>   from rev 1 to rev 18 and it was not — **it closes by confirming there is nothing behind it**,
+>   which stops a future session hunting a pattern that does not exist.
+> - **Both copies, both decks** (was #24a): **both.** `EXPERT` `CODE` `Probable` → Settled.
+> - **A turned-up 7♦** (was #24b): **a double money card, *"worth double."*** `EXPERT` This also
+>   promotes §4.3's `DERIVED` guess that a double counts as **two** at settlement.
+> - **Can it stack past a double** (was #24c): ⚠️ **hedged — *"maybe… i don't think that's
+>   mechanically possible/relevant."*** `PLAYER`, and it stays flagged. 🔥 **It is *possible* — both
+>   7♦s turned up together, about one round in 5,800 — and it is *irrelevant*, for a reason nobody
+>   stated**: in that case both copies are lying on the table as designators, so the value is
+>   owned by nobody and pays nothing whatever it stacks to (§4.1, `DERIVED`).
+> - **A turned-up joker** (was #11, first half): **jokers become money cards.** `EXPERT` It
+>   eliminates the reading in which a joker cannot be a money card and is set aside. ⚠️ **Which
+>   jokers is still open** and #11 survives, narrowed.
+> - **Does a claimed money card's value still pay** (was #12): **yes — "all 9s of hearts become
+>   money cards."** `EXPERT` Designation is fixed at setup and does not travel with the card. P7's
+>   default confirmed.
+> - **How often the claim is offered** (was #5, first half): **every round** — 🔥 **and the answer
+>   arrived as a definition**: *"the beginning of the game, if game means from the time the money
+>   card is turned up to the time a player goes out."* **A game is a round** (§3). P9's default
+>   confirmed. ⚠️ **Who approves it was not answered** and #5 survives, narrowed.
+> - **The turned-up cards and the reshuffle** (was #4): **they stay where they are.** `EXPERT`
+>   The sweep takes the discard piles and nothing else. P9's default confirmed.
+> - **Throwing back what you just took** (was #13): **yes — *"as long as you aren't violating any
+>   other discard rules."*** `EXPERT` P7's default confirmed. 🔥 **The rider is the find**: it makes
+>   the feeding ban outrank the throw-back, so the just-taken card is filtered like any other and
+>   needs no rule of its own (§5).
+> - **What moves between rounds** (was #14): 🔥 **the seating — every round.** `EXPERT` *"You
+>   randomize seats between games, using the game definition from #5."* ⚠️ **This reverses P9,
+>   which keeps one seating for a whole match**, and it is the only answer of the nine that
+>   changes what the engine must do (§10 #16). ✅ **It moves no published measurement**: every
+>   experiment in `BurmesePoker.Sim` runs `RoundsPerGame = 1`, so no measured game has a second
+>   round to re-seat for.
+> - **Does anything else change with the player count** (was #26): ⚠️ **hedged — *"not that I know
+>   of."*** `EXPERT`, **Probable rather than Settled**, and the hedge is quoted because §7.1.1 is
+>   proof the question is real. Hand size, decks, money cards and stakes are unchanged at every
+>   table size; the win condition is the one thing that moves.
+>
+> **Resolved in rev 18** — the two that blocked a correct win condition, from Mya Lay and Aung
+> Aung. ✅ **§7.1.1 is now fully specified, and §10 #14 has nothing open against it.**
+> - **At two players, are sets illegal or merely not required** (was #22): **illegal.** *"In 2
+>   player, you must go out with ALL SERIES, no sets."* `EXPERT` 🔥 **This confirms a rule that
+>   was already written down** — rev 17 recorded the strong form because it was what was said,
+>   and flagged that it had never been put back as a table situation. Put back, it held. **No
+>   rule changes; a tag does**, from a recording to a confirmation.
+> - **Does an all-joker meld count as a series** (was #29): **yes — but never a clean one.**
+>   `EXPERT` So it can satisfy a **surplus** series and never a required one (§6.1, §7.1.1). ✅
+>   **This also closes #8**, whose second half asked exactly this; the maximum-jokers half falls
+>   out as `DERIVED` and is the one thing here nobody was asked.
+>
 > **Resolved in rev 17** — twelve questions in one day, from the session with Mya Lay and Aung
 > Aung on 2026-08-20. ✅ **§5.1's specification is complete.**
 > - **Does the feeding ban work two-handed** (was #25): **the rule is the same in every game.**
@@ -1188,9 +1661,12 @@ Decisions here that the implementation contradicts or lacks:
     ranking — **including the runner-up a difficulty level throws as its mistake** — must be
     filtered to the legal cards — and the legal set is **the hand minus the banned ranks, or the
     whole hand if that is empty** (§5.1, The floor), so it is never empty and a turn cannot
-    deadlock. ⚠️ **The banned-rank test is rank alone** — neither `==` nor `SameValueAs`, both of
-    which are narrower — so it needs a predicate `Card` does not have. Needs §9 #16–#19, #25 and
-    #27 answered first.
+    deadlock. ✅ **Rev 19 confirmed the filter is the whole of it**: a player may throw back the
+    card they just took *"as long as you aren't violating any other discard rules"* (§9 #13), so
+    the just-taken card is filtered like any other and needs no special case. ⚠️ **The banned-rank test is rank alone** — neither `==` nor `SameValueAs`, both of
+    which are narrower — so it needs a predicate `Card` does not have. ✅ **§9 #16–#19, #25 and #27 are
+    all answered** (2026-08-20), so nothing blocks this: it is **P27**. ✅ **And §9 #30 makes the
+    claim's objection test the same rank-only predicate** — write it once (§10 #18).
 14. 🔥 **The win condition is a function of the table size** (§7.1.1) — **both how many series a
     hand must contain and how many of those must be joker-free**, and the two counts are the same
     number (§7.1). `HandEvaluator` implements **neither**: it asks only whether thirteen
@@ -1201,11 +1677,69 @@ Decisions here that the implementation contradicts or lacks:
     `docs/STRATEGY.md` was measured at four seats under the wrong condition. ⚠️ **And it is not a
     filter over the existing search** — §9 #23's answer makes the requirement a property of the
     *partition chosen*, so the evaluator may no longer return the first cover it finds (§7.1.1).
-    Only §9 #22 is still open against it.
+    ✅ **Nothing in §9 is open against it any more** — rev 18 closed #22 and #29, the last two.
+    ⚠️ **Two-handed is a constraint on the partition, not a filter on the hand** (§9 #22): sets
+    are illegal *as melds*, so the thirteen must partition into runs alone, and an evaluator that
+    finds any cover has not answered the question. ⚠️ **And an all-joker series can never
+    discharge the required count** (§9 #29), so the purity test cannot be applied to the melds a
+    cover happens to return — it has to be part of choosing the cover.
 15. **The discards are public** (§5). `TurnContext` shows a seat only the single discard offered
     to it, which is **less** than the rules allow and less than the browser already draws for a
     watcher. ⚠️ **P20's card-counting null was measured under the narrower reading** and is
     conditional on it; widening this is the one change that could reopen a published result.
+
+16. 🔥 **Seating is re-randomised every round** (§3 step 2, §9 #14) — **the only rule this
+    document has ever recorded that the engine actively contradicts rather than merely lacks.**
+    `MatchEngine` randomises once at setup and keeps that seating for the whole match, which is
+    what P9 chose when §9 #14 was open and the recommendation was *nothing moves*. It is one
+    place, and the round engine already takes its seating as given. ⚠️ **It moves no published
+    figure** — every experiment in `BurmesePoker.Sim` runs `RoundsPerGame = 1`, so no measured
+    game has a second round to re-seat for, and `--seating rotated`/`balanced` assign strategies
+    to seats **within** a game and are untouched. ⚠️ **The two front ends are where it shows**:
+    the console and the browser play round after round with the banks carrying over (§7.2), so a
+    player's neighbours currently never change and should change every deal. 🔥 **It collides with
+    a UX decision, not just a loop** — P13.5 puts *you at the front whichever seat you were dealt*,
+    so re-seating every round means the table visibly rearranges itself around a fixed viewer, and
+    `TableRing` has never been asked to do that between rounds. ⚠️ **And it interacts with §5.1**:
+    the feeding ban is a property of an ordered pair of adjacent seats, and re-seating rebuilds
+    every pair each round — which is harmless, because the ban is per round in any case, but it
+    means the banned-rank sets are keyed to a seating that no longer exists the moment the round
+    ends.
+
+17. 🔥 **The money layer is three rules away from what is built, and the third changes the shape
+    of the function** (§4.1, §4.3, §4.4).
+    **(a) Jokers are permanent money cards** — `MoneyCardRegistry.Permanent` holds two values and
+    must hold three; the permanent side-bet goes from **4 cards to 8**.
+    **(b) A designation landing on a permanent money card pays ×3** — `Multiplier` is
+    `(permanent ? 1 : 0) + (designated ? 1 : 0)`, caps at **2**, and must return **3**.
+    **(c) ⚠️ If the turn-up is the 7♦ and the A♠ and one player owns both partners, both pay ×5** —
+    **and this cannot be computed from the designators at all.** It needs the round's ownership, so
+    `Multiplier(Card)` gains a parameter and `Settlement` can no longer ask the registry about a
+    card in isolation. ✅ **The design decision survives**: money status is still *computed, never
+    stored*; the inputs widen, the principle does not move. ⚠️ Needs §9 #32 before the predicate is
+    generalised past the 7♦/A♠ pair. ✅ **Designation itself is already right** — `SameValueAs` matches a joker by colour,
+    which is exactly §9 #11's answer. ⚠️ **This is the first rules change that invalidates a
+    published measurement.** `MoneyOdds.PerBlindDraw` prices a blind draw from `Multiplier`;
+    `prospector` is the one rung whose decision reads the money (P22); and `docs/STRATEGY.md` §10
+    — the money sweep, twelve rows of `measurements.csv` — was measured under the struck rule.
+    ⚠️ **`ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe` asserts the
+    withdrawn direction and will go red**, which is the good case: the claim was written down as
+    an assertion rather than as prose, so the rules change cannot pass silently. 🔥 **Its last
+    assertion should invert to an equality** — a designation on the 7♦ and a designation on an
+    ordinary card leave the same money loose in the shoe — **and that is a prediction, not a
+    measurement; it has not been run.**
+18. 🔥 **Claiming the turned-up money card requires the upstream player's permission** (§4.5).
+    `RoundEngine` offers the claim and asks nobody. This needs **a third decision from an agent** —
+    the first new one since the engine was built: not *what do I take* or *what do I throw* but
+    *do I object*. ⚠️ **It is asked of a seat that is not on turn**, which no prompt in
+    `BurmesePoker.Server` currently does — every `SeatPrompt` goes to the player whose turn it is
+    — so the hosted table needs an out-of-turn question and the browser needs somewhere to put it.
+    ⚠️ **And the answer is a disclosure**: only a holder may object, so an objection tells the
+    table that seat holds that rank. **That is a `TableEvent` and it is public by construction**,
+    which makes it the first thing a player reveals by choice rather than by discarding — a real
+    decision for `ConcealmentTests` to pin down rather than a UI detail. ✅ **The predicate is
+    settled — §9 #30 is *rank alone***, which is §5.1's own predicate, so the objection test is
+    the same `HoldsRank` the ban needs and the two must not be written twice.
 
 See `RULES-TECHNICAL.md` §7 for defects not driven by rules decisions, and
 `RECONCILIATION-PLAN.md` for sequencing.
