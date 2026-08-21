@@ -47,13 +47,24 @@ public sealed class RandomBotAgent(Random random) : IPlayerAgent
         return _random.Next(2) == 0 ? TurnAction.TakeDiscard : TurnAction.DrawFromDeck;
     }
 
-    /// <summary>Any of the fourteen, with equal chance — including the card just taken.</summary>
+    /// <summary>
+    /// Any card the turn actually offers, with equal chance — including the one just taken.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The legal discards, not the fourteen</b> (RULES.md §5.1). This is the one rung that
+    /// does not go through <see cref="CoverScore.Ranking"/>, so it is the one rung that has to say
+    /// so itself: a rank the next seat has taken in the open is not a move, and a floor that thinks
+    /// about nothing still may not make one. The list is never empty (§5.1, The floor), so the
+    /// guard below is about an empty <em>hand</em> and nothing else.
+    /// </remarks>
     public Card ChooseDiscard(TurnContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        return context.Hand.Count > 0
-            ? context.Hand[_random.Next(context.Hand.Count)]
+        var legal = context.LegalDiscards;
+
+        return legal.Count > 0
+            ? legal[_random.Next(legal.Count)]
             : throw new InvalidOperationException("Asked to discard from an empty hand.");
     }
 

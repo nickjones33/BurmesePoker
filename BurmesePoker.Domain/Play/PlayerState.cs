@@ -48,7 +48,26 @@ public sealed class PlayerState
     /// <summary>The most recent discard — the only one the next player may take — or null.</summary>
     public Card? TopDiscard => _discards.Count == 0 ? null : _discards[^1];
 
+    /// <summary>
+    /// What this seat has taken in the open, and so which ranks <b>the seat that discards to
+    /// it</b> may not throw (RULES.md §5.1).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>It constrains the seat above, not this one.</b> The rule is written from the
+    /// collector's side, so a seat's own ban lives on its own seat and is read by its feeder —
+    /// <see cref="TableState.SeatFedBy"/> is how a turn finds the right one.
+    /// <b>It is public information</b>: every take that arms it and every discard that releases it
+    /// happened where the whole table could watch (§5.1, Enforcement, point 1).
+    /// </remarks>
+    public FeedingBan MayNotBeFed { get; } = new();
+
     internal void Take(Card card) => _hand.Add(card);
+
+    /// <summary>
+    /// This seat took a card in the open, which closes its rank to whoever feeds them
+    /// (RULES.md §5.1). Only a public take: a blind draw arms nothing (§9 #17).
+    /// </summary>
+    internal void TookInTheOpen(Card card) => MayNotBeFed.TookInTheOpen(card);
 
     internal Card Discard(Card card)
     {
@@ -63,6 +82,12 @@ public sealed class PlayerState
         var discarded = _hand[index];
         _hand.RemoveAt(index);
         _discards.Add(discarded);
+
+        // Throwing a rank away re-opens it to whoever feeds this seat, permanently (RULES.md §5.1,
+        // exception 1). ⚠️ Recorded here rather than read back off the pile, because §5's reshuffle
+        // sweeps every pile and would silently re-arm the rank (§9 #19).
+        MayNotBeFed.ThrewAway(discarded);
+
         return discarded;
     }
 

@@ -22,7 +22,12 @@ public class SkillLadderRunTests
     {
         Strategies = [.. new[] { "random", "simple", "greedy", "cautious" }.Select(StrategyCatalog.Resolve)],
         Seats = 4,
-        Games = 8,
+        // ⚠️ Eight was enough until §5.1 (P27). The feeding ban costs `simple` — the rung with no
+        // tie-break — enough rounds that it drew a blank across eight games at this seed, and an
+        // ordering test that can be beaten by one unlucky run is not testing an ordering. At 200
+        // games the rungs measure 0% / 29.0% / 43.0% / 28.0%, so thirty-two is a margin rather
+        // than a hope, and the run is still under a second.
+        Games = 32,
         MasterSeed = 20260819,
 
         // ⚠️ Serial by default, and the determinism test is the one that asks for threads.
@@ -140,7 +145,7 @@ public class SkillLadderRunTests
         // games — see the packet's own numbers. What is worth pinning in a test is only the
         // part no run of this size could get wrong: a rung that thinks about the cover count
         // wins rounds and one that does not wins almost none. The separations further up the
-        // ladder are far too fine for eight games, and two of them turned out to be finer
+        // ladder are far too fine for a run this size, and two of them turned out to be finer
         // than they look — which is exactly why they are measured and not asserted.
         var report = Played.Value;
 

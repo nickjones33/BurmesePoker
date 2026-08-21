@@ -57,5 +57,17 @@ public enum CardDisplayState
     Owned = 1 << 4,
 
     /// <summary>The card the computer would throw away, when a front end is offering hints.</summary>
-    SuggestedThrow = 1 << 5
+    SuggestedThrow = 1 << 5,
+
+    /// <summary>
+    /// A card that <b>cannot be thrown this turn</b>: the seat you discard to has taken that rank
+    /// in the open and has not thrown it back (RULES.md §5.1).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Not a warning, and not a hint.</b> A banned discard is an impossible move rather than
+    /// an infraction — it is never offered and cannot be chosen — so a front end must draw this
+    /// card as something that is not a control, and this is what tells it which. It survives the
+    /// hints being turned off, because it is a rule and not advice.
+    /// </remarks>
+    Unthrowable = 1 << 6
 }

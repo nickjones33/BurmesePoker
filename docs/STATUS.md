@@ -2,7 +2,7 @@
 
 Cross-session progress tracker. **`/poker` reads this first and updates it last.**
 
-Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 21) · Skill: `.claude/skills/poker/SKILL.md`
+Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 23) · Skill: `.claude/skills/poker/SKILL.md`
 
 State markers: `☐` not started · `◐` in progress · `☑` done
 
@@ -10,29 +10,35 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-🔥 **P25 and P26 have both shipped (2026-08-21). Three remain: P27, P28, P29.** Every packet from
+🔥 **P25, P26 and P27 have all shipped (2026-08-21). Two remain: P28 and P29.** Every packet from
 §0 is done — P23 shipped 2026-08-20 — but **four sessions with Mya Lay and Aung Aung on
 2026-08-20/21 closed twenty-three questions in `RULES.md` §9 and left four settled rules with no
-implementation at all.** ✅ **Two of them are implemented now**: P25 the win condition by table
-size, and P26 the money layer as §4 actually states it. **P27 the feeding ban, P28 the claim's
+implementation at all.** ✅ **Three of them are implemented now**: P25 the win condition by table
+size, P26 the money layer as §4 actually states it, and P27 the feeding ban. **P28 the claim's
 permission and per-round seating, P29 re-measure.** ⚠️ **This is a different kind of work from
 everything above it: P11–P23 added capability to a correct engine, and P25–P28 make a working
-engine play a different game.** ✅ **P27 is independent of both** — it is the turn, not `Money/`;
-**P28 needs P27** (the objection predicate *is* the ban's predicate); **P29 needs all four.**
+engine play a different game.** **P29 needs all four.**
 ⚠️ **P24 is re-sequenced after P29 and that is a recommendation, not a decision** — see
 `BUILD-PLAN.md` §4.
 
-🔥 **The next packet is P27, the feeding ban** — the only one of the three with nothing in front
-of it.
+🔥 **The next packet is P28**, and P27 leaves it two gifts and one line of work: the objection
+predicate already exists as **`Card.SameRankAs`** (§9 #30 — read it, do not write a second one),
+a re-drawn seating gets fresh feeding bans **by construction** because a `FeedingBan` lives on a
+`PlayerState` the deal builds, and ⚠️ **a *refused* claim must not arm §5.1** — which is the one
+place P28 has to touch P27's code (`RoundEngine.TakeCard` calls `PlayerState.TookInTheOpen` on
+every claim today).
 
-Nothing is in progress and the tree is green at **590 passed / 0 failed** (574 before P26; the
-16 new ones are the jackpot and permanence cases in `MoneyCardRegistryTests` and three in
-`SettlementTests`). ⚠️ **It is still green against §5.1, §3 and §4.5, which have no code behind
-them at all.**
+Nothing is in progress and the tree is green at **642 passed / 0 failed** in 9 m 42 s (590 before
+P27; the 52 new ones are `FeedingBanTests`, `FeedingBanInPlayTests`, `LegalDiscardsTests` — which
+are theories over the whole of `BotCatalog` and `DifficultyLadder` — plus `SeatAnswerTests` and
+cases in `CardTests`, `HandViewTests` and `MarkupStandardsTests`). ⚠️ **Only §3, per-round seating,
+is now settled with no code behind it.**
 
-⚠️ **The baseline was verified in a `git worktree` at `HEAD`, not in place** — 574 / 0 in
-9 m 34 s — because this session had already started editing. **It is a cheap trick worth
-reusing**: `git worktree add <scratch> HEAD && dotnet test` proves the baseline without stashing.
+⚠️ **The baseline was verified in a `git worktree` at `HEAD`, not in place** — **590 / 0 in
+8 m 57 s** — so the session could start writing before it finished. **It is a cheap trick worth
+reusing twice over**: `git worktree add <scratch> HEAD && dotnet test` proves the baseline without
+stashing, **and the same worktree is then the *before* arm of any measurement the packet wants**,
+which is how P27's before/after play numbers were taken.
 
 🔥 **One prediction `STATUS.md` itself made was wrong, and the shape of the error is worth
 keeping.** This block said `ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe`
@@ -49,8 +55,9 @@ level is built on `outs`, so `DifficultyCalibrationTests` alone runs about four 
 added a minute or so of its own in `MoneySweepTests` and `SuiteTests`. Everything heavy shares
 `WallClockBudgets.Collection` with the two wall-clock budgets, so nothing is starved.
 
-🔥 **But the plan is no longer the whole of the work: a playtest with Mya Lay on 2026-08-20
-produced a new rule, and the game does not implement it.** `RULES.md` **§5.1, the feeding ban** —
+✅ **The feeding ban is built — P27, 2026-08-21, `RULES.md` rev 23.** The block below is the
+record of what it was built *from*; what it became is in **Notes for the next session**.
+`RULES.md` **§5.1, the feeding ban** —
 *you may not discard a rank the next player has taken in the open, until they throw that rank back
 or you are going out on it* — is `EXPERT` and **Settled**, and it is **the first rule in the
 document that constrains *which* card a player may discard.** `RoundEngine` accepts any of the
@@ -1005,8 +1012,8 @@ test that plays a round outside the harness has no such protection.
 | ☐ | **P24** The computer's reasoning, said out loud | P13.6, P14, P18, P21 | **planned 2026-08-20, not started** — the browser's arrow grows a *why*, and a journal that records where an expert disagreed |
 | ☑ | **P25** The win condition is a function of the table size | — | **done 2026-08-21** — `TableRules.For(players)` is the §7.1.1 table as data; `HandEvaluator` takes it and **has no parameterless overload**. The search carries what is still owing **along** the partition; two-handed prunes sets out of the candidates; `Meld.IsClean` needs no case for the all-joker meld. 🔥 **The change is real and `drive-console.py` cannot see it** — both captures are byte-identical because neither script reaches a declaration. |
 | ☑ | **P26** The money layer as it actually is | — | **done 2026-08-21** — `Permanent` is **three values and eight cards**, `Multiplier(Card)` returns 0/1/**3**, and the ×5 is `Multiplier(card, owner, MoneyOwnership)` under a configuration `Settlement` reads **once a round**. 🔥 **The packet's stated prediction held**: a designation on the 7♦ and one on an ordinary card leave *exactly the same* money loose in the shoe, now an equality assertion. 🔥 **The side-bet went from `$8.50` to `$11.58 ± 0.34` a round at five seats — 42.5% → 58% of the round prize — and play did not move at all.** ⚠️ **The ×5 is fenced to the 7♦/A♠ pair** (§9 #32) by two tests. |
-| ☐ | **P27** The feeding ban | — | **planned 2026-08-21, not started** — §5.1, enforced **by construction**: a banned card is never offered and cannot be chosen (`RULES.md` §10 #13). **The first work since P0 that changes what a legal turn is.** ⚠️ Needs a **rank-only** predicate the domain does not have, a released-rank set per seat, and the floor. |
-| ☐ | **P28** The claim, the permission, and the seat you sit in | **P27** | **planned 2026-08-21, not started** — seats re-randomise **every round** (§3, §10 #16) and claiming needs the **upstream player's permission** (§4.5, §10 #18). 🔥 **A third kind of agent decision — *do I object* — asked of a seat that is not on turn**, and the answer is a **disclosure**. Depends on P27 because the objection predicate *is* the ban's predicate. |
+| ☑ | **P27** The feeding ban | — | **done 2026-08-21** — §5.1 enforced **by construction**: `FeedingBan` is two rank sets a seat, `TurnContext.LegalDiscards` is the whole of the choice a turn presents and is **never empty**, and `CoverScore.Ranking` takes a context so **every rung including the runner-up is filtered without any rung remembering to**. 🔥 **The predicate is `Card.SameRankAs`, which is `Rank == other.Rank`** — nullable equality is what makes a joker close the other jokers (§9 #27), so the house ruling falls out of the type. 🔥 **A bot's cover count can now fall**, which breaks the monotonicity argument that says a table of bots terminates. ⚠️ Both front ends draw a closed card as **not a control** (`CardDisplayState.Unthrowable`). |
+| ☐ | **P28** The claim, the permission, and the seat you sit in | **P27** ✅ | **next; planned 2026-08-21, not started** — seats re-randomise **every round** (§3, §10 #16) and claiming needs the **upstream player's permission** (§4.5, §10 #18). 🔥 **A third kind of agent decision — *do I object* — asked of a seat that is not on turn**, and the answer is a **disclosure**. Depends on P27 because the objection predicate *is* the ban's predicate. |
 | ☐ | **P29** Re-measure, under the rules as they are | P25, P26, P27, P28 | **planned 2026-08-21, not started** — every figure in `STRATEGY.md` was measured under rules the document no longer holds. 🔥 **Three predictions written down before the run**, so the packet can be wrong. ⚠️ `sim suite` was five hours at P23 and P25 makes the evaluator's question harder. |
 
 **P14, P15 and P16 are all done, and not one of them needed a line of the engine.** P14 cost
@@ -1055,12 +1062,83 @@ harness prints today would be a guess wearing a number.
 
 ## Notes for the next session
 
-🔥 **P25 and P26 are done. The next packet is P27, the feeding ban** — the only remaining one
-with nothing in front of it, and the first work since P0 that changes **what a legal turn is**. ⚠️ **P24 was re-sequenced after P29
-on 2026-08-21 — a recommendation, not a decision**, since Nick set its scope: its stated reason for
+🔥 **P25, P26 and P27 are done. The next packet is P28.** ⚠️ **P24 was re-sequenced after P29 on
+2026-08-21 — a recommendation, not a decision**, since Nick set its scope: its stated reason for
 going first (*§5.1 is blocked, and P24 makes that conversation productive*) is spent, and it
-explains decisions that P26 and P27 are about to change. **P28 needs P27**; **P29 needs all
-four.**
+explains decisions that P26 and P27 have now changed. **P29 needs all four.**
+
+### What P27 found, and what it leaves behind
+
+1. 🔥 **The finding that outlives the packet: a bot's cover count can now fall, and that breaks
+   the argument that a table of bots terminates.** `GreedyBotAgent`'s own remarks say the score
+   *"can never fall — throwing back the card just taken restores the hand exactly"*, and that is
+   the stated reason a round of bots reaches a declaration at all. **§5.1 takes the just-taken card
+   out of the choice.** A seat whose only legal discards are melded ones gives up a meld, so
+   convergence is no longer guaranteed by construction. ⚠️ **In practice the tree finishes and the
+   suite is green**; what stands behind it is `SimulationOptions.TurnCap` and the hosted table's
+   `RoundTimeLimit`, both of which existed for `RandomBotAgent` and now carry a second job.
+   **P29 should publish round lengths and abandoned-round counts, not only win rates** — nothing
+   published has ever quoted the abandoned count, and if it is not zero that is a result.
+2. 🔥 **The rank-only predicate is one line, and the house ruling falls out of the type.**
+   `Card.SameRankAs` is `Rank == other.Rank` — nullable equality, so two jokers match and a joker
+   matches nothing else, which *is* §9 #27's ruling that taking a joker closes the other jokers.
+   ⚠️ **It reads like a trivial field comparison and it is not**: `SameValueAs` would compile, pass
+   most of the tests, and implement the wrong rule. **P28 must reuse this method** for the claim's
+   objection (§9 #30), not write a second one that agrees by inspection.
+3. 🔥 **The filter became a property of the ladder rather than a line each rung remembers.**
+   `CoverScore.Discard` and `CoverScore.Ranking` take a `TurnContext` instead of a hand, so every
+   rung that ranks is filtered by construction — **and so is the runner-up a difficulty level
+   throws as its mistake**, which was the thing §5.1 said was easiest to get wrong. Only
+   `RandomBotAgent` needed a line of its own, because it is the one rung that does not rank.
+   ✅ **A rung added later cannot forget**, and `LegalDiscardsTests` runs over `BotCatalog.All` and
+   `DifficultyLadder.All` rather than over a sample.
+4. ⚠️ **The floor is one line; the declaring-discard exception is not.** Exception 2 needs
+   `HandEvaluator.IsWinning` per banned card, gated behind one
+   `PartialCover.CoversAtLeast(hand, 13)` so it is asked only of a hand that could actually go out
+   — and only when a rank is closed *and* held. **An ordinary turn returns the hand itself**, same
+   reference, no allocation, no search.
+5. ⚠️ **"Domain only" was false again, and in a new way.** §5.1 makes a card *unpressable*, so both
+   front ends had to change: `CardDisplayState.Unthrowable` with the token `closed`, a legend
+   entry, an accessible name, the console dropping the card from its `SelectionPrompt`, and the
+   browser drawing it as a `<span>` rather than a disabled button — **a control that does nothing
+   is exactly the failure P13.4 spent a packet chasing.** 🔥 **So a `drive-console.py` capture from
+   before P27 no longer compares either**, for the second packet running.
+6. ✅ **The server refuses a banned discard where it already refuses a card you do not hold.**
+   `SeatPrompt.MayThrow` replaces `Holds` in `SeatAnswer.Discard.Fits`, so a bad client's answer
+   does not fit, the question stays standing and the stand-in eventually plays — **rather than the
+   engine's guard throwing and taking a hosted table down with it.** The engine guard stays, for
+   anything that gets past that.
+7. ⚠️ **A test that plays a round has to be given a way to end, and this bit twice.** Two of the
+   new engine tests hung on the first run: a table of seats that draw blind and throw back what
+   they drew never finishes, because only a declaration ends a round (§7.1) and §5's reshuffle
+   keeps the cards circulating. **`ScriptedPlayerAgent` advances per turn *that seat* is asked**,
+   not per table turn, which is the other half of the same trap.
+8. ✅ **`FeedingBanInPlayTests.AnOrdinaryRoundClosesRanksAndNeverOffersOne` is the anti-vacuity
+   test.** Everything else in that file scripts the ban into existence; this one plays a round of
+   greedy bots and asserts §5.1 **binds somebody** in it. Without it a filter that quietly did
+   nothing would pass the whole file.
+9. 🔥 **Measured, and the headline is how little it costs: the ban is nearly free at four seats.**
+   Same command before and after (`--games 200 --strategies greedy,simple --seats 4 --seed
+   20260821`), *before* being the P26 tree in a worktree at `HEAD`:
+
+   | | turns a round | rounds/s | greedy | simple |
+   |---|---|---|---|---|
+   | before (P26) | 26.6 | 69 | 31.3 ± 3.4 | 18.8 ± 3.4 |
+   | after (P27) | **27.1** | **69** | 31.5 ± 3.4 | 18.5 ± 3.4 |
+
+   **Play moved by one round out of 200 and throughput did not move at all** — so the exception-2
+   gate is doing its job and the filter costs nothing measurable. ⚠️ **The reason it is this small
+   is worth knowing before P29 reads too much into it: a seat takes in the open on only about a
+   fifth of its turns** (`take %` is 20–23%), so a rank is closed for far less of a round than the
+   rule's prominence suggests. **At a table of stronger rungs, which take more, expect more.**
+10. ⚠️ **Two shipped tests went red and both for the same reason — a fixture that had been legal
+   became an illegal move.** `RoundEngineTests.OnlyTheDealAndABlindDrawEverConferOwnership` had a
+   passive seat draw a 3♠ and throw it straight back, one turn after Alice claimed the 3♣ in the
+   open; the fixture draws a 4♠ now. And `SkillLadderRunTests.ThinkingBeatsNotThinkingByAMile`
+   asserted `random < simple` over **eight** games, and `simple` drew a blank — it wins **29.0%**
+   over two hundred, so eight was a coin toss the ban tipped. **Thirty-two games now.** 🔥 **Both
+   are the same lesson P21 left about round length: a test over a *played round* can be asserting
+   a property of that round nobody wrote down.**
 
 ### What P26 found, and what it leaves behind
 
@@ -2331,13 +2409,13 @@ of them across four sessions with **Mya Lay and Aung Aung** on 2026-08-20/21, in
 §5.1's specification (§9 #16–#19, #25, #27), both of the win condition's (#22, #29) and the whole
 money layer (#4, #5, #10–#14, #24, #26, #30, #31).
 
-⚠️ **Four calls are Nick's rather than a rules matter, and none of them stops P27 starting.**
+⚠️ **Four calls are Nick's rather than a rules matter, and none of them stops P28 starting.**
 
 1. 🔥 **P24's position.** It was sequenced ahead of the §5.1 work deliberately, on the argument
    that §5.1 was blocked and P24 would make that conversation productive. **The conversation
    happened**, so the argument is spent, and P24 explains *why the computer chose this card* while
-   **P25–P27 change what a good card is at three of four table sizes, what a card is worth, and
-   which cards are legal to throw at all.** ⚠️ **`BUILD-PLAN.md` §4 records P24 after P29 as a
+   **P25–P27 changed what a good card is at three of four table sizes, what a card is worth, and
+   which cards are legal to throw at all — all three have now shipped.** ⚠️ **`BUILD-PLAN.md` §4 records P24 after P29 as a
    recommendation, not a decision** — P24's scope was set by Nick on 2026-08-20 and moving it is
    his call.
 2. ⚠️ **When to re-measure.** P29 regenerates `docs/strategy/measurements.csv` under the corrected
@@ -2381,6 +2459,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-21 | P27 | **Done — §5.1 is code, and a legal turn changed for the first time since P0.** `Domain/Play/FeedingBan.cs` is the whole rule: two `HashSet<Rank?>` a seat — taken-in-the-open and released — and one method, `LegalDiscards(hand, rules)`, carrying both exceptions and the floor. `PlayerState.MayNotBeFed` is the seat's own record, `TableState.SeatFedBy` is the one seat that reads it, and **`TurnContext.LegalDiscards` is the whole of the choice a turn presents** — never empty by construction, and on an ordinary turn the hand itself, same reference, no allocation. Build clean, **642 passed / 0 failed** in 9 m 42 s (590 before; baseline verified at `HEAD` in a worktree, 590/0 in 8 m 57 s). 🔥 **The filter became a property of the ladder rather than a line each rung remembers**: `CoverScore.Discard` and `CoverScore.Ranking` take a `TurnContext` instead of a hand, so every rung that ranks is filtered by construction **and so is the runner-up a difficulty level throws as its mistake** — the thing §5.1 warned was easiest to get wrong. Only `RandomBotAgent` needed a line of its own. `LegalDiscardsTests` runs over **all** of `BotCatalog` and `DifficultyLadder`, so a rung added later cannot forget. 🔥 **The rank-only predicate is `Card.SameRankAs`, and it is literally `Rank == other.Rank`** — nullable equality is what makes a joker close the other jokers, so §9 #27's `PLAYER` house ruling falls out of the type rather than being written as a case; ⚠️ **P28 must read it for the claim's objection (§9 #30), not write a second one.** ⚠️ **The floor is one line; exception 2 is not** — a `HandEvaluator.IsWinning` per banned card, gated on the hand being fourteen *and* on `PartialCover.CoversAtLeast(hand, 13)`, so it is asked only of a hand that could actually go out. 🔥 **The finding that outlives the packet: a bot's cover count can now fall.** `GreedyBotAgent`'s stated reason a table of bots terminates is that the score can never fall, *because throwing back the card just taken restores the hand* — §5.1 removes that card from the choice, so convergence is no longer guaranteed and `TurnCap` / `RoundTimeLimit` are what stand behind it. **P29 should publish round lengths and abandoned-round counts.** ⚠️ **It already broke two shipped tests, both fixtures rather than code**: a passive seat throwing back the 3♠ it drew became illegal one turn after Alice claimed the 3♣, and `SkillLadderRunTests` asserted an ordering over **eight** games in which `simple` — which wins 29.0% over two hundred — drew a blank. 🔥 **Measured, and the surprise is how cheap it is**: same seed, greedy vs simple, four seats, 200 games — **26.6 → 27.1 turns a round, 69 → 69 rounds/s, 31.3% → 31.5%**. ⚠️ **The reason is that a seat takes in the open on only about a fifth of its turns**, so a rank is closed for far less of a round than the rule's prominence suggests — **expect more at a table of stronger rungs.** ⚠️ **"Domain only" was false again, and in a new way**: a closed card is `CardDisplayState.Unthrowable` with the token `closed`, a legend entry and an accessible name, the console drops it from its `SelectionPrompt` and the browser draws it as a `<span>` rather than a disabled button — **a control that does nothing is exactly the failure P13.4 spent a packet chasing** — so **a `drive-console.py` capture from before P27 no longer compares**, for the second packet running. ✅ **The server refuses a banned answer where it already refuses a card you do not hold** (`SeatPrompt.MayThrow` in `SeatAnswer.Discard.Fits`), so a bad client does not take a hosted table down; the engine's guard stays behind it. **No rules question arose**; `RULES.md` is rev 23 — §5.1's *"none of this is implemented"* replaced and §10 #13 discharged, both status rather than a rule moving. |
 | 2026-08-21 | P26 | **Done — the money layer is what `RULES.md` §4 actually says.** `MoneyCardRegistry.Permanent` holds **three values and eight cards** (the jokers joined), `Multiplier(Card)` returns 0/1/**3**, and the ×5 is `Multiplier(card, owner, MoneyOwnership)` under a configuration `Settlement` reads from `CardOwnership` **once a round**. ✅ **Design decision 2 held**: nothing is stored on a card, and `Multiplier(Card)` survives as the value-only question — which is what every view drawing one card at a time is really asking, and why no caller outside `Settlement` needed a parameter. Build clean, **590 passed / 0 failed** (574 before; 16 new). Baseline verified at `HEAD` **in a `git worktree`**, 574/0. 🔥 **The packet's own stated prediction was the deliverable and it came out right**: under the ×3 a designation on the 7♦ and one on an ordinary card leave **exactly the same** money loose in the shoe, so §4.1's conservation arithmetic is sound and the rule did not need re-asking; `ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe`'s last assertion is an equality now. ⚠️ **`STATUS.md` had predicted that test would be *red* before the packet started and it was green** — the code still implemented the withdrawn rule, so it agreed with the code and disagreed only with the document. 🔥 **Seven shipped tests went red and all seven for one reason: jokers are dealt.** Four of 108 cards, so an arbitrary four-handed deal hands out one or two, and five tests carried the comment *"nobody owns a money card"*. **The blast radius of rev 21 is every golden settlement number in the tree, not the money layer.** 🔥 **Measured: the side-bet moved `$8.50 ± 0.26` → `$11.58 ± 0.34` a round at five seats, 42.5% → 58% of the round prize**, with the *before* run reproducing P12's rev-13 figures at a different seed so the instrument is validated rather than asserted; `RULES.md` §4.3 and §4.4's stale `DERIVED` notes are re-derived (rev 22) and §10 #17 is discharged. ✅ **Play did not move** — same seed, same wins, turns and cover: §4.4's decoupling claim measured *across* a money-layer change for the first time. ⚠️ **"Domain only" was true of the logic and false of the text**: `($$)` → `($$$)`, `PaysDouble` → `PaysTriple`, four user-facing strings, **so a `drive-console.py` capture from before P26 no longer compares**. ⚠️ **No view can show a ×5** and no packet owns that gap; **`MoneyOdds` does not price it** either, and says so. ⚠️ **§9 #32 stays open and is fenced by two tests**, not a comment. |
 | 2026-08-21 | P25 | **Done — the win condition is a function of the table size, and the engine finally asks the right question.** `Domain/Melds/TableRules.cs` is `RULES.md` §7.1.1 as data and the only place it is written down; `HandEvaluator.IsWinning(hand, rules)` and `TryFindCover(hand, rules, out melds)` are the whole surface and **the parameterless overloads are gone**, so no caller can ask the five-handed question by accident. `TableState.Rules` and `TurnContext.Rules` are where the engine and a seat read it. **574 passed / 0 failed**, up 26. 🔥 **The interesting part was the memo, not the requirement**: the search state is `(covered, seriesStillOwed, cleanStillOwed)`, because a covered-set from which no completion can supply *two* more clean series may perfectly well supply one, and the old key would have poisoned the second question with the first question's dead ends. The counts are carried **along** the partition and clamped at nought — a clean series discharges both, an impure one the series count alone (§9 #28, #29) — with one prune, that fewer than three uncovered cards per series still owed cannot pay for them however they fall. ✅ **Two-handed was the cheap case**: sets are illegal *as melds*, a property of a meld rather than of the partition, so `MeldIndex.Build` takes `setsAllowed` and the search never sees one — ⚠️ **and filtering on `Meld.Kind` keeps more than it looks like it does**, since `MeldCandidates` already emits `{9♦,🃏,🃏}` and `{🃏,🃏,🃏}` once, as the **run** interpretation. ✅ **`Meld.IsClean` needed no special case for the all-joker meld** — `Kind == Run && JokerCount == 0`, and three jokers fail it because every slot is a substitute, so §6.1 and §9 #29 agreed without either being bent. 🔥 **The change is real and `drive-console.py` cannot see it.** Four-handed greedy-vs-simple over 200 games at one seed goes from **25.1 to 26.6 turns a round** and **102 to 86 rounds/s** — strictly harder, longer rounds, as predicted — and yet **both console captures are byte-identical to `HEAD`** (8,417 and 90,251 bytes). ⚠️ **Not because nothing changed: both scripts quit in round 2 and neither capture contains a declaration at all.** The instrument that proved P21 and P23 were refactors is blind to the win condition by construction — **do not read a clean `cmp` as evidence about play.** ⚠️ **`PartialCover` was left alone on purpose and now measures something else**: `IsComplete` agrees with `IsWinning` only at five or more, so **every rung in `BotCatalog` is maximising cover count at a table where cover count is no longer the win condition** — P29's prediction 2, to be priced rather than fixed. ⚠️ **Left behind and owned by nobody: `RoundEngine.MinimumPlayers` is still 4** (§10 #7), so `TableRules.For(2)` and `For(3)` are correct, tested and unreachable from a dealt game. **No rules question arose and `RULES.md` stays at rev 21** — §10 #14 gained a ✅ discharge note, which is a status annotation and not a rule moving. |
 | 2026-08-21 | P25–P29 | **Planned, not started — and the plan has a second half again.** 🔥 **`RULES.md` is rev 21, and the last two answers changed §4.1 twice over.** Asked how much a turned-up joker's partner pays, the answer went behind the question: **"7 of diamonds, ace of spades, AND jokers are always money cards"** — so the **permanent side-bet doubles, 4 cards to 8**, two `DERIVED` arguments built on the old count are stale (§4.3's measured *42% of the round prize*, §4.4's *~4 of 6 owned at the deal*), and rev 20's ×3 list stops looking arbitrary: **it was never a list of special cards, it is the list of permanent money cards.** 🔥 **And a rule nobody asked for — a jackpot**: if the two turned-up cards are the 7♦ and the A♠ and one player owns **both** partners, they pay **×5 each** rather than ×3, which at standard stakes is **$40 a head against a $5 round prize**. ⚠️ **It is the first rule in this game where a card's value depends on who holds what**, so a multiplier is a property of *(value, ownership)* and `MoneyCardRegistry.Multiplier(Card)` cannot answer alone. ✅ **The headline design decision survives** — money status is still *computed, never stored*; the inputs widen, the principle does not. ✅ **§9 #30 closed: an objection turns on the *rank*, which is §5.1's own predicate**, so the claim's test and the ban's test are one predicate and must not be written twice. ✅ **#31 closed by its premise turning out to be wrong** — asking it flat, without mentioning the 7♦, produced a correction instead of a confirmation. ⚠️ **One question left, §9 #32**: whether the ×5 needs the 7♦/A♠ pair specifically or any two tripled values — a combination that exists **only because jokers became permanent**. 🔥 **The pattern across four revisions is worth naming: every one of them answered past the question asked, and three changed a rule nobody was asking about** — rev 19 defined *a game*, rev 20 supplied the ownership framing and superseded a one-day-old `EXPERT` ruling, rev 21 made jokers permanent and produced the jackpot. **This game's rules are recalled as wholes, not as answers**, and asking narrowly has lost material three times. **Then the plan: P25 the win condition by table size, P26 the money layer as it actually is, P27 the feeding ban, P28 the claim's permission and per-round seating, P29 re-measure** — written into `BUILD-PLAN.md` §5 with a new dependency graph in §4. ⚠️ **P24 re-sequenced after P29 and flagged as a recommendation rather than a decision**: its stated reason for going first (*§5.1 is blocked and P24 makes that conversation productive*) is spent, and shipping an explanation of decisions that P25–P27 are about to change means writing the sentence twice and believing it once. 🔥 **P29 carries three predictions written down before the run**, so it can be wrong: the difficulty dial survives, `outs` **loses** margin at four seats (its objective is cover count, which is no longer sufficient for a win), and `prospector` separates at lower stakes than $5/$40. Docs only — `RULES.md`, `RULES-PRIMER.md`, `QUESTIONS-FOR-MYA-LAY.md`, `BUILD-PLAN.md`, `CLAUDE.md`, this file. **No code touched.** |

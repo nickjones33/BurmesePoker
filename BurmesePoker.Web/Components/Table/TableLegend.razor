@@ -75,6 +75,11 @@
         CardDisplayState.Owned => "Yours: it pays you at settlement even after you throw it away. "
             + "A money card without a star is one you are only holding — it pays somebody else.",
         CardDisplayState.SuggestedThrow => "The card the computer would throw. Turn the hints off to stop being told.",
+        // ⚠️ A rule, not a hint. The card cannot be pressed, so the legend has to say why rather
+        // than leaving a player to conclude the table is broken (RULES.md §5.1).
+        CardDisplayState.Unthrowable => "You may not throw that card: the player after you took that rank "
+            + "in the open, and you may not feed them another one until they throw one back — or unless you "
+            + "are going out on it (RULES.md §5.1).",
         _ => throw new ArgumentOutOfRangeException(nameof(state), state, "No display state means nothing.")
     };
 }

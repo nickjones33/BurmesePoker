@@ -46,11 +46,14 @@ public abstract record SeatAnswer
         public override bool Fits(SeatPrompt prompt) => prompt is { Question: SeatQuestion.ClaimMoneyCard };
     }
 
-    /// <summary>The card to throw away. Must be one the seat is holding.</summary>
+    /// <summary>
+    /// The card to throw away. Must be one the seat is holding <b>and</b> one the turn offered
+    /// (RULES.md §5.1).
+    /// </summary>
     public sealed record Discard(Card Card) : SeatAnswer
     {
         public override bool Fits(SeatPrompt prompt) =>
-            prompt is { Question: SeatQuestion.Discard } && prompt.Holds(Card);
+            prompt is { Question: SeatQuestion.Discard } && prompt.MayThrow(Card);
     }
 
     /// <summary>Whether to lay all thirteen down and end the round (RULES.md §7.1).</summary>

@@ -104,8 +104,17 @@ not a judgement about your hand.
 | `($)` | A money card. It pays its owner the money card value from **every** other player. |
 | `($$$)` | A triple — a designation that landed on a card that always pays, so it pays three times. |
 | `★` | **You own it.** The deck gave you this card, so it pays *you*. |
+| `closed` | **You may not throw it this turn.** The player after you took that rank in the open, so it is not among the cards you are offered (`RULES.md` §5.1). |
 
 **A money card with no star pays somebody else**, and you are holding it for them.
+
+**A card marked `closed` is not a choice.** Taking a card in the open announces what you are
+collecting, and the seat that discards to you may not hand you another one — so once the player
+*after* you takes, say, a Queen where everybody can see it, **every** Queen in your hand goes
+closed and stays closed until they throw a Queen back. Suit does not come into it. Two things get
+you out of it: they throw that rank away, which re-opens it for the rest of the round; or you are
+going out on it, because the ban never stands between you and a win. And if *every* card you hold
+is closed, the ban gives way for that turn — you always discard.
 
 ---
 

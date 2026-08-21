@@ -97,6 +97,41 @@ public sealed class TurnContext
     public TableRules Rules => _table.Rules;
 
     /// <summary>
+    /// The ranks this player may not throw, because the seat they discard to has taken them in the
+    /// open and not thrown them back (RULES.md §5.1).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>It costs the concealment model nothing, and the reason is worth being exact about.</b>
+    /// The ban is computed from things that happened in the open, never from reading a hand: the
+    /// seat below <em>took</em> its card in view of the table, and every discard that would release
+    /// a rank was <em>thrown</em> in view of it. So a player at a real table knows the closed ranks
+    /// by having watched, and this tells them nothing they could not have seen (§5.1, Enforcement,
+    /// point 1).
+    /// </remarks>
+    public FeedingBan ClosedToYou => _table.SeatFedBy(Player).MayNotBeFed;
+
+    /// <summary>
+    /// Which of the held cards may actually be thrown — <b>the whole of the choice this turn
+    /// presents</b> (RULES.md §5.1, §10 #13).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>A banned discard is not an infraction but an impossible move.</b> It is never offered
+    /// and cannot be chosen, so there is no penalty and nothing to retract — which is why every
+    /// player, bot or person, chooses from this list and not from <see cref="Hand"/>. It is
+    /// <b>never empty</b>: where the ban would leave nothing throwable it yields for the turn, so a
+    /// turn cannot deadlock (§5.1, The floor).
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Computed, not cached.</b> <see cref="Hand"/> is the seat's own live list and the engine
+    /// discards from it the moment this decision is answered, so an answer kept from before the
+    /// discard would describe cards that have gone (P13.1, P19). It is free on an ordinary turn —
+    /// nothing closed means the hand itself, with no work and no allocation.
+    /// </para>
+    /// </remarks>
+    public IReadOnlyList<Card> LegalDiscards => ClosedToYou.LegalDiscards(Hand, Rules);
+
+    /// <summary>
     /// Whether this hand may be declared: all 13 cards partition into disjoint melds
     /// (RULES.md §7.1) and the partition satisfies <see cref="Rules"/> (§7.1.1).
     /// <see cref="HandEvaluator"/> is the only authority on that, and the engine asks the

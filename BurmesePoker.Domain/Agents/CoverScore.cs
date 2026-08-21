@@ -1,5 +1,6 @@
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
+using BurmesePoker.Domain.Play;
 
 namespace BurmesePoker.Domain.Agents;
 
@@ -74,10 +75,10 @@ internal static class CoverScore
     /// which is the reason this file exists at all.
     /// </remarks>
     internal static Card Discard(
-        IReadOnlyList<Card> hand,
+        TurnContext context,
         Func<Card, IReadOnlyList<Card>, long> tieBreak,
         Refinement? amongTheBest = null) =>
-        Ranking(hand, tieBreak, amongTheBest) is [var best, ..]
+        Ranking(context, tieBreak, amongTheBest) is [var best, ..]
             ? best
             : throw new InvalidOperationException("Asked to discard from an empty hand.");
 
@@ -101,6 +102,15 @@ internal static class CoverScore
     /// ties to the given preference, and an equal preference leaving the first card seen.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// 🔥 <b>It ranks the legal discards, not the hand, and it takes a <see cref="TurnContext"/>
+    /// for exactly that reason</b> (BUILD-PLAN P27). RULES.md §5.1 makes a rank the next seat has
+    /// taken in the open an <em>impossible move</em> rather than an infraction, so a ranking that
+    /// scored the whole hand and left somebody to check afterwards would be the wrong shape twice
+    /// over: the head of it could be unplayable, and so could the runner-up a difficulty level
+    /// throws as its mistake. Every rung goes through here, so no rung can forget — which is what
+    /// makes the filter a property of the ladder rather than a line each rung has to remember.
+    /// </para>
     /// <para>
     /// <b>Two copies of one value are one candidate.</b> They leave the same thirteen behind,
     /// so the second is the first's answer already — and skipping it costs a
@@ -133,16 +143,30 @@ internal static class CoverScore
     /// </para>
     /// </remarks>
     internal static IReadOnlyList<Card> Ranking(
+        TurnContext context,
+        Func<Card, IReadOnlyList<Card>, long> tieBreak,
+        Refinement? amongTheBest = null) =>
+        Ranking(context.Hand, context.LegalDiscards, tieBreak, amongTheBest);
+
+    /// <inheritdoc cref="Ranking(TurnContext,Func{Card,IReadOnlyList{Card},long},Refinement?)"/>
+    /// <param name="hand">Everything held — what a card is judged against.</param>
+    /// <param name="candidates">
+    /// The cards that may actually be thrown, which on an ordinary turn is the hand itself.
+    /// </param>
+    /// <param name="tieBreak">Lower wins, and an equal preference leaves the first card seen.</param>
+    /// <param name="amongTheBest">The expensive second key, asked only of what is tied at the top.</param>
+    internal static IReadOnlyList<Card> Ranking(
         IReadOnlyList<Card> hand,
+        IReadOnlyList<Card> candidates,
         Func<Card, IReadOnlyList<Card>, long> tieBreak,
         Refinement? amongTheBest = null)
     {
-        var judged = new List<Card>(hand.Count);
-        var scored = new List<(Card Card, List<Card> Kept, int Cost, long Refined, long Preference)>(hand.Count);
+        var judged = new List<Card>(candidates.Count);
+        var scored = new List<(Card Card, List<Card> Kept, int Cost, long Refined, long Preference)>(candidates.Count);
         var best = int.MinValue;
         var tied = 0;
 
-        foreach (var card in hand)
+        foreach (var card in candidates)
         {
             if (judged.Exists(seen => seen.SameValueAs(card)))
             {

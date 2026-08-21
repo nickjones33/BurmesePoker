@@ -204,7 +204,11 @@ public class RoundEngineTests
     {
         var order = Order(DealBuilder.ForPlayers(4)
             .Give(0, [.. WinningHand[..12], "2C"])
-            .ThenDraw("2S", "3S", "KD"));
+            // ⚠️ Not a 3: Alice claims the 3♣ in the open on turn 1, which closes threes to Dan
+            // — the seat that discards to her — so the 3♠ Dan used to draw and throw straight back
+            // stopped being a legal move when §5.1 was built (P27). A passive seat throws back
+            // what it drew, and that is now something the rules can refuse.
+            .ThenDraw("2S", "4S", "KD"));
 
         var alice = new ScriptedPlayerAgent(
             new ScriptedTurn { Claim = true, Discard = "2C" },

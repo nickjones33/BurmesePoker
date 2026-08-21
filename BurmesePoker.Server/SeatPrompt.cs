@@ -88,4 +88,18 @@ public sealed record SeatPrompt(
 
     /// <summary>Whether this seat is holding the given card — by instance, not value (§3.1).</summary>
     public bool Holds(Card card) => Hand.Hand.Any(held => held.Id == card.Id);
+
+    /// <summary>
+    /// Whether the turn actually offered this card to throw — held, <b>and</b> not of a rank the
+    /// seat below has taken in the open (RULES.md §5.1).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Refused here rather than in the engine.</b> A banned discard is an impossible move, so
+    /// a remote seat naming one is answering a question it was not asked — the same class of thing
+    /// as naming a card it is not holding, and it is refused the same way: the answer does not fit,
+    /// the seat is still being asked, and the stand-in eventually plays. The engine's own guard
+    /// stays where it is, for anything that gets past this.
+    /// </remarks>
+    public bool MayThrow(Card card) =>
+        Hand.Hand.Any(held => held.Id == card.Id) && Hand.Of(card).CanBeThrown;
 }

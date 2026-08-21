@@ -94,7 +94,7 @@ public sealed class ProspectorBotAgent : IPlayerAgent, IRanksDiscards
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        return CoverScore.Discard(context.Hand, Preference, Outs);
+        return CoverScore.Discard(context, Preference, Outs);
     }
 
     /// <inheritdoc cref="OutsBotAgent.RankDiscards"/>
@@ -102,7 +102,7 @@ public sealed class ProspectorBotAgent : IPlayerAgent, IRanksDiscards
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        return CoverScore.Ranking(context.Hand, Preference, Outs);
+        return CoverScore.Ranking(context, Preference, Outs);
     }
 
     /// <summary>

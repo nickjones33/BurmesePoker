@@ -88,7 +88,7 @@ the fives. **[✓]**
 2. Discard one card. **You may throw straight back the card you just took** — as long as no other
    discard rule stops you, which in practice means the feeding ban below. **[✓]**
 
-**You may not feed the next player. [✓] [⚠ not implemented]** If the player after you has
+**You may not feed the next player. [✓]** If the player after you has
 taken a card in the open, you may not discard **that rank** again — *any* suit — for the rest
 of the round. Two ways out: they discard that rank themselves, which opens it up **permanently**
 even if they pick another one up later; or you are **going out** on it. Rank taken → rank closed,
@@ -120,7 +120,6 @@ one. It's the only thing in this game you reveal on purpose.
 
 **Sets** — 3+ cards of the same rank, **all different suits**. `9♥ 9♥ 9♠` is **not** a set,
 even though two decks make it holdable. A set therefore caps at **4 cards**. **[✓]**
-**[⚠ not implemented at all]**
 
 ## Concealment **[✓]**
 
@@ -129,7 +128,7 @@ melds secret until you go out, then reveal all 13 at once. There is **no laying 
 your own or anyone else's melds. The only public information is the discards — **and those are
 properly public: you may pick a pile up and look through it, not just see the top card.** **[✓]**
 
-## Winning **[⚠ not implemented]**
+## Winning **[✓]**
 
 **Discard, then lay down all 13.** You hold 13, take one to make 14, **throw one away**, and
 *then* reveal the thirteen melded. The discard comes first. **[✓]**
@@ -179,13 +178,16 @@ rot stays visible:
 1. ~~**What happens when the deck runs out?**~~ Gather the discards and shuffle.
 2. ~~**What ends a match?**~~ Nothing does — banks carry over and you stop when you stop.
 
-⚠️ **What is left is the opposite problem: rules that are settled and unbuilt.** Three of them,
-and they are the whole of the gap between this page and the program.
+⚠️ **What is left is the opposite problem: rules that are settled and unbuilt.** ✅ **Two of the
+three closed on 2026-08-21** and one is left, so the gap between this page and the program is
+nearly shut.
 
-- **The feeding ban** (above, §5.1) — `EXPERT`, fully specified since 2026-08-20, and nothing
-  enforces it.
-- **The win condition by player count** (*Winning*, §7.1.1) — the engine plays every table as if
-  it were five-handed.
-- **Re-drawing for seats every round** (*Setup*, §3) — the engine seats you once and keeps it.
+- ✅ **The feeding ban** (above, §5.1) — **built (P27)**. A closed rank is not offered at all: the
+  console leaves it out of the list and the browser draws it as a card you cannot press, marked
+  `closed`.
+- ✅ **The win condition by player count** (*Winning*, §7.1.1) — **built (P25)**. ⚠️ The engine
+  still deals for four to six, so the two- and three-handed rules are implemented and unreachable.
+- ⚠️ **Re-drawing for seats every round** (*Setup*, §3) — still the one that is settled and
+  unbuilt: the engine seats you once and keeps it for the whole match.
 
 Full list in `RULES.md` §9. Algorithms, edge cases and verified bugs in `RULES-TECHNICAL.md`.

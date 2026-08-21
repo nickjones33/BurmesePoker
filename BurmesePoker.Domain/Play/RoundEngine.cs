@@ -200,9 +200,10 @@ public sealed class RoundEngine
         var context = new TurnContext(Table, seat, _round, turn, available, canClaim, taken: null);
         var taken = TakeCard(agent, seat, previous, context);
 
-        // 2. Discard (RULES.md §5). Ownership is untouched by it (§4.4).
+        // 2. Discard (RULES.md §5), from the legal cards only — a rank the next seat has taken in
+        //    the open is not a move this turn offers (§5.1). Ownership is untouched by it (§4.4).
         context = new TurnContext(Table, seat, _round, turn, available, canClaim, taken);
-        var discarded = seat.Discard(agent.ChooseDiscard(context));
+        var discarded = seat.Discard(RequireALegalDiscard(context, agent.ChooseDiscard(context)));
         _observer.PlayerDiscarded(seat.Id, discarded);
 
         // 3. Only then may the hand be laid down — the discard comes first and the reveal
@@ -236,6 +237,10 @@ public sealed class RoundEngine
             // give it to anybody, so no ownership is recorded (RULES.md §4.5).
             var claimed = Table.ClaimTurnedUpFromTop();
             seat.Take(claimed);
+
+            // Taken where the table could see it, so it closes that rank to whoever feeds this
+            // seat (RULES.md §5.1, §4.5).
+            seat.TookInTheOpen(claimed);
             _observer.MoneyCardClaimed(seat.Id, claimed);
             return claimed;
         }
@@ -244,6 +249,10 @@ public sealed class RoundEngine
         {
             var pickedUp = previous.TakeTopDiscard();
             seat.Take(pickedUp);
+
+            // The take everyone watched: it announces what this seat is collecting, and closes that
+            // rank to the seat that discards to them (RULES.md §5.1).
+            seat.TookInTheOpen(pickedUp);
             _observer.PlayerTookDiscard(seat.Id, pickedUp);
             return pickedUp;
         }
@@ -263,6 +272,32 @@ public sealed class RoundEngine
         Table.Ownership.TryRecordFromDeck(drawn.Id, seat.Id);
         _observer.PlayerDrew(seat.Id, drawn);
         return drawn;
+    }
+
+    /// <summary>
+    /// The card a player says they are throwing, if the turn actually offered it (RULES.md §5.1).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>This is a guard against a broken agent, not the enforcement.</b> The ban is enforced
+    /// by construction — <see cref="TurnContext.LegalDiscards"/> is what every player picks from,
+    /// so a banned card is never presented and the question *"what happens if somebody throws one
+    /// anyway?"* has no answer at a real table. What is left is the same class of mistake as naming
+    /// a card you are not holding, which <see cref="PlayerState.Discard"/> already refuses: an
+    /// answer that did not come from the choice offered.
+    /// </remarks>
+    private static Card RequireALegalDiscard(TurnContext context, Card chosen)
+    {
+        foreach (var legal in context.LegalDiscards)
+        {
+            if (legal.Id == chosen.Id)
+            {
+                return chosen;
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"{context.Player} cannot throw {chosen}: the seat they discard to has taken that rank "
+            + "in the open and has not thrown it back (RULES.md §5.1).");
     }
 
     private static TurnAction ChooseAction(IPlayerAgent agent, TurnContext context)

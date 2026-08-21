@@ -64,7 +64,7 @@ public sealed class CautiousBotAgent : IPlayerAgent, IRanksDiscards
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        return CoverScore.Discard(context.Hand, Preference);
+        return CoverScore.Discard(context, Preference);
     }
 
     /// <summary>The same ordering the discard is the head of (BUILD-PLAN P19).</summary>
@@ -77,7 +77,7 @@ public sealed class CautiousBotAgent : IPlayerAgent, IRanksDiscards
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        return CoverScore.Ranking(context.Hand, Preference);
+        return CoverScore.Ranking(context, Preference);
     }
 
     /// <inheritdoc cref="GreedyBotAgent.ClaimTurnedUpMoneyCard"/>

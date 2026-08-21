@@ -974,7 +974,7 @@ P16 ─┘                         ├─► P21  outs rung       (lookahead)  �
                               │
         ┌─────────────────────┼──────────────────────┬─────────────────────┐
         ▼                     ▼                      ▼                     │
-   P25  win condition ☑  P26  the money         P27  the feeding ban       │
+   P25  win condition ☑  P26  the money         P27  the feeding ban ☑     │
         by table size         layer as it is         (a legal turn         │
         (§7.1.1)              (§4, ×3 and ×5)         changes)             │
         │                     │                      │                     │
@@ -1108,8 +1108,8 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | P24 | The computer's reasoning, said out loud | P13.6, P14, P18, P21 | M — ☐ **re-sequenced after P29 on 2026-08-21** |
 | **P25** | **The win condition is a function of the table size** | — | L — ☑ **done 2026-08-21** — `TableRules`, and the search carries the counts |
 | **P26** | **The money layer as it actually is** | — | M — ☑ **done 2026-08-21** — eight permanent cards, ×3, and a ×5 that needs the round's ownership |
-| **P27** | **The feeding ban** | — | L — ☐ **the first work since P0 that changes what a legal turn is** |
-| **P28** | **The claim, the permission, and the seat you sit in** | **P27** | M — ☐ a third kind of agent decision |
+| **P27** | **The feeding ban** | — | L — ☑ done 2026-08-21 — **the first work since P0 that changed what a legal turn is**; a bot's cover count can now fall |
+| **P28** | **The claim, the permission, and the seat you sit in** | **P27** ✅ | M — ☐ **next** — a third kind of agent decision; reuse `Card.SameRankAs` |
 | **P29** | **Re-measure, under the rules as they are** | P25, P26, P27, P28 | L — ☐ ⚠️ `sim suite` was five hours *before* P25 |
 
 ⚠️ **P25–P29 are the only packets in this table that do not descend from §0.** They come from
@@ -4553,7 +4553,7 @@ compares** (see P29).
 
 ---
 
-### P27 — The feeding ban ☐
+### P27 — The feeding ban ☑ done 2026-08-21
 
 **Goal.** §5.1 becomes real: you may not discard a rank the next player has taken in the open —
 **enforced by construction**, so a banned card is never offered and cannot be chosen.
@@ -4591,6 +4591,42 @@ is always a legal card.
 *"yes, as long as you aren't violating any other discard rules"* — so there is no special case for
 it, and a test says so.
 
+**What it turned out to be.** ✅ **All four "done when"s, and the rule needed no code outside the
+one type.** `Domain/Play/FeedingBan.cs` is two `HashSet<Rank?>` and one method; `PlayerState`
+carries one per seat and `TableState.SeatFedBy` finds the seat that reads it;
+`TurnContext.LegalDiscards` is the whole of the choice a turn presents.
+
+🔥 **The filter is a property of the ladder rather than a line each rung remembers.**
+`CoverScore.Discard` and `CoverScore.Ranking` take a `TurnContext` instead of a hand, so every rung
+that goes through them is filtered by construction and **the runner-up a difficulty level throws is
+filtered with it**. Only `RandomBotAgent` had to say so itself, because it is the one rung that
+does not rank.
+
+🔥 **The predicate is `Card.SameRankAs`, and it is literally `Rank == other.Rank`.** Nullable
+equality is what makes a joker close the other jokers — §9 #27's house ruling falling out of the
+type rather than being written as a case. ⚠️ **It is one method because §9 #30 says P28 must reuse
+it**, not two that agree by inspection.
+
+⚠️ **The floor is one line and the declaring-discard exception is not.** Exception 2 costs a
+`HandEvaluator.IsWinning` per banned card, gated behind one `PartialCover.CoversAtLeast(hand, 13)`
+so it is asked only of a hand that could actually go out — and only when a rank is closed *and*
+held, which is the case that pays for the whole computation.
+
+🔥 **The finding that outlives the packet: a bot's cover count can now fall.** Every rung's score
+was monotone — "throwing back the card just taken restores the hand exactly", which is
+`GreedyBotAgent`'s stated reason a table of bots terminates at all. **§5.1 removes that card from
+the choice.** A seat whose only legal discards are melded ones gives up a meld, so a round is no
+longer guaranteed to converge and the argument in `GreedyBotAgent`'s remarks is now false as
+written. In practice the tree still finishes; `SimulationOptions.TurnCap` and the hosted table's
+`RoundTimeLimit` are what stand behind it. ⚠️ **P29 should report round lengths and abandoned
+rounds, not only win rates.**
+
+⚠️ **Both front ends needed a change, and it is not a hint.** A closed card is
+`CardDisplayState.Unthrowable` — a state with a token (`closed`), a legend entry and an accessible
+name — because a card that cannot be pressed must say why. The browser draws it as a `<span>`
+rather than a disabled button, and the server refuses a remote answer naming one
+(`SeatPrompt.MayThrow`) so a hosted table does not fall over on a bad client.
+
 ---
 
 ### P28 — The claim, the permission, and the seat you sit in ☐
@@ -4603,8 +4639,13 @@ player's permission** (§4.5).
 `Domain/Engine/MatchEngine.cs`, `Domain/Engine/RoundEngine.cs`, `Domain/Agents/IPlayerAgent.cs`,
 `Server/SeatPrompt.cs`, `Server/TableSession.cs`, `Web/Components/Table/TableRing.razor`.
 
-**Depends on.** **P27** — the objection predicate *is* §5.1's predicate (rank alone, §9 #30) and
-writing it twice is the defect to avoid.
+**Depends on.** **P27**, ✅ **which is done** — the objection predicate *is* §5.1's predicate
+(rank alone, §9 #30), and it is now **`Card.SameRankAs`**. ⚠️ **Read it rather than writing a
+second one**: the objection test is `hand.Any(held => held.SameRankAs(turnedUp))` and nothing more.
+🔥 **And the permission and the ban are one mechanism, not two that agree** — the reason the
+upstream seat may refuse is that a claim *arms* §5.1 against them, which
+`RoundEngine.TakeCard` already does through `PlayerState.TookInTheOpen`. **A refused claim must not
+arm it**, which is the one line where P28 touches P27's code.
 
 🔥 **The permission rule needs a third kind of agent decision, the first new one since the engine
 was built.** Not *what do I take* or *what do I throw* but **do I object** — and ⚠️ **it is asked
@@ -4622,8 +4663,10 @@ seating for a whole match; it should re-draw before every deal, and the round en
 its seating as given. **But P13.5 puts *you at the front whichever seat you were dealt***, so
 re-seating means the table visibly rearranges itself around a fixed viewer every round, and
 `TableRing` has never been asked to do that. ⚠️ **It also rebuilds every §5.1 ordered pair each
-round** — harmless, since the ban is per round anyway, but the banned-rank sets are keyed to a
-seating that ceases to exist the moment the round ends.
+round** — harmless, since the ban is per round anyway. ✅ **P27 makes that structural rather than a
+thing to remember**: a `FeedingBan` lives on a `PlayerState`, a `PlayerState` is built by the deal,
+and `TableState.SeatFedBy` reads the seating it was constructed with — so a re-drawn seating gets
+fresh bans by construction and there is nothing to reset.
 
 **Done when.** Seats differ between consecutive rounds of one match; a claim is refused when the
 upstream seat holds that rank and it chooses to refuse; the refusal is visible to every watcher;
@@ -4639,6 +4682,7 @@ saying plainly which of its published numbers moved and why.
 **Read first.** `docs/STRATEGY.md` §§4, 9, 10, 11; `Tests/Sim/StandingAnswerTests.cs`; §3.8.
 
 **Depends on.** P25, P26, P27, P28 — all four, because each changes what a round is worth.
+✅ **Three of them are in.**
 
 ⚠️ **Every figure in `STRATEGY.md` was measured under rules this document no longer holds**: four
 seats judged by the five-handed win condition (P25), a money model without permanent jokers or the
@@ -4648,7 +4692,10 @@ is the one rung whose decision reads the money.
 🔥 **Three predictions, written down before the run so the packet can be wrong.**
 1. **The difficulty dial survives.** ε is a property of *the mistake*, not of the rung (P23), and
    §5.1 filters both the winner and the runner-up. **If the four levels stop being ordered, that
-   is the finding.**
+   is the finding.** ⚠️ **P27 sharpened the risk rather than removing it**: the ranking a level
+   slips down is now often *shorter*, because closed ranks are dropped from it — and where the ban
+   leaves one candidate there is no runner-up at all, so ε does nothing on that turn. **A dial
+   whose steps depend on how often the ban binds is a dial that moves with the table.**
 2. **`outs` loses some of its margin at four seats.** Its objective is cover count, which is no
    longer sufficient for a win — so a rung that looks ahead at the wrong target should narrow
    against `greedy`.
@@ -4659,6 +4706,13 @@ is the one rung whose decision reads the money.
    before and after, greedy vs simple. ⚠️ **The ×5 is not in that figure** (one round in 1,444) and
    **`MoneyOdds` does not price it at all**, so `prospector`'s *estimate* of a blind draw moved
    only by the triple and the jokers.
+
+🔥 **A fourth thing to measure, and P27 created it: how long a round runs, and how many do not
+finish.** Every rung's cover count used to be monotone, which is the stated reason a table of bots
+terminates; §5.1 takes the just-taken card out of the choice, so a seat with nothing but melded
+legal discards gives up a meld and a round is no longer guaranteed to converge. ⚠️ **`Sim` reports
+abandoned rounds already (`TurnCap`) and nothing published has ever quoted the number.** If it is
+not zero, that is a result and not a nuisance.
 
 ⚠️ **`sim suite` was five hours at P23** and P25 makes the evaluator's question harder. **Budget
 it, measure the new per-round cost with `sim bench` first, and say in the packet what was

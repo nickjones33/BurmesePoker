@@ -31,6 +31,18 @@ internal static class TurnContexts
         Build(hand, offered: null, Stakes.Standard, FromBottom, FromTop, hand[^1]);
 
     /// <summary>
+    /// The same seat, with the player it discards to having taken those cards in the open — so
+    /// their ranks are closed to it (RULES.md §5.1).
+    /// </summary>
+    /// <param name="hand">The fourteen held.</param>
+    /// <param name="takenByTheSeatYouFeed">
+    /// What the <b>next</b> seat took in view of the table. ⚠️ It is the next seat and never the
+    /// previous one: only the seat immediately before you can feed you (§9 #16).
+    /// </param>
+    internal static TurnContext Fed(IReadOnlyList<Card> hand, params Card[] takenByTheSeatYouFeed) =>
+        Build(hand, offered: null, Stakes.Standard, FromBottom, FromTop, hand[^1], takenByTheSeatYouFeed);
+
+    /// <summary>
     /// A seat holding these cards and being offered that one, at those stakes — the question a
     /// take decision is (BUILD-PLAN P22).
     /// </summary>
@@ -64,7 +76,8 @@ internal static class TurnContexts
         Stakes stakes,
         Card turnedUpFromBottom,
         Card turnedUpFromTop,
-        Card? taken)
+        Card? taken,
+        IReadOnlyList<Card>? takenByTheSeatYouFeed = null)
     {
         var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, 4).Select(seat => new PlayerId(seat))];
         var shoe = Deck.TwoDecks();
@@ -75,6 +88,11 @@ internal static class TurnContexts
         foreach (var card in hand)
         {
             seat.Take(card);
+        }
+
+        foreach (var card in takenByTheSeatYouFeed ?? [])
+        {
+            table.SeatFedBy(seat.Id).TookInTheOpen(card);
         }
 
         return new TurnContext(

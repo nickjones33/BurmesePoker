@@ -32,6 +32,12 @@ public static class DisplayTokens
     public const string SuggestedThrow = "←";
 
     /// <summary>
+    /// Marks a card whose rank is closed to you this turn (RULES.md §5.1) — a word rather than a
+    /// glyph, because the thing it names is a rule and has to survive being read aloud.
+    /// </summary>
+    public const string Closed = "closed";
+
+    /// <summary>
     /// The token for a single display state.
     /// </summary>
     /// <exception cref="ArgumentException">
@@ -46,6 +52,7 @@ public static class DisplayTokens
         CardDisplayState.PaysTriple => "($$$)",
         CardDisplayState.Owned => Owned,
         CardDisplayState.SuggestedThrow => SuggestedThrow,
+        CardDisplayState.Unthrowable => Closed,
         _ => throw new ArgumentException(
             $"{state} is not a single display state, so it has no one token.", nameof(state))
     };

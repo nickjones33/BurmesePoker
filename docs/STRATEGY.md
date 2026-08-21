@@ -16,16 +16,18 @@ hours** — the ladder ranked, the difficulty dial calibrated and re-fitted besi
 sweep, and P12's headline under both seatings.
 
 ❌ **Every number in this document was measured under rules the game no longer plays by, and the
-list has grown twice since it was generated. Do not quote a figure here as current.**
+list has grown three times since it was generated. Do not quote a figure here as current.**
 
 | Packet | What changed under the measurements |
 |---|---|
 | **P25** (2026-08-21) | **The win condition is a function of the table size** (`RULES.md` §7.1.1). Everything here is four-handed and was measured under the *five-or-more* condition; four-handed now requires one joker-free series. 🔥 **And every rung in `BotCatalog` still maximises cover count**, which is no longer sufficient to win — that is P29's prediction 2. |
 | **P26** (2026-08-21) | **The money layer** (`RULES.md` §4.1). Jokers are permanent money cards (**8, not 4**), a designation landing on a permanent value pays **×3**, and there is a **×5**. **§10's money sweep is the worst affected** — `prospector` is the one rung whose decision reads the money, and `MoneyOdds` prices a blind draw off the multiplier that changed. ⚠️ **The side-bet at five seats went from `$8.50` to `$11.58 ± 0.34` a round**, 42.5% → 58% of the round prize; `RULES.md` §4.3 carries the measurement. |
 
-⚠️ **P27 and P28 will add more** — the feeding ban constrains which card may be thrown at all, and
-`prospector` is not the only rung that will feel it. **P29 is the packet that regenerates this
-file**, and `BUILD-PLAN.md` §5 P29 holds three predictions written down before the run.
+| **P27** (2026-08-21) | **The feeding ban** (`RULES.md` §5.1). A rank the next seat has taken in the open is not a legal discard, so **every rung's discard is chosen from a filtered list — the runner-up a difficulty level throws included.** 🔥 **And a rung's cover count can now fall**, which breaks the monotonicity that made a table of bots terminate: `simple` drew a blank across eight games where it wins **29.0%** over two hundred, and a four-rung 200-game run at seed 20260819 measures **random 0.0% / simple 29.0% / greedy 43.0% / cautious 28.0%** with **no round abandoned**. ⚠️ **Round length is a number this document has never published and now should**, along with abandoned-round counts. |
+
+⚠️ **P28 will add one more** — per-round seating and the claim's permission. **P29 is the packet
+that regenerates this file**, and `BUILD-PLAN.md` §5 P29 holds three predictions written down
+before the run.
 
 🔥 **59 of the 77 rows came back byte-identical to the previous run**, which is the strongest
 reproducibility statement this document has carried. Every ladder figure, the harness's own null

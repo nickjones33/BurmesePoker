@@ -4,7 +4,17 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-21 (rev 22 — ✅ **no rule moved; the two `DERIVED` notes rev 21 left stale
+Last revised: 2026-08-21 (rev 23 — ✅ **no rule moved; §5.1 is code now.** Packet P27 built the
+feeding ban exactly as this document specifies it: enforced **by construction** (`FeedingBan`,
+`TurnContext.LegalDiscards`), armed by public takes only, bound to the seat you discard to,
+released permanently by a throw-back that survives the reshuffle, with the declaring-discard
+exception and the floor. 🔥 **The rank-only predicate the document said the domain did not have is
+`Card.SameRankAs`, and it is one method rather than two** — §9 #30 makes the claim's objection test
+the same question, so §4.5 will read it rather than write a second one. ⚠️ **Both `PLAYER` house
+rulings are marked as such in the code they decide** — the joker closing the other jokers (#27) and
+a release surviving the reshuffle (#19) — so if either is ever put to a player and comes back
+differently, the test that moves says whose ruling it was. §10 #13 is discharged; nothing in §5.1
+is left unimplemented. Rev 22 — ✅ **no rule moved; the two `DERIVED` notes rev 21 left stale
 are re-derived, with numbers.** Packet P26 built the money layer as rev 20 and rev 21 state it, and
 re-measured what the side-bet is worth under it. **§4.3: the money cards move `$11.58 ± 0.34` a
 round over 600 five-player rounds** — **58% of the $20 round prize** and **37% of all the money
@@ -884,8 +894,20 @@ Three things the ruling fixes:
 
 #### What this does not yet say
 
-**None of this is implemented.** `RoundEngine` accepts any discard, `TurnContext` shows a seat only
-the one discard it is being offered, and no agent knows the rule exists.
+✅ **It is implemented — packet P27, 2026-08-21, and there is nothing of §5.1 left over.**
+`Domain/Play/FeedingBan.cs` is the rule: two sets of ranks per seat, kept rather than read back off
+a pile, and one method — `LegalDiscards(hand, rules)` — that is the whole of what a turn offers.
+`PlayerState.MayNotBeFed` is the seat's own record and `TableState.SeatFedBy` finds the one seat
+that reads it; `TurnContext.LegalDiscards` is what **every** player picks from, bot or person, and
+`CoverScore.Ranking` takes a context rather than a hand so that no rung can forget. The two
+exceptions and the floor are in that one method, and `RoundEngine` refuses a discard the turn never
+offered — a guard against a broken agent, not the enforcement.
+
+⚠️ **The one thing to know before touching it: the predicate is `Card.SameRankAs`, which is
+`Rank == other.Rank` and nothing more.** It is deliberately neither of the two identity notions the
+domain already had, and the nullable comparison is what makes a joker close the other jokers —
+which is #27's house ruling falling out of the type rather than being derived. Widening it to
+`SameValueAs` would compile, pass most of the tests, and implement the wrong rule.
 
 ✅ **But the specification is now complete but for one case.** Every detail that was unrecorded on
 2026-08-20 was settled the same day, and 🔥 **the narrow reading was confirmed on every single
@@ -1698,6 +1720,15 @@ Decisions here that the implementation contradicts or lacks:
     which are narrower — so it needs a predicate `Card` does not have. ✅ **§9 #16–#19, #25 and #27 are
     all answered** (2026-08-20), so nothing blocks this: it is **P27**. ✅ **And §9 #30 makes the
     claim's objection test the same rank-only predicate** — write it once (§10 #18).
+    ✅ **Implemented 2026-08-21 (P27), and this ruling is discharged.** `FeedingBan` holds the two
+    rank sets per seat; `TurnContext.LegalDiscards` is the whole of the choice a turn presents and
+    is never empty by construction; `Card.SameRankAs` is the rank-only predicate, and it is the one
+    §10 #18 must reuse rather than re-write. Every rung is filtered because `CoverScore.Ranking`
+    takes the context — **including the runner-up a difficulty level throws as its mistake** — and
+    both front ends draw a closed card as something that is not a control
+    (`CardDisplayState.Unthrowable`). ⚠️ **What this does not reach: the ban changes play, so every
+    figure in `docs/STRATEGY.md` is now measured under a third rule the game no longer plays by
+    (P29).**
 14. 🔥 **The win condition is a function of the table size** (§7.1.1) — **both how many series a
     hand must contain and how many of those must be joker-free**, and the two counts are the same
     number (§7.1). `HandEvaluator` implements **neither**: it asks only whether thirteen

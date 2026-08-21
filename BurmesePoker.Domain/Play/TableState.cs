@@ -121,6 +121,26 @@ public sealed class TableState
             ? seat
             : throw new ArgumentException($"{player} is not at this table.", nameof(player));
 
+    /// <summary>
+    /// The seat this player discards to — the next one round the table, and the only seat they can
+    /// feed, because only their top discard is takeable (RULES.md §5, §5.1).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Two-handed it is the same seat that feeds them</b>, and that is the rule working rather
+    /// than a case to special-case: each player is simultaneously the feeder and the fed, the two
+    /// bans run independently, and the mutual lock they can produce is a legal state of the game
+    /// (RULES.md §5.1, Two-handed; §9 #25).
+    /// </remarks>
+    /// <exception cref="ArgumentException">Nobody of that name is at this table.</exception>
+    public PlayerState SeatFedBy(PlayerId player)
+    {
+        var seat = _seats.FindIndex(other => other.Id == player);
+
+        return seat < 0
+            ? throw new ArgumentException($"{player} is not at this table.", nameof(player))
+            : _seats[(seat + 1) % _seats.Count];
+    }
+
     internal Deck DrawPile { get; private set; }
 
     /// <summary>

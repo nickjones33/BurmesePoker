@@ -46,6 +46,12 @@ public readonly record struct CardView(
     /// <summary>Whether the computer would throw this one away.</summary>
     public bool IsSuggestedThrow => State.HasFlag(CardDisplayState.SuggestedThrow);
 
+    /// <summary>
+    /// Whether this card may be thrown at all this turn — false when the seat you discard to has
+    /// taken its rank in the open (RULES.md §5.1). A front end must not offer it.
+    /// </summary>
+    public bool CanBeThrown => !State.HasFlag(CardDisplayState.Unthrowable);
+
     /// <summary>Every non-colour token this card carries, in flag order (§3.11 A2).</summary>
     public IEnumerable<string> Tokens => DisplayTokens.All(State);
 }

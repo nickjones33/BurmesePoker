@@ -326,6 +326,40 @@ public class MarkupStandardsTests
         Assert.True(longest >= 30, $"the longest run measured was {longest}, so nothing here is being tested.");
     }
 
+    /// <summary>
+    /// 🔥 <b>A card the rules do not let you throw is not a button</b> (RULES.md §5.1).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// §5.1 makes a banned discard an <em>impossible move</em> rather than an infraction: it is
+    /// never offered and cannot be chosen. In a browser that means it must not be a control at all
+    /// — a disabled button, or a button that refuses the press, would be the wrong thing twice
+    /// over, because a control that does nothing is exactly the failure P13.4 spent a packet
+    /// chasing.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>And it must say why.</b> The card carries <c>DisplayTokens.Closed</c> from the view
+    /// model, the legend explains it, and the accessible name says it in words — dimming alone
+    /// would be meaning carried by appearance (§3.11 A2).
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void ACardTheFeedingBanClosesIsNotAControl()
+    {
+        var hand = Sources.Read("Components/Table/HandPanel.razor");
+
+        Assert.Contains("!held.Card.CanBeThrown", hand, StringComparison.Ordinal);
+        Assert.Contains("you may not throw it", hand, StringComparison.Ordinal);
+        Assert.DoesNotContain("disabled", hand, StringComparison.Ordinal);
+
+        // The legend is exhaustive over the enum, so the new state reaches it by construction —
+        // this pins that somebody wrote the sentence rather than leaving it to throw.
+        Assert.Contains(
+            "CardDisplayState.Unthrowable",
+            Sources.Read("Components/Table/TableLegend.razor"),
+            StringComparison.Ordinal);
+    }
+
     /// <remarks>
     /// The other half of the same rule, stated positively: <b>the sentences that left the felt
     /// are still on the page.</b> A budget nothing balances is a licence to delete.

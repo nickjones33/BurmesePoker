@@ -52,7 +52,7 @@ public sealed class SimpleBotAgent : IPlayerAgent, IRanksDiscards
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        return CoverScore.Discard(context.Hand, CoverScore.NoPreference);
+        return CoverScore.Discard(context, CoverScore.NoPreference);
     }
 
     /// <summary>The same ordering the discard is the head of (BUILD-PLAN P19).</summary>
@@ -65,7 +65,7 @@ public sealed class SimpleBotAgent : IPlayerAgent, IRanksDiscards
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        return CoverScore.Ranking(context.Hand, CoverScore.NoPreference);
+        return CoverScore.Ranking(context, CoverScore.NoPreference);
     }
 
     /// <inheritdoc cref="GreedyBotAgent.ClaimTurnedUpMoneyCard"/>

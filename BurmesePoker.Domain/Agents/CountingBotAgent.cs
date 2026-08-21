@@ -123,7 +123,7 @@ public sealed class CountingBotAgent : IPlayerAgent, IRanksDiscards
         ArgumentNullException.ThrowIfNull(context);
         Observe(context);
 
-        return CoverScore.Discard(context.Hand, _preference);
+        return CoverScore.Discard(context, _preference);
     }
 
     /// <inheritdoc cref="CautiousBotAgent.RankDiscards"/>
@@ -132,7 +132,7 @@ public sealed class CountingBotAgent : IPlayerAgent, IRanksDiscards
         ArgumentNullException.ThrowIfNull(context);
         Observe(context);
 
-        return CoverScore.Ranking(context.Hand, _preference);
+        return CoverScore.Ranking(context, _preference);
     }
 
     /// <inheritdoc cref="GreedyBotAgent.ClaimTurnedUpMoneyCard"/>

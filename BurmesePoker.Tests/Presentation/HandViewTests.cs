@@ -243,6 +243,40 @@ public class HandViewTests
         Assert.Throws<ArgumentException>(() => view.CostOfThrowing(Hands.Value("9C")));
     }
 
+    /// <remarks>
+    /// RULES.md §5.1, as a front end sees it. ⚠️ <b>The view does not decide it</b> — it is handed
+    /// the turn's own list of legal discards, because the ban is a rule and a second implementation
+    /// of one is exactly what P13.1 wrote a type to prevent.
+    /// </remarks>
+    [Fact]
+    public void ACardTheTurnDoesNotOfferIsMarkedUnthrowableAndNoOtherIs()
+    {
+        var hand = Hands.Of(TwelveAndADeadQueen);
+        var legal = hand.Where(card => card.Rank != Rank.Queen).ToArray();
+
+        var view = HandView.Of(hand, NoMoney, _ => false, suggestedThrow: null, legalDiscards: legal);
+
+        var queen = view.Of(view.Hand.First(card => card.Rank == Rank.Queen));
+
+        Assert.False(queen.CanBeThrown);
+        Assert.True(queen.State.HasFlag(CardDisplayState.Unthrowable));
+        Assert.Contains(DisplayTokens.Closed, queen.Tokens);
+
+        Assert.All(
+            view.Cards.Where(card => card.Card.Rank != Rank.Queen),
+            card => Assert.True(card.CanBeThrown));
+    }
+
+    /// <remarks>
+    /// A hand drawn outside a turn is not being offered anything, so it is not refusing anything
+    /// either — every card comes back throwable rather than every card coming back closed.
+    /// </remarks>
+    [Fact]
+    public void AHandBuiltWithNoTurnAroundItRefusesNothing()
+    {
+        Assert.All(View(TwelveAndADeadQueen).Cards, card => Assert.True(card.CanBeThrown));
+    }
+
     private static HandView View(string[] codes) => HandView.Of(Hands.Of(codes), NoMoney, _ => false);
 
     /// <summary>The one card of this hand with the named value.</summary>

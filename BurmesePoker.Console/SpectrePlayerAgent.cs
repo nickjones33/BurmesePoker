@@ -131,13 +131,26 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
         // it; asking costs one call and prints nothing, so the screen is unchanged by it.
         var view = ShowHand(context, _hints ? _adviser.Discard(context) : null);
 
+        // ⚠️ The legal cards, not the hand (RULES.md §5.1). A rank the seat below you has taken in
+        // the open is an impossible move rather than an infraction, so it is not on this list at
+        // all — the hand above still draws it, marked, because a player has to be told why a card
+        // they are holding is not among the choices.
+        var choices = view.Cards.Where(card => card.CanBeThrown).Select(card => card.Card).ToArray();
+
+        if (choices.Length < view.Cards.Count)
+        {
+            _console.MarkupLine(
+                $"[{Palette.Quiet}]{DisplayTokens.Closed}: the player after you took that rank in the open, "
+                + $"so you may not throw it back to them (RULES.md §5.1).[/]");
+        }
+
         return _console.Prompt(
             new SelectionPrompt<Card>()
                 .Title("Which card will you throw away?")
                 .PageSize(15)
                 .MoreChoicesText($"[{Palette.Quiet}](move up and down for the rest of your hand)[/]")
                 .UseConverter(card => Choice(view.Of(card)))
-                .AddChoices(view.Cards.Select(card => card.Card)));
+                .AddChoices(choices));
     }
 
     public bool Declare(TurnContext context)

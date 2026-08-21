@@ -68,7 +68,14 @@ public static class CardFormatting
     /// A card the view model has already described — the same face, from state rather than
     /// from a second registry lookup.
     /// </summary>
-    public static string Of(CardView card) => Decorated(card.Card, card.Multiplier, card.IsOwned);
+    /// <remarks>
+    /// ⚠️ <b>A card whose rank is closed says so on its face</b> (RULES.md §5.1). It is not a hint
+    /// and it does not go away with the hints: the card is not among the choices at all, and a
+    /// player holding it has to be able to see why.
+    /// </remarks>
+    public static string Of(CardView card) =>
+        Decorated(card.Card, card.Multiplier, card.IsOwned)
+        + (card.CanBeThrown ? string.Empty : $" [{Palette.Quiet}]{DisplayTokens.Closed}[/]");
 
     /// <summary>A hand in display order, with markers. Ownership is marked from the player's own view.</summary>
     public static string Hand(IReadOnlyList<Card> cards, MoneyCardRegistry money, Func<Card, bool>? owned = null) =>

@@ -76,7 +76,11 @@ public sealed class HandView
     public static HandView Of(TurnContext context, Card? suggestedThrow = null)
     {
         ArgumentNullException.ThrowIfNull(context);
-        return Of(context.Hand, context.MoneyCards, context.YouOwn, suggestedThrow);
+
+        // The turn's own answer about which cards may be thrown (RULES.md §5.1), asked once and
+        // never re-derived here: the ban is a rule, and a view that worked it out for itself would
+        // be a second implementation of one.
+        return Of(context.Hand, context.MoneyCards, context.YouOwn, suggestedThrow, context.LegalDiscards);
     }
 
     /// <summary>
@@ -89,15 +93,28 @@ public sealed class HandView
     /// that player's own cards, so it leaks nothing about anybody else's (RULES.md §4.4).
     /// </param>
     /// <param name="suggestedThrow">The computer's answer, or null for no hint.</param>
+    /// <param name="legalDiscards">
+    /// Which of these cards may actually be thrown (RULES.md §5.1), or null for a hand being drawn
+    /// outside a turn, where nothing is being offered and so nothing is refused. ⚠️ <b>Passed in
+    /// rather than worked out here</b>, for the same reason the hint is: the feeding ban is a rule,
+    /// and <see cref="TurnContext.LegalDiscards"/> is the only place it is decided.
+    /// </param>
     public static HandView Of(
         IReadOnlyList<Card> hand,
         MoneyCardRegistry money,
         Func<Card, bool> owned,
-        Card? suggestedThrow = null)
+        Card? suggestedThrow = null,
+        IReadOnlyList<Card>? legalDiscards = null)
     {
         ArgumentNullException.ThrowIfNull(hand);
         ArgumentNullException.ThrowIfNull(money);
         ArgumentNullException.ThrowIfNull(owned);
+
+        // By CardId, and asked once for the whole hand: the answer is one search of the hand, not
+        // one per card (RULES.md §5.1, exception 2 costs a cover search).
+        var throwable = legalDiscards is null
+            ? null
+            : legalDiscards.Select(card => card.Id).ToHashSet();
 
         // ⚠️ Copied, not aliased. TurnContext.Hand is the seat's own live list and the engine
         // discards from it the moment this decision is answered (RoundEngine step 2), so a
@@ -113,7 +130,7 @@ public sealed class HandView
             card => card.Id,
             card => new CardView(
                 card,
-                State(card, money, owned, melded, suggestedThrow),
+                State(card, money, owned, melded, suggestedThrow, throwable),
                 money.Multiplier(card),
                 CostOfThrowing(card, hand, cover)));
 
@@ -176,7 +193,8 @@ public sealed class HandView
         MoneyCardRegistry money,
         Func<Card, bool> owned,
         HashSet<CardId> melded,
-        Card? suggestedThrow)
+        Card? suggestedThrow,
+        HashSet<CardId>? throwable)
     {
         var state = melded.Contains(card.Id) ? CardDisplayState.Melded : CardDisplayState.Loose;
 
@@ -198,6 +216,13 @@ public sealed class HandView
         if (suggestedThrow is { } advised && advised == card)
         {
             state |= CardDisplayState.SuggestedThrow;
+        }
+
+        // A rank the next seat has taken in the open is not a move this turn offers (RULES.md
+        // §5.1). Instance identity once more, because exception 2 is decided per card.
+        if (throwable is not null && !throwable.Contains(card.Id))
+        {
+            state |= CardDisplayState.Unthrowable;
         }
 
         return state;

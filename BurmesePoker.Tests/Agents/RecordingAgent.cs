@@ -39,6 +39,18 @@ internal sealed class RecordingAgent(IPlayerAgent inner) : IPlayerAgent
     /// </remarks>
     public List<Card[]> Rankings { get; } = [];
 
+    /// <summary>
+    /// Which cards the turn actually offered, each time a discard was asked for (RULES.md §5.1).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Taken during the turn, for the same reason <see cref="Rankings"/> is</b>: it is read
+    /// off the live hand, so a context asked afterwards answers about the thirteen.
+    /// </remarks>
+    public List<Card[]> LegalWhenDiscarding { get; } = [];
+
+    /// <summary>How many ranks were closed to this seat, each time a discard was asked for.</summary>
+    public List<int> ClosedWhenDiscarding { get; } = [];
+
     /// <summary>How the card was taken, each time there was a choice about it.</summary>
     public List<TurnAction> Actions { get; } = [];
 
@@ -55,6 +67,8 @@ internal sealed class RecordingAgent(IPlayerAgent inner) : IPlayerAgent
     public Card ChooseDiscard(TurnContext context)
     {
         HandsWhenDiscarding.Add([.. context.Hand]);
+        LegalWhenDiscarding.Add([.. context.LegalDiscards]);
+        ClosedWhenDiscarding.Add(context.ClosedToYou.Count);
         Rankings.Add(_inner is IRanksDiscards ranker ? [.. ranker.RankDiscards(context)] : []);
         var discard = _inner.ChooseDiscard(context);
         Discards.Add(discard);

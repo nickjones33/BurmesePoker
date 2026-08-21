@@ -101,6 +101,15 @@ h3 {
     padding: 0.15rem;
 }
 
+/*
+    A card whose rank is closed to you (RULES.md §5.1). It is drawn dimmed while every other card
+    is a button, so it reads as unavailable — but the dimming is the second signal, not the only
+    one: the card already carries the word "closed" from DisplayTokens (§3.11 A2).
+*/
+.held.closed {
+    opacity: 0.55;
+}
+
 .card {
     position: relative;
     display: block;

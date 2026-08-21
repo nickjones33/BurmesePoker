@@ -45,7 +45,13 @@ else
                         @foreach (var held in group.Cards)
                         {
                             <li @key="held.Card.Card.Id.Value">
-                                @if (Throwing && First is { } first && held.Card.Card.Id == first)
+                                @if (Throwing && !held.Card.CanBeThrown)
+                                {
+                                    @* A rank the seat after you took in the open: not a control, because
+                                       it is not a move (RULES.md §5.1). *@
+                                    <span class="held closed">@Face(held)</span>
+                                }
+                                else if (Throwing && First is { } first && held.Card.Card.Id == first)
                                 {
                                     <button type="button" class="throw" @ref="_first" @onclick="() => OnThrow.InvokeAsync(held.Card.Card)">
                                         @Face(held)
@@ -128,7 +134,13 @@ else
     /// The first card in the hand, in the order the page draws it. Focus lands here when it
     /// becomes your turn to throw (§3.11 B7), and it is the only card that captures a reference.
     /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The first card you can actually throw</b> (RULES.md §5.1). A closed card is drawn as a
+    /// span rather than a button, so focusing "the first card" without this would aim at something
+    /// that never became a control.
+    /// </remarks>
     private CardId? First => Groups.SelectMany(group => group.Cards)
+        .Where(held => held.Card.CanBeThrown)
         .Select(held => (CardId?)held.Card.Card.Id)
         .FirstOrDefault();
 
@@ -251,6 +263,14 @@ else
             said.Add(held.Card.IsOwned
                 ? $"{pays}, and it is yours — it pays you even if you throw it away"
                 : $"{pays}, but not one of yours");
+        }
+
+        // ⚠️ Not behind the hints gate, because it is a rule and not advice (RULES.md §5.1). The
+        // card is not a control at all, so the ear has to be told why rather than being left to
+        // discover that pressing it does nothing.
+        if (!held.Card.CanBeThrown)
+        {
+            said.Add("you may not throw it: the player after you took that rank in the open");
         }
 
         // ⚠️ The same gate as Mark, and for the same reason: a hint nobody asked for must not
