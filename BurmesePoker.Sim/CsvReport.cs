@@ -31,7 +31,7 @@ public static class CsvReport
 
         yield return "master_seed,game,game_seed,round,seat,strategy,upstream_strategy,"
             + "downstream_strategy,won,net,flat,side_bet,"
-            + "covered,takes,draws,claim_offers,claims,turns,reshuffles,abandoned_game";
+            + "covered,takes,draws,claim_offers,claims,turns,reshuffles,claims_refused,abandoned_game";
 
         foreach (var game in report.Games)
         {
@@ -49,7 +49,8 @@ public static class CsvReport
                         + $"{seat.Strategy},{upstream},{downstream},"
                         + $"{(seat.Won ? 1 : 0)},{seat.Net},{seat.Flat},{seat.SideBet},"
                         + $"{seat.Covered},{seat.Takes},{seat.Draws},{seat.ClaimOffers},{seat.Claims},"
-                        + $"{round.Turns},{round.Reshuffles},{(game.Abandoned ? 1 : 0)}");
+                        + $"{round.Turns},{round.Reshuffles},{round.ClaimsRefused},"
+                        + $"{(game.Abandoned ? 1 : 0)}");
                 }
             }
         }

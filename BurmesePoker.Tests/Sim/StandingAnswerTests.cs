@@ -228,6 +228,58 @@ public class StandingAnswerTests
             StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// ✅ <b>P29 — the two things the programme played for a year and never wrote down.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Round length and the abandoned count became load-bearing at P27.</b> Every rung's
+    /// cover count used to be monotone — throwing back the card just taken restores the hand
+    /// exactly — which is <c>GreedyBotAgent</c>'s own stated reason a table of bots reaches a
+    /// declaration at all. RULES.md §5.1 takes the just-taken card out of the choice, so
+    /// convergence is no longer guaranteed by construction and what stands behind it is a turn
+    /// cap. <b>A document that publishes win rates and not whether the rounds finished is
+    /// publishing a conditional probability without its condition.</b>
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>And the refusal rate is the size of a branch nobody measured.</b> Every rung refuses
+    /// the opener the turned-up money card whenever RULES.md §4.5 allows it, which P28 decided
+    /// from the rule's reasoning; this asserts the file says how often that decision is even
+    /// reached, not that the answer is any particular number.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheDocumentSaysHowLongARoundRunsAndWhetherTheRoundsFinished()
+    {
+        foreach (var scope in new[] { "ladder", "difficulty", "claim-permission" })
+        {
+            var turns = double.Parse(Row($"play.turns-per-round.{scope}")[Column.Mean], CultureInfo.InvariantCulture);
+            var abandoned = Row($"play.abandoned.{scope}");
+
+            // A round is at least one turn a seat and shorter than the cap that would end it.
+            Assert.InRange(turns, 4, 400);
+
+            // ⚠️ Not asserted to be zero. A table that does not converge is a result and the
+            // document has to be able to say so — what is asserted is that the verdict column
+            // is honest about which case this run was.
+            var rate = double.Parse(abandoned[Column.Mean], CultureInfo.InvariantCulture);
+
+            Assert.Equal(rate == 0 ? "every game settled" : "SOME GAMES DID NOT SETTLE", abandoned[Column.Verdict]);
+
+            Assert.True(Published.ContainsKey($"claim.refusal-rate.{scope}"));
+            Assert.True(Published.ContainsKey($"claim.attempt-rate.{scope}"));
+        }
+
+        // And the decision P28 took has a measured price beside it, in both currencies.
+        var arms = ClaimPolicy.Both(BotCatalog.Resolve(new SuiteOptions().ClaimRung));
+
+        Assert.Equal(
+            $"{arms[0].Name} over {arms[1].Name}",
+            Row("claim.permission.refuse-over-allow")[Column.Subject]);
+
+        Assert.True(Published.ContainsKey("claim.permission.money.refuse-over-allow"));
+    }
+
     /// <summary>Which column of a row is which. The header names them; this is the order.</summary>
     private static class Column
     {

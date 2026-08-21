@@ -24,7 +24,15 @@ namespace BurmesePoker.Sim;
 /// <param name="Takes">Cards taken from the previous player's discards.</param>
 /// <param name="Draws">Cards drawn blind, which are the only ones that confer ownership (RULES.md §4.4).</param>
 /// <param name="ClaimOffers">How often the turned-up money card was offered (only ever to seat 0).</param>
-/// <param name="Claims">How often it was taken.</param>
+/// <param name="Claims">
+/// How often this seat <b>asked</b> for it.
+/// <para>
+/// ⚠️ <b>Asked for, not got, and P28 is what made those two different.</b> A claim needs the
+/// permission of the seat that plays before the claimer (RULES.md §4.5), so a claim counted here
+/// may have been refused — <see cref="RoundRow.ClaimsRefused"/> is where that shows, and
+/// <c>Claims − ClaimsRefused</c> is what was actually taken off the table.
+/// </para>
+/// </param>
 public sealed record SeatRow(
     int Seat,
     string Strategy,
@@ -42,8 +50,19 @@ public sealed record SeatRow(
 /// <param name="Round">Which round of the game, counting from 1.</param>
 /// <param name="Turns">How many turns it ran, the winner's last one included.</param>
 /// <param name="Reshuffles">How often the draw pile had to be rebuilt (RULES.md §5).</param>
+/// <param name="ClaimsRefused">
+/// How often the opener's claim was vetoed by the seat before it (RULES.md §4.5) — <b>0 or 1</b>,
+/// since only the opening turn may claim.
+/// <para>
+/// ⚠️ <b>A round-level number and not a seat's, on purpose.</b> A refusal is one seat stopping
+/// another, so attributing it to either would make it read as something that seat <em>did</em>
+/// rather than as something the table settled; BUILD-PLAN P29 wants it as a share of the claims
+/// attempted, which is what the round has.
+/// </para>
+/// </param>
 /// <param name="Seats">Every seat's row, in seating order.</param>
-public sealed record RoundRow(int Round, int Turns, int Reshuffles, IReadOnlyList<SeatRow> Seats);
+public sealed record RoundRow(
+    int Round, int Turns, int Reshuffles, int ClaimsRefused, IReadOnlyList<SeatRow> Seats);
 
 /// <summary>One game: a table, a seed, and the rounds it got through.</summary>
 /// <param name="Game">The game's index in the run.</param>

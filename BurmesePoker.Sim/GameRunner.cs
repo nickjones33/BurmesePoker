@@ -201,6 +201,6 @@ public static class GameRunner
                 Claims: recorders[player].Claims));
         }
 
-        return new RoundRow(result.Round, result.Turns, observer.Reshuffles, seats);
+        return new RoundRow(result.Round, result.Turns, observer.Reshuffles, observer.Refusals, seats);
     }
 }

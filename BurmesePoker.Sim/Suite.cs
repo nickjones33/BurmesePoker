@@ -63,6 +63,17 @@ public sealed record SuiteOptions
     /// <inheritdoc cref="MoneyChallenger"/>
     public string MoneyReference { get; init; } = BotCatalog.Ladder[^1].Name;
 
+    /// <summary>
+    /// The rung the two claim-permission arms are built on (BUILD-PLAN P29).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Read off the catalog rather than typed</b>, for the reason
+    /// <see cref="MoneyChallenger"/> is: the question is what refusing is worth to the best
+    /// player there is, so it re-bases itself when a rung raises the ceiling. The two arms are
+    /// <c>{rung}/refuse</c> and <c>{rung}/allow</c>; see <see cref="ClaimPolicy"/>.
+    /// </remarks>
+    public string ClaimRung { get; init; } = BotCatalog.Hardest.Name;
+
     /// <summary>Seats at the table (RULES.md §2.1).</summary>
     public int Seats { get; init; } = RoundEngine.MinimumPlayers;
 
@@ -107,6 +118,10 @@ public sealed record SuiteMeasurement(
 /// <param name="Tournament">The ladder ranked — the research instrument.</param>
 /// <param name="Difficulty">The dial calibrated — the product (BUILD-PLAN P19).</param>
 /// <param name="Money">The side bet swept — the one axis that is not rummy (BUILD-PLAN P22).</param>
+/// <param name="Claim">
+/// The claim's permission, refusing against allowing — the one decision in the engine that was
+/// taken rather than measured (BUILD-PLAN P28 item 5, P29).
+/// </param>
 /// <param name="Elapsed">How long it took.</param>
 public sealed record SuiteReport(
     SuiteOptions Options,
@@ -114,6 +129,7 @@ public sealed record SuiteReport(
     TournamentReport Tournament,
     TournamentReport Difficulty,
     MoneyReport Money,
+    TournamentCell Claim,
     TimeSpan Elapsed)
 {
     /// <summary>
@@ -201,6 +217,27 @@ public static class Suite
             TurnCap = options.TurnCap,
             Parallel = options.Parallel
         });
+
+        // 🔥 One cell, and no correction, because one comparison is its own family. Every rung
+        // refuses whenever RULES.md §4.5 allows it, which P28 decided from the rule's own
+        // reasoning and did not measure; these two arms differ in that answer and in nothing
+        // else (BUILD-PLAN P29).
+        var claimRung = BotCatalog.Resolve(options.ClaimRung);
+        var arms = ClaimPolicy.Both(claimRung).Select(Strategy.Of).ToList();
+
+        var claim = Tournament.HeadToHead(
+            new TournamentOptions
+            {
+                Strategies = arms,
+                Seats = options.Seats,
+                GamesPerCell = options.GamesPerCell,
+                MasterSeed = options.MasterSeed,
+                TurnCap = options.TurnCap,
+                Stakes = options.Stakes,
+                Parallel = options.Parallel
+            },
+            arms[0],
+            arms[1]);
 
         var measurements = new List<SuiteMeasurement>();
         var names = string.Join(",", options.Strategies.Select(strategy => strategy.Name));
@@ -395,9 +432,89 @@ public static class Suite
                 string.Empty));
         }
 
+        var claimCommand = string.Create(CultureInfo.InvariantCulture,
+            $"BurmesePoker.Sim -- tournament --strategies {arms[0].Name},{arms[1].Name} "
+            + $"--pairs adjacent --seats {options.Seats} --games {options.GamesPerCell} "
+            + $"--seed {options.MasterSeed}");
+
+        measurements.Add(new SuiteMeasurement(
+            "claim.permission.refuse-over-allow",
+            "Is refusing the opener the turned-up money card worth anything? Every rung refuses "
+            + "whenever RULES.md §4.5 allows it, which was decided from the rule's reasoning and "
+            + "never measured — and refusing is a disclosure, since only a holder may refuse.",
+            claimCommand,
+            $"{arms[0].Name} over {arms[1].Name}",
+            "win rate margin",
+            claim.Margin,
+            claim.Margin.IsSeparatedFromZero ? "separated" : "inside the interval"));
+
+        measurements.Add(new SuiteMeasurement(
+            "claim.permission.money.refuse-over-allow",
+            "The same margin in money a round, reported beside the win rate because a claim is "
+            + "a money-card decision and the two can come apart (BUILD-PLAN P22).",
+            claimCommand,
+            $"{arms[0].Name} over {arms[1].Name}",
+            "net per round margin",
+            Measurement.Difference(
+                claim.Player(arms[0].Name).NetPerRound, claim.Player(arms[1].Name).NetPerRound),
+            string.Empty));
+
+        // 🔥 The two numbers nothing reported before this packet: how big the branch P28 decided
+        // actually is, and how long a round runs now that §5.1 can make a cover count fall.
+        foreach (var (scope, cell, command) in new[]
+        {
+            ("ladder", tournament.FreeForAll, tournamentCommand),
+            ("difficulty", difficulty.FreeForAll, difficultyCommand),
+            ("claim-permission", claim, claimCommand)
+        })
+        {
+            measurements.Add(new SuiteMeasurement(
+                $"play.turns-per-round.{scope}",
+                "How long a round runs at this table. ⚠️ Never published before P29, and it has "
+                + "to be now: RULES.md §5.1 takes the just-taken card out of the discard choice, "
+                + "so a seat's cover count can fall and a table of bots is no longer guaranteed "
+                + "to converge by construction.",
+                command,
+                scope,
+                "turns a round",
+                new Measurement(cell.Rounds, cell.TurnsPerRound, 0),
+                string.Empty));
+
+            measurements.Add(new SuiteMeasurement(
+                $"play.abandoned.{scope}",
+                "Share of games given up at the turn cap. This is the number that would show a "
+                + "table failing to converge, and a value above zero is a result rather than a "
+                + "nuisance (BUILD-PLAN P29).",
+                command,
+                scope,
+                "abandoned rate",
+                new Measurement(cell.Games, cell.AbandonedRate, 0),
+                cell.Abandoned == 0 ? "every game settled" : "SOME GAMES DID NOT SETTLE"));
+
+            measurements.Add(new SuiteMeasurement(
+                $"claim.refusal-rate.{scope}",
+                "Of the claims the opener made, how many the seat before it vetoed (RULES.md "
+                + "§4.5). ⚠️ The size of the branch P28's every-rung-refuses decision governs.",
+                command,
+                scope,
+                "refusal rate",
+                new Measurement(cell.ClaimAttempts, cell.RefusalRate, 0),
+                string.Empty));
+
+            measurements.Add(new SuiteMeasurement(
+                $"claim.attempt-rate.{scope}",
+                "Share of rounds in which the opener asked for the turned-up money card at all "
+                + "— the denominator the refusal rate is out of.",
+                command,
+                scope,
+                "claim rate",
+                new Measurement(cell.Rounds, cell.ClaimRate, 0),
+                string.Empty));
+        }
+
         clock.Stop();
 
-        return new SuiteReport(options, measurements, tournament, difficulty, money, clock.Elapsed);
+        return new SuiteReport(options, measurements, tournament, difficulty, money, claim, clock.Elapsed);
     }
 
     /// <summary>

@@ -11,31 +11,68 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **The plan has a second half again: P25–P29. P25, P26, P27 and P28 all shipped 2026-08-21;
-only P29 has not started.** Every packet from §0 is done — P0–P12, P13.1–P13.6 and P14–P23 — and
-**four sessions with Mya Lay and Aung Aung on 2026-08-20/21 closed twenty-three questions in
-`RULES.md` §9 and left four settled rules with no implementation at all.** ✅ **P25** the win
-condition by table size (§7.1.1), ✅ **P26** the money layer as it actually is (§4 — jokers
-permanent, ×3 and ×5), ✅ **P27** the feeding ban (§5.1) and ✅ **P28** the claim's permission with
-per-round seating (§3, §4.5) **are all built**; **P29** re-measures everything under them.
-⚠️ **This is a different kind of work from everything above it — P11–P23 added capability to a
-correct engine; P25–P28 make a working engine play a different game.** ✅ **P29 is next and it is
-the last packet planned.** ⚠️ **P24 is re-sequenced after P29 — a recommendation, not a decision**
-(`BUILD-PLAN.md` §4): its reason for going first is spent, and it explains decisions P25–P28 have
-now changed.
+🔥 **The plan is empty. P25–P29 all shipped 2026-08-21, and P24 is the only unbuilt packet
+left.** Every packet from §0 is done — P0–P12, P13.1–P13.6 and P14–P23 — and **four sessions with
+Mya Lay and Aung Aung on 2026-08-20/21 closed twenty-three questions in `RULES.md` §9 and left
+four settled rules with no implementation at all.** ✅ **P25** the win condition by table size
+(§7.1.1), ✅ **P26** the money layer as it actually is (§4 — jokers permanent, ×3 and ×5),
+✅ **P27** the feeding ban (§5.1), ✅ **P28** the claim's permission with per-round seating (§3,
+§4.5) and ✅ **P29** the re-measurement under all four **are all built**.
+⚠️ **P25–P28 were a different kind of work from everything above them — P11–P23 added capability
+to a correct engine; P25–P28 make a working engine play a different game** — and **P29 is what
+made the documentation true again.** ⚠️ **P24 is now a question of *whether*, not *when*
+(`BUILD-PLAN.md` §4): the objection that moved it behind P29 has been discharged, and building it
+is Nick's call.**
 
-🔥 **The tree is green at 666 tests and `RULES.md` is rev 24: every rule the document records as
-Settled is now implemented** — §10 #13, #14, #16, #17 and #18 are all discharged. **What is left
-is the measurement.**
+🔥 **The tree is green at 672 tests, `RULES.md` is rev 24, and as of P29 every figure in
+`docs/STRATEGY.md` was measured under those rules.** Every rule the document records as Settled is
+implemented (§10 #13, #14, #16, #17 and #18 all discharged), and **the measurement is no longer
+outstanding.**
 
-🔥 **P27's finding outlives P27, and P29 has to price it: a bot's cover count can now fall.**
+🔥 **P29's headline is a reproduction claim going the other way: 4 of 91 rows came back
+byte-identical, and the four are the ε constants of the difficulty dial** — the only numbers in
+`measurements.csv` a human chose. P23 reproduced 59 of 77 and called it the document's strongest
+reproducibility statement. ⚠️ **"Does it reproduce" is not a question that can be asked across a
+rules change**: the only rows that can survive one are the rows that are not measurements. **A
+future packet that changes a rule should expect this and not go looking for the bug.**
+
+🔥 **Of three predictions written down before the run, two held and one was wrong — and the wrong
+one is worth the most.** ✅ The difficulty dial survives (every step still separates under Holm,
+**no ε moved**). ✅ `prospector` separates a whole ratio lower — $5/$20 goes from `+0.95 ± 1.63`
+*inside the interval* to **`+5.32 ± 2.27` separated**, take rate collapsing 8.4% → 0.1%.
+❌ **`outs` did not narrow at all** — `+3.0 ± 1.0` over `greedy` against +3.1, mean margin +14.6
+both times — though the reasoning behind the prediction (every rung maximises cover count, and
+cover count no longer wins at four seats) is sound. 🔥 **Chasing the wrong prediction located the
+real effect: `simple` gained about two points on each of `greedy`, `cautious` and `counting`.**
+**The four-handed condition demands a joker-free series, nothing in any rung is aimed at it, so
+the better melder pays the same tax — a requirement nobody optimises for levels a ladder from the
+bottom rather than tilting it.**
+
+✅ **Two things nothing had ever reported are published, in `docs/STRATEGY.md` §12.**
+**(1) Round length and abandoned rounds** — 28.6 turns a round for the ladder field, and **the
+only non-zero abandoned count is the field containing `random`** (8 games of 9,072); both
+all-`outs` fields settled every game. ⚠️ **The honest statement is narrow**: no table of thinking
+rungs has yet failed to converge, not that none can. **(2) What refusing a claim is worth, which
+is nothing** — `outs/refuse` over `outs/allow` is **`+0.4 ± 1.0`** on win rate and
+**`+0.02 ± 0.18`** on money. ✅ **A null published with its denominator**: the opener asks in about
+a quarter of rounds and the upstream seat holds the rank about half the time, so the veto fires
+about one round in seven. **The null says P28's decision costs nothing either way, not that the
+rule never fires.**
+
+⚠️ **Two corrections a cold session needs.** **(1) `sim suite` is two and three quarter hours, not
+five** — 9,981 s at P29 with a cell *added*, because `outs` costs **7.0×** a `greedy` round rather
+than 8.2×; the stale figure had been quoted in three documents. **Re-time with `sim bench` rather
+than trusting prose.** **(2) `SeatRow.Claims` counts claims *asked for*, not *got*** — P28 made
+those different and the CSV has a `claims_refused` column now.
+
+🔥 **P27's finding still stands and P29 priced it: a bot's cover count can fall.**
 Every rung's score used to be monotone — *"throwing back the card just taken restores the hand
 exactly"* — which is `GreedyBotAgent`'s own stated reason a table of bots reaches a declaration at
 all. **§5.1 takes the just-taken card out of the choice.** A seat whose only legal discards are
 melded ones gives up a meld, so convergence is no longer guaranteed by construction; what stands
-behind it now is `SimulationOptions.TurnCap` and the hosted table's `RoundTimeLimit`. ⚠️ **It
-already broke two shipped tests** — a passive seat throwing back the 3♠ it drew became an illegal
-move, and `simple` drew a blank across eight games where it wins 29% over two hundred.
+behind it now is `SimulationOptions.TurnCap` and the hosted table's `RoundTimeLimit`. ✅ **At
+8,000 games a cell no field of thinking rungs failed to converge**, and the abandoned count is
+published so that it cannot stop being true quietly.
 
 **Every packet in the plan was done — P0–P12, P13.1–P13.6 and P14–P23.**
 🔥 **P24 is the next one, planned 2026-08-20 and not started**: *the computer's reasoning, said
@@ -163,9 +200,11 @@ which `SameValueAs` already computes.
 prediction that came out right.** Under the ×3 a designation on the 7♦ and one on an ordinary card
 leave **exactly the same** money loose in the shoe, so §4.1's conservation arithmetic is sound;
 `ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe` asserts the equality.
-❌ **`docs/STRATEGY.md` is measured under rules the game no longer plays by — P25's win condition,
-P26's money layer and P27's feeding ban, all three — and its header says so.** `prospector` is the one rung whose decision
-reads the money. **Re-measuring is P29 and nothing else.**
+✅ **`docs/STRATEGY.md` is measured under the rules the game actually plays by, as of P29 on
+2026-08-21** — P25's win condition, P26's money layer, P27's feeding ban and P28's claim
+permission, all four. **Every figure published before that date is gone from the document rather
+than annotated.** `prospector` is the one rung whose decision reads the money, and §10 is the
+section that moved most.
 
 ✅ **Both of rev 20's own questions closed in rev 21.** An objection turns on the **rank alone** —
 which is §5.1's own predicate, so the claim's test and the ban's test are **one predicate and must
@@ -418,8 +457,10 @@ close to being a property of *the mistake* rather than of the rung it is made ag
 ⚠️ **The failure mode P21 left behind was a flat spot, not an inversion** — the dial was monotone
 and passing every standing check the whole time, which is why `Tests/Sim/StandingAnswerTests.cs`
 now asserts that **the ε values published are the ε values offered** and that **every rung in
-`BotCatalog` is the subject of a published row**. ⚠️ **`sim suite` is now about five hours**;
-budget it before adding a rung. See BUILD-PLAN §2 for how the seven projects fit together — the
+`BotCatalog` is the subject of a published row**. ⚠️ **`sim suite` is about two and three quarter
+hours** — 9,981 s at P29, down from 17,539 s at P23 because `outs` costs 7.0× a `greedy` round
+rather than 8.2×; budget it before adding a rung, and re-time with `sim bench` rather than
+trusting this line. See BUILD-PLAN §2 for how the seven projects fit together — the
 strategy programme added no eighth project and, in the end, changed nothing in the engine.
 
 ## Rules of engagement
@@ -458,7 +499,8 @@ dotnet run -c Release --project BurmesePoker.Sim -- --games 2000 --seating balan
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --games 2000          # rank every player against every other
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy,medium,hard,expert --pairs adjacent --games 8000   # calibrate the difficulty dial
 dotnet run -c Release --project BurmesePoker.Sim -- money --games 8000               # should you draw blind for the money? a sweep over four stakes ratios
-dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv (⚠️ ~5h, measured at P23)
+dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs/refuse,outs/allow --pairs adjacent --games 8000   # is refusing a claim worth anything? (P29: no)
+dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv (⚠️ ~2h45, measured at P29)
 
 python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0   # capture a scripted match (0 expert, 1 hard, 2 medium, 3 easy)
 python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0 --script human   # …the longer one, with a person in it
@@ -512,7 +554,7 @@ verified bug to show for it.
 | `docs/STATUS.md` | Cross-session progress. Read first, update last. |
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
-| `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration** and **§10 the side bet**. Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
+| `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration**, **§10 the side bet** and **§12 round length, abandoned rounds and what refusing a claim is worth** (P29). Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10 and §12 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
 | `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it. Written for a person at the keyboard, not for a build session. |
 | `docs/RULES-TECHNICAL.md` | What the **old** code does and where it diverges. Defect list. Historical reference. |

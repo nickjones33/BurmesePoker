@@ -983,10 +983,13 @@ P16 ─┘                         ├─► P21  outs rung       (lookahead)  �
         │                     │                               (§3, §4.5)   │
         └─────────────────────┴──────────────────────────────────┬─────────┘
                                                                  ▼
-                                                    P29  re-measure, under the
+                                                    P29  re-measure, under the ☑
                                                          rules as they are
+                                                              │
+                                                              ▼
+                                                    (nothing planned)
 
-   P24  the computer's reasoning ☐  ← re-sequenced after P29; see below
+   P24  the computer's reasoning ☐  ← the only unbuilt packet; see below
 ```
 
 🔥 **P25–P29 are new on 2026-08-21 and they are the first packets in this plan that came from
@@ -997,7 +1000,14 @@ feeding ban, and per-round seating with the claim's permission rule. ⚠️ **Th
 of work from everything above it**: P11 through P23 added capability to a correct engine, and
 **P25–P28 make a working engine play a different game.**
 
-✅ **P25–P28 are all built as of 2026-08-21, and P29 is the only packet left in this branch.**
+✅ **P25–P29 are all built as of 2026-08-21, and this branch is closed.** P29 regenerated
+`docs/strategy/measurements.csv` under the four rules changes above — **91 measurements in
+9,981 s, 4 rows reproduced, and those four are the ε constants a human chose.** 🔥 **Of the three
+predictions this plan wrote down before the run, two held and one was wrong**; the wrong one
+(`outs` narrowing) is the finding, because chasing it located an effect the plan had not
+predicted at all: **the win condition levelled the bottom of the ladder instead of tilting the
+top.** ⚠️ **Nothing here needs a follow-up packet** — P29 raised no rules question and changed no
+play, and `RULES.md` stands at rev 24.
 
 ⚠️ **P25, P26 and P27 were independent of one another** and could be taken in any order or in
 separate sessions — they touch `Melds/`, `Money/` and the turn respectively, and nothing crosses.
@@ -1005,16 +1015,25 @@ separate sessions — they touch `Melds/`, `Money/` and the turn respectively, a
 alone, `RULES.md` §9 #30) and writing it twice is the defect to avoid. **P29 depends on all
 four**, because each of them changes what a round is worth.
 
-⚠️ **P24 was re-sequenced on 2026-08-21, and its own reason for going first is spent.** It was
+⚠️ **P24 is now the only unbuilt packet, and the question is whether to build it rather than
+when.** It was re-sequenced on 2026-08-21 and its own reason for going first is spent. It was
 placed ahead of the §5.1 work deliberately — *"§5.1 filters the very ranking P24 renders, but it
 is blocked on §9 #16–#19, and P24 is what makes that conversation productive."* **That conversation
 happened and §5.1 is fully specified**, so the argument has expired. 🔥 **And the case for moving
 it is stronger than the case for leaving it**: P24 explains *why the computer chose this card*, and
 P25–P27 change what a good card is at three of the four table sizes, what a card is worth, and
 which cards are legal to throw at all. **Shipping an explanation of decisions that are about to
-change means writing the sentence twice and believing it once.** ⚠️ **This is a sequencing
-recommendation, not a decision taken** — P24's scope was set by Nick on 2026-08-20 and moving it
-is his call.
+change means writing the sentence twice and believing it once.** ✅ **Those decisions have now
+changed and been measured**, so the objection that moved it has been discharged and the packet can
+be taken as written. ⚠️ **This was a sequencing recommendation, not a decision taken** — P24's
+scope was set by Nick on 2026-08-20 and whether to build it is his call.
+
+🔥 **P29 left one candidate that is not P24 and is not planned.** `docs/STRATEGY.md`'s tables are
+still *typed* out of `measurements.csv` by hand, which is the last transcription step in a chain
+this project has otherwise mechanised twice (P18, P20, P23). P29 validated a scratch script that
+re-derives §3's whole matrix and Holm column from the CSV — it reproduced the published text on
+all fifteen rows before the new run replaced them — but the script is not in the repo. **A small
+packet could make "generated, never transcribed" literally true rather than nearly true.**
 
 ⚠️ **P13.1–P13.4 are strictly sequential**, which nothing else in this plan has been. Each one
 is the ground the next stands on: the view model before anything renders it, the seat and the
@@ -1112,7 +1131,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P26** | **The money layer as it actually is** | — | M — ☑ **done 2026-08-21** — eight permanent cards, ×3, and a ×5 that needs the round's ownership |
 | **P27** | **The feeding ban** | — | L — ☑ done 2026-08-21 — **the first work since P0 that changed what a legal turn is**; a bot's cover count can now fall |
 | **P28** | **The claim, the permission, and the seat you sit in** | **P27** ✅ | M — ☑ **done 2026-08-21** — a fifth `IPlayerAgent` question, the only one asked off turn; the seats re-draw every deal |
-| **P29** | **Re-measure, under the rules as they are** | P25 ✅, P26 ✅, P27 ✅, P28 ✅ | L — ☐ **next, and the last one planned** ⚠️ `sim suite` was five hours *before* P25 |
+| **P29** | **Re-measure, under the rules as they are** | P25 ✅, P26 ✅, P27 ✅, P28 ✅ | L — ☑ **done 2026-08-21**: 91 measurements in 9,981 s, **4 rows reproduced**, two of three predictions held ⚠️ the suite is **2h45**, not five hours |
 
 ⚠️ **P25–P29 are the only packets in this table that do not descend from §0.** They come from
 `RULES.md` — four sessions with Mya Lay and Aung Aung on 2026-08-20/21 that closed twenty-three
@@ -4188,7 +4207,8 @@ level's or a rung's description instead of asking for it. 🔥 **A default is no
 P20 made the field *default* to the catalog and nothing failed when nobody re-ran the suite, which
 is precisely the state this packet found the tree in.
 
-⚠️ **6. The suite is a five-hour job and there is no shorter honest version.** 17,539 s for 77
+⚠️ **6. The suite is a two-and-three-quarter-hour job and there is no shorter honest version.**
+(⚠️ **Five hours when this was written; re-measured at 9,981 s by P29.**) 17,539 s for 77
 measurements. `--pairs adjacent` on the ladder would take fifteen cells to five and **throw away
 the matrix in §3, which is the document's centre** — it stays available and stays unused. The
 structural saving that *was* available has been taken; there is not a second one.
@@ -4717,7 +4737,7 @@ them, every rule this document records as Settled is implemented.**
 
 ---
 
-### P29 — Re-measure, under the rules as they are ☐
+### P29 — Re-measure, under the rules as they are ☑ done 2026-08-21
 
 **Goal.** `docs/strategy/measurements.csv` regenerated under P25–P28, and `docs/STRATEGY.md`
 saying plainly which of its published numbers moved and why.
@@ -4766,7 +4786,8 @@ legal discards gives up a meld and a round is no longer guaranteed to converge. 
 abandoned rounds already (`TurnCap`) and nothing published has ever quoted the number.** If it is
 not zero, that is a result and not a nuisance.
 
-⚠️ **`sim suite` was five hours at P23** and P25 makes the evaluator's question harder. **Budget
+⚠️ **`sim suite` was five hours at P23** and P25 makes the evaluator's question harder. (✅ **It
+came in at 9,981 s — see the outcome below.**) **Budget
 it, measure the new per-round cost with `sim bench` first, and say in the packet what was
 dropped** if anything is. ✅ **P25's own cost is now measured and it is small**: four-handed
 greedy-vs-simple went from **102 to 86 rounds/s** at one seed, about **16%**, and roughly half of
@@ -4798,6 +4819,52 @@ end** — which is new work, and worth pricing before promising it.
 
 **Done when.** `measurements.csv` regenerates from one command, `StandingAnswerTests` is green,
 and §11 records which rows moved, in which direction, and whether each was predicted.
+
+---
+
+**✅ Done 2026-08-21. What it found, kept here because the predictions above are what it is
+judged against.**
+
+**91 measurements in 9,981 s**, and **4 of the 91 rows byte-identical — the four ε constants.**
+⚠️ **That is not a determinism failure**: the only rows that can survive a rules change are the
+rows that are not measurements, and here they are literally the four numbers a person chose.
+**"Does it reproduce" is not a question that can be asked across a rules change**, which is worth
+knowing before the next packet changes one and goes looking for the bug.
+
+| Prediction | Outcome |
+|---|---|
+| **1. The dial survives.** | ✅ **Held.** All three steps separate under Holm, **no ε moved**, reference spacing improved to **8.1 / 7.9 / 7.1** from 7.9 / 6.7 / 7.7. The stated risk — that §5.1 shortens the ranking a level slips down, making the steps depend on how often the ban binds — did not materialise at a ban that binds on about a fifth of turns. |
+| **2. `outs` loses some of its margin.** | ❌ **Wrong, and the estimate did not even drift**: `+3.0 ± 1.0` over `greedy` against +3.1 ± 1.0, mean margin **+14.6** both times. |
+| **3. `prospector` separates below $5/$40.** | ✅ **Held, by a whole ratio.** $5/$20 went from `+0.95 ± 1.63` *inside the interval* to **`+5.32 ± 2.27` separated under Holm**, with the take rate collapsing **8.4% → 0.1%** — the mechanism variable, so it is a measurement and not a coincidence. |
+
+🔥 **Prediction 2 is the one worth keeping, because being wrong about it located the effect.**
+The reasoning was that every rung maximises cover count and cover count no longer wins at four
+seats (§7.1.1) — so the rung that looks ahead at the wrong target should narrow. It did not.
+**What moved instead is `simple`**, which gained about two points on each of `greedy`, `cautious`
+and `counting` (11.2 → 9.2, 10.8 → 8.8, 11.0 → 9.9). ⚠️ **The four-handed condition demands a
+joker-free series and nothing in any rung is aimed at it, so the better melder pays the same
+tax**: a requirement nobody optimises for **levels a ladder from the bottom rather than tilting
+it**. The prediction had the mechanism right and the direction of its consequence wrong.
+
+✅ **The fourth and fifth things were measured and both are published** (`STRATEGY.md` §12).
+**Round length and abandoned rounds**: 28.6 turns a round for the ladder, 30.0 for the dial, 23.9
+for the two-arm claim cell; **the only non-zero abandoned count is the field containing `random`**
+— 8 games of 9,072 — and both all-`outs` fields settled every game they played. ⚠️ **The honest
+statement is narrow**: no table of thinking rungs has yet failed to converge, not that none can.
+**What refusing a claim is worth**: `outs/refuse` over `outs/allow` at 8,008 games is
+**`+0.4 ± 1.0`** on win rate and **`+0.02 ± 0.18`** on money — **a null, published**, and
+published *with its denominator*, since the opener asks in about a quarter of rounds and the
+upstream seat holds the rank about half the time.
+
+⚠️ **The wall-clock warning above was wrong in the cheap direction.** The suite is **two and three
+quarter hours**, not five, *with a cell added* — `outs` costs **7.0×** a `greedy` round against
+8.2× at P21, because P25's win condition prunes the cover search earlier than it lengthens the
+round. **Nothing was dropped.** ✅ **`sim bench` first was the right instruction and the right
+answer came out of it**; the stale figure had been quoted in three documents.
+
+🔥 **And one thing this packet did not do: it raised no rules question.** `RULES.md` is untouched
+at rev 24 — the first packet since the rules sessions began to measure without discovering a rule,
+which is what a re-measurement packet is for.
 
 ---
 
@@ -4843,7 +4910,7 @@ For picking up in a fresh session with no memory of this conversation.
 | **A research rung is worth nothing** (new 2026-08-19). `cautious` cost a packet and measured +0.5 ± 0.55 points; there is no reason to expect the next one to fare better. | **§3.12: the difficulty system does not depend on research succeeding.** P19 finishes it with the rungs that exist today, and **P20–P22 are independently droppable in preference order**. A null result is published rather than buried (P20 acceptance 1), because *why* `cautious` failed was worth more than its number. ⚠️ **P20 is the second such rung and it happened exactly as this row predicted** — `counting` measured `+0.3 ± 1.0` the wrong way, was published as a failure, and its *why* narrowed P21: **better information fed to a decision rule that does not matter is worth nothing**, so the remaining rung has to change the question rather than the answer. **Two of three research rungs returned nothing.** 🔥 **P21 is the third and it did not** — `outs` measured `+3.1 ± 1.0` over `greedy` and beat every rung in the field, which is the first time this row has been wrong. ⚠️ **It does not retire the row, it sharpens it**: the two that failed both refined the *residue* greedy leaves behind, worth about half a point against an instrument that resolves one; the one that paid changed the question asked *before* greedy's tie-break spoke. **Plan a research rung by asking where its key sits, not by how clever the idea is.** ⚠️ And note the cost of success: a rung that separates becomes `Hardest`, re-bases every difficulty level onto itself, and made both the suite and the test tree three times slower. 🔥 **P22 is the fourth and it broke the row's frame rather than confirming or refuting it.** `prospector` did not ask "is this a better way to play rummy" at all — it asked what the *side bet* is worth, so it is judged on `$/round`, and its answer is **a function of the stakes**: nothing at $5/$1 (where it is literally the same player as `outs`), `+7.3 ± 3.3` a round at $5/$40. ⚠️ **The new lesson is about cost rather than about odds.** A rung that measures nothing at the standard stakes still joins the catalog, still costs six head-to-head cells in every future suite run, and took `sim suite` from 1h45 to about 3h15 — **so the question to ask of the next rung is not only where its key sits but whether the standing instrument is the right place to measure it.** |
 | **The outs rung makes the programme too slow to run** (new 2026-08-19, P21). A live-outs measure costs a `PartialCover.Best` per value per candidate — ~100× a decision, which turns P12's 34-second run into a quarter of an hour. | **A budget stated in advance: no more than 10× greedy's rounds a second, measured** — over it, the rung is built wrong. The optimisation is the one §3.7 has pointed at since P12: **attack allocation**, and put every speed-up **around** the evaluator, never inside it, because `IsWinning` is the win authority (§3.4) and its answers may not change. |
 | **A counting bot sees what the rules conceal** (new 2026-08-19, P20). It is the first strategy to want information beyond its own hand, and `TurnContext` is the concealment rule expressed as a type. | **The information set is decided and asserted before the bot is written**, and the safe default is *only what this seat has actually been shown* — wrong in the direction that makes the bot weak rather than the direction that makes it cheat. ⚠️ Whether a discard pile is inspectable is a **rules** question and goes to §9 and to Mya Lay, not into code. ✅ **Discharged by P20 as designed**: §9 #15 stayed open, the question went to Mya Lay flat, and the bot counts only what it was shown — **12 → 23 cards a round out of 108**. 🔥 **The cost of the cautious default is now a measured quantity rather than a worry**, and it is one of the two reasons the rung returned nothing. If the answer comes back *the piles may be read*, the rung deserves re-measuring before it is written off. |
-| ~~**A standing suite that nobody re-runs**~~ (new 2026-08-20, P22; **half-retired 2026-08-20 by P23**). `sim suite` is the join between the code and every number the docs quote, and it grew from 18 s (P17) to 35 min (P20) to 1h45 (P21) to **about 3h15** (P22) — at which point "regenerate it" stops being something a session does casually and `measurements.csv` starts drifting behind the catalog, which is exactly what it did here. | ⚠️ **The drift is recorded rather than hidden**: `docs/STRATEGY.md` §11 says which tables are the six-rung field and why, and P23 owns the catch-up. The structural answers are `--pairs adjacent` for the ladder as well as the dial (P19 built it), and **not measuring a rung in a cell where it is a known duplicate** — six of P22's new cells are `outs` against itself under another name. ⚠️ **What must not happen is a hand-typed shorter field**: P18 and P20 each removed exactly that defect, one layer apart. ✅ **P23 took the structural saving and refused the hand-typed one.** A rung declares its instrument (`BotRung.Ranked`), the ladder field is a *filter* of the catalog, and a test asserts the ladder and the sweep are between them the whole of it — so the six duplicate cells are gone and a rung still cannot be added without being measured. ⚠️ **What is not retired is the wall clock**: the suite is still five hours, `--pairs adjacent` on the ladder remains the only further saving and would cost §3's matrix, and **the drift this row is about is now a red build rather than a paragraph in §11.** |
+| ~~**A standing suite that nobody re-runs**~~ (new 2026-08-20, P22; **half-retired 2026-08-20 by P23**). `sim suite` is the join between the code and every number the docs quote, and it grew from 18 s (P17) to 35 min (P20) to 1h45 (P21) to **about 3h15** (P22) — at which point "regenerate it" stops being something a session does casually and `measurements.csv` starts drifting behind the catalog, which is exactly what it did here. | ⚠️ **The drift is recorded rather than hidden**: `docs/STRATEGY.md` §11 says which tables are the six-rung field and why, and P23 owns the catch-up. The structural answers are `--pairs adjacent` for the ladder as well as the dial (P19 built it), and **not measuring a rung in a cell where it is a known duplicate** — six of P22's new cells are `outs` against itself under another name. ⚠️ **What must not happen is a hand-typed shorter field**: P18 and P20 each removed exactly that defect, one layer apart. ✅ **P23 took the structural saving and refused the hand-typed one.** A rung declares its instrument (`BotRung.Ranked`), the ladder field is a *filter* of the catalog, and a test asserts the ladder and the sweep are between them the whole of it — so the six duplicate cells are gone and a rung still cannot be added without being measured. ⚠️ **What is not retired is the wall clock** — though P29 measured it *down* rather than up: the suite is **two and three quarter hours** (9,981 s) with a sixteenth cell added, because `outs` costs 7.0× a `greedy` round rather than 8.2×. `--pairs adjacent` on the ladder remains the only further saving, would cost §3's matrix, and **there is no longer a wall-clock reason to take it**; the drift this row is about is now a red build rather than a paragraph in §11. |
 | ~~**The difficulty ladder becomes a lie**~~ (new 2026-08-19, **retired 2026-08-20 by P23**). Levels are calibrated against a ladder that later packets widen, so a published calibration is stale the moment a rung lands. | ✅ **Done.** P23 re-ran the suite and re-fitted the spacing (`hard` 0.5 → 0.4), and **`StandingAnswerTests` asserts that the levels published are the levels offered, at the ε they are offered at** — so a rate moved without a re-run is a red build rather than a document nobody checked. A level not separated from its neighbour is **deleted rather than shipped** (P19 acceptance 1); all three steps survive Holm at 6.8× the half-width or better. 🔥 **The row was right about the mechanism and wrong about the size**: re-basing the dial onto a stronger rung left it *ordered* and only unevenly spaced, which no existing check would ever have caught — the alarm that fires is for inversion, and the failure mode that actually happened was a flat spot. |
 | Rules drift as more is recalled. | `RULES.md` provenance tags make revisiting cheap; §9 tracks what is still unrecorded. |
 | Three projects is over-engineering. | Noted in §2. The enforcement is the point, but a single project with `IGameObserver` is an acceptable fallback. |

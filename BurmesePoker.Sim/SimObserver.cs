@@ -30,6 +30,19 @@ public sealed class SimObserver : IGameObserver
     /// <summary>How often the draw pile was rebuilt from the discards, this round (RULES.md §5).</summary>
     public int Reshuffles { get; private set; }
 
+    /// <summary>
+    /// How often the opener's claim was refused by the seat before it, this round
+    /// (RULES.md §4.5).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>The engine narrates a refusal and nothing else about the permission</b> — an
+    /// objection that was never invited leaves no trace, and neither does one that was invited
+    /// and declined, because both let the claim through. So this counts the vetoes that
+    /// <em>bit</em>, which is what BUILD-PLAN P29 asks for: the share of claims that a seat
+    /// upstream actually stopped. <b>At most one a round</b>, since only turn 1 may claim.
+    /// </remarks>
+    public int Refusals { get; private set; }
+
     /// <summary>Starts a fresh round's tallies.</summary>
     public void BeginRound()
     {
@@ -40,6 +53,7 @@ public sealed class SimObserver : IGameObserver
         }
 
         Reshuffles = 0;
+        Refusals = 0;
     }
 
     /// <summary>Cards this seat took blind off the deck, this round — the only route to ownership.</summary>
@@ -53,4 +67,6 @@ public sealed class SimObserver : IGameObserver
     public void PlayerTookDiscard(PlayerId player, Card card) => _takes[player]++;
 
     public void DiscardsReshuffled(int cards) => Reshuffles++;
+
+    public void ClaimRefused(PlayerId objector, PlayerId claimant, Card card) => Refusals++;
 }

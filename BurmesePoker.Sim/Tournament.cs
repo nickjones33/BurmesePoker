@@ -194,6 +194,20 @@ public sealed record CellPlayer(
 /// be compared with <see cref="Margin"/></b> (P17 acceptance 3): within a cell it is the wrong
 /// answer, and how wrong is worth printing.
 /// </param>
+/// <param name="Rounds">Rounds that settled, which is one per game at <c>RoundsPerGame = 1</c>.</param>
+/// <param name="Turns">
+/// Turns across all of them. 🔥 <b>Round length is a thing this programme never published and
+/// now has to</b> (BUILD-PLAN P29): P27 took the just-taken card out of the discard choice, so a
+/// rung's cover count can fall and a table of bots is no longer guaranteed to converge by
+/// construction. <see cref="TurnsPerRound"/> and <see cref="Abandoned"/> are the two numbers
+/// that would show it if it stopped.
+/// </param>
+/// <param name="ClaimAttempts">How often the opener asked for the turned-up money card (RULES.md §4.5).</param>
+/// <param name="ClaimsRefused">
+/// How many of those the seat before it vetoed. ⚠️ <b>Every rung refuses whenever it may</b>,
+/// which P28 decided rather than measured, so this is the size of the branch that decision
+/// governs.
+/// </param>
 public sealed record TournamentCell(
     CellKind Kind,
     string Row,
@@ -204,8 +218,24 @@ public sealed record TournamentCell(
     int Abandoned,
     IReadOnlyList<CellPlayer> Players,
     Measurement Margin,
-    Measurement IndependentMargin)
+    Measurement IndependentMargin,
+    int Rounds = 0,
+    long Turns = 0,
+    int ClaimAttempts = 0,
+    int ClaimsRefused = 0)
 {
+    /// <summary>Average turns to a declaration in this cell.</summary>
+    public double TurnsPerRound => Rounds == 0 ? 0 : (double)Turns / Rounds;
+
+    /// <summary>Share of the games this cell gave up at the turn cap.</summary>
+    public double AbandonedRate => Games == 0 ? 0 : (double)Abandoned / Games;
+
+    /// <summary>Share of the claims made that were refused (RULES.md §4.5).</summary>
+    public double RefusalRate => ClaimAttempts == 0 ? 0 : (double)ClaimsRefused / ClaimAttempts;
+
+    /// <summary>Share of the rounds in which the opener asked for the turned-up money card.</summary>
+    public double ClaimRate => Rounds == 0 ? 0 : (double)ClaimAttempts / Rounds;
+
     /// <summary>How the cell reads in a report.</summary>
     public string Label => Kind switch
     {
@@ -358,6 +388,27 @@ public static class Tournament
         return [strategy, strategy with { Name = strategy.Name + MirrorSuffix }];
     }
 
+    /// <summary>
+    /// One head-to-head cell on its own, without the round-robin around it.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>For a question that is a single comparison rather than a field</b> (BUILD-PLAN P29).
+    /// Two arms of one rung — <c>outs/refuse</c> against <c>outs/allow</c> — make exactly one
+    /// claim, so running them through <see cref="Run"/> would pay for a free-for-all that
+    /// reproduces the pair cell and a null cell that reproduces a unit test. ⚠️ <b>There is no
+    /// correction, because there is no family</b>: one comparison is its own family, and
+    /// <see cref="Measurement.IsSeparatedFromZero"/> is the whole verdict.
+    /// </remarks>
+    public static TournamentCell HeadToHead(TournamentOptions options, Strategy row, Strategy column)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(row);
+        ArgumentNullException.ThrowIfNull(column);
+        options.Validated();
+
+        return Play(options, CellKind.Pair, row, column);
+    }
+
     private static TournamentCell Play(TournamentOptions options, CellKind kind, Strategy row, Strategy column)
     {
         IReadOnlyList<Strategy> players = [row, column];
@@ -407,6 +458,24 @@ public static class Tournament
 
         var settled = report.Games.Count(game => game.Rounds.Count > 0);
 
+        // §3.8's rule, again: collected off the rows the run already produced, never computed
+        // by the domain and never a second pass over the engine.
+        var rounds = 0;
+        var turns = 0L;
+        var attempts = 0;
+        var refused = 0;
+
+        foreach (var game in report.Games)
+        {
+            foreach (var round in game.Rounds)
+            {
+                rounds++;
+                turns += round.Turns;
+                attempts += round.Seats.Sum(seat => seat.Claims);
+                refused += round.ClaimsRefused;
+            }
+        }
+
         var cellPlayers = series
             .Select(one => new CellPlayer(
                 one.Name,
@@ -421,7 +490,8 @@ public static class Tournament
         {
             return new TournamentCell(
                 kind, row, column, assignments.Count, report.Games.Count, settled,
-                report.Games.Count - settled, cellPlayers, default, default);
+                report.Games.Count - settled, cellPlayers, default, default,
+                rounds, turns, attempts, refused);
         }
 
         var rowSeries = series.Single(one => one.Name == row);
@@ -437,7 +507,11 @@ public static class Tournament
             report.Games.Count - settled,
             cellPlayers,
             Measurement.Paired(rowSeries.WinRate, columnSeries.WinRate),
-            Measurement.Difference(Measurement.Of(rowSeries.WinRate), Measurement.Of(columnSeries.WinRate)));
+            Measurement.Difference(Measurement.Of(rowSeries.WinRate), Measurement.Of(columnSeries.WinRate)),
+            rounds,
+            turns,
+            attempts,
+            refused);
     }
 
     private static IReadOnlyList<Standing> Standings(
