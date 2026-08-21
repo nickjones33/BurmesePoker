@@ -80,10 +80,21 @@ public class RoundEngineTests
         Assert.Equal(Alice, result.Winner);
         Assert.Equal(13, result.Melds.Sum(meld => meld.Count));
 
-        // Nobody owns a money card, so only the flat round value moves: $5 from each loser.
+        // ⚠️ This said "nobody owns a money card" until P26, and the deal had not changed —
+        // **jokers became permanent money cards** (RULES.md §4.1, rev 21). This deal gives Bob
+        // the black joker and Dan the red one, so each collects $1 a head on top of the flat $5.
         Assert.Equal(
-            new Dictionary<PlayerId, int> { [Alice] = 15, [Bob] = -5, [Carol] = -5, [Dan] = -5 },
+            new Dictionary<PlayerId, int> { [Alice] = 13, [Bob] = -3, [Carol] = -7, [Dan] = -3 },
             result.Payouts);
+
+        var jokers = engine.Table.Ownership.Records
+            .Select(record => engine.Table.AllCards.First(card => card.Id == record.Key))
+            .Where(card => engine.Table.MoneyCards.Multiplier(card) > 0)
+            .ToList();
+
+        // Named rather than left implicit in the arithmetic above: two jokers, nothing else.
+        Assert.Equal(2, jokers.Count);
+        Assert.All(jokers, card => Assert.True(card.IsJoker));
     }
 
     [Fact]
@@ -140,9 +151,12 @@ public class RoundEngineTests
         Assert.Null(engine.Table.Ownership.OwnerOf(claimed.Id));
 
         // The claimed card is a money card, and it pays nobody: the table gave it, not the deck.
+        // ⚠️ The rest of the movement is jokers, permanent money cards since RULES.md rev 21
+        // (§4.1): Carol holds the red one and Dan the black one, and each collects $1 a head.
+        // **Alice claimed a money card and still collects nothing for it**, which is the point.
         Assert.Equal(1, engine.Table.MoneyCards.Multiplier(claimed));
         Assert.Equal(
-            new Dictionary<PlayerId, int> { [Alice] = 15, [Bob] = -5, [Carol] = -5, [Dan] = -5 },
+            new Dictionary<PlayerId, int> { [Alice] = 13, [Bob] = -7, [Carol] = -3, [Dan] = -3 },
             result.Payouts);
 
         Assert.Equal(DeckBuilder.TotalCards, engine.Table.AllCards.Select(card => card.Id).Distinct().Count());
@@ -172,9 +186,11 @@ public class RoundEngineTests
         Assert.Equal(Bob, result.Winner);
         Assert.Equal(Alice, engine.Table.Ownership.OwnerOf(sevenOfDiamonds.Id));
 
-        // Bob wins $5 a head but pays Alice $1 for the 7♦ he is holding.
+        // Bob wins $5 a head but pays Alice $1 for the 7♦ he is holding. ⚠️ Alice also owns
+        // the black joker and Dan the red one — permanent money cards since RULES.md rev 21
+        // (§4.1) — so Alice collects on two cards and comes out level.
         Assert.Equal(
-            new Dictionary<PlayerId, int> { [Alice] = -2, [Bob] = 14, [Carol] = -6, [Dan] = -6 },
+            new Dictionary<PlayerId, int> { [Alice] = 0, [Bob] = 12, [Carol] = -8, [Dan] = -4 },
             result.Payouts);
     }
 

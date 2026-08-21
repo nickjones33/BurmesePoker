@@ -20,7 +20,10 @@ namespace BurmesePoker.Presentation;
 /// </remarks>
 /// <param name="Card">The physical card. Instance identity, so two copies of a value are two views.</param>
 /// <param name="State">Everything true of this card in this hand, as flags.</param>
-/// <param name="Multiplier">How many times this card's value pays this round: 0, 1 or 2.</param>
+/// <param name="Multiplier">
+/// How many times this card's <em>value</em> pays this round: 0, 1 or 3 (RULES.md §4.1).
+/// ⚠️ Never 5 — the jackpot needs the round's ownership and is settled, not drawn.
+/// </param>
 /// <param name="CostOfThrowing">
 /// How many melded cards throwing this one gives up — the cover of the twelve that would be
 /// left against the cover of the thirteen. Zero for deadwood.

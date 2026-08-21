@@ -28,8 +28,11 @@ public class MatchEngineTests
     [Fact]
     public void ThreeRoundsRunOneAfterAnotherWithTheBanksCarryingOver()
     {
-        // Alice goes out on the opening turn of every round, so nobody has drawn anything and
-        // no money card is owned: only the flat round value moves (RULES.md §7.2).
+        // Alice goes out on the opening turn of every round, so nobody has drawn anything.
+        // ⚠️ That used to mean "no money card is owned"; since RULES.md rev 21 **jokers are
+        // permanent money cards** (§4.1), and this deal hands the black one to Bob and the red
+        // one to Dan. So $1 a head moves each way on top of the flat round value (§7.2), every
+        // round, identically — which is what makes the banks still a clean multiple.
         var match = Match(WinsImmediately());
 
         for (var round = 1; round <= 3; round++)
@@ -39,13 +42,14 @@ public class MatchEngineTests
             Assert.Equal(round, played.Result.Round);
             Assert.Equal(round, match.RoundsPlayed);
             Assert.Equal(Alice, played.Result.Winner);
-            Assert.Equal(round * 15, match.Banks[Alice]);
-            Assert.Equal(round * -5, match.Banks[Bob]);
+            Assert.Equal(round * 13, match.Banks[Alice]);
+            Assert.Equal(round * -3, match.Banks[Bob]);
         }
 
         Assert.Equal(
-            new Dictionary<PlayerId, int> { [Alice] = 45, [Bob] = -15, [Carol] = -15, [Dan] = -15 },
+            new Dictionary<PlayerId, int> { [Alice] = 39, [Bob] = -9, [Carol] = -21, [Dan] = -9 },
             match.Banks);
+        Assert.Equal(0, match.Banks.Values.Sum());
     }
 
     [Fact]
@@ -115,7 +119,12 @@ public class MatchEngineTests
                 ? table.Stakes.RoundValue * (table.Players.Count - 1)
                 : -table.Stakes.RoundValue));
 
-        Assert.All(sideBet.Values, share => Assert.Equal(0, share));
+        // ⚠️ Every share was zero until P26, because this deal owns no *designated* card. It
+        // owns two **jokers**, which are permanent money cards since RULES.md rev 21 (§4.1) —
+        // so the side bet is now non-zero here, and it is still a transfer, so it still sums to
+        // zero. **Reachable at all is the property this test is about** (BUILD-PLAN §3.8).
+        Assert.Equal(0, sideBet.Values.Sum());
+        Assert.Contains(sideBet.Values, share => share != 0);
     }
 
     [Fact]
@@ -177,7 +186,7 @@ public class MatchEngineTests
         }
 
         Assert.Equal(12, match.RoundsPlayed);
-        Assert.Equal(180, match.Banks[Alice]);
+        Assert.Equal(12 * 13, match.Banks[Alice]);
     }
 
     [Fact]

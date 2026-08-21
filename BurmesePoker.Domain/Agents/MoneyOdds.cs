@@ -35,6 +35,14 @@ namespace BurmesePoker.Domain.Agents;
 /// Reshuffles are rare (RULES.md §5) and the overstatement is in the direction of drawing blind,
 /// which is the behaviour being measured rather than assumed.
 /// </para>
+/// <para>
+/// ⚠️ <b>A third, added by P26: the ×5 is not priced.</b> A draw that completes both partners of
+/// a 7♦/A♠ turn-up is worth ten money-card values rather than six (RULES.md §4.1), and this sums
+/// <see cref="MoneyCardRegistry.Multiplier(Card)"/> over the shoe, which is the value-only
+/// answer. Pricing it would need the seat's own ownership records, which no rung reads; the
+/// turn-up is that pair about one round in 1,400, and the understatement is against drawing
+/// blind, which is the conservative direction for the one rung that reads this at all.
+/// </para>
 /// </remarks>
 internal static class MoneyOdds
 {

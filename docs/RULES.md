@@ -4,7 +4,20 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-21 (rev 21 — 🔥 **jokers are permanent money cards, and there is a
+Last revised: 2026-08-21 (rev 22 — ✅ **no rule moved; the two `DERIVED` notes rev 21 left stale
+are re-derived, with numbers.** Packet P26 built the money layer as rev 20 and rev 21 state it, and
+re-measured what the side-bet is worth under it. **§4.3: the money cards move `$11.58 ± 0.34` a
+round over 600 five-player rounds** — **58% of the $20 round prize** and **37% of all the money
+that changed hands**, against $8.43 / 42% / 30% measured at rev 13 under four permanent cards and
+no triple. 🔥 **The side-bet grew by more than a third and the game is still not inverted**, so
+§4.2's balance argument survives with new numbers. **§4.4: 10 ownable money cards sit in the
+106-card pool in the ordinary case, not 6, so ~6.1 are owned the moment the deal ends and ~3.9 are
+left to be drawn for** — the *fraction* settled at the deal is unchanged at 61%, because it is
+65/106 and always was; what nearly doubled is the **live** component. ✅ **And the ×3's
+conservation argument is no longer a prediction**: a designation on the 7♦ and one on an ordinary
+card leave **exactly the same** money loose in the shoe, asserted as an equality in
+`ProspectorBotAgentTests`. ⚠️ **§9 #32 stays open and the code is fenced to the narrow reading.**
+Rev 21 — 🔥 **jokers are permanent money cards, and there is a
 jackpot.** Asked how much a turned-up joker's partner pays, the answer went behind the question:
 **"7 of diamonds, ace of spades, AND jokers are always money cards"** — so the permanent side-bet
 is **eight cards, not four** (§4.1), and two `DERIVED` arguments built on the old count are stale
@@ -451,29 +464,34 @@ takes part in it too, both collecting and paying. It resolves **independently of
 | A **tripled** money card counts as **three**; only the ownable copy can collect it (§4.1). | `EXPERT` | Settled — rev 20 |
 | **×5 each** where one player owns both partners of a 7♦/A♠ turn-up (§4.1). | `EXPERT` | Settled — rev 21 |
 
-> ⚠️ **The `DERIVED` balance note below is stale as of rev 21 and is kept unrevised.** It counts
-> **four** permanent money cards; there are **eight** (§4.1 — jokers are permanent), and it
-> predates both the ×3 and the ×5. **The side-bet is larger than the figure below says and nobody
-> has re-derived by how much.** ✅ Its *conclusion* — that a side-bet at this order of magnitude
-> is significant without dominating — is what §4.2's matching argument leans on, and that argument
-> is comparative and survives. ❌ **Its numbers do not.** Re-measuring it is §10 #17.
+✅ **Re-measured under rev 21, in packet P26 (2026-08-21).** The note below is the current
+one; the rev 13 measurement it replaces is kept beneath it as the record of what the side-bet
+was worth before jokers became permanent and before the ×3.
 
-**`DERIVED` — the recalled stakes produce a balanced game.** Under the code's exact-match
-rule (§4.2), ~6 money cards circulate beyond the two face-up. In a 5-player round the
-winner takes $20, while a player owning two money cards takes $8 — roughly 40% of the
-round prize. Significant without dominating: exactly what a side-bet should be.
+**`DERIVED` — the recalled stakes still produce a balanced game, with the side-bet larger
+than it was.** Under the exact-match rule (§4.2) **~10 ownable money cards** circulate in the
+106-card pool in the ordinary case — eight permanent (§4.1) plus one partner for each of the two
+designators. Over **600 simulated five-player rounds** (`--games 600 --seats 5 --seed 20260821`,
+greedy vs simple, summing each round's positive side-bet deltas) the money cards moved
+**`$11.58 ± 0.34` a round** against the flat prize of $20 — **58% of it**, and **37% of all the
+money that changed hands**.
 
-> **Measured, and the estimate holds** (packet P12, 2026-08-18). Over **600 simulated
-> five-player rounds** the money cards moved **$8.43 a round** against the flat prize of
-> $20 — **42% of it**, and 30% of all the money that changed hands. The derivation above
-> guessed 40% from two owned cards, so the recalled 5:1 ratio really does produce the
-> balance it was justified by. This is a measurement of the *game*, not a rule: it says
-> nothing new about what the rule is, only that the rule is a sensible one.
+> 🔥 **The side-bet grew by more than a third and the game is still not inverted, which is what
+> §4.2's argument needed.** Rank-matching would put roughly twice as many cards in play again and
+> take the side-bet clear past the round prize; the exact-match rule leaves it at a bit over half
+> of it. **The comparative argument survives rev 21 intact and its numbers have moved with it.**
+> ⚠️ **This measures the ×3 and the eight permanent cards. It does not usefully measure the
+> ×5** — the turn-up is the 7♦/A♠ pair about **one round in 1,444**, so the expected number of
+> jackpots in a 600-round run is **0.4**. Whatever this run happened to contain, the figure above
+> is a measurement of the triple and of the eight permanent cards, and the jackpot's contribution
+> to it is noise.
 
-This also **strengthens the case for exact-match over rank-match** in §4.2. Rank-matching
-would put ~12 money cards in play, and the side-bet would routinely outweigh the round
-prize — inverting the game. The 5:1 round-to-money-card ratio only makes sense with the
-narrower rule.
+> ⚠️ **Superseded, and kept as the record.** **Measured at rev 13** (packet P12, 2026-08-18):
+> over 600 simulated five-player rounds the money cards moved **$8.43 a round** against the flat
+> prize of $20 — **42% of it**, and 30% of all the money that changed hands, from a pool of ~6
+> money cards. 🔥 **The same command against the pre-P26 tree at a different seed reproduces it to
+> the cent — $8.50, 42.5%, 29.8%** — which is why the $11.58 above is a measurement of the rules
+> change rather than of a change of method.
 
 ### 4.4 Eligibility — `EXPERT`, Settled
 
@@ -523,15 +541,28 @@ score for the new steward"*, which is precisely rule 1 in action.
 > It also explains why claiming the turned-up money card is worth offering at all (§4.5): it
 > gives you a card's *melding utility* with no money attached — a pure hand decision.
 
-> **`DERIVED` — the money layer is mostly settled at the deal.** Since dealing confers
-> ownership, most money cards are claimed before anyone acts. In a 5-player round, ~6
-> money-bearing cards sit in the 106-card pool; 65 of those are dealt, so roughly **4 of the 6
-> are owned the moment the deal ends**, with the remaining ~2 claimable by drawing during play.
+> **`DERIVED` — the money layer is mostly settled at the deal.** *(Re-derived under rev 21 in
+> packet P26, 2026-08-21.)* Since dealing confers ownership, most money cards are claimed before
+> anyone acts. In a 5-player round, **~10** ownable money-bearing cards sit in the 106-card pool
+> in the ordinary case — the **eight** permanent ones (§4.1: two 7♦, two A♠ and four jokers) plus
+> one partner for each of the two designators. 65 of the 106 are dealt, so roughly **6.1 of the
+> 10 are owned the moment the deal ends**, with the remaining **~3.9** claimable by drawing during
+> play.
 >
-> The money side-bet is therefore **substantially a deal lottery, with a smaller live
-> component** — which fits its role: it is not meant to be played for, only settled. This is
-> the direct consequence of the answer to question #3 and is worth remembering when tuning
-> stakes.
+> ⚠️ **The fraction did not move; the counts did.** 65/106 is 61% whatever the pool holds, and it
+> was 61% when this note said *4 of 6*. What rev 21 changed is the size of both halves — and the
+> **live** component nearly doubled, from ~2 cards to ~3.9. 🔥 **That matters more than the total
+> does**, because the live half is the only half a player can do anything about (§4.4, and the one
+> rung that reads the money, `prospector`).
+>
+> The money side-bet is therefore **still substantially a deal lottery, with a larger live
+> component than it had** — which fits its role: it is not meant to be played for, only settled.
+> This is the direct consequence of the answer to question #3 and is worth remembering when
+> tuning stakes.
+>
+> *(Exact, over every turn-up rather than the ordinary case: a turn-up that is itself a permanent
+> money card takes a card out of the pool instead of adding a partner, so the expectation is 9.68
+> ownable cards and **5.94 owned at the deal**.)*
 
 ### 4.5 Claiming the turned-up money card
 
@@ -1715,8 +1746,25 @@ Decisions here that the implementation contradicts or lacks:
     means the banned-rank sets are keyed to a seating that no longer exists the moment the round
     ends.
 
-17. 🔥 **The money layer is three rules away from what is built, and the third changes the shape
-    of the function** (§4.1, §4.3, §4.4).
+17. ✅ **Discharged 2026-08-21 (P26). The money layer is what §4 says it is.**
+    `MoneyCardRegistry.Permanent` holds **three values and eight cards**; `Multiplier(Card)`
+    returns 0, 1 or **3**; and the ×5 is `Multiplier(card, owner, MoneyOwnership)` under a
+    configuration `Settlement` reads from `CardOwnership` **once a round**, never once a card.
+    ✅ **The design decision held**: nothing is stored on a card, and the widened signature is
+    documented as the inputs widening rather than the principle moving.
+    ⚠️ **The ×5 is fenced to the 7♦/A♠ pair** (§9 #32), and `TwoTripledJokersInOneHandAreNotAJackpot`
+    is the test that makes widening it visible.
+    ✅ **The withdrawn `DERIVED` note's replacement was a prediction and it came out right**:
+    `ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe` now asserts an
+    **equality** — a designation on the 7♦ and one on an ordinary card leave exactly the same
+    money loose in the shoe — and it passes. ⚠️ **What is *not* discharged: `docs/STRATEGY.md`
+    §10's money sweep is still measured under the struck rule** and every rung's decision is
+    unchanged, so no published strategy figure has been re-run. **That is P29.**
+    ⚠️ **And `MoneyOdds` does not price the ×5** — it sums the value-only multiplier over the
+    shoe, which understates a round in 1,444 in the conservative direction; stated in the code
+    beside the two approximations that were already there.
+    *(What it was, before P26.)* 🔥 **The money layer is three rules away from what is built, and
+    the third changes the shape of the function** (§4.1, §4.3, §4.4).
     **(a) Jokers are permanent money cards** — `MoneyCardRegistry.Permanent` holds two values and
     must hold three; the permanent side-bet goes from **4 cards to 8**.
     **(b) A designation landing on a permanent money card pays ×3** — `Multiplier` is

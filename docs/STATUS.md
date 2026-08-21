@@ -10,26 +10,37 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-🔥 **P25 shipped 2026-08-21 and four of the five remain: P26, P27, P28, P29.** Every packet from
+🔥 **P25 and P26 have both shipped (2026-08-21). Three remain: P27, P28, P29.** Every packet from
 §0 is done — P23 shipped 2026-08-20 — but **four sessions with Mya Lay and Aung Aung on
 2026-08-20/21 closed twenty-three questions in `RULES.md` §9 and left four settled rules with no
-implementation at all.** ✅ **P25 the win condition by table size is now one of them no longer**;
-P26 the money layer as it actually is, P27 the feeding ban, P28 the claim's permission and
-per-round seating, P29 re-measure. ⚠️ **This is a different kind of work from everything above it:
-P11–P23 added capability to a correct engine, and P25–P28 make a working engine play a different
-game.** ✅ **P26 and P27 are independent of each other and of P25** — `Money/` and the turn;
+implementation at all.** ✅ **Two of them are implemented now**: P25 the win condition by table
+size, and P26 the money layer as §4 actually states it. **P27 the feeding ban, P28 the claim's
+permission and per-round seating, P29 re-measure.** ⚠️ **This is a different kind of work from
+everything above it: P11–P23 added capability to a correct engine, and P25–P28 make a working
+engine play a different game.** ✅ **P27 is independent of both** — it is the turn, not `Money/`;
 **P28 needs P27** (the objection predicate *is* the ban's predicate); **P29 needs all four.**
 ⚠️ **P24 is re-sequenced after P29 and that is a recommendation, not a decision** — see
 `BUILD-PLAN.md` §4.
 
-🔥 **The next packet is P26 or P27 — either, they do not touch each other or P25's code.**
+🔥 **The next packet is P27, the feeding ban** — the only one of the three with nothing in front
+of it.
 
-Nothing is in progress and the tree is green at **574 passed / 0 failed** (548 before P25; the
-26 new ones are `TableRulesTests` and nine acceptance cases in `HandEvaluatorTests`) — ⚠️ **still
-green against rules this document no longer holds**, and one test (`ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe`)
-asserts a derivation that has been withdrawn and is expected to go red when P26 starts.
-⚠️ *This line said 540 while the tree was actually at 543 — a count written from memory rather
-than from a run. It is from a run.*
+Nothing is in progress and the tree is green at **590 passed / 0 failed** (574 before P26; the
+16 new ones are the jackpot and permanence cases in `MoneyCardRegistryTests` and three in
+`SettlementTests`). ⚠️ **It is still green against §5.1, §3 and §4.5, which have no code behind
+them at all.**
+
+⚠️ **The baseline was verified in a `git worktree` at `HEAD`, not in place** — 574 / 0 in
+9 m 34 s — because this session had already started editing. **It is a cheap trick worth
+reusing**: `git worktree add <scratch> HEAD && dotnet test` proves the baseline without stashing.
+
+🔥 **One prediction `STATUS.md` itself made was wrong, and the shape of the error is worth
+keeping.** This block said `ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe`
+was *"expected to go red when P26 starts"*. **It was green at `HEAD`** — the code still implemented
+the withdrawn rule, so the test agreed with the code and disagreed only with `RULES.md`.
+**A test cannot go red for a rules change until somebody changes the code.** ✅ What the test
+*did* do is exactly what it was for: its assertion had to be rewritten deliberately, and the
+rewrite was a stated prediction that then came out right (below).
 ⚠️ **The test suite takes about eight minutes** — **7 m 35 s at P23**, on an otherwise idle
 machine (six and a half before P22, two and a half to four before P21, one before P19, 18 s
 before P17). ⚠️ **Measure it idle**: the same 548 tests took **16 minutes** in this session while a
@@ -93,8 +104,36 @@ front ends are where it shows**, and it is not only a loop: P13.5 puts *you at t
 seat you were dealt*, so re-seating every round means the table visibly rearranges itself around a
 fixed viewer, and `TableRing` has never been asked to do that between rounds.
 
+✅ **P26 built the money layer on 2026-08-21 and `RULES.md` §10 #17 is discharged.** Jokers are
+permanent (`Permanent` holds three values and eight cards), a designation landing on a permanent
+value pays **×3**, and the **×5** is `MoneyCardRegistry.Multiplier(card, owner, MoneyOwnership)`
+under a configuration `Settlement` reads from `CardOwnership` **once a round**. 🔥 **The design
+decision held**: nothing is stored on a card, `Multiplier(Card)` survives as the value-only
+question — which is what every view drawing one card at a time is really asking — and that is why
+no caller outside `Settlement` needed a parameter. ⚠️ **The ×5 is fenced to the 7♦/A♠ pair** while
+§9 #32 is open, and two tests pin the narrowness so widening it later cannot pass silently.
+⚠️ **No view can show a ×5** — `CardView.Multiplier` is 0, 1 or 3 by construction — so the jackpot
+is settled and never drawn. **A real UX gap, and no packet owns it.**
+
+🔥 **What P26 measured, and it is bigger than the packet expected.** The side-bet went from
+**`$8.50` to `$11.58 ± 0.34` a round** at five seats — **42.5% → 58% of the $20 round prize** —
+measured with the *same* command before and after (`--games 600 --seats 5 --seed 20260821`, greedy
+vs simple, summing each round's positive `side_bet` deltas out of `--csv`). ✅ **The instrument is
+validated rather than asserted**: the *before* run reproduces P12's rev-13 published figures
+($8.43 / 42% / 30%) at a different seed. ✅ **And play did not move at all** — same seed, same
+wins, same turns, same cover — which is the first time §4.4's decoupling claim has been measured
+*across* a change to the money layer. 🔥 **The packet's own stated prediction came out right**: a
+designation on the 7♦ and one on an ordinary card leave **exactly the same** money loose in the
+shoe, so §4.1's arithmetic is sound and the rule did not need re-asking.
+
+⚠️ **P26's one surprise is that "domain only" was true of the logic and not of the text.** `($$)`
+had to become `($$$)`, `CardDisplayState.PaysDouble` became `PaysTriple`, and four user-facing
+strings said *double*; leaving them would have printed a false number to a player. 🔥 **So a
+`drive-console.py` capture from before P26 no longer compares** — P23's promise that a pre-P23
+capture still does is spent.
+
 🔥 **And on 2026-08-21 the money layer's last two answers added a fourth unbuilt rule and broke a
-shipped test.** `RULES.md` is **rev 20**. **(1) Claiming the turned-up money card needs the
+shipped test.** *(The record of what P26 was built from.)* `RULES.md` is **rev 20**. **(1) Claiming the turned-up money card needs the
 permission of the seat that plays *before* you**, who may refuse only if they hold that card —
 because your public take arms §5.1 against them and locks them into holding it (§4.5, `EXPERT`).
 **The first rule tying the money layer to the feeding ban**, and it independently confirms §9 #16
@@ -965,7 +1004,7 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P23** The standing answer | P17, P19 | done 2026-08-20 — **the last packet**: the dial re-fitted (one ε moved), **59 of 77 rows byte-identical**, and "a rung cannot be added without being measured" made a test |
 | ☐ | **P24** The computer's reasoning, said out loud | P13.6, P14, P18, P21 | **planned 2026-08-20, not started** — the browser's arrow grows a *why*, and a journal that records where an expert disagreed |
 | ☑ | **P25** The win condition is a function of the table size | — | **done 2026-08-21** — `TableRules.For(players)` is the §7.1.1 table as data; `HandEvaluator` takes it and **has no parameterless overload**. The search carries what is still owing **along** the partition; two-handed prunes sets out of the candidates; `Meld.IsClean` needs no case for the all-joker meld. 🔥 **The change is real and `drive-console.py` cannot see it** — both captures are byte-identical because neither script reaches a declaration. |
-| ☐ | **P26** The money layer as it actually is | — | **planned 2026-08-21, not started** — jokers are permanent money cards, a designation landing on one pays **×3**, and a 7♦/A♠ turn-up whose partners are owned by one player pays **×5** (`RULES.md` §4, §10 #17). 🔥 **The ×5 cannot be computed from the designators**, so `Multiplier(Card)` gains the round's ownership. ⚠️ **One test is expected red before this starts.** |
+| ☑ | **P26** The money layer as it actually is | — | **done 2026-08-21** — `Permanent` is **three values and eight cards**, `Multiplier(Card)` returns 0/1/**3**, and the ×5 is `Multiplier(card, owner, MoneyOwnership)` under a configuration `Settlement` reads **once a round**. 🔥 **The packet's stated prediction held**: a designation on the 7♦ and one on an ordinary card leave *exactly the same* money loose in the shoe, now an equality assertion. 🔥 **The side-bet went from `$8.50` to `$11.58 ± 0.34` a round at five seats — 42.5% → 58% of the round prize — and play did not move at all.** ⚠️ **The ×5 is fenced to the 7♦/A♠ pair** (§9 #32) by two tests. |
 | ☐ | **P27** The feeding ban | — | **planned 2026-08-21, not started** — §5.1, enforced **by construction**: a banned card is never offered and cannot be chosen (`RULES.md` §10 #13). **The first work since P0 that changes what a legal turn is.** ⚠️ Needs a **rank-only** predicate the domain does not have, a released-rank set per seat, and the floor. |
 | ☐ | **P28** The claim, the permission, and the seat you sit in | **P27** | **planned 2026-08-21, not started** — seats re-randomise **every round** (§3, §10 #16) and claiming needs the **upstream player's permission** (§4.5, §10 #18). 🔥 **A third kind of agent decision — *do I object* — asked of a seat that is not on turn**, and the answer is a **disclosure**. Depends on P27 because the objection predicate *is* the ban's predicate. |
 | ☐ | **P29** Re-measure, under the rules as they are | P25, P26, P27, P28 | **planned 2026-08-21, not started** — every figure in `STRATEGY.md` was measured under rules the document no longer holds. 🔥 **Three predictions written down before the run**, so the packet can be wrong. ⚠️ `sim suite` was five hours at P23 and P25 makes the evaluator's question harder. |
@@ -1016,12 +1055,62 @@ harness prints today would be a guess wearing a number.
 
 ## Notes for the next session
 
-🔥 **P25 is done. The next packet is P26 or P27 — take either**, they touch different code
-(`Money/` and the turn) and neither touches what P25 changed. ⚠️ **P24 was re-sequenced after P29
+🔥 **P25 and P26 are done. The next packet is P27, the feeding ban** — the only remaining one
+with nothing in front of it, and the first work since P0 that changes **what a legal turn is**. ⚠️ **P24 was re-sequenced after P29
 on 2026-08-21 — a recommendation, not a decision**, since Nick set its scope: its stated reason for
 going first (*§5.1 is blocked, and P24 makes that conversation productive*) is spent, and it
 explains decisions that P26 and P27 are about to change. **P28 needs P27**; **P29 needs all
 four.**
+
+### What P26 found, and what it leaves behind
+
+1. 🔥 **The packet's own prediction was the deliverable and it came out right.** `RULES.md` §10 #17
+   said, in advance, that
+   `ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe`'s last assertion
+   *"should invert to an equality"* — that under the ×3 a designation on the 7♦ and one on an
+   ordinary card leave **exactly the same** money loose in the shoe — and that **it had not been
+   run**. It was run. **They are equal to nine decimal places.** So §4.1's conservation arithmetic
+   is sound and the rule did **not** need re-asking, which was the stated fallback.
+2. ⚠️ **`STATUS.md` predicted that test would be *red* before P26 started. It was green at
+   `HEAD`.** The code still implemented the withdrawn rule, so the test agreed with the code and
+   disagreed only with the document. 🔥 **A test cannot go red for a rules change until somebody
+   changes the code** — what a shipped assertion buys you is that the change *cannot be made
+   quietly*, not that the tree tells you it is due.
+3. 🔥 **Seven shipped tests went red and every one of them for the same reason: jokers are dealt.**
+   Four of 108 cards are jokers, so an arbitrary four-handed deal hands out one or two of them —
+   and five tests carried the comment *"nobody owns a money card, so only the flat round value
+   moves"*, which stopped being true the moment `Permanent` grew. **The blast radius of rev 21 is
+   not the money layer; it is every golden settlement number in the tree.** ✅ All seven are
+   genuine expectation moves and each now names the jokers rather than restating a number.
+4. 🔥 **The side-bet is `$11.58 ± 0.34` a round at five seats, against `$8.50 ± 0.26` before** —
+   **58% of the $20 round prize, up from 42.5%**, and 37% of all the money that changes hands.
+   ✅ **The instrument was validated before it was used**: the *before* run reproduces P12's
+   rev-13 published figures ($8.43 / 42% / 30%) at a different seed, so the difference is the
+   rules change. **Method** — `--games 600 --seats 5 --seed 20260821 --csv`, then sum each round's
+   positive `side_bet` column; it is worth keeping, because nothing in `Sim` reports gross
+   side-bet movement and the CSV does.
+5. ✅ **Play did not move at all.** Same seed before and after: identical wins, turns and cover.
+   **This is the first time §4.4's decoupling claim — money never distorts the melding game — has
+   been measured *across* a change to the money layer**, and it held exactly.
+6. ⚠️ **"Domain only" was true of the logic and false of the text.** `($$)` had to become `($$$)`,
+   `CardDisplayState.PaysDouble` became `PaysTriple`, and four user-facing strings said *double*.
+   🔥 **So a `drive-console.py` capture from before P26 no longer compares** — P23's promise that
+   a pre-P23 capture still does is spent. Re-capture from `HEAD` first.
+7. ⚠️ **No view can show a ×5, and no packet owns the gap.** `CardView.Multiplier` is 0, 1 or 3 by
+   construction, because a marker beside one card cannot depend on the rest of the round's
+   ownership. The jackpot is settled and never drawn — a player owning both partners sees `($$$)`
+   and is paid ×5. **Candidate work for P24 or a UX packet; it is not a bug in P26.**
+8. ⚠️ **`MoneyOdds` does not price the ×5 either**, and says so beside the two approximations it
+   already had. It sums the value-only multiplier over the shoe; the turn-up is the 7♦/A♠ pair
+   about **one round in 1,444**, and the understatement is against drawing blind, which is the
+   conservative direction for `prospector`, the one rung that reads it.
+9. ⚠️ **§9 #32 is fenced by two tests, not by a comment.**
+   `TwoTripledJokersInOneHandAreNotAJackpot` (both colours, and both copies of one colour) and
+   `ASevenAndAJokerTurnedUpAreNotAJackpotEither` assert ×3 for the combinations rev 21 *created*.
+   **Widening the rule has to break them.**
+10. ✅ **The baseline was verified in a `git worktree` at `HEAD` rather than by stashing** — 574/0
+   in 9 m 34 s, run alongside the work. `git worktree add <scratch> HEAD && dotnet test` is worth
+   reusing whenever a session has already started editing before the baseline is green.
 
 ### What P25 found, and what it leaves behind
 
@@ -2242,8 +2331,7 @@ of them across four sessions with **Mya Lay and Aung Aung** on 2026-08-20/21, in
 §5.1's specification (§9 #16–#19, #25, #27), both of the win condition's (#22, #29) and the whole
 money layer (#4, #5, #10–#14, #24, #26, #30, #31).
 
-⚠️ **Three calls are Nick's rather than a rules matter, and none of them stops P26 or P27
-starting.**
+⚠️ **Four calls are Nick's rather than a rules matter, and none of them stops P27 starting.**
 
 1. 🔥 **P24's position.** It was sequenced ahead of the §5.1 work deliberately, on the argument
    that §5.1 was blocked and P24 would make that conversation productive. **The conversation
@@ -2265,10 +2353,19 @@ starting.**
    and nobody has asked for one.** It is fine to leave it exactly as it is; it is not fine to
    leave it undecided and unrecorded.
 
+4. 🔥 **Whether the browser should ever show a ×5, and where.** P26 leaves the jackpot
+   **settled but never drawn**: `CardView.Multiplier` is 0, 1 or 3 by construction, because a
+   marker beside one card cannot depend on the rest of the round's ownership, so a player who owns
+   both partners of a 7♦/A♠ turn-up sees `($$$)` and is paid ×5. **It is the largest single swing
+   in the game and the only one the table cannot see coming.** Showing it means a per-hand fact
+   rather than a per-card one — plausibly P24's territory, plausibly a UX packet of its own, and
+   **no packet owns it today.**
+
 ✅ **One rules question is open and it blocks nothing** — `RULES.md` §9 **#32**: does the ×5 need
 the 7♦/A♠ pair specifically, or would any two tripled values do (a 7♦ and a joker, two jokers of
-opposite colours)? **The combination exists only because rev 21 made jokers permanent.** P26 writes
-the **narrow** rule with a test pinning the narrowness, so widening it later is a visible change.
+opposite colours)? **The combination exists only because rev 21 made jokers permanent.** ✅ **P26
+wrote the narrow rule and pinned it with two tests** — `TwoTripledJokersInOneHandAreNotAJackpot`
+and `ASevenAndAJokerTurnedUpAreNotAJackpotEither` — so widening it later has to break a test.
 `QUESTIONS-FOR-MYA-LAY.md` **Q9** has it phrased as a table situation.
 
 ⚠️ **Three rulings in the rules are `PLAYER` house rulings rather than recall, and stay flagged**:
@@ -2284,6 +2381,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 |---|---|---|
+| 2026-08-21 | P26 | **Done — the money layer is what `RULES.md` §4 actually says.** `MoneyCardRegistry.Permanent` holds **three values and eight cards** (the jokers joined), `Multiplier(Card)` returns 0/1/**3**, and the ×5 is `Multiplier(card, owner, MoneyOwnership)` under a configuration `Settlement` reads from `CardOwnership` **once a round**. ✅ **Design decision 2 held**: nothing is stored on a card, and `Multiplier(Card)` survives as the value-only question — which is what every view drawing one card at a time is really asking, and why no caller outside `Settlement` needed a parameter. Build clean, **590 passed / 0 failed** (574 before; 16 new). Baseline verified at `HEAD` **in a `git worktree`**, 574/0. 🔥 **The packet's own stated prediction was the deliverable and it came out right**: under the ×3 a designation on the 7♦ and one on an ordinary card leave **exactly the same** money loose in the shoe, so §4.1's conservation arithmetic is sound and the rule did not need re-asking; `ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe`'s last assertion is an equality now. ⚠️ **`STATUS.md` had predicted that test would be *red* before the packet started and it was green** — the code still implemented the withdrawn rule, so it agreed with the code and disagreed only with the document. 🔥 **Seven shipped tests went red and all seven for one reason: jokers are dealt.** Four of 108 cards, so an arbitrary four-handed deal hands out one or two, and five tests carried the comment *"nobody owns a money card"*. **The blast radius of rev 21 is every golden settlement number in the tree, not the money layer.** 🔥 **Measured: the side-bet moved `$8.50 ± 0.26` → `$11.58 ± 0.34` a round at five seats, 42.5% → 58% of the round prize**, with the *before* run reproducing P12's rev-13 figures at a different seed so the instrument is validated rather than asserted; `RULES.md` §4.3 and §4.4's stale `DERIVED` notes are re-derived (rev 22) and §10 #17 is discharged. ✅ **Play did not move** — same seed, same wins, turns and cover: §4.4's decoupling claim measured *across* a money-layer change for the first time. ⚠️ **"Domain only" was true of the logic and false of the text**: `($$)` → `($$$)`, `PaysDouble` → `PaysTriple`, four user-facing strings, **so a `drive-console.py` capture from before P26 no longer compares**. ⚠️ **No view can show a ×5** and no packet owns that gap; **`MoneyOdds` does not price it** either, and says so. ⚠️ **§9 #32 stays open and is fenced by two tests**, not a comment. |
 | 2026-08-21 | P25 | **Done — the win condition is a function of the table size, and the engine finally asks the right question.** `Domain/Melds/TableRules.cs` is `RULES.md` §7.1.1 as data and the only place it is written down; `HandEvaluator.IsWinning(hand, rules)` and `TryFindCover(hand, rules, out melds)` are the whole surface and **the parameterless overloads are gone**, so no caller can ask the five-handed question by accident. `TableState.Rules` and `TurnContext.Rules` are where the engine and a seat read it. **574 passed / 0 failed**, up 26. 🔥 **The interesting part was the memo, not the requirement**: the search state is `(covered, seriesStillOwed, cleanStillOwed)`, because a covered-set from which no completion can supply *two* more clean series may perfectly well supply one, and the old key would have poisoned the second question with the first question's dead ends. The counts are carried **along** the partition and clamped at nought — a clean series discharges both, an impure one the series count alone (§9 #28, #29) — with one prune, that fewer than three uncovered cards per series still owed cannot pay for them however they fall. ✅ **Two-handed was the cheap case**: sets are illegal *as melds*, a property of a meld rather than of the partition, so `MeldIndex.Build` takes `setsAllowed` and the search never sees one — ⚠️ **and filtering on `Meld.Kind` keeps more than it looks like it does**, since `MeldCandidates` already emits `{9♦,🃏,🃏}` and `{🃏,🃏,🃏}` once, as the **run** interpretation. ✅ **`Meld.IsClean` needed no special case for the all-joker meld** — `Kind == Run && JokerCount == 0`, and three jokers fail it because every slot is a substitute, so §6.1 and §9 #29 agreed without either being bent. 🔥 **The change is real and `drive-console.py` cannot see it.** Four-handed greedy-vs-simple over 200 games at one seed goes from **25.1 to 26.6 turns a round** and **102 to 86 rounds/s** — strictly harder, longer rounds, as predicted — and yet **both console captures are byte-identical to `HEAD`** (8,417 and 90,251 bytes). ⚠️ **Not because nothing changed: both scripts quit in round 2 and neither capture contains a declaration at all.** The instrument that proved P21 and P23 were refactors is blind to the win condition by construction — **do not read a clean `cmp` as evidence about play.** ⚠️ **`PartialCover` was left alone on purpose and now measures something else**: `IsComplete` agrees with `IsWinning` only at five or more, so **every rung in `BotCatalog` is maximising cover count at a table where cover count is no longer the win condition** — P29's prediction 2, to be priced rather than fixed. ⚠️ **Left behind and owned by nobody: `RoundEngine.MinimumPlayers` is still 4** (§10 #7), so `TableRules.For(2)` and `For(3)` are correct, tested and unreachable from a dealt game. **No rules question arose and `RULES.md` stays at rev 21** — §10 #14 gained a ✅ discharge note, which is a status annotation and not a rule moving. |
 | 2026-08-21 | P25–P29 | **Planned, not started — and the plan has a second half again.** 🔥 **`RULES.md` is rev 21, and the last two answers changed §4.1 twice over.** Asked how much a turned-up joker's partner pays, the answer went behind the question: **"7 of diamonds, ace of spades, AND jokers are always money cards"** — so the **permanent side-bet doubles, 4 cards to 8**, two `DERIVED` arguments built on the old count are stale (§4.3's measured *42% of the round prize*, §4.4's *~4 of 6 owned at the deal*), and rev 20's ×3 list stops looking arbitrary: **it was never a list of special cards, it is the list of permanent money cards.** 🔥 **And a rule nobody asked for — a jackpot**: if the two turned-up cards are the 7♦ and the A♠ and one player owns **both** partners, they pay **×5 each** rather than ×3, which at standard stakes is **$40 a head against a $5 round prize**. ⚠️ **It is the first rule in this game where a card's value depends on who holds what**, so a multiplier is a property of *(value, ownership)* and `MoneyCardRegistry.Multiplier(Card)` cannot answer alone. ✅ **The headline design decision survives** — money status is still *computed, never stored*; the inputs widen, the principle does not. ✅ **§9 #30 closed: an objection turns on the *rank*, which is §5.1's own predicate**, so the claim's test and the ban's test are one predicate and must not be written twice. ✅ **#31 closed by its premise turning out to be wrong** — asking it flat, without mentioning the 7♦, produced a correction instead of a confirmation. ⚠️ **One question left, §9 #32**: whether the ×5 needs the 7♦/A♠ pair specifically or any two tripled values — a combination that exists **only because jokers became permanent**. 🔥 **The pattern across four revisions is worth naming: every one of them answered past the question asked, and three changed a rule nobody was asking about** — rev 19 defined *a game*, rev 20 supplied the ownership framing and superseded a one-day-old `EXPERT` ruling, rev 21 made jokers permanent and produced the jackpot. **This game's rules are recalled as wholes, not as answers**, and asking narrowly has lost material three times. **Then the plan: P25 the win condition by table size, P26 the money layer as it actually is, P27 the feeding ban, P28 the claim's permission and per-round seating, P29 re-measure** — written into `BUILD-PLAN.md` §5 with a new dependency graph in §4. ⚠️ **P24 re-sequenced after P29 and flagged as a recommendation rather than a decision**: its stated reason for going first (*§5.1 is blocked and P24 makes that conversation productive*) is spent, and shipping an explanation of decisions that P25–P27 are about to change means writing the sentence twice and believing it once. 🔥 **P29 carries three predictions written down before the run**, so it can be wrong: the difficulty dial survives, `outs` **loses** margin at four seats (its objective is cover count, which is no longer sufficient for a win), and `prospector` separates at lower stakes than $5/$40. Docs only — `RULES.md`, `RULES-PRIMER.md`, `QUESTIONS-FOR-MYA-LAY.md`, `BUILD-PLAN.md`, `CLAUDE.md`, this file. **No code touched.** |
 | 2026-08-21 | — | 🔥 **The money layer's last two questions closed — `RULES.md` is rev 20 — and both answers reached past the question.** **(1) Claiming the turned-up money card requires the permission of the player who goes *before* you in turn order**, who may object **only if they hold that card**: your take is public, so it arms §5.1 against exactly that seat and locks them into holding their copy all round. `EXPERT`, closing §9 #5, which the 2023 source carried as a `TODO` nobody could explain. 🔥 **It is the first rule tying the money layer to the feeding ban, and it independently confirms two §5.1 rulings that were only recommendations when they were made** — #16 (the ban binds the seat above you, not the table) and #17 (only a public take arms it, the §4.5 claim included). **A permission rule naming the upstream seat cannot be stated in a game where either is false**, which is the strongest structural evidence yet that §5.1 is an old rule rather than a one-off table ruling. ⚠️ **Two consequences nobody had noticed**: the claim is an **attack** — it pays nothing (§4.4) and buys a lock on the hand of the player who discards to you all round, which `prospector` models not at all — and an **objection is a disclosure**, the first thing in this concealed game a player reveals by choice. **(2) A turned-up joker designates the other joker of its own colour** — *"colour matters for jokers"* — closing §9 #11 and confirming that `SameValueAs` already computes it. ⚠️ **And an answer nobody asked for superseded an `EXPERT` ruling from the day before**: a shown 7♦, A♠ or joker **can never be owned, claimed or not, and its partner copy pays ×3**, not the *double* rev 19 recorded. **Both `EXPERT`, one day apart, not in agreement — the later and more specific is the rule and the earlier is struck rather than deleted.** 🔥 **The second time an answer given before the framing that governs it turned out not to be an answer** (§7.1's purity ruling failed identically); the framing here is **ownership**. ✅ **The arithmetic backs the later answer**: ×3 is 1 for the partner's own permanence, 1 for the designation and 1 inherited from the copy that can no longer be paid for, which makes a designation on a permanent money card worth exactly what an ordinary designation is worth — where ×2 would have made it worth *less*. ❌ **First rules change to invalidate a published measurement.** `MoneyCardRegistry.Multiplier` caps at 2 and must return 3; `MoneyOdds` prices blind draws from it; `prospector` is the one rung reading the money; **`STRATEGY.md` §10's money sweep was measured under the struck rule**; and P22's `DERIVED` note is **withdrawn** — the reasoning was sound and the premise moved. ✅ **`ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe` asserts the withdrawn direction and will go red — the derivation was written as an assertion rather than as prose, so this cannot pass silently.** ⚠️ **Two new §9 questions, both raised by these answers**: #30 (does an objection turn on the exact card or the rank — §5.1 is rank-only) and #31 (is a joker's partner really ×3, when the same multiplier conserves money on a 7♦ and creates it on a joker). Docs only — `RULES.md`, `RULES-PRIMER.md`, `QUESTIONS-FOR-MYA-LAY.md` (**new Q8**), `BUILD-PLAN.md`, `CLAUDE.md`, this file. **No code touched; the tree is still green, and it is green against a rule this document no longer holds.** |

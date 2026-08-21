@@ -1107,7 +1107,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | P17–P23 | The strategy programme | P15, P16, P18 | ☑ all done 2026-08-19/20 — see §4's second graph |
 | P24 | The computer's reasoning, said out loud | P13.6, P14, P18, P21 | M — ☐ **re-sequenced after P29 on 2026-08-21** |
 | **P25** | **The win condition is a function of the table size** | — | L — ☑ **done 2026-08-21** — `TableRules`, and the search carries the counts |
-| **P26** | **The money layer as it actually is** | — | M — ☐ ⚠️ **one shipped test is expected red before it starts** |
+| **P26** | **The money layer as it actually is** | — | M — ☑ **done 2026-08-21** — eight permanent cards, ×3, and a ×5 that needs the round's ownership |
 | **P27** | **The feeding ban** | — | L — ☐ **the first work since P0 that changes what a legal turn is** |
 | **P28** | **The claim, the permission, and the seat you sit in** | **P27** | M — ☐ a third kind of agent decision |
 | **P29** | **Re-measure, under the rules as they are** | P25, P26, P27, P28 | L — ☐ ⚠️ `sim suite` was five hours *before* P25 |
@@ -4457,7 +4457,7 @@ the deal, the money layer and both front ends to agree that a table can be small
 
 ---
 
-### P26 — The money layer as it actually is ☐
+### P26 — The money layer as it actually is ☑ done 2026-08-21
 
 **Goal.** Settlement pays what `RULES.md` §4 now says: jokers are permanent money cards, a
 designation landing on a permanent card pays **×3**, and a 7♦/A♠ turn-up whose partners are owned
@@ -4503,6 +4503,53 @@ notes carry measured numbers.
 ⚠️ **Scope fence: do not generalise the ×5 past the 7♦/A♠ pair.** §9 #32 asks whether two jokers,
 or a 7♦ and a joker, do the same thing, and it is unanswered. **Write the narrow rule and a test
 that pins the narrowness**, so widening it later is a visible change.
+
+#### What P26 found
+
+🔥 **The prediction the packet was told to check came out right, and that is the headline.** It was
+written as *a prediction, not a measurement*: under the ×3, a designation on the 7♦ and one on an
+ordinary card should leave **exactly the same** money loose in the shoe. They do —
+`WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe`'s last assertion is now
+`Assert.Equal(spread, tripled, 9)` and it passes. **So `RULES.md` §4.1's arithmetic is right and
+the rule did not need re-asking.** ⚠️ **The test was *green* at `HEAD`, not red** — `STATUS.md`
+said it was "expected to be red before P26 starts" and that was wrong in a way worth naming: the
+code still implemented the withdrawn rule, so the test agreed with the code and disagreed only
+with the document. **A test cannot go red for a rules change until somebody changes the code.**
+
+🔥 **The ×5 is a property of a *(value, ownership)* pair and the signature says so.**
+`MoneyOwnership` is a one-field record struct — *who, if anybody, owns both partners of a 7♦/A♠
+turn-up* — computed by `MoneyCardRegistry.ConfigurationOf(ownership, shoe)` **once a round**, and
+`Multiplier(card, owner, ownership)` is the whole answer. ✅ **`Multiplier(Card)` survives as the
+value-only question**, which is what every view that draws one card at a time is actually asking;
+that is why nothing outside `Settlement` needed a parameter. ⚠️ **And no view can show the ×5** —
+`CardView.Multiplier` is 0, 1 or 3 by construction, and a card's marker cannot depend on the rest
+of the round's ownership. The jackpot is settled and never drawn. **That is a real UX gap and no
+packet owns it.**
+
+⚠️ **The narrowness is a test, because §9 #32 is open.** `TwoTripledJokersInOneHandAreNotAJackpot`
+(both colours, and both copies of one colour) and `ASevenAndAJokerTurnedUpAreNotAJackpotEither`
+assert that the combinations rev 21 *created* pay ×3 and not ×5. Widening the rule has to break
+them.
+
+🔥 **The side-bet is half again as big and the game is still not inverted.** Measured with the same
+command before and after — `--games 600 --seats 5 --seed 20260821`, greedy vs simple, summing each
+round's positive `side_bet` deltas out of `--csv` — the money cards move **`$11.58 ± 0.34` a round
+against `$8.50 ± 0.26`**: **58% of the $20 round prize, up from 42.5%**, and 37% of all the money
+that changed hands. ✅ **The method is validated rather than asserted**: the *before* run reproduces
+P12's rev-13 figures ($8.43, 42%, 30%) at a different seed, so the difference is the rules change
+and not a change of instrument. ✅ **§4.2's exact-match argument survives with new numbers** —
+rank-matching would still roughly double it again, and *that* would invert the game.
+
+⚠️ **Play did not move and the run proves it.** Same seed, before and after: identical wins,
+identical turns, identical cover. **The money layer is genuinely decoupled from the melding game**
+(§4.4), which is the design property the rules claim and this is the first time it has been
+measured across a change to the money layer.
+
+⚠️ **The bill landed in the front ends after all, and it is one word.** `($$)` had to become
+`($$$)`, `CardDisplayState.PaysDouble` became `PaysTriple`, and four user-facing strings said
+*double*. **The packet is domain-only in its logic and not in its text** — leaving them would have
+printed a false number to a player. ⚠️ **So a `drive-console.py` capture from before P26 no longer
+compares** (see P29).
 
 ---
 
@@ -4606,7 +4653,12 @@ is the one rung whose decision reads the money.
    longer sufficient for a win — so a rung that looks ahead at the wrong target should narrow
    against `greedy`.
 3. **`prospector` separates at lower stakes than $5/$40.** There is more money on the table (8
-   permanent cards, not 4) and a ×5 case worth $40 a head.
+   permanent cards, not 4) and a ×5 case worth $40 a head. ✅ **P26 priced the first half of this
+   and it is bigger than it looks: the side-bet went from `$8.50` to `$11.58 ± 0.34` a round at
+   five seats** — 42.5% of the round prize to **58%** — measured with `--games 600 --seats 5`
+   before and after, greedy vs simple. ⚠️ **The ×5 is not in that figure** (one round in 1,444) and
+   **`MoneyOdds` does not price it at all**, so `prospector`'s *estimate* of a blind draw moved
+   only by the triple and the jokers.
 
 ⚠️ **`sim suite` was five hours at P23** and P25 makes the evaluator's question harder. **Budget
 it, measure the new per-round cost with `sim bench` first, and say in the packet what was
@@ -4622,6 +4674,11 @@ not a result.** In that same 200-game run `greedy` fell from 32.3% to 31.3% and 
 inside an interval is the reason**: `PartialCover` was left alone by P25 on purpose, so every rung
 in the catalog is still maximising cover count at a table where cover count is no longer the win
 condition. Prediction 2 is a claim about that gap, and P29 is where it is priced.
+
+⚠️ **A capture from before P26 no longer compares, and that is new.** P26 changed what the
+console *prints*: `($$)` is `($$$)`, `CardDisplayState.PaysDouble` is `PaysTriple`, and the legend
+reads *pays triple*. **P23's promise that a pre-P23 capture still compares is spent** — re-capture
+the baseline from `HEAD` before using `cmp` to prove anything about a front-end refactor.
 
 ⚠️ **`drive-console.py` cannot help here and P25 proved it.** Both scripts quit in round 2, so no
 capture in this repo contains a declaration; a byte-identical `cmp` across a win-condition change

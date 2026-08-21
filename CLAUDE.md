@@ -11,23 +11,22 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **The plan has a second half again: P25–P29. P25 shipped 2026-08-21; P26–P29 have not
+🔥 **The plan has a second half again: P25–P29. P25 and P26 shipped 2026-08-21; P27–P29 have not
 started.** Every packet from §0 is done — P0–P12, P13.1–P13.6 and P14–P23 — but **four sessions
 with Mya Lay and Aung Aung on 2026-08-20/21 closed twenty-three questions in `RULES.md` §9 and left
 four settled rules with no implementation at all.** ✅ **P25** the win condition by table size
-(§7.1.1) **is built**; **P26** the money layer as it actually is (§4 — jokers permanent, ×3 and
-×5), **P27** the feeding ban (§5.1), **P28** the claim's permission and per-round seating (§3,
-§4.5), **P29** re-measure everything under them.
+(§7.1.1) and ✅ **P26** the money layer as it actually is (§4 — jokers permanent, ×3 and ×5) **are
+both built**; **P27** the feeding ban (§5.1), **P28** the claim's permission and per-round seating
+(§3, §4.5), **P29** re-measure everything under them.
 ⚠️ **This is a different kind of work from everything above it — P11–P23 added capability to a
-correct engine; P25–P28 make a working engine play a different game.** ✅ P26 and P27 are
-independent of each other and of P25 (`Money/`, the turn); **P28 needs P27**, because the objection
-predicate *is* the ban's predicate; **P29 needs all four.** ⚠️ **P24 is re-sequenced after P29 — a
-recommendation, not a decision** (`BUILD-PLAN.md` §4): its reason for going first is spent, and it
-explains decisions P26 and P27 are about to change.
+correct engine; P25–P28 make a working engine play a different game.** ✅ **P27 is next and nothing
+is in front of it**; **P28 needs P27**, because the objection predicate *is* the ban's predicate;
+**P29 needs all four.** ⚠️ **P24 is re-sequenced after P29 — a recommendation, not a decision**
+(`BUILD-PLAN.md` §4): its reason for going first is spent, and it explains decisions P27 is about
+to change.
 
-⚠️ **The tree is green at 574 tests and still green against rules this document no longer holds.**
-One test — `ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe` — asserts a
-derivation that has been **withdrawn**, and it is expected to be red before P26 starts.
+⚠️ **The tree is green at 590 tests and still green against §5.1, §3 and §4.5, which have no code
+behind them at all.**
 
 **Every packet in the plan was done — P0–P12, P13.1–P13.6 and P14–P23.**
 🔥 **P24 is the next one, planned 2026-08-20 and not started**: *the computer's reasoning, said
@@ -97,17 +96,23 @@ once at setup and holds it for a whole match**, which is what P9 chose while the
 loop**: P13.5 puts *you at the front whichever seat you were dealt*, so the table would visibly
 rearrange itself around a fixed viewer every deal, which `TableRing` has never been asked to do.
 
-🔥 **Jokers are permanent money cards, and there is a jackpot — `RULES.md` rev 21.** *"7 of
-diamonds, ace of spades, AND jokers are always money cards"*, so **the permanent side-bet is eight
-cards, not four**, and §4.3's measured *42% of the round prize* and §4.4's *~4 of 6 owned at the
-deal* are stale. **And if the two turned-up cards are the 7♦ and the A♠ and one player owns both
-partners, they pay ×5 each instead of ×3** — $40 a head at standard stakes against a $5 round
-prize. ⚠️ **It is the first rule in this game where a card's value depends on who holds what**, so
-`MoneyCardRegistry.Multiplier(Card)` needs the round's **ownership** and can no longer answer
-alone. ✅ **Design decision 2 survives** — money status is still *computed, never stored*; the
-inputs widen, the principle does not move. ⚠️ **`RULES.md` §9 holds one question, #32**: whether
-the ×5 needs the 7♦/A♠ pair specifically or any two tripled values — a combination that exists only
-because jokers became permanent. **Do not generalise it in code.**
+✅ **The money layer is built — P26, 2026-08-21, `RULES.md` rev 22.** Jokers are permanent money
+cards (*"7 of diamonds, ace of spades, AND jokers are always money cards"*), so **the permanent
+side-bet is eight cards, not four**; a designation landing on a permanent value pays **×3**; and if
+the two turned-up cards are the 7♦ and the A♠ and one player owns both partners, they pay **×5**
+each — $40 a head at standard stakes against a $5 round prize. 🔥 **A multiplier stopped being a
+property of a card**, so `MoneyOwnership` carries the one thing ownership decides and
+`Multiplier(card, owner, ownership)` is the whole answer, under a configuration `Settlement` reads
+**once a round**. ✅ **Design decision 2 held** — money status is still *computed, never stored*,
+and `Multiplier(Card)` survives as the value-only question every view actually asks.
+🔥 **Measured: the side-bet went from `$8.50` to `$11.58 ± 0.34` a round at five seats** — 42.5% →
+**58%** of the round prize — with the *before* run reproducing P12's rev-13 figures at a different
+seed, so §4.3 and §4.4's stale `DERIVED` notes are re-derived rather than re-argued. ✅ **And play
+did not move at all**: same seed, same wins, same turns, same cover. ⚠️ **Two things P26 leaves
+behind.** **(1) No view can show a ×5** — `CardView.Multiplier` is 0, 1 or 3 by construction, and
+`MoneyOdds` does not price it either; the jackpot is settled and never drawn, and **no packet owns
+that gap**. **(2) `RULES.md` §9 #32 is still open** — whether the ×5 needs the 7♦/A♠ pair
+specifically or any two tripled values. **Do not generalise it in code**; two tests fence it.
 
 🔥 **A fourth unbuilt rule, and the first rules change that invalidates a published measurement —
 `RULES.md` rev 20, 2026-08-21.** **(1) Claiming the turned-up money card needs the permission of
@@ -123,13 +128,13 @@ or joker can never be owned, claimed or not, and its partner copy pays ×3** —
 ownership framing arrived. A turned-up **joker** designates the other joker of **its own colour**,
 which `SameValueAs` already computes.
 
-❌ **`MoneyCardRegistry.Multiplier` caps at 2 and must return 3** (§10 #17). `MoneyOdds` prices a
-blind draw from it, `prospector` is the one rung whose decision reads the money, and
-**`docs/STRATEGY.md` §10's money sweep was measured under the struck rule.** ⚠️ **P22's `DERIVED`
-note is withdrawn** — *a designation landing on a permanent money card leaves less money in the
-deck* — the reasoning was sound and the premise moved. ✅ **The claim was asserted as a test
-rather than written as prose, so it goes red rather than passing silently**:
-`ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe`.
+✅ **P22's withdrawn `DERIVED` note has been replaced by a measurement, and the replacement was a
+prediction that came out right.** Under the ×3 a designation on the 7♦ and one on an ordinary card
+leave **exactly the same** money loose in the shoe, so §4.1's conservation arithmetic is sound;
+`ProspectorBotAgentTests.WhatABlindDrawIsWorthIsWhatIsStillLooseInTheShoe` asserts the equality.
+❌ **`docs/STRATEGY.md` is measured under rules the game no longer plays by — P25's win condition
+and P26's money layer both — and its header says so.** `prospector` is the one rung whose decision
+reads the money. **Re-measuring is P29 and nothing else.**
 
 ✅ **Both of rev 20's own questions closed in rev 21.** An objection turns on the **rank alone** —
 which is §5.1's own predicate, so the claim's test and the ban's test are **one predicate and must

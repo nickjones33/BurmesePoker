@@ -54,7 +54,7 @@ public static class Palette
 
     /// <summary>What the markers mean, for a footer under a hand.</summary>
     public const string Legend =
-        $"[{Quiet}]($) pays once · ($$) pays double ·[/] [{Good}]{OwnedMark}[/][{Quiet}] the deck gave it "
+        $"[{Quiet}]($) pays once · ($$$) pays triple ·[/] [{Good}]{OwnedMark}[/][{Quiet}] the deck gave it "
         + "to you, so it pays you even after you throw it[/]";
 
     /// <summary>An amount of money, signed and coloured from the point of view of whoever holds it.</summary>

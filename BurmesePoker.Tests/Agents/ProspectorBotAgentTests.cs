@@ -181,16 +181,21 @@ public class ProspectorBotAgentTests
 
         Assert.True(MoneyOdds.PerBlindDraw(drained) < MoneyOdds.PerBlindDraw(standard));
 
-        // 🔥 And the one that reads backwards until you follow the rules through. Turning up
-        // the 7♦ makes it a *double* (RULES.md §4.1) — and takes the physical card out of the
-        // deck to act as the designator, leaving one 7♦ worth $2 where an ordinary designation
-        // leaves one partner worth $1 and the 7♦'s own partner worth $1 besides. A designation
-        // that lands on a permanent money card is worth *less* to a player drawing for it, not
-        // more, because doubling one card is not the same as designating a second.
-        var doubled = TurnContexts.Offered(hand, offered, Stakes.Standard, Designating("3C", "7D"));
+        // 🔥 And the one this packet inverted. P22 derived — correctly, from the *double* rule
+        // that RULES.md rev 20 struck — that a designation landing on a permanent money card
+        // leaves *less* money in the deck than an ordinary one, and asserted it here. Under the
+        // **triple** the two come out **equal**, and that is not a coincidence: the shown copy
+        // can never be owned (§4.4), so ×3 is exactly 1 for the partner's own permanence, 1 for
+        // the designation, and 1 inherited from the copy nobody can be paid for. Every
+        // designation is worth the same $1 of live money wherever it lands.
+        //
+        // ⚠️ **The reasoning was sound and the premise moved**, which is the difference between
+        // a mistake and a dependency — and the claim was written down as an assertion rather
+        // than as prose, which is why the rules change could not pass silently.
+        var tripled = TurnContexts.Offered(hand, offered, Stakes.Standard, Designating("3C", "7D"));
         var spread = TurnContexts.Offered(hand, offered, Stakes.Standard, Designating("3C", "4C"));
 
-        Assert.True(MoneyOdds.PerBlindDraw(doubled) < MoneyOdds.PerBlindDraw(spread));
+        Assert.Equal(MoneyOdds.PerBlindDraw(spread), MoneyOdds.PerBlindDraw(tripled), 9);
     }
 
     [Fact]

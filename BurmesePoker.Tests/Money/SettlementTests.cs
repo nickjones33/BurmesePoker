@@ -71,33 +71,92 @@ public class SettlementTests
     }
 
     [Fact]
-    public void APlayerOwningOneDoubleMoneyCardCollectsEightFromTheTable()
+    public void APlayerOwningOneTripledMoneyCardCollectsTwelveFromTheTable()
     {
-        // The §4.3 worked example, line 3: turning up the 7♦ doubles a permanent money card,
-        // so one card pays 2 × $1 × 4 = $8 — the same as owning two singles.
+        // The §4.3 worked example, line 3: turning up the 7♦ triples the value, so its
+        // partner pays 3 × $1 × 4 = $12 — half again as much as owning two singles.
         var deltas = Settle(
             TurnedUp(Copy(Rank.Seven, Suit.Diamonds)),
-            OwnedBy(Bo, Copy(Rank.Seven, Suit.Diamonds)));
+            OwnedBy(Bo, Copy(Rank.Seven, Suit.Diamonds, 1)));
 
-        Assert.Equal(-5 + 8, deltas[Bo]);
-        Assert.Equal(20 - 2, deltas[Ava]);
-        Assert.Equal([-7, -7, -7], new[] { Cy, Di, Eve }.Select(player => deltas[player]));
+        Assert.Equal(-5 + 12, deltas[Bo]);
+        Assert.Equal(20 - 3, deltas[Ava]);
+        Assert.Equal([-8, -8, -8], new[] { Cy, Di, Eve }.Select(player => deltas[player]));
         Assert.Equal(0, deltas.Values.Sum());
     }
 
     [Fact]
-    public void ADoubleMoneyCardPaysTwiceTheMoneyCardValuePerOpponent()
+    public void ATripledMoneyCardPaysThreeTimesTheMoneyCardValuePerOpponent()
     {
         var single = Settle(
             TurnedUp(Copy(Rank.Five, Suit.Hearts)),
             OwnedBy(Bo, Copy(Rank.Five, Suit.Hearts)));
 
-        var doubled = Settle(
+        var tripled = Settle(
             TurnedUp(Copy(Rank.Ace, Suit.Spades)),
-            OwnedBy(Bo, Copy(Rank.Ace, Suit.Spades)));
+            OwnedBy(Bo, Copy(Rank.Ace, Suit.Spades, 1)));
 
         Assert.Equal(-5 + 4, single[Bo]);
-        Assert.Equal(-5 + 8, doubled[Bo]);
+        Assert.Equal(-5 + 12, tripled[Bo]);
+    }
+
+    [Fact]
+    public void OwningBothPartnersOfASevenAndAceTurnUpCollectsFortyFromTheTable()
+    {
+        // 🔥 The §4.3 worked example, line 4, and the largest single swing in the game:
+        // (5 + 5) × $1 × 4 = $40 a head at standard stakes, against a $5 round prize
+        // (RULES.md §4.1, rev 21).
+        var deltas = Settle(
+            TurnedUp(Copy(Rank.Seven, Suit.Diamonds), Copy(Rank.Ace, Suit.Spades)),
+            OwnedBy(Bo, Copy(Rank.Seven, Suit.Diamonds, 1), Copy(Rank.Ace, Suit.Spades, 1)));
+
+        Assert.Equal(-5 + 40, deltas[Bo]);
+        Assert.Equal(20 - 10, deltas[Ava]);
+        Assert.Equal([-15, -15, -15], new[] { Cy, Di, Eve }.Select(player => deltas[player]));
+        Assert.Equal(0, deltas.Values.Sum());
+    }
+
+    [Fact]
+    public void TheSameTurnUpWithThePartnersSplitSettlesAtTwentyFour()
+    {
+        // The same round, the same two cards, and the only thing that moved is who the deck
+        // gave them to: two players collect 3 × $1 × 4 = $12 each, so the pair moves $24
+        // instead of $40. This is the pair of tests the ×5 exists for.
+        var ownership = new CardOwnership();
+        ownership.RecordFromDeck(Copy(Rank.Seven, Suit.Diamonds, 1).Id, Bo);
+        ownership.RecordFromDeck(Copy(Rank.Ace, Suit.Spades, 1).Id, Cy);
+
+        var deltas = Settle(
+            TurnedUp(Copy(Rank.Seven, Suit.Diamonds), Copy(Rank.Ace, Suit.Spades)),
+            ownership);
+
+        Assert.Equal(-5 + 12 - 3, deltas[Bo]);
+        Assert.Equal(-5 + 12 - 3, deltas[Cy]);
+        Assert.Equal(20 - 6, deltas[Ava]);
+        Assert.Equal([-11, -11], new[] { Di, Eve }.Select(player => deltas[player]));
+        Assert.Equal(0, deltas.Values.Sum());
+
+        // The pair collects $24 here and $40 in the test above, from the same designation and
+        // the same two physical cards: a player who owns neither pays $6 of side-bet against
+        // $10, and that difference is the whole of the jackpot.
+        var jackpot = Settle(
+            TurnedUp(Copy(Rank.Seven, Suit.Diamonds), Copy(Rank.Ace, Suit.Spades)),
+            OwnedBy(Bo, Copy(Rank.Seven, Suit.Diamonds, 1), Copy(Rank.Ace, Suit.Spades, 1)));
+
+        Assert.Equal(-6, deltas[Eve] + 5);
+        Assert.Equal(-10, jackpot[Eve] + 5);
+    }
+
+    [Fact]
+    public void EveryJokerPaysItsOwnerInEveryRound()
+    {
+        // RULES.md §4.1, rev 21: jokers are permanent money cards, so a joker nobody turned
+        // up still pays 1 × $1 × 4.
+        var joker = Shoe.First(card => card.IsJoker);
+        var deltas = Settle(TurnedUp(Copy(Rank.Five, Suit.Hearts)), OwnedBy(Bo, joker));
+
+        Assert.Equal(-5 + 4, deltas[Bo]);
+        Assert.Equal(0, deltas.Values.Sum());
     }
 
     [Fact]

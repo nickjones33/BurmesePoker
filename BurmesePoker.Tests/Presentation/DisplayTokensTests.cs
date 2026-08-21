@@ -90,6 +90,6 @@ public class DisplayTokensTests
         Assert.Equal("★", DisplayTokens.For(CardDisplayState.Owned));
         Assert.Equal("←", DisplayTokens.For(CardDisplayState.SuggestedThrow));
         Assert.Equal("($)", DisplayTokens.For(CardDisplayState.PaysOnce));
-        Assert.Equal("($$)", DisplayTokens.For(CardDisplayState.PaysDouble));
+        Assert.Equal("($$$)", DisplayTokens.For(CardDisplayState.PaysTriple));
     }
 }

@@ -182,7 +182,7 @@ public sealed class HandView
 
         state |= money.Multiplier(card) switch
         {
-            >= 2 => CardDisplayState.PaysDouble,
+            >= MoneyCardRegistry.Tripled => CardDisplayState.PaysTriple,
             1 => CardDisplayState.PaysOnce,
             _ => CardDisplayState.None
         };

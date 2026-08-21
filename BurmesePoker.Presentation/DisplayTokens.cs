@@ -43,7 +43,7 @@ public static class DisplayTokens
         CardDisplayState.Melded => "meld",
         CardDisplayState.Loose => "loose",
         CardDisplayState.PaysOnce => "($)",
-        CardDisplayState.PaysDouble => "($$)",
+        CardDisplayState.PaysTriple => "($$$)",
         CardDisplayState.Owned => Owned,
         CardDisplayState.SuggestedThrow => SuggestedThrow,
         _ => throw new ArgumentException(

@@ -102,7 +102,7 @@ not a judgement about your hand.
 | Marker | Means |
 |---|---|
 | `($)` | A money card. It pays its owner the money card value from **every** other player. |
-| `($$)` | A double — it pays twice. |
+| `($$$)` | A triple — a designation that landed on a card that always pays, so it pays three times. |
 | `★` | **You own it.** The deck gave you this card, so it pays *you*. |
 
 **A money card with no star pays somebody else**, and you are holding it for them.
@@ -306,7 +306,7 @@ you handle. **A card you can throw is a button** — press it and your turn ends
 **The small number on a card is what throwing it would cost you**: `−3` means throwing it gives
 up three melded cards. **A card with no number costs nothing** — those are the ones worth
 throwing, and they are the ones grouped under `loose`. `←` is the card the computer would throw;
-`($)` and `($$)` mark money cards, and **`★` marks the ones that pay *you***.
+`($)` and `($$$)` mark money cards, and **`★` marks the ones that pay *you***.
 
 ⚠️ **`★` is the one worth understanding.** A money card pays **whoever the deck gave it to**, and
 only the deck — being dealt one or drawing one blind makes it yours, taking one from a discard or

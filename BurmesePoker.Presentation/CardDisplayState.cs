@@ -38,8 +38,17 @@ public enum CardDisplayState
     /// <summary>A money card paying once this round (RULES.md §4.1, §4.2).</summary>
     PaysOnce = 1 << 2,
 
-    /// <summary>A money card paying double — designated twice over (RULES.md §4.3).</summary>
-    PaysDouble = 1 << 3,
+    /// <summary>
+    /// A money card paying <b>three times</b> — a designation that landed on a permanent
+    /// money card (RULES.md §4.1, §4.3).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ It was <c>PaysDouble</c> until rev 21 struck the double; three is what conserves
+    /// what a designation is worth. <b>There is deliberately no state for the ×5</b> — the
+    /// jackpot is a property of an ownership configuration rather than of a card, so no view
+    /// that draws one card at a time can compute it (RULES.md §4.1).
+    /// </remarks>
+    PaysTriple = 1 << 3,
 
     /// <summary>
     /// The deck gave this card to the player whose view this is, so it pays them at settlement

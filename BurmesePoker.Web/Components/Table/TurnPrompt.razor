@@ -236,14 +236,14 @@ else
     /// <summary>The money marker on the card you just took, if it is one (§3.11 A2).</summary>
     private static string? Mark(SeatPrompt asking, Card card) => asking.MoneyCards.Multiplier(card) switch
     {
-        >= 2 => DisplayTokens.For(CardDisplayState.PaysDouble),
+        >= 2 => DisplayTokens.For(CardDisplayState.PaysTriple),
         1 => DisplayTokens.For(CardDisplayState.PaysOnce),
         _ => null
     };
 
     private static string? Words(SeatPrompt asking, Card card) => asking.MoneyCards.Multiplier(card) switch
     {
-        >= 2 => "you took it, and it is a money card that pays twice",
+        >= 2 => "you took it, and it is a money card that pays three times",
         1 => "you took it, and it is a money card",
         _ => "you took it"
     };

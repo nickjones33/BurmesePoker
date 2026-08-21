@@ -38,7 +38,6 @@ Two ways a card becomes one:
 
 1. **Permanently** — the **7♦**, the **A♠** and **every joker**, every round, all copies out of
    both decks. **That's eight cards paying before you turn anything up.** **[✓]**
-   **[⚠ engine has only the 7♦ and the A♠]**
 2. **For this round** — the two turned-up cards, and their matching copies. **[✓]**
 
 🔥 **Turn up a 7♦, an A♠ or a joker and the *other copy* pays triple.** The one on the table is
@@ -77,7 +76,8 @@ nothing, so you never have to choose between winning the hand and hoarding cash.
 the money settles on what the deck dealt you.
 
 → Because the deal counts, **most of the money is decided before anyone plays a card** — in a
-5-player round roughly 4 of the ~6 live money cards are already owned when the deal ends.
+5-player round roughly **6 of the ~10** ownable money cards are already owned when the deal ends,
+leaving about four to be drawn for.
 
 **Exact match only.** A turned-up 5♥ makes money cards of **just the two 5♥s**, not all
 the fives. **[✓]**

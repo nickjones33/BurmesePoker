@@ -42,9 +42,11 @@ public class GreedyBotAgentTests
         Assert.Equal(13, result.Melds.Sum(meld => meld.Count));
         Assert.True(Assert.Single(bot.Discards).SameValueAs(Hands.Value("QC")));
 
-        // Nobody owns a money card, so only the flat round value moves: $5 from each loser.
+        // ⚠️ This said "nobody owns a money card" until P26 and the deal has not changed —
+        // **jokers became permanent money cards** (RULES.md §4.1, rev 21), and this deal hands
+        // one to Carol and one to Dan. $1 a head each way on top of the flat $5.
         Assert.Equal(
-            new Dictionary<PlayerId, int> { [Alice] = 15, [Bob] = -5, [Carol] = -5, [Dan] = -5 },
+            new Dictionary<PlayerId, int> { [Alice] = 13, [Bob] = -7, [Carol] = -3, [Dan] = -3 },
             result.Payouts);
     }
 

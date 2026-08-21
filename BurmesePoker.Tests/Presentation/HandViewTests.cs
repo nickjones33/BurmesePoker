@@ -137,15 +137,17 @@ public class HandViewTests
     [Fact]
     public void AMoneyCardCarriesItsMultiplierAndTheMatchingState()
     {
-        // Doubling is the overlap of the two ways a card is designated: turning up the 7♦,
-        // which already pays permanently, is what makes it pay twice (RULES.md §4.1, §4.3).
+        // Tripling is the overlap of the two ways a value is designated: turning up the 7♦,
+        // which already pays permanently, is what makes its partner pay three times
+        // (RULES.md §4.1, §4.3). ⚠️ Never five here — the jackpot is a property of the round's
+        // ownership and no view that draws one card at a time can compute it.
         var hand = Hands.Of("2H", "3H", "4H", "5H", "6H", "7H", "8D", "9D", "10D", "KC", "KH", "KS", "7D");
         var money = new MoneyCardRegistry([Hands.Value("7D"), Hands.Value("KH")]);
         var view = HandView.Of(hand, money, _ => false);
 
         var seven = view.Of(Card(view, "7D"));
-        Assert.Equal(2, seven.Multiplier);
-        Assert.True(seven.State.HasFlag(CardDisplayState.PaysDouble));
+        Assert.Equal(3, seven.Multiplier);
+        Assert.True(seven.State.HasFlag(CardDisplayState.PaysTriple));
         Assert.False(seven.State.HasFlag(CardDisplayState.PaysOnce));
 
         var king = view.Of(Card(view, "KH"));

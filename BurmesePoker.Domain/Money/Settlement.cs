@@ -19,6 +19,13 @@ namespace BurmesePoker.Domain.Money;
 ///   ways (RULES.md §4.3).</item>
 /// </list>
 /// <para>
+/// 🔥 <b>A multiplier is not a property of a card, and this is the only place that shows.</b>
+/// One player owning <b>both</b> partners of a 7♦/A♠ turn-up is paid ×5 apiece where two
+/// players holding one each are paid ×3 (RULES.md §4.1), so the registry is asked about a card
+/// <i>and its owner</i> — under a configuration read from <see cref="CardOwnership"/> once,
+/// before the walk below starts.
+/// </para>
+/// <para>
 /// <b>Settlement walks ownership records and never looks at a hand.</b> Ownership is
 /// conferred only by the deck and never transfers (RULES.md §4.4), so where a card now sits
 /// is irrelevant: a money card its owner discarded still pays that owner, one an opponent
@@ -64,6 +71,11 @@ public static class Settlement
         ArgumentNullException.ThrowIfNull(shoe);
         RequireIndexAligned(shoe);
 
+        // The ownership configuration, once a round rather than once a card: what a value
+        // pays is a function of the turn-up, but the ×5 is a function of who owns what
+        // (RULES.md §4.1). Nothing is stored on a card either way (BUILD-PLAN §3.3).
+        var configuration = moneyCards.ConfigurationOf(ownership, shoe);
+
         var deltas = new Dictionary<PlayerId, int>(players.Count);
 
         foreach (var player in players)
@@ -102,7 +114,7 @@ public static class Settlement
                     $"Card {card} is owned by {owner}, who is not at the table.", nameof(ownership));
             }
 
-            var multiplier = moneyCards.Multiplier(Resolve(shoe, card));
+            var multiplier = moneyCards.Multiplier(Resolve(shoe, card), owner, configuration);
 
             if (multiplier == 0)
             {
