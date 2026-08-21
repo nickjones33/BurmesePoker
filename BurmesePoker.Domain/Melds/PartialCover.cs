@@ -14,8 +14,15 @@ namespace BurmesePoker.Domain.Melds;
 /// which is every hand anybody actually holds. A player choosing what to throw away needs the
 /// other question — <em>how much of this hand melds?</em> — so this is the same backtracking
 /// over the same <see cref="MeldIndex"/>, maximising cards covered instead of demanding all
-/// thirteen. On a winning hand the two agree by construction: <see cref="IsComplete"/> is true
-/// exactly when <see cref="HandEvaluator.IsWinning"/> is.
+/// thirteen.
+/// </para>
+/// <para>
+/// ⚠️ <b>Since P25 a complete cover is not the same thing as a win, and this type does not
+/// know the difference.</b> <see cref="IsComplete"/> agrees with
+/// <see cref="HandEvaluator.IsWinning"/> only at five or more players, where nothing is asked
+/// of the partition; at two, three or four seats a hand can cover exactly and still lose
+/// (RULES.md §7.1.1). That is deliberate — this is a count of cards, an input to a decision
+/// about what to throw away, and the win authority is the other type.
 /// </para>
 /// <para>
 /// The search is the evaluator's walk with one extra branch. At the lowest card not yet
@@ -51,8 +58,9 @@ public sealed class PartialCover
     public int CoveredCount => Melds.Sum(meld => meld.Count);
 
     /// <summary>
-    /// Whether every card is covered — the hand is winning, if it is the thirteen a player
-    /// holds between turns (RULES.md §7.1).
+    /// Whether every card is covered. ⚠️ <b>Not the same question as winning</b> — that also
+    /// asks what the partition contains, and the answer depends on the table size
+    /// (RULES.md §7.1.1). <see cref="HandEvaluator.IsWinning"/> is the authority.
     /// </summary>
     public bool IsComplete => Uncovered.Count == 0;
 

@@ -70,6 +70,19 @@ public sealed class Meld
     /// <summary>How many of the positions are filled by a joker standing in for a card.</summary>
     public int JokerCount => _slots.Count(slot => slot.IsSubstitute);
 
+    /// <summary>
+    /// Whether this meld is a <b>clean</b> series: a run with no joker standing in anywhere
+    /// (RULES.md §7.1, §7.1.1).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A meld that is nothing but jokers is a series and is never a clean one</b>
+    /// (RULES.md §6.1, §9 #29), which falls out of the definition rather than needing a case:
+    /// every one of its slots is a substitute. So an all-joker meld can discharge a
+    /// <em>surplus</em> series and can never discharge one a table size requires
+    /// (<see cref="TableRules"/>).
+    /// </remarks>
+    public bool IsClean => Kind == MeldKind.Run && JokerCount == 0;
+
     /// <summary>True when the two melds share a physical card, and so cannot both be played.</summary>
     public bool Overlaps(Meld other)
     {

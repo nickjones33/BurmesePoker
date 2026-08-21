@@ -209,7 +209,7 @@ public sealed class RoundEngine
         //    follows it (RULES.md §7.1).
         context = new TurnContext(Table, seat, _round, turn, available, canClaim, taken);
 
-        if (!HandEvaluator.TryFindCover(seat.Hand, out var melds) || !agent.Declare(context))
+        if (!HandEvaluator.TryFindCover(seat.Hand, Table.Rules, out var melds) || !agent.Declare(context))
         {
             return null;
         }

@@ -10,7 +10,8 @@ namespace BurmesePoker.Domain.Play;
 /// <param name="Melds">
 /// The cover found for the winning hand. <b>A cover, not the tidiest one</b> — thirteen cards
 /// of one suit in sequence come back as four melds rather than one, because
-/// <see cref="HandEvaluator.TryFindCover"/> returns the first partition it finds. Presenting
+/// <see cref="HandEvaluator.TryFindCover"/> returns the first partition that satisfies the
+/// table (RULES.md §7.1.1), not the tidiest one that does. Presenting
 /// it the way a player would lay it out is the front end's problem (BUILD-PLAN P8).
 /// </param>
 /// <param name="Payouts">

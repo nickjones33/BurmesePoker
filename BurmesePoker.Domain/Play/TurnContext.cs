@@ -90,11 +90,19 @@ public sealed class TurnContext
     public Stakes Stakes => _table.Stakes;
 
     /// <summary>
-    /// Whether this hand may be declared: all 13 cards partition into disjoint melds
-    /// (RULES.md §7.1). <see cref="HandEvaluator"/> is the only authority on that, and the
-    /// engine asks the same question before offering the choice.
+    /// What a declared hand must contain at this table (RULES.md §7.1.1) — how many series,
+    /// how many of them joker-free, and whether sets are legal melds at all. Public
+    /// information: it is a function of how many are sitting down.
     /// </summary>
-    public bool CanDeclare => HandEvaluator.IsWinning(Hand);
+    public TableRules Rules => _table.Rules;
+
+    /// <summary>
+    /// Whether this hand may be declared: all 13 cards partition into disjoint melds
+    /// (RULES.md §7.1) and the partition satisfies <see cref="Rules"/> (§7.1.1).
+    /// <see cref="HandEvaluator"/> is the only authority on that, and the engine asks the
+    /// same question before offering the choice.
+    /// </summary>
+    public bool CanDeclare => HandEvaluator.IsWinning(Hand, Rules);
 
     /// <summary>
     /// Whether the deck gave this card to <em>this</em> player, and so whether it pays them

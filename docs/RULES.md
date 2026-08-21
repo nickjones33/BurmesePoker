@@ -1683,6 +1683,15 @@ Decisions here that the implementation contradicts or lacks:
     finds any cover has not answered the question. ⚠️ **And an all-joker series can never
     discharge the required count** (§9 #29), so the purity test cannot be applied to the melds a
     cover happens to return — it has to be part of choosing the cover.
+    ✅ **Implemented 2026-08-21 (P25), and this ruling is discharged.** `TableRules.For(players)`
+    is the §7.1.1 table as data and the only place it is written down; `HandEvaluator` takes it as
+    a parameter and **has no parameterless overload**, so no caller can ask the five-handed
+    question by accident. The search carries what is still owing **along** the partition rather
+    than auditing a finished cover, sets are pruned out of the candidates two-handed, and
+    `Meld.IsClean` is *a run with no joker in it* — which makes the all-joker series fail the
+    purity test with no special case, since every one of its slots is a substitute.
+    ⚠️ **What this does not reach: `RoundEngine.MinimumPlayers` is still 4** (#7), so the two- and
+    three-handed rules above are correct, tested, and unreachable from a dealt game.
 15. **The discards are public** (§5). `TurnContext` shows a seat only the single discard offered
     to it, which is **less** than the rules allow and less than the browser already draws for a
     watcher. ⚠️ **P20's card-counting null was measured under the narrower reading** and is

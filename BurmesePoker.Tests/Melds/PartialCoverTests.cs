@@ -31,7 +31,7 @@ public class PartialCoverTests
         Assert.True(cover.IsComplete);
         Assert.Equal(13, cover.CoveredCount);
         Assert.Empty(cover.Uncovered);
-        Assert.True(HandEvaluator.IsWinning(hand));
+        Assert.True(HandEvaluator.IsWinning(hand, TableRules.For(5)));
     }
 
     [Fact]
@@ -115,7 +115,11 @@ public class PartialCoverTests
                 var hand = shoe[(seat * 13)..((seat + 1) * 13)];
                 var cover = PartialCover.Best(hand);
 
-                Assert.Equal(HandEvaluator.IsWinning(hand), cover.IsComplete);
+                // ⚠️ Five-handed, and that is the whole of the agreement since P25. A partial
+                // cover is a count of cards, not a judgement: at three or four seats a
+                // complete cover can still lose (RULES.md §7.1.1), which is why
+                // PartialCover is not the win authority.
+                Assert.Equal(HandEvaluator.IsWinning(hand, TableRules.For(5)), cover.IsComplete);
                 Assert.InRange(cover.CoveredCount, 0, 13);
             }
         }
@@ -136,7 +140,7 @@ public class PartialCoverTests
             var cover = PartialCover.Best(hand);
 
             Assert.True(cover.IsComplete, $"Left {cover.Uncovered.Count} uncovered.");
-            Assert.True(HandEvaluator.IsWinning(hand));
+            Assert.True(HandEvaluator.IsWinning(hand, TableRules.For(5)));
         }
     }
 

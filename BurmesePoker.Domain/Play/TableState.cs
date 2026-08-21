@@ -1,4 +1,5 @@
 using BurmesePoker.Domain.Cards;
+using BurmesePoker.Domain.Melds;
 using BurmesePoker.Domain.Money;
 
 namespace BurmesePoker.Domain.Play;
@@ -57,6 +58,13 @@ public sealed class TableState
 
     /// <summary>Every seat, in seating order.</summary>
     public IReadOnlyList<PlayerState> Seats => _seats;
+
+    /// <summary>
+    /// What a declared hand must contain at this table size (RULES.md §7.1.1). Public
+    /// information — everybody can count the seats — and the one place the engine and the
+    /// view of a seat both read it from.
+    /// </summary>
+    public TableRules Rules => TableRules.For(Players.Count);
 
     /// <summary>The stakes this round is played for. Fixed for the whole match.</summary>
     public Stakes Stakes { get; }

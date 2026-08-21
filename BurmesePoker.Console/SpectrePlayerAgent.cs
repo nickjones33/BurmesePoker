@@ -144,7 +144,7 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
     {
         BeginTurn(context);
 
-        if (HandEvaluator.TryFindCover(context.Hand, out var cover))
+        if (HandEvaluator.TryFindCover(context.Hand, context.Rules, out var cover))
         {
             _console.MarkupLine($"[{Palette.Good}]All thirteen melt.[/] {Who(context.Player)} can go out with:");
 

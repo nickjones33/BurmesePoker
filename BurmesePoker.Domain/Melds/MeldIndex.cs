@@ -69,7 +69,30 @@ internal sealed class MeldIndex
     /// <exception cref="ArgumentException">
     /// The hand is too large to index, or holds the same physical card twice.
     /// </exception>
-    public static MeldIndex Build(IReadOnlyList<Card> hand)
+    public static MeldIndex Build(IReadOnlyList<Card> hand) => Build(hand, setsAllowed: true);
+
+    /// <summary>
+    /// The index, with sets left out of it when the table forbids them (RULES.md §7.1.1,
+    /// §9 #22).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Two-handed is the one requirement that is cheap</b>, because it is a property of
+    /// the melds rather than of the partition: a set can never appear in a legal cover, so it
+    /// is removed from the candidates and the search never sees it. The series counts cannot
+    /// be handled this way — they are satisfiable by one cover of a hand and not by another.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Filtering on <see cref="Meld.Kind"/> keeps more than it looks like it does.</b>
+    /// <see cref="MeldCandidates"/> emits a card set that is both — <c>{9♦,🃏,🃏}</c>,
+    /// <c>{🃏,🃏,🃏}</c> — once, as the <b>run</b> interpretation, so those survive here.
+    /// That is right: they are legal runs, and a two-handed player may lay them down.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// The hand is too large to index, or holds the same physical card twice.
+    /// </exception>
+    public static MeldIndex Build(IReadOnlyList<Card> hand, bool setsAllowed)
     {
         ArgumentNullException.ThrowIfNull(hand);
         if (hand.Count > MaximumHandSize)
@@ -102,6 +125,11 @@ internal sealed class MeldIndex
 
         foreach (var meld in MeldCandidates.For(hand))
         {
+            if (!setsAllowed && meld.Kind == MeldKind.Set)
+            {
+                continue;
+            }
+
             var mask = 0UL;
             foreach (var id in meld.CardIds)
             {

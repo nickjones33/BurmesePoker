@@ -974,7 +974,7 @@ P16 ─┘                         ├─► P21  outs rung       (lookahead)  �
                               │
         ┌─────────────────────┼──────────────────────┬─────────────────────┐
         ▼                     ▼                      ▼                     │
-   P25  win condition    P26  the money         P27  the feeding ban       │
+   P25  win condition ☑  P26  the money         P27  the feeding ban       │
         by table size         layer as it is         (a legal turn         │
         (§7.1.1)              (§4, ×3 and ×5)         changes)             │
         │                     │                      │                     │
@@ -1106,7 +1106,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | P16 | Does the player before you decide your game? | P15 (**P14 ☑, so rich journals are available**) | M — ☑ done 2026-08-19 |
 | P17–P23 | The strategy programme | P15, P16, P18 | ☑ all done 2026-08-19/20 — see §4's second graph |
 | P24 | The computer's reasoning, said out loud | P13.6, P14, P18, P21 | M — ☐ **re-sequenced after P29 on 2026-08-21** |
-| **P25** | **The win condition is a function of the table size** | — | L — ☐ **the largest single divergence in the tree** |
+| **P25** | **The win condition is a function of the table size** | — | L — ☑ **done 2026-08-21** — `TableRules`, and the search carries the counts |
 | **P26** | **The money layer as it actually is** | — | M — ☐ ⚠️ **one shipped test is expected red before it starts** |
 | **P27** | **The feeding ban** | — | L — ☐ **the first work since P0 that changes what a legal turn is** |
 | **P28** | **The claim, the permission, and the seat you sit in** | **P27** | M — ☐ a third kind of agent decision |
@@ -4370,7 +4370,7 @@ before.
 
 ---
 
-### P25 — The win condition is a function of the table size ☐
+### P25 — The win condition is a function of the table size ☑
 
 **Goal.** `HandEvaluator` stops answering the five-handed question at every table. What thirteen
 cards must contain — and how many of their series must be joker-free — becomes a function of the
@@ -4410,6 +4410,50 @@ its runs fall; and a five-handed hand is judged exactly as it is today, byte for
 seats under the five-handed rule, so **P29 re-measures**. And `outs` reasons about *cover count*
 (P21) — a rung whose objective is now the wrong objective at four seats, which is a finding to
 publish rather than a bug to fix.
+
+**What it shipped, 2026-08-21.** `Domain/Melds/TableRules.cs` is the §7.1.1 table as data and the
+only place it is written down; `TableState.Rules` and `TurnContext.Rules` are the one place the
+engine and a seat read it from; `HandEvaluator.IsWinning(hand, rules)` and
+`TryFindCover(hand, rules, out melds)` are the whole public surface, and **the parameterless
+overloads are gone**, so every caller in the tree had to say which table it was asking about.
+26 new tests, 574 passing.
+
+🔥 **The search carries what is still owing, and that is what made the memo the interesting
+part.** The state is `(covered, seriesStillOwed, cleanStillOwed)` rather than `covered` alone: a
+covered-set from which no completion can supply *two* more clean series may perfectly well supply
+one, so the old key would have poisoned the second question with the first question's dead ends.
+The counts are clamped at nought — a clean series discharges both, an impure one discharges the
+series count alone (§9 #28, #29) — and there is one prune, that a hand with fewer than three
+uncovered cards per series still owed cannot pay for them however it is arranged.
+
+✅ **Two-handed really is the cheap case, and it was cheaper than expected.** Sets are illegal *as
+melds*, which is a property of a meld rather than of the partition, so `MeldIndex.Build` takes
+`setsAllowed` and the search never sees a set. ⚠️ **Filtering on `Meld.Kind` keeps more than it
+looks like it does**: `MeldCandidates` already emits a card set that is both — `{9♦,🃏,🃏}`,
+`{🃏,🃏,🃏}` — once, as the **run** interpretation, so those survive the filter, which is right.
+
+✅ **`Meld.IsClean` needed no special case for the all-joker meld** (§9 #29). It is
+`Kind == Run && JokerCount == 0`, and three jokers fail it because every slot is a substitute.
+
+⚠️ **`PartialCover` was deliberately not touched, and it is now measuring a different thing from
+the evaluator.** `IsComplete` agrees with `IsWinning` **only at five or more players**; at two,
+three or four a hand can cover exactly and still lose. That is the P29 finding arriving early —
+every rung's objective is cover count — and it is recorded in the type's own remarks so nobody
+re-derives it from a failing test.
+
+🔥 **The change is real and `drive-console.py` cannot see it.** Four-handed greedy-vs-simple over
+200 games at one seed goes from **25.1 to 26.6 turns a round** and from 102 to 86 rounds/s — the
+condition is strictly harder and rounds are longer, exactly as predicted — and yet **both console
+captures are byte-identical to the pre-P25 tree** (`--script bots` 8,417 bytes, `--script human`
+90,251). ⚠️ **Not because nothing changed: because both scripts quit in round 2 and neither
+capture contains a declaration at all.** The instrument that proved P21 and P23 were refactors is
+blind to the win condition by construction. **Do not read a clean `cmp` as evidence about play.**
+
+⚠️ **Left behind, and owned by no packet: `RoundEngine.MinimumPlayers` is still 4** (`RULES.md`
+§10 #7). `TableRules.For(2)` and `For(3)` are correct, tested, and unreachable from a game — the
+engine cannot deal a two- or three-handed round, so the two strictest rules in §7.1.1 are
+implemented and never executed. That is a **separate packet**, not a line in this one: it needs
+the deal, the money layer and both front ends to agree that a table can be smaller than four.
 
 ---
 
@@ -4566,7 +4610,24 @@ is the one rung whose decision reads the money.
 
 ⚠️ **`sim suite` was five hours at P23** and P25 makes the evaluator's question harder. **Budget
 it, measure the new per-round cost with `sim bench` first, and say in the packet what was
-dropped** if anything is.
+dropped** if anything is. ✅ **P25's own cost is now measured and it is small**: four-handed
+greedy-vs-simple went from **102 to 86 rounds/s** at one seed, about **16%**, and roughly half of
+that is the round being longer (25.1 → 26.6 turns) rather than the evaluator being slower. **That
+is one measurement at one seed with two weak rungs, not a budget** — re-time it with `sim bench`
+once P26–P28 are in.
+
+⚠️ **Prediction 2 has a first data point and it points the right way — treat it as a smoke test,
+not a result.** In that same 200-game run `greedy` fell from 32.3% to 31.3% and `simple` rose from
+17.8% to 18.8%, which is inside the interval and proves nothing on its own. 🔥 **What is *not*
+inside an interval is the reason**: `PartialCover` was left alone by P25 on purpose, so every rung
+in the catalog is still maximising cover count at a table where cover count is no longer the win
+condition. Prediction 2 is a claim about that gap, and P29 is where it is priced.
+
+⚠️ **`drive-console.py` cannot help here and P25 proved it.** Both scripts quit in round 2, so no
+capture in this repo contains a declaration; a byte-identical `cmp` across a win-condition change
+is what it looks like when the instrument cannot see the question. If P29 wants a front-end
+regression check that covers going out, **the script has to be extended to play a round to its
+end** — which is new work, and worth pricing before promising it.
 
 **Done when.** `measurements.csv` regenerates from one command, `StandingAnswerTests` is green,
 and §11 records which rows moved, in which direction, and whether each was predicted.

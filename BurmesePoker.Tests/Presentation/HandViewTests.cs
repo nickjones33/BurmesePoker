@@ -195,7 +195,7 @@ public class HandViewTests
         Assert.True(view.IsComplete);
         Assert.Equal(13, view.Covered);
         Assert.Empty(view.Loose);
-        Assert.True(HandEvaluator.IsWinning(view.Hand));
+        Assert.True(HandEvaluator.IsWinning(view.Hand, TableRules.For(5)));
     }
 
     [Fact]

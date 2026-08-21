@@ -714,7 +714,10 @@ static int Bench(string[] args)
 
     Console.WriteLine($"{hands} random thirteen-card hands");
     Console.WriteLine($"PartialCover.Best          {Time(dealt, hand => PartialCover.Best(hand).CoveredCount != -1)}");
-    Console.WriteLine($"HandEvaluator.TryFindCover {Time(dealt, hand => HandEvaluator.TryFindCover(hand, out _))}");
+    // Four-handed, which is what every published measurement is played at — and since P25 a
+    // harder question than the bare exact cover: one of the series has to be joker-free.
+    var fourHanded = TableRules.For(4);
+    Console.WriteLine($"HandEvaluator.TryFindCover {Time(dealt, hand => HandEvaluator.TryFindCover(hand, fourHanded, out _))}");
     // ⚠️ One better than the hand can actually do, which is the question the outs rung asks
     // hundreds of times a turn and the expensive half of it: the answer is "no", so the search
     // cannot stop early and has to be pruned to the end (BUILD-PLAN P21).
