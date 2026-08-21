@@ -82,9 +82,10 @@ public sealed class TableFanOut : IGameObserver
         }
     }
 
-    public void RoundStarted(int round, IReadOnlyList<Card> turnedUp) =>
-        // Copied: this is the table's own list, and a claim takes a card out of it.
-        Broadcast(new TableEvent.RoundStarted(round, [.. turnedUp]));
+    public void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp) =>
+        // Both copied: these are the table's own lists, and a claim takes a card out of one of
+        // them. The seating is this round's and no other (RULES.md §3 step 2).
+        Broadcast(new TableEvent.RoundStarted(round, [.. seating], [.. turnedUp]));
 
     /// <remarks>
     /// <b>The one filtered event.</b> The drawer is told the card; everyone else is told that a
@@ -107,6 +108,15 @@ public sealed class TableFanOut : IGameObserver
 
     public void MoneyCardClaimed(PlayerId player, Card card) =>
         Broadcast(new TableEvent.MoneyCardClaimed(player, card));
+
+    /// <remarks>
+    /// ⚠️ <b>Broadcast, and it is the one place a hand reaches the table before the declaration.</b>
+    /// Only a holder may refuse (RULES.md §4.5), so this tells everybody that the objecting seat
+    /// holds that rank — <b>disclosed by the player rather than leaked by the server</b>, which is
+    /// the distinction this class exists to keep.
+    /// </remarks>
+    public void ClaimRefused(PlayerId objector, PlayerId claimant, Card card) =>
+        Broadcast(new TableEvent.ClaimRefused(objector, claimant, card));
 
     public void PlayerDiscarded(PlayerId player, Card card) =>
         Broadcast(new TableEvent.Discarded(player, card));

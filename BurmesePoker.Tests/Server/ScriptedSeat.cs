@@ -79,6 +79,7 @@ public sealed class ScriptedSeat
     {
         SeatQuestion.Take => new SeatAnswer.Take(TurnAction.DrawFromDeck),
         SeatQuestion.ClaimMoneyCard => new SeatAnswer.Claim(false),
+        SeatQuestion.ObjectToClaim => new SeatAnswer.Objection(true),
         SeatQuestion.Discard => new SeatAnswer.Discard(Throw(prompt)),
         _ => new SeatAnswer.Declaration(true)
     };

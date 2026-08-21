@@ -84,6 +84,25 @@ internal sealed class BoundedAgent(IPlayerAgent inner, TableClock clock, TableFa
         return inner.Declare(context);
     }
 
+    /// <remarks>
+    /// 🔥 <b>The clock, but never the spotlight.</b> This is the one question put to a seat that
+    /// is not on turn (RULES.md §4.5), and it carries the <em>opener's</em> turn number — so
+    /// announcing it would move every client's spotlight onto the seat being asked permission,
+    /// in the middle of somebody else's turn. A table that has run out of time still stops here,
+    /// because the seat is genuinely being waited on.
+    /// </remarks>
+    public bool ObjectToClaim(TurnContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        if (clock.HasRunOut)
+        {
+            throw new TableAbandonedException(context.Round, clock.Limit);
+        }
+
+        return inner.ObjectToClaim(context);
+    }
+
     private void Bound(TurnContext context)
     {
         ArgumentNullException.ThrowIfNull(context);

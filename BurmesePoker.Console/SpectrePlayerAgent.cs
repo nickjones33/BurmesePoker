@@ -153,6 +153,57 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
                 .AddChoices(choices));
     }
 
+    /// <summary>
+    /// The one question asked while it is somebody else's turn: the opener wants the turned-up
+    /// money card, and this seat may refuse it (RULES.md §4.5).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠️ <b>It hands the keyboard over on its own rather than through <see cref="BeginTurn"/>.</b>
+    /// The turn number this arrives with is the <em>opener's</em>, so the usual header would
+    /// announce a turn that belongs to somebody else — and it must not consume the turn either,
+    /// because this seat's own turn is still coming and still wants its clear.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Offered unconditionally, and that is safe.</b> The engine asks only a seat that is
+    /// holding the rank (RULES.md §4.5), exactly as it offers a declaration only to a hand that
+    /// wins — checking again on this side would be the rules written twice.
+    /// </para>
+    /// </remarks>
+    public bool ObjectToClaim(TurnContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        var asking = context.PermissionAsked
+            ?? throw new InvalidOperationException("Asked to permit a claim with no claim on the table.");
+
+        _console.Clear();
+        _console.Write(new Rule($"Permission — {Who(context.Player)}").LeftJustified());
+        _console.MarkupLine($"[{Palette.Quiet}]Nobody else should be looking.[/]");
+        _console.Confirm($"{Who(context.Player)}, are you at the keyboard?", defaultValue: true);
+
+        _console.Write(_log.AsPanel());
+        ShowHand(context);
+
+        _console.MarkupLine(
+            $"{Who(asking.Claimant)} wants the turned-up {CardFormatting.Of(asking.Card, context.MoneyCards)} "
+            + $"off the table, and plays [bold]after[/] you. You are holding that rank, which is the only "
+            + $"reason you may say no [{Palette.Quiet}](RULES.md §4.5)[/].");
+        _console.MarkupLine(
+            $"[{Palette.Quiet}]If they take it, you may not throw that rank to them for the rest of the "
+            + $"round (RULES.md §5.1).[/]");
+
+        if (_hints)
+        {
+            _console.MarkupLine(Advice(
+                _adviser.ObjectToClaim(context)
+                    ? "refuse — letting it through closes that rank in your hand until they release it"
+                    : "allow it — the rank costs you less than the objection tells the table"));
+        }
+
+        return _console.Confirm("Refuse them the card?", defaultValue: true);
+    }
+
     public bool Declare(TurnContext context)
     {
         BeginTurn(context);

@@ -32,7 +32,8 @@ public sealed class TurnContext
         int turnNumber,
         Card? availableDiscard,
         bool canClaimTurnedUpMoneyCard,
-        Card? taken)
+        Card? taken,
+        ClaimRequest? permissionAsked = null)
     {
         _table = table;
         _seat = seat;
@@ -41,6 +42,7 @@ public sealed class TurnContext
         AvailableDiscard = availableDiscard;
         CanClaimTurnedUpMoneyCard = canClaimTurnedUpMoneyCard;
         Taken = taken;
+        PermissionAsked = permissionAsked;
     }
 
     /// <summary>The player being asked.</summary>
@@ -76,6 +78,31 @@ public sealed class TurnContext
 
     /// <summary>The card taken this turn, or null before it has been taken.</summary>
     public Card? Taken { get; }
+
+    /// <summary>
+    /// The claim this seat is being asked to permit, or null — which is every question but one
+    /// (RULES.md §4.5).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>The one question asked of a seat that is not on turn.</b> Every other decision in the
+    /// game belongs to the player whose turn it is; this one belongs to the seat that plays
+    /// <em>before</em> the opener, because it is that seat the claim would lock into holding a rank
+    /// (§5.1). Nothing else about the context changes: it is the asked seat's own hand, the same
+    /// public table, and the same concealment.
+    /// </remarks>
+    public ClaimRequest? PermissionAsked { get; }
+
+    /// <summary>
+    /// Whether this seat may refuse the claim it is being asked about — it holds that rank
+    /// (RULES.md §4.5). False when nothing is being asked.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The engine asks nobody who could not refuse</b>, so an agent that is asked at all can
+    /// always answer either way; this is here so that a front end can say <em>why</em> it may
+    /// object rather than presenting a veto with no reason attached. It reads this seat's own hand
+    /// and nothing else, so it discloses nothing.
+    /// </remarks>
+    public bool MayObject => PermissionAsked is { } claim && claim.MayBeRefusedBy(Hand);
 
     /// <summary>How many cards are left to draw.</summary>
     public int DrawPileCount => _table.DrawPileCount;

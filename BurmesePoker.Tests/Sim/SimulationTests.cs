@@ -257,6 +257,8 @@ public class SimulationTests
 
         public bool ClaimTurnedUpMoneyCard(TurnContext context) => false;
 
+        public bool ObjectToClaim(TurnContext context) => false;
+
         public bool Declare(TurnContext context) => true;
     }
 }

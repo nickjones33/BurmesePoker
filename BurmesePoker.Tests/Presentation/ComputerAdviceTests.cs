@@ -137,6 +137,8 @@ public class ComputerAdviceTests
 
         public List<(bool Bot, bool Advice)> Claims { get; } = [];
 
+        public List<(bool Bot, bool Advice)> Objections { get; } = [];
+
         /// <summary>The view a front end would have drawn at each discard.</summary>
         public List<HandView> Views { get; } = [];
 
@@ -161,6 +163,13 @@ public class ComputerAdviceTests
         {
             var chosen = _bot.ClaimTurnedUpMoneyCard(context);
             Claims.Add((chosen, _advice.ClaimTurnedUpMoneyCard(context)));
+            return chosen;
+        }
+
+        public bool ObjectToClaim(TurnContext context)
+        {
+            var chosen = _bot.ObjectToClaim(context);
+            Objections.Add((chosen, _advice.ObjectToClaim(context)));
             return chosen;
         }
 

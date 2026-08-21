@@ -28,11 +28,15 @@ namespace BurmesePoker.Server;
 /// </para>
 /// </remarks>
 /// <param name="Player">Whose seat is being asked.</param>
-/// <param name="Question">Which of the four questions this is.</param>
+/// <param name="Question">Which of the five questions this is.</param>
 /// <param name="Round">Which round of the match, counting from 1.</param>
 /// <param name="TurnNumber">Which turn of the round, counting from 1.</param>
 /// <param name="AvailableDiscard">The previous player's top discard, or null on the opening turn.</param>
 /// <param name="CanClaimTurnedUpMoneyCard">Whether the top money card may be claimed (RULES.md §4.5).</param>
+/// <param name="PermissionAsked">
+/// The claim this seat is being asked to permit, or null — which is every question but
+/// <see cref="SeatQuestion.ObjectToClaim"/> (RULES.md §4.5).
+/// </param>
 /// <param name="Taken">The card taken this turn, or null before it has been taken.</param>
 /// <param name="CanDeclare">Whether these thirteen cards win (RULES.md §7.1).</param>
 /// <param name="DrawPileCount">How many cards are left to draw.</param>
@@ -51,6 +55,7 @@ public sealed record SeatPrompt(
     int TurnNumber,
     Card? AvailableDiscard,
     bool CanClaimTurnedUpMoneyCard,
+    ClaimRequest? PermissionAsked,
     Card? Taken,
     bool CanDeclare,
     int DrawPileCount,
@@ -61,7 +66,7 @@ public sealed record SeatPrompt(
 {
     /// <summary>Photographs the turn as the asked seat may see it.</summary>
     /// <param name="context">The decision being put. Only the asking seat's own view is read.</param>
-    /// <param name="question">Which of the four questions it is.</param>
+    /// <param name="question">Which of the five questions it is.</param>
     /// <param name="suggestedThrow">The computer's answer, or null when hints are off.</param>
     public static SeatPrompt For(TurnContext context, SeatQuestion question, Card? suggestedThrow = null)
     {
@@ -74,6 +79,7 @@ public sealed record SeatPrompt(
             context.TurnNumber,
             context.AvailableDiscard,
             context.CanClaimTurnedUpMoneyCard,
+            context.PermissionAsked,
             context.Taken,
             // Asked of the context rather than recomputed: HandEvaluator is the only authority
             // on a winning hand, and the engine asks it the same question (RULES.md §7.1).
@@ -85,6 +91,18 @@ public sealed record SeatPrompt(
             context.Stakes,
             HandView.Of(context, suggestedThrow));
     }
+
+    /// <summary>
+    /// Whether this seat could refuse the claim it is being asked about — it holds that rank
+    /// (RULES.md §4.5, §9 #30). False when nothing is being asked.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Not a check on the answer, and there is deliberately none.</b> The table asks only a
+    /// seat that may refuse, so by the time this prompt exists the question is already free; this
+    /// is here so a client can say <em>why</em> it is being offered a veto, which is the difference
+    /// between a control and a control with a reason (§3.11 C13).
+    /// </remarks>
+    public bool MayObject => PermissionAsked is { } claim && claim.MayBeRefusedBy(Hand.Hand);
 
     /// <summary>Whether this seat is holding the given card — by instance, not value (§3.1).</summary>
     public bool Holds(Card card) => Hand.Hand.Any(held => held.Id == card.Id);

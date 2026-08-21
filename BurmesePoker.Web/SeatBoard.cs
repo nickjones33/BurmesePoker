@@ -81,7 +81,16 @@ public sealed class SeatBoard : IDisposable
     /// <summary>How many questions you have answered in time.</summary>
     public int Answered { get; private set; }
 
-    /// <summary>Whether the table is waiting on you.</summary>
+    /// <summary>
+    /// Whether the table is waiting on you.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Being asked something is no longer the same as being on turn</b> (P28). The claim's
+    /// permission is put to the seat that plays <em>before</em> the opener (RULES.md §4.5), so a
+    /// question can stand in front of you in the middle of somebody else's turn — which is why
+    /// this reads the question rather than the spotlight, and why the spotlight is
+    /// <c>TableBoard.Turn</c> and not this.
+    /// </remarks>
     public bool IsYourTurn => Asking is not null;
 
     /// <summary>Raised whenever any of the above changed. May arrive on any thread.</summary>
@@ -92,6 +101,12 @@ public sealed class SeatBoard : IDisposable
 
     /// <summary>Claim the top turned-up card instead of drawing (RULES.md §4.5).</summary>
     public bool Claim(bool claimed) => Answer(new SeatAnswer.Claim(claimed));
+
+    /// <summary>
+    /// Refuse the seat after you the turned-up money card (RULES.md §4.5). <b>Asked while it is
+    /// not your turn</b>, and only when you are holding that rank.
+    /// </summary>
+    public bool Object(bool objected) => Answer(new SeatAnswer.Objection(objected));
 
     /// <summary>Throw a card away, which ends your turn (RULES.md §5).</summary>
     public bool Throw(Card card) => Answer(new SeatAnswer.Discard(card));

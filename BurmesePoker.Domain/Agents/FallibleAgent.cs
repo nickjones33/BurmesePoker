@@ -109,6 +109,13 @@ public sealed class FallibleAgent : IPlayerAgent, IRanksDiscards
     /// <summary>The inner player's, unchanged. Money is not a thing to be wrong about.</summary>
     public bool ClaimTurnedUpMoneyCard(TurnContext context) => _inner.ClaimTurnedUpMoneyCard(context);
 
+    /// <summary>
+    /// The inner player's, unchanged. <b>A mistake is a card, not a veto</b> — the dial is
+    /// calibrated on which thirteen a seat keeps (P19), and the objection has no runner-up to
+    /// slip to (RULES.md §4.5).
+    /// </summary>
+    public bool ObjectToClaim(TurnContext context) => _inner.ObjectToClaim(context);
+
     /// <summary>The inner player's, unchanged. A won hand is always laid down.</summary>
     public bool Declare(TurnContext context) => _inner.Declare(context);
 

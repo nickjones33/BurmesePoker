@@ -49,11 +49,20 @@ public sealed class ConsoleObserver : IGameObserver
         _log = log ?? throw new ArgumentNullException(nameof(log));
     }
 
-    public void RoundStarted(int round, IReadOnlyList<Card> turnedUp)
+    /// <remarks>
+    /// ⚠️ <b>The seating is said every round because it changes every round</b> (RULES.md §3
+    /// step 2). It used to be printed once at setup, which was true of a match that kept its
+    /// seats and is a lie about one that re-draws them.
+    /// </remarks>
+    public void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp)
     {
         _log.StartRound(round);
 
         _console.Write(new Rule($"Round {round}").LeftJustified());
+        Say(
+            $"[{Palette.Quiet}]Seats drawn:[/] "
+            + string.Join(" → ", seating.Select(Who))
+            + $"  [{Palette.Quiet}]— {Who(seating[0])} opens; the seats are re-drawn every round[/]");
         Say(
             "Turned up: " + string.Join("  ", turnedUp.Select(CardFormatting.Of))
             + $"  [{Palette.Quiet}]— both copies of each pay their owner; 7♦ and A♠ always do[/]");
@@ -84,6 +93,16 @@ public sealed class ConsoleObserver : IGameObserver
             $"[{Palette.Money}]The draw pile ran out.[/] All {cards} discards were gathered and "
             + $"shuffled into a new one [{Palette.Quiet}](a money card still pays whoever the deck "
             + "gave it to first)[/].");
+
+    /// <remarks>
+    /// ⚠️ <b>Worth saying plainly, because it is the one thing a player tells the table about
+    /// their own hand.</b> Only a holder may refuse (RULES.md §4.5), so the refusal itself says
+    /// the objector is holding that rank.
+    /// </remarks>
+    public void ClaimRefused(PlayerId objector, PlayerId claimant, Card card) =>
+        Say(
+            $"{Who(objector)} refused {Who(claimant)} the turned-up {CardFormatting.Of(card)} "
+            + $"[{Palette.Quiet}](which they may only by holding one — RULES.md §4.5)[/].");
 
     public void PlayerDiscarded(PlayerId player, Card card) =>
         Say($"{Who(player)} discarded {CardFormatting.Of(card)}.");

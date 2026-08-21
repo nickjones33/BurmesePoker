@@ -54,6 +54,9 @@ internal sealed class RecordingAgent(IPlayerAgent inner) : IPlayerAgent
     /// <summary>How the card was taken, each time there was a choice about it.</summary>
     public List<TurnAction> Actions { get; } = [];
 
+    /// <summary>Every answer to the claim's permission (RULES.md §4.5).</summary>
+    public List<bool> Objections { get; } = [];
+
     /// <summary>Whether the turned-up money card was claimed, each time it was offered.</summary>
     public List<bool> Claims { get; } = [];
 
@@ -80,6 +83,13 @@ internal sealed class RecordingAgent(IPlayerAgent inner) : IPlayerAgent
         var claimed = _inner.ClaimTurnedUpMoneyCard(context);
         Claims.Add(claimed);
         return claimed;
+    }
+
+    public bool ObjectToClaim(TurnContext context)
+    {
+        var objected = _inner.ObjectToClaim(context);
+        Objections.Add(objected);
+        return objected;
     }
 
     public bool Declare(TurnContext context) => _inner.Declare(context);

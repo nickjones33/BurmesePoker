@@ -46,6 +46,11 @@ public sealed class ComputerAdvice
     /// <summary>Whether it would claim the top turned-up money card instead of drawing (RULES.md §4.5).</summary>
     public bool ClaimTurnedUpMoneyCard(TurnContext context) => _adviser.ClaimTurnedUpMoneyCard(context);
 
+    /// <summary>
+    /// Whether it would refuse the seat after it the turned-up money card (RULES.md §4.5).
+    /// </summary>
+    public bool ObjectToClaim(TurnContext context) => _adviser.ObjectToClaim(context);
+
     /// <summary>Whether it would take the discard or draw blind.</summary>
     public TurnAction Take(TurnContext context) => _adviser.ChooseAction(context);
 

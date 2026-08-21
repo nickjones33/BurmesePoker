@@ -286,6 +286,12 @@ public class ConcealmentTests(WatchedRound round) : IClassFixture<WatchedRound>
                 case TableEvent.MoneyCardClaimed claimed:
                     seen.Add(claimed.Card.Id);
                     break;
+                // ⚠️ Public, and the card it names is the one lying face up on the table
+                // (RULES.md §4.5). What the refusal discloses is the objector's *rank*, which
+                // they said out loud — no card of theirs is named.
+                case TableEvent.ClaimRefused refused:
+                    seen.Add(refused.Card.Id);
+                    break;
                 case TableEvent.Discarded discarded:
                     seen.Add(discarded.Card.Id);
                     break;
@@ -321,6 +327,12 @@ public class ConcealmentTests(WatchedRound round) : IClassFixture<WatchedRound>
                     break;
                 case TableEvent.MoneyCardClaimed claimed:
                     seen.Add(claimed.Card.Id);
+                    break;
+                // ⚠️ Public, and the card it names is the one lying face up on the table
+                // (RULES.md §4.5). What the refusal discloses is the objector's *rank*, which
+                // they said out loud — no card of theirs is named.
+                case TableEvent.ClaimRefused refused:
+                    seen.Add(refused.Card.Id);
                     break;
                 case TableEvent.Discarded discarded:
                     seen.Add(discarded.Card.Id);

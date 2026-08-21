@@ -33,11 +33,31 @@ internal sealed class ScriptedPlayerAgent : IPlayerAgent
     /// <summary>Hand sizes seen when discarding, to pin the 14-during-a-turn rule.</summary>
     public List<int> HandSizeWhenDiscarding { get; } = [];
 
+    /// <summary>Every claim this seat was asked to permit (RULES.md §4.5).</summary>
+    public List<ClaimRequest> Objections { get; } = [];
+
+    /// <summary>Whether it refuses the seat after it the turned-up money card (RULES.md §4.5).</summary>
+    public bool Objects { get; set; }
+
     public bool ClaimTurnedUpMoneyCard(TurnContext context)
     {
         Sync(context);
         HandSizeBeforeTaking.Add(context.Hand.Count);
         return _current.Claim;
+    }
+
+    /// <summary>
+    /// Whether this seat refuses the claim it is being asked about (RULES.md §4.5).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A standing answer rather than a scripted turn, because it is not a turn.</b> This is
+    /// asked of a seat that is not on turn, during somebody else's, so it neither reads nor
+    /// advances the script — a seat asked for permission has not had a turn.
+    /// </remarks>
+    public bool ObjectToClaim(TurnContext context)
+    {
+        Objections.Add(context.PermissionAsked!);
+        return Objects;
     }
 
     public TurnAction ChooseAction(TurnContext context)

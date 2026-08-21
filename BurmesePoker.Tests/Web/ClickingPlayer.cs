@@ -82,8 +82,15 @@ public sealed class ClickingPlayer
                 _seat.Take(TurnAction.DrawFromDeck);
                 break;
 
+            // ⚠️ It claims, which is what makes the fifth question reachable at all: the
+            // permission is asked of the seat above only when somebody actually wants the card
+            // (RULES.md §4.5). Pressing "Claim" is as much a thing a page can do as declining.
             case SeatQuestion.ClaimMoneyCard:
-                _seat.Claim(false);
+                _seat.Claim(true);
+                break;
+
+            case SeatQuestion.ObjectToClaim:
+                _seat.Object(true);
                 break;
 
             case SeatQuestion.Discard:

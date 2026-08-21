@@ -11,21 +11,22 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **The plan has a second half again: P25–P29. P25, P26 and P27 shipped 2026-08-21; P28 and P29
-have not started.** Every packet from §0 is done — P0–P12, P13.1–P13.6 and P14–P23 — but **four
-sessions with Mya Lay and Aung Aung on 2026-08-20/21 closed twenty-three questions in `RULES.md` §9
-and left four settled rules with no implementation at all.** ✅ **P25** the win condition by table
-size (§7.1.1), ✅ **P26** the money layer as it actually is (§4 — jokers permanent, ×3 and ×5) and
-✅ **P27** the feeding ban (§5.1) **are all built**; **P28** the claim's permission and per-round
-seating (§3, §4.5), **P29** re-measure everything under them.
+🔥 **The plan has a second half again: P25–P29. P25, P26, P27 and P28 all shipped 2026-08-21;
+only P29 has not started.** Every packet from §0 is done — P0–P12, P13.1–P13.6 and P14–P23 — and
+**four sessions with Mya Lay and Aung Aung on 2026-08-20/21 closed twenty-three questions in
+`RULES.md` §9 and left four settled rules with no implementation at all.** ✅ **P25** the win
+condition by table size (§7.1.1), ✅ **P26** the money layer as it actually is (§4 — jokers
+permanent, ×3 and ×5), ✅ **P27** the feeding ban (§5.1) and ✅ **P28** the claim's permission with
+per-round seating (§3, §4.5) **are all built**; **P29** re-measures everything under them.
 ⚠️ **This is a different kind of work from everything above it — P11–P23 added capability to a
-correct engine; P25–P28 make a working engine play a different game.** ✅ **P28 is next**;
-**P29 needs all four.** ⚠️ **P24 is re-sequenced after P29 — a recommendation, not a decision**
-(`BUILD-PLAN.md` §4): its reason for going first is spent, and it explains decisions P25–P27 have
+correct engine; P25–P28 make a working engine play a different game.** ✅ **P29 is next and it is
+the last packet planned.** ⚠️ **P24 is re-sequenced after P29 — a recommendation, not a decision**
+(`BUILD-PLAN.md` §4): its reason for going first is spent, and it explains decisions P25–P28 have
 now changed.
 
-⚠️ **The tree is green at 642 tests and now only §3 — per-round seating — is settled with no code
-behind it.**
+🔥 **The tree is green at 666 tests and `RULES.md` is rev 24: every rule the document records as
+Settled is now implemented** — §10 #13, #14, #16, #17 and #18 are all discharged. **What is left
+is the measurement.**
 
 🔥 **P27's finding outlives P27, and P29 has to price it: a bot's cover count can now fall.**
 Every rung's score used to be monotone — *"throwing back the card just taken restores the hand
@@ -101,8 +102,9 @@ declaration**. **Do not read a clean `cmp` as evidence about play.** ⚠️ **An
 `RoundEngine.MinimumPlayers` is still 4** (§10 #7), so `TableRules.For(2)` and `For(3)` are
 correct, tested and unreachable from a dealt game.
 
-🔥 **The one settled rule still without code, and the only one the engine actively
-contradicts: seats are re-randomised every round** — `RULES.md` §3 and §10 #16, `EXPERT`, rev 19.
+✅ **Built by P28 on 2026-08-21 — the only rule this document ever recorded that the engine
+actively contradicted rather than merely lacked. The record of what it was built from follows.**
+🔥 **Seats are re-randomised every round** — `RULES.md` §3 and §10 #16, `EXPERT`, rev 19.
 A *game* means from the turn-up to somebody going out — **a game is a round** — and the seating is
 re-drawn between games, so a player's neighbours change every deal. ⚠️ **`MatchEngine` randomises
 once at setup and holds it for a whole match**, which is what P9 chose while the question was open.
@@ -128,6 +130,19 @@ behind.** **(1) No view can show a ×5** — `CardView.Multiplier` is 0, 1 or 3 
 `MoneyOdds` does not price it either; the jackpot is settled and never drawn, and **no packet owns
 that gap**. **(2) `RULES.md` §9 #32 is still open** — whether the ×5 needs the 7♦/A♠ pair
 specifically or any two tripled values. **Do not generalise it in code**; two tests fence it.
+
+✅ **P28 built the claim's permission and the per-round seating on 2026-08-21, and `RULES.md`
+§10 #16 and #18 are discharged.** `ClaimRequest.MayBeRefusedBy` asks **`Card.SameRankAs`** — P27's
+method read rather than re-written (§9 #30) — `IPlayerAgent.ObjectToClaim` is the fifth question
+and **the only one asked of a seat that is not on turn**, and the engine asks it **only of a seat
+holding that rank**. 🔥 **A refused claim arms nothing**, so the veto really does buy the upstream
+seat its rank back. 🔥 **The finding that cost the most is older than the packet**:
+`JournalFormat.Name` ended `_ => "declare"`, so a fifth question was written to file as a
+*declaration* — **a serializer's default arm is a mistranslation waiting for the next case**, and
+only the file round-trip test could see it. ⚠️ **`MatchEngine.PlayRound()` draws the seats and
+`PlayRound(drawOrder)` does not**: a deal written down card by card is a deal written down *for a
+seating*. ⚠️ **Every rung refuses whenever it may and none prices the disclosure** — a decision,
+not a derivation, and P29's to measure. The rest of this block is what it was built from.
 
 🔥 **The other unbuilt rule — P28's, and the first rules change that invalidated a published
 measurement —

@@ -53,7 +53,7 @@ public class TableBoardTests
     [Fact]
     public void TheDealPutsTheTurnedUpCardsOnTheTable()
     {
-        var board = Empty().After(new TableEvent.RoundStarted(1, [KingOfDiamonds, SevenOfSpades]));
+        var board = Empty().After(Dealt(1, [KingOfDiamonds, SevenOfSpades]));
 
         Assert.Equal(1, board.Round);
         Assert.True(board.InPlay);
@@ -70,7 +70,7 @@ public class TableBoardTests
     public void AClaimTakesOneCopyOffTheTable()
     {
         var board = Empty()
-            .After(new TableEvent.RoundStarted(1, [KingOfDiamonds, OtherKingOfDiamonds]))
+            .After(Dealt(1, [KingOfDiamonds, OtherKingOfDiamonds]))
             .After(new TableEvent.MoneyCardClaimed(One, KingOfDiamonds));
 
         Assert.Equal([OtherKingOfDiamonds], board.TurnedUp);
@@ -81,7 +81,7 @@ public class TableBoardTests
     public void ADiscardBecomesTheTopOfThatSeatsPile()
     {
         var board = Empty()
-            .After(new TableEvent.RoundStarted(1, []))
+            .After(Dealt(1, []))
             .After(new TableEvent.Discarded(Two, SevenOfSpades));
 
         Assert.Equal(SevenOfSpades, board.Seats.Single(seat => seat.Player == Two).LastDiscard);
@@ -98,10 +98,10 @@ public class TableBoardTests
     public void BanksAccumulateAcrossRoundsAndTheTableIsClearedBetweenThem()
     {
         var board = Empty()
-            .After(new TableEvent.RoundStarted(1, [KingOfDiamonds]))
+            .After(Dealt(1, [KingOfDiamonds]))
             .After(new TableEvent.Discarded(Two, SevenOfSpades))
             .After(new TableEvent.Settled(Result(1, One, 15, -5, -5, -5)))
-            .After(new TableEvent.RoundStarted(2, [SevenOfSpades]))
+            .After(Dealt(2, [SevenOfSpades]))
             .After(new TableEvent.Settled(Result(2, Two, -5, 15, -5, -5)));
 
         Assert.Equal(10, board.Seats.Single(seat => seat.Player == One).Bank);
@@ -118,9 +118,9 @@ public class TableBoardTests
     public void ANewDealClearsTheDiscardPiles()
     {
         var board = Empty()
-            .After(new TableEvent.RoundStarted(1, []))
+            .After(Dealt(1, []))
             .After(new TableEvent.Discarded(Two, SevenOfSpades))
-            .After(new TableEvent.RoundStarted(2, []));
+            .After(Dealt(2, []));
 
         Assert.All(board.Seats, seat => Assert.Null(seat.LastDiscard));
         Assert.Null(board.Acting);
@@ -139,7 +139,7 @@ public class TableBoardTests
     [Fact]
     public void TheLogIsTrimmedAndEveryKeyStaysUnique()
     {
-        var board = Empty().After(new TableEvent.RoundStarted(1, []));
+        var board = Empty().After(Dealt(1, []));
 
         for (var said = 0; said < TableBoard.LogKept * 2; said++)
         {
@@ -159,7 +159,7 @@ public class TableBoardTests
     public void ABlindDrawSaysThatItHappenedAndNothingMore()
     {
         var board = Empty()
-            .After(new TableEvent.RoundStarted(1, []))
+            .After(Dealt(1, []))
             .After(new TableEvent.Drew(Three, null));
 
         var line = board.Log.Last();
@@ -173,7 +173,7 @@ public class TableBoardTests
     public void AnAbandonedRoundIsSaidRatherThanLeftLookingLikeAFreeze()
     {
         var board = Empty()
-            .After(new TableEvent.RoundStarted(1, []))
+            .After(Dealt(1, []))
             .After(new TableEvent.TableAbandoned(1, TimeSpan.FromHours(2)));
 
         Assert.True(board.Abandoned);
@@ -248,7 +248,7 @@ public class TableBoardTests
     public void WhoseTurnItIsComesFromTheTableAndIsNotWhoMovedLast()
     {
         var board = Empty()
-            .After(new TableEvent.RoundStarted(1, [KingOfDiamonds, SevenOfSpades]))
+            .After(Dealt(1, [KingOfDiamonds, SevenOfSpades]))
             .After(new TableEvent.TurnBegan(One, 1, 1));
 
         Assert.Equal(One, board.Turn);
@@ -275,7 +275,7 @@ public class TableBoardTests
         Assert.Equal(
             board.Log.Count,
             Empty()
-                .After(new TableEvent.RoundStarted(1, [KingOfDiamonds, SevenOfSpades]))
+                .After(Dealt(1, [KingOfDiamonds, SevenOfSpades]))
                 .After(new TableEvent.Discarded(One, KingOfDiamonds))
                 .Log.Count);
     }
@@ -288,7 +288,7 @@ public class TableBoardTests
     public void NobodyIsSpotlightedOnceTheRoundIsOver()
     {
         var board = Empty()
-            .After(new TableEvent.RoundStarted(1, [KingOfDiamonds]))
+            .After(Dealt(1, [KingOfDiamonds]))
             .After(new TableEvent.TurnBegan(Three, 1, 7))
             .After(new TableEvent.Declared(Three, []))
             .After(new TableEvent.Settled(Settlement(Three)));
@@ -311,7 +311,7 @@ public class TableBoardTests
     public void TakingADiscardUncoversTheOneUnderIt()
     {
         var board = Empty()
-            .After(new TableEvent.RoundStarted(1, [SevenOfSpades]))
+            .After(Dealt(1, [SevenOfSpades]))
             .After(new TableEvent.Discarded(Two, KingOfDiamonds))
             .After(new TableEvent.Discarded(Two, OtherKingOfDiamonds));
 
@@ -338,7 +338,7 @@ public class TableBoardTests
     public void TheDiscardOnOfferIsThePreviousSeatsTopCard()
     {
         var board = Empty()
-            .After(new TableEvent.RoundStarted(1, [SevenOfSpades]))
+            .After(Dealt(1, [SevenOfSpades]))
             .After(new TableEvent.Discarded(One, KingOfDiamonds))
             .After(new TableEvent.TurnBegan(Two, 1, 2));
 
@@ -348,7 +348,7 @@ public class TableBoardTests
         Assert.Null(board.After(new TableEvent.TurnBegan(One, 1, 5)).AvailableDiscard);
 
         // Nobody is being waited on, so nothing is on offer.
-        Assert.Null(Empty().After(new TableEvent.RoundStarted(1, [SevenOfSpades])).AvailableDiscard);
+        Assert.Null(Empty().After(Dealt(1, [SevenOfSpades])).AvailableDiscard);
     }
 
     /// <summary>
@@ -364,7 +364,7 @@ public class TableBoardTests
     [Fact]
     public void TheDrawPileIsCountedFromWhatTheTableSaid()
     {
-        var board = Empty().After(new TableEvent.RoundStarted(1, [KingOfDiamonds, SevenOfSpades]));
+        var board = Empty().After(Dealt(1, [KingOfDiamonds, SevenOfSpades]));
 
         Assert.Equal(DeckBuilder.TotalCards - (RoundEngine.HandSize * 4) - 2, board.DrawPileCount);
 
@@ -429,7 +429,7 @@ public class TableBoardTests
     {
         var board = Empty()
             .After(new TableEvent.SeatTaken(Two, "Nick"))
-            .After(new TableEvent.RoundStarted(1, []));
+            .After(Dealt(1, []));
 
         Assert.Equal("Nick", board.Names[Two]);
         Assert.Equal([Two], board.Seated);
@@ -460,7 +460,7 @@ public class TableBoardTests
     public void TheComputerStandingInLastsOneTurn()
     {
         var board = Empty()
-            .After(new TableEvent.RoundStarted(1, []))
+            .After(Dealt(1, []))
             .After(new TableEvent.TurnBegan(Three, 1, 3))
             .After(new TableEvent.SeatPlayedByTheComputer(Three, 1, 3));
 
@@ -476,7 +476,7 @@ public class TableBoardTests
         Assert.False(again.SeatOf(Three).PlayedByTheComputer);
 
         // …and it does not survive a deal either.
-        Assert.Empty(board.After(new TableEvent.RoundStarted(2, [])).StoodInFor);
+        Assert.Empty(board.After(Dealt(2, [])).StoodInFor);
     }
 
     /// <remarks>
@@ -489,7 +489,7 @@ public class TableBoardTests
     {
         var board = Empty()
             .After(new TableEvent.SeatTaken(Two, "Nick"))
-            .After(new TableEvent.RoundStarted(1, []))
+            .After(Dealt(1, []))
             .After(new TableEvent.SeatLeft(Two, "Nick"))
             .After(new TableEvent.TurnBegan(Two, 1, 2));
 
@@ -500,13 +500,63 @@ public class TableBoardTests
         Assert.False(board.SeatOf(Four).PlayedByTheComputer);
 
         // …and it survives the next deal, because a player who left is still gone.
-        Assert.True(board.After(new TableEvent.RoundStarted(2, [])).SeatOf(Two).PlayedByTheComputer);
+        Assert.True(board.After(Dealt(2, [])).SeatOf(Two).PlayedByTheComputer);
 
         var back = board.After(new TableEvent.SeatTaken(Two, "Nick"));
 
         Assert.Empty(back.Vacated);
         Assert.False(back.SeatOf(Two).PlayedByTheComputer);
     }
+
+    /// <summary>
+    /// ✅ <b>The ring follows the deal</b> (RULES.md §3 step 2, packet P28). Seats are drawn
+    /// again every round, so a board that kept the order the lobby opened with would draw the
+    /// wrong neighbours from the second deal on — and the neighbour is what the discard and the
+    /// feeding ban are about.
+    /// </summary>
+    [Fact]
+    public void ARedrawnSeatingRearrangesTheTable()
+    {
+        var board = Empty()
+            .After(Dealt(1, []))
+            .After(new TableEvent.RoundStarted(2, [Three, One, Four, Two], []));
+
+        Assert.Equal([Three, One, Four, Two], board.Seating);
+
+        // The seats are the same four people in a different order — nobody joined or left.
+        Assert.Equal(
+            [One, Two, Three, Four],
+            board.Seats.Select(seat => seat.Player).OrderBy(player => player.Value).ToArray());
+    }
+
+    /// <summary>
+    /// ✅ <b>A refused claim is narrated to a watcher</b> (RULES.md §4.5) — the one thing a
+    /// player says out loud about their own hand before the declaration.
+    /// </summary>
+    [Fact]
+    public void ARefusedClaimIsSaidToTheTable()
+    {
+        var board = Empty()
+            .After(Dealt(1, [KingOfDiamonds, SevenOfSpades]))
+            .After(new TableEvent.ClaimRefused(Four, One, KingOfDiamonds));
+
+        var said = board.Log[^1];
+
+        Assert.Contains("refused", said.Text, StringComparison.Ordinal);
+        Assert.Contains("Aung Aung", said.Text, StringComparison.Ordinal);
+        Assert.Contains("Mya Lay", said.Text, StringComparison.Ordinal);
+        Assert.Equal([KingOfDiamonds], said.Cards);
+
+        // ⚠️ The card stays on the table, because a refused claim moves nothing.
+        Assert.Equal([KingOfDiamonds, SevenOfSpades], board.TurnedUp);
+    }
+
+    /// <summary>
+    /// The deal, for the seating the table opened with — which is what a first round gets
+    /// (RULES.md §3 step 2 re-draws it after that).
+    /// </summary>
+    private static TableEvent.RoundStarted Dealt(int round, IReadOnlyList<Card> turnedUp) =>
+        new(round, [One, Two, Three, Four], turnedUp);
 
     private static TableBoard Empty() => TableBoard.Of(
         [One, Two, Three, Four],

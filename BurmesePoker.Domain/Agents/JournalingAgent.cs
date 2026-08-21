@@ -13,7 +13,7 @@ namespace BurmesePoker.Domain.Agents;
 /// the test project and <see cref="Play.GameJournalBuilder"/>'s other consumer <c>SeatRecorder</c>
 /// in the harness are both this shape already; a journal is the same idea kept long enough to
 /// be worth a file. Nothing in the engine changes to make it work — it sees an
-/// <see cref="IPlayerAgent"/> and asks it four questions.
+/// <see cref="IPlayerAgent"/> and asks it five questions.
 /// </para>
 /// <para>
 /// <b>It records answers, not intentions.</b> What the wrapped strategy would have done had it
@@ -71,6 +71,19 @@ public sealed class JournalingAgent(IPlayerAgent inner, GameJournalBuilder journ
             context.Round, context.TurnNumber, context.Player, JournalQuestion.Claim, claimed, snapshot));
 
         return claimed;
+    }
+
+    public bool ObjectToClaim(TurnContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        var snapshot = _journal.SnapshotOf(context);
+        var objected = _inner.ObjectToClaim(context);
+
+        _journal.Append(JournalDecision.Of(
+            context.Round, context.TurnNumber, context.Player, JournalQuestion.Objection, objected, snapshot));
+
+        return objected;
     }
 
     public bool Declare(TurnContext context)

@@ -118,20 +118,32 @@ is closed, the ban gives way for that turn — you always discard.
 
 ---
 
-## The four questions
+## The five questions
 
 **1. "Take the turned-up money card instead of drawing?"** — only on the opening turn, and
 only if you open. You take the actual card off the table, and it **costs you your draw**.
 ⚠️ **The table gave it to you, not the deck, so it pays you nothing** (`RULES.md` §4.4). Take
-it only if it melds.
+it only if it melds. ⚠️ **And you have to be allowed to** — see question 2.
 
-**2. "How will you take your card?"** — the previous player's discard, or the top of the deck
+**2. "Refuse them the card?"** — the odd one out: it arrives **while it is not your turn**, and
+it is about somebody else's move. The player who plays *after* you wants the turned-up card, and
+claiming it needs your permission (`RULES.md` §4.5). **You are only ever asked if you are holding
+that rank**, because that is the only ground on which you may refuse: their taking it in the open
+closes that rank against you, so you could not throw a card of it to them for the rest of the
+round (§5.1).
+
+⚠️ **Refusing tells the table something.** Only a holder may refuse, so saying no says you are
+holding one — the only thing anybody learns about a hand before somebody declares. Saying yes
+costs you the freedom to throw that rank all round. Neither is free, and the computer always
+refuses.
+
+**3. "How will you take your card?"** — the previous player's discard, or the top of the deck
 blind. Two things are different about them beyond the card itself: you can *see* the discard,
 and **a blind draw is the only way to come to own a money card mid-round**. Only the
 immediately-previous player's top discard is ever offered, so at a four-seat table you see one
 card in four go past.
 
-**3. "Which card will you throw away?"** — you are at fourteen and must go back to thirteen.
+**4. "Which card will you throw away?"** — you are at fourteen and must go back to thirteen.
 Each card is annotated with what throwing it costs:
 
 ```
@@ -144,7 +156,7 @@ Each card is annotated with what throwing it costs:
 stop melding if it goes. You **may** throw back the card you just took (`RULES.md` §9 #13,
 defaulted).
 
-**4. "Declare and end the round?"** — offered only when all thirteen genuinely meld, so it is
+**5. "Declare and end the round?"** — offered only when all thirteen genuinely meld, so it is
 never a trap. Say yes.
 
 ---
@@ -243,6 +255,10 @@ them.
 **Nothing ends a session but the players** (`RULES.md` §7.2) — there is no target score and no
 round limit, so *"Another round?"* is asked until you say no.
 
+⚠️ **The seats are drawn again for every deal** (`RULES.md` §3), so the round begins by printing
+the new order and who opens. **Your neighbours change every round** — the player who was feeding
+you discards is somewhere else next time, and so is the one you were feeding.
+
 If the draw pile runs out, every discard pile is gathered, shuffled, and becomes the new draw
 pile; the table is told when it happens. In practice you will only see it at a **full table** —
 it is common at six seats and essentially never happens at four.
@@ -259,7 +275,7 @@ Then open the address it prints (`http://localhost:5188` by default). **That is 
 table** — type a name, press **Sit down**, and you are at a table with the computer in the other
 seats, at the same pace the console uses.
 
-**It asks the same four questions**, in the same order. It does not say them the same way.
+**It asks the same five questions**, in the same order. It does not say them the same way.
 
 ### The lobby
 

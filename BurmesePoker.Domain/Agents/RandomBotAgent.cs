@@ -83,6 +83,17 @@ public sealed class RandomBotAgent(Random random) : IPlayerAgent
         return context.TurnedUpMoneyCards.Count > 0 && _random.Next(2) == 0;
     }
 
+    /// <summary>
+    /// A coin toss, like everything else here. The engine asks only a seat that may refuse, so
+    /// both answers are legal whichever way it lands (RULES.md §4.5).
+    /// </summary>
+    public bool ObjectToClaim(TurnContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        return _random.Next(2) == 0;
+    }
+
     /// <summary>Always. The engine only asks when the hand genuinely wins (RULES.md §7.1).</summary>
     public bool Declare(TurnContext context) => true;
 }

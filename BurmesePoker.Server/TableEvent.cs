@@ -38,8 +38,21 @@ public abstract record TableEvent
     {
     }
 
-    /// <summary>The deal is done and the money cards are turned up (RULES.md §3).</summary>
-    public sealed record RoundStarted(int Round, IReadOnlyList<Card> TurnedUp) : TableEvent;
+    /// <summary>
+    /// The deal is done and the money cards are turned up (RULES.md §3), for the seating drawn
+    /// for this round.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b><see cref="Seating"/> is carried because it moves.</b> Seats are re-randomised every
+    /// deal (RULES.md §3 step 2, §9 #14), so a client that kept the order the table opened with
+    /// would draw the wrong neighbours — and the neighbours are what the discard and the feeding
+    /// ban are about. Public by construction: who is sitting where is the most visible fact at a
+    /// table, like <see cref="SeatTaken"/>.
+    /// </remarks>
+    public sealed record RoundStarted(
+        int Round,
+        IReadOnlyList<PlayerId> Seating,
+        IReadOnlyList<Card> TurnedUp) : TableEvent;
 
     /// <summary>
     /// Somebody sat down in a seat that was waiting for a player, and this is what they are
@@ -109,6 +122,26 @@ public abstract record TableEvent
 
     /// <summary>The opening player took the top money card off the table (RULES.md §4.5).</summary>
     public sealed record MoneyCardClaimed(PlayerId Player, Card Card) : TableEvent;
+
+    /// <summary>
+    /// The seat that plays before the opener refused them the turned-up money card (RULES.md
+    /// §4.5).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The first thing a player discloses about their hand by choice.</b> Only a holder may
+    /// refuse, so this event says that <see cref="Objector"/> holds a card of that rank — and the
+    /// rest of the game conceals every hand until the declaration (RULES.md §7.1). It is public
+    /// by construction rather than by permission: the refusal happens out loud at the table, and
+    /// a client that hid it would be hiding a fact the other players are entitled to reason from.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>It is a decision for <c>ConcealmentTests</c>, not a detail for the UI.</b> Every other
+    /// route from a hand to a watcher is a leak; this one is the rule, so it is written down where
+    /// the leaks are checked.
+    /// </para>
+    /// </remarks>
+    public sealed record ClaimRefused(PlayerId Objector, PlayerId Claimant, Card Card) : TableEvent;
 
     /// <summary>A player discarded. Public, and ownership is unaffected (RULES.md §4.4).</summary>
     public sealed record Discarded(PlayerId Player, Card Card) : TableEvent;

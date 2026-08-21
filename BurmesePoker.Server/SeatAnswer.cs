@@ -47,6 +47,19 @@ public abstract record SeatAnswer
     }
 
     /// <summary>
+    /// Whether to refuse the seat after you the turned-up money card (RULES.md §4.5).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Both answers fit.</b> The table asks only a seat that is holding the rank, so there
+    /// is nothing here to check against the prompt that the prompt has not already decided — the
+    /// same shape as <see cref="Claim"/>, and for the same reason.
+    /// </remarks>
+    public sealed record Objection(bool Objected) : SeatAnswer
+    {
+        public override bool Fits(SeatPrompt prompt) => prompt is { Question: SeatQuestion.ObjectToClaim };
+    }
+
+    /// <summary>
     /// The card to throw away. Must be one the seat is holding <b>and</b> one the turn offered
     /// (RULES.md §5.1).
     /// </summary>

@@ -19,8 +19,17 @@ namespace BurmesePoker.Domain.Abstractions;
 /// </remarks>
 public interface IGameObserver
 {
-    /// <summary>The deal is done and the money cards are turned up.</summary>
-    void RoundStarted(int round, IReadOnlyList<Card> turnedUp) { }
+    /// <summary>
+    /// The deal is done and the money cards are turned up — for <paramref name="seating"/>,
+    /// which was drawn for this round and no other (RULES.md §3 step 2).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The seating is narrated because it moves.</b> Seats are re-randomised every round
+    /// (§3, §9 #14), so a front end that drew the order it opened with would be drawing the
+    /// wrong neighbours from the second deal on — and who sits where is the most public fact
+    /// at a table.
+    /// </remarks>
+    void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp) { }
 
     /// <summary>A player drew blind from the deck. The deck gave it, so they own it.</summary>
     void PlayerDrew(PlayerId player, Card card) { }
@@ -30,6 +39,18 @@ public interface IGameObserver
 
     /// <summary>The opening player took the top money card off the table (RULES.md §4.5).</summary>
     void MoneyCardClaimed(PlayerId player, Card card) { }
+
+    /// <summary>
+    /// The seat that plays before the opener refused them the turned-up money card, which it may
+    /// do only by holding that rank (RULES.md §4.5).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Public, and a disclosure.</b> Only a holder may refuse, so this says that
+    /// <paramref name="objector"/> is holding a card of that rank — the one fact about a hand
+    /// that reaches the table before the declaration, and it reaches it because a player chose
+    /// to say it.
+    /// </remarks>
+    void ClaimRefused(PlayerId objector, PlayerId claimant, Card card) { }
 
     /// <summary>A player discarded. Ownership is unaffected (RULES.md §4.4).</summary>
     void PlayerDiscarded(PlayerId player, Card card) { }

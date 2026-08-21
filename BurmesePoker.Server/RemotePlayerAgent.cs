@@ -88,6 +88,11 @@ public sealed class RemotePlayerAgent : IPlayerAgent
             ? answer.Claimed
             : _standIn.ClaimTurnedUpMoneyCard(context);
 
+    public bool ObjectToClaim(TurnContext context) =>
+        Ask(context, SeatQuestion.ObjectToClaim) is SeatAnswer.Objection answer
+            ? answer.Objected
+            : _standIn.ObjectToClaim(context);
+
     public Card ChooseDiscard(TurnContext context) =>
         Ask(context, SeatQuestion.Discard) is SeatAnswer.Discard answer
             ? answer.Card

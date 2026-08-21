@@ -1,4 +1,5 @@
 using BurmesePoker.Domain.Abstractions;
+using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Money;
 using BurmesePoker.Domain.Play;
@@ -237,6 +238,110 @@ public class MatchEngineTests
         Assert.Equal([(1, 1), (2, 1)], seen.Distinct().ToArray());
     }
 
+    /// <summary>
+    /// ✅ <b>RULES.md §3 step 2 — the seats are drawn again before every deal</b> (§9 #14,
+    /// packet P28).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>A game <em>is</em> a round</b> (§3), so "between games" means between deals: a
+    /// player's neighbours change every round, and with them the whole of §5.1's ordered pairs.
+    /// The engine held one seating for a match until this packet, which is the only rule this
+    /// document has recorded that the code actively contradicted (§10 #16).
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The first round keeps the seating it was given</b>, because whoever opened the table
+    /// has already drawn it — a lobby, a console, or a harness that assigns strategies to seats
+    /// on purpose.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheSeatsAreDrawnAgainForEveryRoundAfterTheFirst()
+    {
+        var observer = new RecordingObserver();
+        var match = new MatchEngine(
+            FourPlayers, Bots(), Stakes.Standard, new Random(20260821), observer);
+
+        for (var round = 0; round < 6; round++)
+        {
+            match.PlayRound();
+        }
+
+        Assert.Equal(6, observer.Seatings.Count);
+        Assert.Equal(FourPlayers, observer.Seatings[0]);
+        Assert.Equal(observer.Seatings[^1], match.Seating);
+
+        // Everybody is still at the table, every round: a draw is a permutation and nothing else.
+        Assert.All(observer.Seatings, seating => Assert.Equal(FourPlayers.ToHashSet(), seating.ToHashSet()));
+
+        // And they really move. Six draws of four seats coming out identical has a probability of
+        // 24^-5, so a seed that produced it would be evidence of a bug rather than of luck.
+        Assert.True(
+            observer.Seatings.Distinct(SeatingOrder).Count() > 1,
+            "The seating never changed over six rounds.");
+
+        // ⚠️ Who opens moves with it. It used to be the same player every round for a whole
+        // match, which is what made the fixed seating visible at all.
+        Assert.True(observer.Seatings.Select(seating => seating[0]).Distinct().Count() > 1);
+    }
+
+    /// <summary>
+    /// ✅ <b>The draw comes out of the match's own generator, so a seed still reproduces a whole
+    /// match</b> (BUILD-PLAN §3.7, §3.9).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A seed from before this packet no longer plays the same match</b> — the seating draw
+    /// takes numbers the deal used to take, which is §3.9 point 2 happening again. Round 1 is
+    /// unaffected, because it draws no seats.
+    /// </remarks>
+    [Fact]
+    public void TheSameSeedDrawsTheSameSeatsInTheSameOrder()
+    {
+        Assert.Equal(SeatingsOf(seed: 4), SeatingsOf(seed: 4));
+        Assert.NotEqual(SeatingsOf(seed: 4), SeatingsOf(seed: 5));
+    }
+
+    /// <summary>
+    /// ✅ <b>The scripted overload deals to the table as it stands</b>, which is what keeps a
+    /// written-down deal meaning what it says (see <c>MatchEngine.PlayRound(IReadOnlyList{Card})</c>).
+    /// </summary>
+    [Fact]
+    public void AScriptedRoundIsDealtToTheSeatingItWasGiven()
+    {
+        var observer = new RecordingObserver();
+        var match = new MatchEngine(
+            FourPlayers, Agents(WinsImmediately()), Stakes.Standard, new Random(1), observer);
+
+        match.PlayRound(Deal());
+        match.PlayRound(Deal());
+
+        Assert.Equal([FourPlayers, FourPlayers], observer.Seatings);
+        Assert.Equal(2, match.Banks[Alice] / 13);
+    }
+
+    private static List<string> SeatingsOf(int seed)
+    {
+        var observer = new RecordingObserver();
+        var match = new MatchEngine(FourPlayers, Bots(), Stakes.Standard, new Random(seed), observer);
+
+        for (var round = 0; round < 4; round++)
+        {
+            match.PlayRound();
+        }
+
+        return [.. observer.Seatings.Select(seating => string.Join(",", seating))];
+    }
+
+    /// <summary>Compares two seatings as orders rather than as lists of the same four seats.</summary>
+    private static readonly IEqualityComparer<IReadOnlyList<PlayerId>> SeatingOrder =
+        EqualityComparer<IReadOnlyList<PlayerId>>.Create(
+            (left, right) => left is not null && right is not null && left.SequenceEqual(right),
+            seating => seating.Aggregate(17, (hash, player) => (hash * 31) + player.Value));
+
+    /// <summary>A table that plays itself out, for the rounds that are dealt from a real shuffle.</summary>
+    private static IReadOnlyDictionary<PlayerId, IPlayerAgent> Bots() =>
+        FourPlayers.ToDictionary(player => player, IPlayerAgent (_) => new GreedyBotAgent());
+
     private static MatchEngine Match(IPlayerAgent alice) =>
         new(FourPlayers, Agents(alice), Stakes.Standard, new Random(1));
 
@@ -264,6 +369,8 @@ public class MatchEngineTests
 
         public bool ClaimTurnedUpMoneyCard(TurnContext context) => false;
 
+        public bool ObjectToClaim(TurnContext context) => false;
+
         public bool Declare(TurnContext context) => false;
     }
 
@@ -278,6 +385,8 @@ public class MatchEngineTests
             Note(context, context.Taken ?? throw new InvalidOperationException("Nothing was taken."));
 
         public bool ClaimTurnedUpMoneyCard(TurnContext context) => Note(context, false);
+
+        public bool ObjectToClaim(TurnContext context) => Note(context, false);
 
         public bool Declare(TurnContext context) => Note(context, true);
 

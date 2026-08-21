@@ -4,7 +4,19 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-21 (rev 23 — ✅ **no rule moved; §5.1 is code now.** Packet P27 built the
+Last revised: 2026-08-21 (rev 24 — ✅ **no rule moved; §3's re-seating and §4.5's permission are
+code now, and this document no longer records anything settled that nothing implements.** Packet
+P28 built the last two: **the seats are drawn again before every deal** (§3 step 2) — which was the
+only rule here the engine actively *contradicted* rather than merely lacked (§10 #16) — and
+**claiming the turned-up money card needs the permission of the seat that plays before you, who may
+refuse only by holding that rank** (§4.5, §10 #18). 🔥 **The objection is §5.1's own predicate and
+it was not written twice**: `ClaimRequest.MayBeRefusedBy` asks `Card.SameRankAs`, which is what §9
+#30 settled. 🔥 **And the two rules turn out to be one mechanism seen from two ends** — a claim is a
+public take, so it arms §5.1 against exactly the seat whose permission is asked, and **a refused
+claim arms nothing**, which is the whole of what the veto buys. ⚠️ **Only a holder is ever asked**,
+so the question itself discloses nothing and the *answer* discloses everything it is allowed to:
+an objection tells the table that seat holds that rank, and it is the first thing in this game a
+player reveals by choice. Rev 23 — ✅ **no rule moved; §5.1 is code now.** Packet P27 built the
 feeding ban exactly as this document specifies it: enforced **by construction** (`FeedingBan`,
 `TurnContext.LegalDiscards`), armed by public takes only, bound to the seat you discard to,
 released permanently by a throw-back that survives the reshuffle, with the declaring-discard
@@ -230,8 +242,10 @@ copy of a card that is about to become a money card. That appears to be the poin
 > 🔥 **This is what makes §9 #14's answer bite.** Seating is re-randomised *between games*, and
 > a game is a round — so **step 2 runs before every deal**. There is no fixed table, no dealer
 > rotation, and no persistent seat: the player on your left this round is on the far side of the
-> table the next. ⚠️ **The engine keeps the seating it was given for a whole match** and is wrong
-> about it (§10 #16).
+> table the next. ✅ **Built 2026-08-21 (P28), and §10 #16 is discharged**: `MatchEngine` draws the
+> seats again before every deal and narrates the order it drew. The first round keeps the seating it
+> was handed, because whoever opened the table drew that one. ⚠️ **A seed from before P28 no longer
+> plays the same match** — the seating draw takes numbers the deal used to take.
 >
 > ⚠️ **This document keeps saying *round*** — every rule, every cross-reference, and every column
 > in `docs/strategy/measurements.csv` — because renaming the unit would break far more than it
@@ -613,8 +627,11 @@ score for the new steward"*, which is precisely rule 1 in action.
 > > lock them into holding the card via the discard rules."*
 >
 > `EXPERT`. The 2023 source had a permission check with a `TODO` against it and no explanation;
-> rev 1 to rev 19 carried it as `Unknown`, and **P9 asks nobody**. It is real, and the reason is
-> §5.1.
+> rev 1 to rev 19 carried it as `Unknown`, and P9 asked nobody. It is real, and the reason is §5.1.
+> ✅ **Built 2026-08-21 (P28), and §10 #18 is discharged.** `IPlayerAgent.ObjectToClaim` is the
+> game's third kind of decision and the only one put to a seat that is not on turn; the engine asks
+> it **only of a seat holding that rank**, and a refused claim leaves the card on the table and the
+> opener drawing blind.
 >
 > 🔥 **Follow the mechanism, because it is the whole justification.** Claiming the turned-up card
 > is a **public take** (§9 #17), so it arms the feeding ban against the seat that discards to the
@@ -1321,11 +1338,14 @@ material three times.
 
 ⚠️ **What is left is one row, and it does not block play — only a correct settlement.**
 
-✅ **Nothing open blocks anything.** §5.1's specification — #16–#20, #25 and #27 — was written on
-2026-08-20; rev 18 closed the win condition's last two, #22 and #29; and both survivors have a
-recorded default that a shipped packet already runs on. ⚠️ **What is left unimplemented is not a
-question but a decision already taken** — §5.1, §7.1.1 and rev 19's per-round seating are all
-settled rules with no code behind them (§10 #13, #14, #16).
+✅ **Nothing open blocks anything, and nothing settled is unbuilt.** §5.1's specification —
+#16–#20, #25 and #27 — was written on 2026-08-20; rev 18 closed the win condition's last two, #22
+and #29; and the one survivor has a recorded default that a shipped packet already runs on.
+🔥 **The backlog this paragraph used to describe is gone**: §7.1.1 (P25), §4 (P26), §5.1 (P27) and
+§3 with §4.5 (P28) are all code, so **every rule this document records as Settled is implemented**
+— §10 #13, #14, #16, #17 and #18 are all discharged. ⚠️ **What is not discharged is the
+measurement**: every figure in `docs/STRATEGY.md` was taken under rules the game no longer plays by
+(P29).
 
 ⚠️ **One of the two is worth more than its size.** #11's default sends a joker's money value
 somewhere §5.1's #27 sends it elsewhere — two of the four jokers against all four — and the two
@@ -1776,6 +1796,19 @@ Decisions here that the implementation contradicts or lacks:
     every pair each round — which is harmless, because the ban is per round in any case, but it
     means the banned-rank sets are keyed to a seating that no longer exists the moment the round
     ends.
+    ✅ **Implemented 2026-08-21 (P28), and this ruling is discharged.** `MatchEngine.PlayRound()`
+    shuffles, then draws the seats, then deals — §3's own order — and `MatchEngine.Seating` is the
+    order the round in progress was dealt in, while `Players` stays the table's membership so a
+    caller's banks, names and agents do not shuffle under it. ⚠️ **The scripted overload
+    `PlayRound(drawOrder)` draws no seats**, for the same reason `RoundEngine` takes its seating as
+    given: a deal written down card by card is a deal written down *for a seating*.
+    🔥 **The seating became narration.** `IGameObserver.RoundStarted` carries it, so the console
+    prints the seats every round instead of once at setup and the browser's ring rearranges itself
+    between deals — P13.5's *you at the front whichever seat you were dealt* turned out to need
+    nothing new, because `TableRing.Around` is already given a seating and a viewer.
+    ⚠️ **A seed from before P28 no longer plays the same match** (BUILD-PLAN §3.9 point 2): the
+    seating draw takes numbers the deal used to take. Round 1 is unaffected, because it draws no
+    seats.
 
 17. ✅ **Discharged 2026-08-21 (P26). The money layer is what §4 says it is.**
     `MoneyCardRegistry.Permanent` holds **three values and eight cards**; `Multiplier(Card)`
@@ -1828,6 +1861,24 @@ Decisions here that the implementation contradicts or lacks:
     decision for `ConcealmentTests` to pin down rather than a UI detail. ✅ **The predicate is
     settled — §9 #30 is *rank alone***, which is §5.1's own predicate, so the objection test is
     the same `HoldsRank` the ban needs and the two must not be written twice.
+    ✅ **Implemented 2026-08-21 (P28), and this ruling is discharged.** `ClaimRequest` is the claim
+    being put, and `MayBeRefusedBy` asks `Card.SameRankAs` — **P27's method, read rather than
+    re-written**. `IPlayerAgent.ObjectToClaim` is the third kind of decision; `TurnContext` carries
+    the request and nothing else changes about what a seat may see, so the out-of-turn question is
+    the same concealment as every other. 🔥 **A refused claim does not arm §5.1**, which is the one
+    line where this touches P27: the opener falls through to a blind draw and nothing was taken in
+    the open.
+    ⚠️ **Only a holder is asked at all** — a question with one possible answer is not a question,
+    and asking it of a seat that could not refuse would say more than the rule does. The disclosure
+    is therefore entirely in the answer: `TableEvent.ClaimRefused` is broadcast to every connection
+    and `ConcealmentTests` counts the card it names as public, because it is the one lying face up
+    on the table.
+    ⚠️ **Three places in the server assumed a question meant a turn**, and only one of them was
+    load-bearing: `BoundedAgent` must check the clock and **not** announce `TurnBegan`, or every
+    client spotlights the wrong seat in the middle of somebody else's turn.
+    ⚠️ **What the rungs answer is a decision and not a derivation.** Every bot refuses whenever it
+    may, on §4.5's own reasoning — the claim would close that rank in its hand — and **no rung
+    prices the disclosure**. Whether refusing is right is unmeasured (P29).
 
 See `RULES-TECHNICAL.md` §7 for defects not driven by rules decisions, and
 `RECONCILIATION-PLAN.md` for sequencing.

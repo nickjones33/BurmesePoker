@@ -233,8 +233,9 @@ public static class JournalFormat
             "action" => JournalQuestion.Action,
             "discard" => JournalQuestion.Discard,
             "claim" => JournalQuestion.Claim,
+            "objection" => JournalQuestion.Objection,
             "declare" => JournalQuestion.Declare,
-            var unknown => throw new JournalException($"Line {number}: '{unknown}' is not one of the four questions.")
+            var unknown => throw new JournalException($"Line {number}: '{unknown}' is not one of the five questions.")
         };
 
         DecisionSnapshot? snapshot = null;
@@ -257,12 +258,22 @@ public static class JournalFormat
             snapshot);
     }
 
+    /// <remarks>
+    /// 🔥 <b>Every case is named and there is no catch-all, which is a correction rather than a
+    /// style.</b> This ended <c>_ =&gt; "declare"</c>, so when P28 added a fifth question the
+    /// writer silently wrote every objection down as a declaration — <b>a journal that read back
+    /// as a different game</b>, and one the in-memory replay could not see because it never
+    /// crosses this method. A serializer's default arm is a mistranslation waiting for the next
+    /// case.
+    /// </remarks>
     private static string Name(JournalQuestion question) => question switch
     {
         JournalQuestion.Action => "action",
         JournalQuestion.Discard => "discard",
         JournalQuestion.Claim => "claim",
-        _ => "declare"
+        JournalQuestion.Objection => "objection",
+        JournalQuestion.Declare => "declare",
+        _ => throw new JournalException($"There is no name for the {question} question.")
     };
 
     /// <summary>

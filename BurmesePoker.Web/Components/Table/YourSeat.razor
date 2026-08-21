@@ -42,7 +42,7 @@
                    Throwing="@(_seat.Asking?.Question == SeatQuestion.Discard)"
                    OnThrow="Throw" />
 
-        <TurnPrompt @ref="_prompt" Asking="_seat.Asking" OnAnswer="Answer" />
+        <TurnPrompt @ref="_prompt" Asking="_seat.Asking" Names="Names" OnAnswer="Answer" />
     </section>
 }
 
@@ -68,6 +68,17 @@
     /// <summary>Whether the computer's suggestions start switched on (the table's own setting).</summary>
     [Parameter]
     public bool Hints { get; set; } = true;
+
+    /// <summary>
+    /// What the seats are called, so a question about another player can name them.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Only one question is about another player</b> — the claim's permission (RULES.md
+    /// §4.5) — and it names the seat that is asking. Handed down from the board like everything
+    /// else on the page rather than looked up.
+    /// </remarks>
+    [Parameter]
+    public IReadOnlyDictionary<PlayerId, string>? Names { get; set; }
 
     protected override void OnParametersSet()
     {

@@ -223,6 +223,12 @@ public class CountingBotAgentTests
             return inner.ClaimTurnedUpMoneyCard(context);
         }
 
+        public bool ObjectToClaim(TurnContext context)
+        {
+            Watch(context);
+            return inner.ObjectToClaim(context);
+        }
+
         public bool Declare(TurnContext context)
         {
             Watch(context);
@@ -277,6 +283,13 @@ public class CountingBotAgentTests
             return claimed;
         }
 
+        public bool ObjectToClaim(TurnContext context)
+        {
+            var objected = inner.ObjectToClaim(context);
+            Note(context);
+            return objected;
+        }
+
         public bool Declare(TurnContext context)
         {
             var declared = inner.Declare(context);
@@ -311,7 +324,8 @@ public class CountingBotAgentTests
 
         public void PlayerDiscarded(PlayerId player, Card card) => Discards.Add((player, card));
 
-        public void RoundStarted(int round, IReadOnlyList<Card> turnedUp) => TurnedUp.AddRange(turnedUp);
+        public void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp) =>
+            TurnedUp.AddRange(turnedUp);
     }
 
     /// <summary>Six turns of a real round with a counting seat, and everything it was shown.</summary>

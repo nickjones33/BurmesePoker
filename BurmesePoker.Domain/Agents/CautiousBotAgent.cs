@@ -89,6 +89,14 @@ public sealed class CautiousBotAgent : IPlayerAgent, IRanksDiscards
             && CoverScore.Improves(context.Hand, context.TurnedUpMoneyCards[^1]);
     }
 
+    /// <inheritdoc cref="GreedyBotAgent.ObjectToClaim"/>
+    public bool ObjectToClaim(TurnContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        return true;
+    }
+
     /// <summary>Always. The engine only asks when the hand genuinely wins (RULES.md §7.1).</summary>
     public bool Declare(TurnContext context) => true;
 

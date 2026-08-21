@@ -56,6 +56,8 @@ public sealed class SeatRecorder(IPlayerAgent inner, int turnCap) : IPlayerAgent
         return claimed;
     }
 
+    public bool ObjectToClaim(TurnContext context) => _inner.ObjectToClaim(context);
+
     public bool Declare(TurnContext context) => _inner.Declare(context);
 
     private void Bound(TurnContext context)

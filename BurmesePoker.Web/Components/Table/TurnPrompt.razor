@@ -1,6 +1,11 @@
 @*
-    The question standing in front of you, as one action bar. The four IPlayerAgent asks, and
-    no others: take, claim, throw, declare.
+    The question standing in front of you, as one action bar. The five IPlayerAgent asks, and
+    no others: take, claim, permit, throw, declare.
+
+    ⚠️ "Permit" is the odd one and it is odd by the rules (RULES.md §4.5): it arrives while it is
+    somebody else's turn, so this bar can be standing in front of you when the spotlight is
+    across the table. It is still your question and still your hand, which is why it is drawn
+    here and not somewhere new.
 
     🔥 An action bar, not a paragraph (BUILD-PLAN P13.5). Board Game Arena's shape: at most four
     buttons, the main action first, the quieter one beside it, and the context on the same line
@@ -86,6 +91,42 @@ else if (asking.Question == SeatQuestion.ClaimMoneyCard)
             <p>
                 Only the opening player may (RULES.md §4.5). It costs you your draw, and the
                 table gives it rather than the deck — so you hold it, but it pays nobody.
+            </p>
+        </details>
+    </section>
+}
+else if (asking.Question == SeatQuestion.ObjectToClaim)
+{
+    <section class="bar" aria-labelledby="ask-heading">
+        <h3 id="ask-heading">May they take it?</h3>
+        <p class="detail">
+            @if (asking.PermissionAsked is { } permission)
+            {
+                <span class="verb" aria-hidden="true">@Who(permission.Claimant) wants</span>
+                <CardChip Card="permission.Card"
+                          Token="@DisplayTokens.For(CardDisplayState.PaysOnce)"
+                          TokenWords="a money card" />
+            }
+            <span class="said">
+                They play after you, and you are holding that rank — which is the only reason you
+                may say no.
+            </span>
+        </p>
+        <div class="choices">
+            <button type="button" class="main" @ref="_first" @onclick="() => Answer(new SeatAnswer.Objection(true))">
+                <span class="verb">Refuse</span>
+            </button>
+            <button type="button" class="second" @onclick="() => Answer(new SeatAnswer.Objection(false))">
+                <span class="verb">Allow it</span>
+            </button>
+        </div>
+        <details class="why">
+            <summary>Why?</summary>
+            <p>
+                Claiming needs the permission of the player who goes before the claimer, and only
+                a holder may refuse (RULES.md §4.5). If they take it, you may not throw that rank
+                to them for the rest of the round (RULES.md §5.1) — and refusing tells the table
+                you are holding one.
             </p>
         </details>
     </section>
@@ -215,7 +256,15 @@ else
         }
     }
 
+    /// <summary>What the seats are called, so the claimer can be named rather than numbered.</summary>
+    [Parameter]
+    public IReadOnlyDictionary<PlayerId, string>? Names { get; set; }
+
     private Task Answer(SeatAnswer answer) => OnAnswer.InvokeAsync(answer);
+
+    /// <summary>A seat's name, or its number when the table has not been told one.</summary>
+    private string Who(PlayerId player) =>
+        Names is not null && Names.TryGetValue(player, out var name) ? name : $"Seat {player.Value}";
 
     /// <summary>A stable key per meld: the cards it is made of, which no other meld holds (§3.1).</summary>
     private static string Key(MeldView meld) => string.Join('-', meld.Meld.CardIds.Select(id => id.Value));

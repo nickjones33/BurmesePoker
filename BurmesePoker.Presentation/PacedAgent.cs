@@ -80,6 +80,12 @@ public sealed class PacedAgent : IPlayerAgent
         return _inner.ClaimTurnedUpMoneyCard(context);
     }
 
+    public bool ObjectToClaim(TurnContext context)
+    {
+        Beat(context);
+        return _inner.ObjectToClaim(context);
+    }
+
     public bool Declare(TurnContext context)
     {
         Beat(context);

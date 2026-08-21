@@ -60,7 +60,14 @@ public sealed record TableBoard
         return new TableBoard([.. seating], names.ToDictionary(entry => entry.Key, entry => entry.Value));
     }
 
-    /// <summary>The seating order, which is also the turn order (RULES.md §3).</summary>
+    /// <summary>
+    /// This round's seating, which is also its turn order (RULES.md §3).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>It changes between rounds.</b> Seats are re-randomised every deal (§3 step 2, §9
+    /// #14) and every <see cref="TableEvent.RoundStarted"/> carries the order that was drawn, so
+    /// this is the seating of the round being played and not of the table that was opened.
+    /// </remarks>
     public IReadOnlyList<PlayerId> Seating { get; private init; }
 
     /// <summary>What each seat is called.</summary>
@@ -260,6 +267,10 @@ public sealed record TableBoard
             TableEvent.RoundStarted started => (this with
             {
                 Round = started.Round,
+                // ⚠️ The seats are drawn again for every deal (RULES.md §3 step 2), so the ring
+                // this board is folded into rearranges itself between rounds. Taken from the
+                // event rather than kept from the lobby, which knew only the first one.
+                Seating = [.. started.Seating],
                 TurnedUp = [.. started.TurnedUp],
                 DiscardPiles = new Dictionary<PlayerId, IReadOnlyList<Card>>(),
                 // The shoe, less thirteen to every seat and the cards turned up off it
@@ -329,6 +340,16 @@ public sealed record TableBoard
                 Round,
                 $"{Who(claimed.Player)} claimed the turned-up card off the table — held, but owned by nobody:",
                 [claimed.Card],
+                LogTone.Money),
+
+            // RULES.md §4.5: the seat that plays before the opener refused them the card. It
+            // may only, by holding that rank — so the refusal says so, and it is the one thing a
+            // player tells the table about their own hand before the declaration.
+            TableEvent.ClaimRefused refused => this.Say(
+                Round,
+                $"{Who(refused.Objector)} refused {Who(refused.Claimant)} the turned-up card — which "
+                + "they may only by holding that rank:",
+                [refused.Card],
                 LogTone.Money),
 
             TableEvent.Discarded discarded => (Moved(discarded.Player) with

@@ -55,7 +55,7 @@ public enum JournalFidelity
 }
 
 /// <summary>
-/// The four questions an <see cref="IPlayerAgent"/> is ever asked. Exactly its four methods.
+/// The five questions an <see cref="IPlayerAgent"/> is ever asked. Exactly its five methods.
 /// </summary>
 public enum JournalQuestion
 {
@@ -67,6 +67,12 @@ public enum JournalQuestion
 
     /// <summary>Take the turned-up money card instead of drawing (RULES.md §4.5).</summary>
     Claim,
+
+    /// <summary>
+    /// Refuse the seat after you the turned-up money card (RULES.md §4.5) — the one decision
+    /// recorded against a seat that is not on turn.
+    /// </summary>
+    Objection,
 
     /// <summary>Lay all thirteen down and end the round (RULES.md §7.1).</summary>
     Declare

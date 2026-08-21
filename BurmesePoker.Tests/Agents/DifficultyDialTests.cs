@@ -374,6 +374,12 @@ public class DifficultyDialTests
             return true;
         }
 
+        public bool ObjectToClaim(TurnContext context)
+        {
+            Asked++;
+            return true;
+        }
+
         public bool Declare(TurnContext context)
         {
             Asked++;

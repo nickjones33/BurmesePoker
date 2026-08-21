@@ -74,6 +74,8 @@ public sealed class JournalPlayerAgent : IPlayerAgent
 
     public bool ClaimTurnedUpMoneyCard(TurnContext context) => Next(context, JournalQuestion.Claim).AsBoolean();
 
+    public bool ObjectToClaim(TurnContext context) => Next(context, JournalQuestion.Objection).AsBoolean();
+
     public bool Declare(TurnContext context) => Next(context, JournalQuestion.Declare).AsBoolean();
 
     private JournalDecision Next(TurnContext context, JournalQuestion question)

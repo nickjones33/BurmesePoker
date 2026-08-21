@@ -53,11 +53,28 @@ internal sealed class RecordingObserver : IGameObserver
         Check();
     }
 
-    public void RoundStarted(int round, IReadOnlyList<Card> turnedUp)
+    public void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp)
     {
+        Seatings.Add([.. seating]);
         Events.Add($"round {round} started, turned up {string.Join(" ", turnedUp)}");
         Check();
     }
+
+    /// <summary>
+    /// The seating each round was dealt with, in order — re-drawn every deal (RULES.md §3
+    /// step 2).
+    /// </summary>
+    public List<IReadOnlyList<PlayerId>> Seatings { get; } = [];
+
+    public void ClaimRefused(PlayerId objector, PlayerId claimant, Card card)
+    {
+        Refusals.Add((objector, claimant, card));
+        Events.Add($"{objector} refused {claimant} the turned-up {card}");
+        Check();
+    }
+
+    /// <summary>Every claim refused under RULES.md §4.5.</summary>
+    public List<(PlayerId Objector, PlayerId Claimant, Card Card)> Refusals { get; } = [];
 
     public void PlayerDrew(PlayerId player, Card card)
     {

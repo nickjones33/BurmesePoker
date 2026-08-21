@@ -117,6 +117,32 @@ public sealed class GreedyBotAgent : IPlayerAgent, IRanksDiscards
             && CoverScore.Improves(context.Hand, context.TurnedUpMoneyCards[^1]);
     }
 
+    /// <summary>
+    /// Always. The engine asks only a seat that <em>may</em> refuse, and a seat that may refuse
+    /// has every reason to (RULES.md §4.5).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Denial and self-interest point the same way here</b>, which is why this is not a
+    /// strategy knob (P15 found the same shape in <c>cautious</c>). Letting the claim through
+    /// closes that rank against this seat for the rest of the round (RULES.md §5.1): every copy
+    /// of it becomes a card that cannot be thrown, and the claimer — having just taken one — is
+    /// in no hurry to release it. Refusing costs the throw of a card this seat was free to keep.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>What it does not price is the disclosure.</b> Objecting tells the table this seat
+    /// holds that rank, and no rung models what that is worth to the other players — the rule
+    /// itself is one day old (rev 20). <b>It is a decision, not a derivation</b>, and it is the
+    /// one place a future rung could differ without changing a line of the engine.
+    /// </para>
+    /// </remarks>
+    public bool ObjectToClaim(TurnContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        return true;
+    }
+
     /// <summary>Always. The engine only asks when the hand genuinely wins (RULES.md §7.1).</summary>
     public bool Declare(TurnContext context) => true;
 }

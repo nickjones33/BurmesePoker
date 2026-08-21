@@ -94,7 +94,7 @@ public sealed class RoundEngine
         RequirePermutationOfTheShoe(drawOrder, shoe);
 
         Table = Deal(players, stakes, drawOrder, shoe);
-        _observer.RoundStarted(_round, Table.TurnedUpOnTable);
+        _observer.RoundStarted(_round, Table.Players, Table.TurnedUpOnTable);
     }
 
     /// <summary>Sets a round up from a freshly shuffled shoe (RULES.md §3 step 1).</summary>
@@ -231,7 +231,11 @@ public sealed class RoundEngine
     /// </remarks>
     private Card TakeCard(IPlayerAgent agent, PlayerState seat, PlayerState previous, TurnContext context)
     {
-        if (context.CanClaimTurnedUpMoneyCard && agent.ClaimTurnedUpMoneyCard(context))
+        // The claim needs the permission of the seat that plays before this one, and that seat
+        // is `previous` — the one whose discard this turn could otherwise have taken (§4.5).
+        if (context.CanClaimTurnedUpMoneyCard
+            && agent.ClaimTurnedUpMoneyCard(context)
+            && IsPermitted(new ClaimRequest(seat.Id, Table.TurnedUpFromTop), previous))
         {
             // The actual card leaves the table — it is never copied — and the deck did not
             // give it to anybody, so no ownership is recorded (RULES.md §4.5).
@@ -244,6 +248,11 @@ public sealed class RoundEngine
             _observer.MoneyCardClaimed(seat.Id, claimed);
             return claimed;
         }
+
+        // ⚠️ A refused claim falls through to the ordinary ways of taking a card, and on the
+        // opening turn there is no discard to take — so it is a blind draw. Nothing was taken in
+        // the open, so §5.1 is not armed against the upstream seat, which is the whole of what
+        // their veto was for.
 
         if (context.AvailableDiscard is not null && ChooseAction(agent, context) == TurnAction.TakeDiscard)
         {
@@ -272,6 +281,46 @@ public sealed class RoundEngine
         Table.Ownership.TryRecordFromDeck(drawn.Id, seat.Id);
         _observer.PlayerDrew(seat.Id, drawn);
         return drawn;
+    }
+
+    /// <summary>
+    /// Whether the seat that plays before the claimer allows them the turned-up money card
+    /// (RULES.md §4.5).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The permission and the feeding ban are one mechanism.</b> A claim is a public take, so
+    /// it closes that rank against whoever discards to the claimer — and that is precisely the seat
+    /// asked here. The rule gives them a veto because the claim would spend their hand, and
+    /// <b>only a holder may use it</b>: the test is <see cref="ClaimRequest.MayBeRefusedBy"/>,
+    /// which is §5.1's own rank-only predicate and not a second one (§9 #30).
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>A seat that could not refuse is not asked.</b> A question with one possible answer is
+    /// not a question, and an objection is a disclosure — so putting it to a table of seats that
+    /// cannot object would say more about their hands than the rule does (§10 #18).
+    /// </para>
+    /// </remarks>
+    private bool IsPermitted(ClaimRequest request, PlayerState upstream)
+    {
+        if (!request.MayBeRefusedBy(upstream.Hand))
+        {
+            return true;
+        }
+
+        // Asked of a seat that is not on turn, and on its own hand: the turn number is the
+        // opener's, because this is a moment of the opening turn (RULES.md §4.5).
+        var asked = new TurnContext(
+            Table, upstream, _round, turnNumber: 1, availableDiscard: null,
+            canClaimTurnedUpMoneyCard: false, taken: null, permissionAsked: request);
+
+        if (!_agents[upstream.Id].ObjectToClaim(asked))
+        {
+            return true;
+        }
+
+        _observer.ClaimRefused(upstream.Id, request.Claimant, request.Card);
+        return false;
     }
 
     /// <summary>

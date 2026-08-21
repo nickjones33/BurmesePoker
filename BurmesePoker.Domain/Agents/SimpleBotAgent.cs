@@ -77,6 +77,14 @@ public sealed class SimpleBotAgent : IPlayerAgent, IRanksDiscards
             && CoverScore.Improves(context.Hand, context.TurnedUpMoneyCards[^1]);
     }
 
+    /// <inheritdoc cref="GreedyBotAgent.ObjectToClaim"/>
+    public bool ObjectToClaim(TurnContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        return true;
+    }
+
     /// <summary>Go out the moment it can: there is never a reason to hold a winning hand.</summary>
     public bool Declare(TurnContext context) => true;
 }

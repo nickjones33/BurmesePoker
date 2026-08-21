@@ -202,13 +202,22 @@ public class SeatBoardTests(PlayedMatch match) : IClassFixture<PlayedMatch>
     }
 
     /// <remarks>
-    /// All four of <c>IPlayerAgent</c>'s questions reach a seat over a match, which is what
-    /// makes the four branches of <c>TurnPrompt</c> worth having. The claim is asked only of
-    /// whoever opens a round (RULES.md §4.5) and the declaration only of a seat that can go out
-    /// (§7.1), so both need a match rather than a round to turn up.
+    /// <para>
+    /// All five of <c>IPlayerAgent</c>'s questions reach a seat over a match, which is what makes
+    /// the five branches of <c>TurnPrompt</c> worth having. The claim is asked only of whoever
+    /// opens a round (RULES.md §4.5) and the declaration only of a seat that can go out (§7.1),
+    /// so both need a match rather than a round to turn up.
+    /// </para>
+    /// <para>
+    /// 🔥 <b>The fifth needs the fourth to be answered yes</b> (P28): the permission is put to the
+    /// seat above only when somebody actually wants the card, and only when that seat is holding
+    /// the rank. <c>ClickingPlayer</c> therefore claims — a page can press <em>Claim</em> as
+    /// easily as <em>Leave it</em>, and declining every time would have left a whole branch of
+    /// the prompt unreachable and this assertion quietly weaker than it reads.
+    /// </para>
     /// </remarks>
     [Fact]
-    public void EverySeatIsAskedAllFourQuestionsOverAMatch()
+    public void EverySeatIsAskedEveryQuestionOverAMatch()
     {
         var asked = match.Players.Values
             .SelectMany(driver => driver.Asked)
