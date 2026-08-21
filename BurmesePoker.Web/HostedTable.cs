@@ -76,6 +76,7 @@ public sealed class HostedTable : IAsyncDisposable
     private int _seen;
     private int _attending;
     private bool _stopped;
+    private bool _journalTrouble;
     private Task? _dealer;
 
     public HostedTable(string id, TablePlan plan, ILogger log)
@@ -103,6 +104,7 @@ public sealed class HostedTable : IAsyncDisposable
                 Seed = plan.Seed,
                 Patience = plan.Patience,
                 Hints = plan.Hints,
+                Journal = plan.Journal,
                 // A stand-in is paced too, so a seat the computer took over reads as a seat
                 // playing rather than as a stutter (P13.4, §3.11 C16). The factory is why the
                 // server never had to know what a pause was.
@@ -359,6 +361,7 @@ public sealed class HostedTable : IAsyncDisposable
             try
             {
                 await _table.PlayRoundAsync(token).ConfigureAwait(false);
+                WriteJournal();
             }
             catch (OperationCanceledException)
             {
@@ -368,6 +371,7 @@ public sealed class HostedTable : IAsyncDisposable
             {
                 // Announced to the table before it was thrown (P13.2); the board says so and
                 // the next round is dealt on top of it.
+                WriteJournal();
             }
             catch (Exception problem)
             {
@@ -394,6 +398,47 @@ public sealed class HostedTable : IAsyncDisposable
         }
 
         Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// Writes the table down, if the plan asked for it (P24.1).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The format is the domain's and the file is this file's</b> (BUILD-PLAN §2, P14) —
+    /// the console's split, at the console's other half's layer. Rewritten whole after every
+    /// settled round, because nothing ends a hosted match but the table closing: what is on
+    /// disk is every round that has settled, whatever happens to the process after it.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Called on the dealer's own thread, between rounds, and nowhere else.</b> The
+    /// decisions are appended by the round that is playing; a flush from any other thread —
+    /// disposal included — could read a round mid-sentence.
+    /// </para>
+    /// </remarks>
+    private void WriteJournal()
+    {
+        if (Plan.Journal is not { } path || _table.Journal() is not { } journal)
+        {
+            return;
+        }
+
+        try
+        {
+            File.WriteAllLines(path, JournalFormat.Lines(journal));
+            _journalTrouble = false;
+        }
+        catch (Exception problem) when (problem is IOException or UnauthorizedAccessException)
+        {
+            // Said once rather than every round, and the table plays on: a full disk must not
+            // stop a game, and a log line a round would bury the one that mattered.
+            if (!_journalTrouble)
+            {
+                _log.LogError(problem, "Table {Table} could not write its journal to {Path}.", Id, path);
+            }
+
+            _journalTrouble = true;
+        }
     }
 
     /// <summary>One seat: a person's if the plan asked for one, and the computer's otherwise.</summary>
@@ -437,7 +482,9 @@ public sealed class HostedTable : IAsyncDisposable
             // ⚠️ A seed per seat, out of the table's own (§3.9): a rung that decides anything
             // at random — only `random` does today — must still be reproducible from the one
             // number the table carries, and two seats of it must not play the same game.
-            PacedAgent.Wrap(_levels[seat - Plan.People - 1].Create(Plan.Seed + seat), Plan.Pace));
+            PacedAgent.Wrap(_levels[seat - Plan.People - 1].Create(Plan.Seed + seat), Plan.Pace),
+            // The journal's attribution — a level's name, exactly as the console writes one.
+            _levels[seat - Plan.People - 1].Name);
 
     /// <summary>
     /// Folds everything the watcher has been told since last time into the board.

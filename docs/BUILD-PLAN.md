@@ -990,7 +990,7 @@ P16 ─┘                         ├─► P21  outs rung       (lookahead)  �
    P30.1  a thorough code ☑ ──┐        ← Fable 5
           review               │
                               ▼
-   P24.1  a journal for the ☐ ──► P30.2  conformance: the rules ☐   ← Fable 5
+   P24.1  a journal for the ☑ ──► P30.2  conformance: the rules ☐   ← Fable 5
           hosted table                     as *played*
                                            │
                                            ├─► P31  warden — the feeding ☐   ← Opus
@@ -1164,7 +1164,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | P16 | Does the player before you decide your game? | P15 (**P14 ☑, so rich journals are available**) | M — ☑ done 2026-08-19 |
 | P17–P23 | The strategy programme | P15, P16, P18 | ☑ all done 2026-08-19/20 — see §4's second graph |
 | P24 | ~~The computer's reasoning, said out loud~~ — **split 2026-08-21 into P24.1 and P24.2** | — | ☐ see the two below |
-| **P24.1** | **A journal for the hosted table** | P13.6, P14 | S — ☐ **new 2026-08-21**; `Web` and `Server` contain the string `journal` **zero times**, and P30 needs one |
+| **P24.1** | **A journal for the hosted table** | P13.6, P14 | S — ☑ **done 2026-08-21** · **Fable 5** — `TableOptions.Journal` opts a `TableSession` into `JournalingAgent.Wrap`; `TableSession.Journal()` hands the record back and the host writes the file (`--journal` on the Web, flushed after every settled round). Same format, replays identically |
 | **P24.2** | **The computer's reasoning, said out loud** | P24.1, P18, P21 | M — ☐ the *why* beside the arrow, and where an expert disagreed |
 | **P25** | **The win condition is a function of the table size** | — | L — ☑ **done 2026-08-21** — `TableRules`, and the search carries the counts |
 | **P26** | **The money layer as it actually is** | — | M — ☑ **done 2026-08-21** — eight permanent cards, ×3, and a ×5 that needs the round's ownership |
@@ -4278,6 +4278,18 @@ description says *two times in five* now.
 >   reads. ⚠️ **Nothing about the *why*.** ✅ **A hosted table records what every seat was asked
 >   and what it answered**, which is what makes a browser round auditable at all — and what P30's
 >   browser half is written against.
+>   ✅ **Built 2026-08-21 (Fable 5).** The split it settled: `TableSession` owns the
+>   `GameJournalBuilder` (the agents are built there, wrapped **outermost** so the record is the
+>   answer that reached the engine — a stand-in's or the clock's included) and hands the record
+>   back through `TableSession.Journal()`; **the file stays the host's**, exactly the console's
+>   split — `HostedTable` flushes it **after every settled round, on the dealer's own thread**,
+>   because nothing ends a hosted match but the table closing, and a mid-round build from any
+>   other thread would tear the decision list. `TableSeat` gained `Strategy` (a journal's
+>   attribution: a level's name for the Web's bots, `human` for a remote seat), an abandoned
+>   round marks `Header.Abandoned` rather than poisoning the file, and the lobby's form does
+>   not offer the flag on purpose — two tables writing one path would take turns overwriting
+>   each other. ⚠️ **The journal still stamps rules rev 13** — that is R2, P30.2's fix, and one
+>   constant covers console, Sim and Web alike.
 > - **P24.2 — the reasoning, said out loud.** Everything below: the hint arrow grows a *why*, and
 >   the journal grows an **opinion beside an answer** so that *where an expert disagreed with the
 >   computer* is a query rather than something somebody has to notice. **Scope unchanged** —
@@ -4380,12 +4392,11 @@ and touching it would spend P21's and P23's byte-identical captures for no reade
   seat-private; `ConcealmentTests` sweeps every event against what each viewer may see, and one
   seat's reasoning on the bus is precisely the leak §3.11 A1 exists to catch.
   `IRanksDiscards`' own remarks say this in advance.
-- 🔥 **Journalling the hosted table, which does not exist yet.** `--journal` is on the console and
-  the harness; `BurmesePoker.Web` and `BurmesePoker.Server` contain the string **zero times**.
-  `TableSession` builds its agents and hands them to `MatchEngine` with nothing wrapping them.
-  So this packet owes: a `GameJournalBuilder` per table, `JournalingAgent.Wrap` over the agent
-  dictionary, `--journal <path>` on `TablePlan`/`TableOptions`, and a flush when the match ends.
-  **It is not large, but it is a piece of work rather than a field on an existing writer.**
+- ✅ **Journalling the hosted table — built by P24.1 on 2026-08-21; this bullet is discharged.**
+  `TableOptions.Journal` opts the session in, `JournalingAgent.Wrap` runs outermost over the
+  agent dictionary, `TableSession.Journal()` hands the record back, and `HostedTable` writes
+  `TablePlan.Journal`'s path after every settled round. **What P24.2 adds here is only the
+  advice beside the answer** — the plumbing below this line already exists.
 - 🔥 **What is recorded is not a rationale — it is an *opinion beside an answer*.**
   `JournalingAgent` records the answer *the seat gave*, and at a table with an expert in it that
   answer is **hers**. The computer's recommendation is a different agent's opinion about the same
@@ -5038,8 +5049,9 @@ and checked **through both front ends**, not only through the engine.
 **Read first.** `docs/RULES.md` §§4–7 and §10; `Tests/Server/ConcealmentTests.cs`;
 `scripts/drive-console.py`; BUILD-PLAN §3.8.
 
-**Depends on.** **P30.1** ✅ — its findings are this packet's checklist — and **P24.1** for the
-browser half (a hosted table that writes down what it did).
+**Depends on.** **P30.1** ✅ — its findings are this packet's checklist — and **P24.1** ✅ for the
+browser half (a hosted table that writes down what it did; `--journal` on the Web since
+2026-08-21, flushed after every settled round).
 
 > ✅ **P30.1 ran 2026-08-21 and the checklist exists: `docs/REVIEW-2026-08.md`, triage table at
 > the bottom.** What it adds to the build list below, named so a cold session cannot miss it:

@@ -46,6 +46,18 @@ public sealed record TableOptions
     public bool Hints { get; init; } = true;
 
     /// <summary>
+    /// Where the host should write this table down, or null to keep no journal (P24.1).
+    /// </summary>
+    /// <remarks>
+    /// <b>The path is the host's; the session only reads whether one was asked for.</b> A
+    /// non-null value makes the table collect every seat's answers
+    /// (<see cref="Agents.JournalingAgent"/>), and <see cref="TableSession.Journal"/> hands the
+    /// record back — turning it into lines is <c>JournalFormat</c>'s job and writing them to
+    /// this path is the consumer's (BUILD-PLAN §2, P14), exactly the console's split.
+    /// </remarks>
+    public string? Journal { get; init; }
+
+    /// <summary>
     /// What plays a seat whose player has stopped answering.
     /// </summary>
     /// <remarks>

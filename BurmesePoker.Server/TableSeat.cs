@@ -19,18 +19,26 @@ namespace BurmesePoker.Server;
 /// What plays the seat, or null for a person who will connect. <b>A bot is just another
 /// <see cref="IPlayerAgent"/></b> (P10), so the table cannot tell the two apart past this line.
 /// </param>
-public sealed record TableSeat(PlayerId Player, string Name, IPlayerAgent? Agent = null)
+/// <param name="Strategy">
+/// What a journal attributes this seat's answers to — a difficulty level's name, a rung's, or
+/// null for the kind's own word (<c>human</c> for a remote seat, <c>bot</c> for the computer's).
+/// Half of a CSV row's join key (BUILD-PLAN §3.8 item 4), exactly as the console writes it.
+/// </param>
+public sealed record TableSeat(PlayerId Player, string Name, IPlayerAgent? Agent = null, string? Strategy = null)
 {
     /// <summary>A seat somebody will connect to and play.</summary>
     public static TableSeat Person(PlayerId player, string name) => new(player, name);
 
     /// <summary>A seat the computer plays.</summary>
-    public static TableSeat Computer(PlayerId player, string name, IPlayerAgent agent)
+    public static TableSeat Computer(PlayerId player, string name, IPlayerAgent agent, string? strategy = null)
     {
         ArgumentNullException.ThrowIfNull(agent);
-        return new TableSeat(player, name, agent);
+        return new TableSeat(player, name, agent, strategy);
     }
 
     /// <summary>Whether this seat is waiting for somebody to connect.</summary>
     public bool IsRemote => Agent is null;
+
+    /// <summary>The journal's word for this seat (P24.1).</summary>
+    public string Attribution => Strategy ?? (IsRemote ? "human" : "bot");
 }

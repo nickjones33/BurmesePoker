@@ -45,6 +45,18 @@ public sealed record TablePlan
     public bool Hints { get; init; } = true;
 
     /// <summary>
+    /// Where to write this table down as it plays, or null to keep no journal (P24.1).
+    /// </summary>
+    /// <remarks>
+    /// <b>The console's <c>--journal</c>, for a hosted table</b> — the same file format, written
+    /// after every settled round rather than at exit, because nothing ends a hosted match but
+    /// the table closing. The lobby's form does not offer it: two tables writing one path would
+    /// take turns overwriting each other, so it stays a command-line request for the table the
+    /// site was started with.
+    /// </remarks>
+    public string? Journal { get; init; }
+
+    /// <summary>
     /// How hard the computer is at this table — the name of a level of
     /// <c>DifficultyLadder</c>.
     /// </summary>

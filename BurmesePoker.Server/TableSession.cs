@@ -1,4 +1,5 @@
 using BurmesePoker.Domain.Abstractions;
+using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Play;
 using BurmesePoker.Presentation;
 
@@ -33,17 +34,22 @@ public sealed class TableSession
 {
     private readonly Dictionary<PlayerId, SeatConnection> _seats = [];
     private readonly Dictionary<PlayerId, string> _names;
+    private readonly Dictionary<PlayerId, string> _strategies;
     private readonly HashSet<PlayerId> _taken = [];
     private readonly TableFanOut _fanOut = new();
     private readonly TableClock _clock;
     private readonly MatchEngine _match;
+    private readonly GameJournalBuilder? _journal;
     private readonly Lock _gate = new();
     private bool _playing;
+    private bool _abandoned;
 
     private TableSession(IReadOnlyList<TableSeat> seats, TableOptions options)
     {
         Options = options;
         _names = seats.ToDictionary(seat => seat.Player, seat => seat.Name);
+        _strategies = seats.ToDictionary(seat => seat.Player, seat => seat.Attribution);
+        _journal = options.Journal is null ? null : new GameJournalBuilder();
         _clock = new TableClock(options.RoundTimeLimit);
 
         // One adviser for the whole table: it holds no state between turns, exactly as the
@@ -77,7 +83,10 @@ public sealed class TableSession
         // One Random per table, from the seed and from nothing else (P14).
         _match = new MatchEngine(
             [.. seats.Select(seat => seat.Player)],
-            agents,
+            // The journal wraps outermost, exactly as the console's does (P14): what it records
+            // is the answer that reached the engine — a stand-in's or the clock's included —
+            // because that is the answer a replay has to give.
+            _journal is null ? agents : JournalingAgent.Wrap(agents, _journal),
             options.Stakes,
             new Random(options.Seed),
             _fanOut);
@@ -295,6 +304,11 @@ public sealed class TableSession
         }
         catch (TableAbandonedException abandoned)
         {
+            lock (_gate)
+            {
+                _abandoned = true;
+            }
+
             _fanOut.Broadcast(new TableEvent.TableAbandoned(abandoned.Round, abandoned.Limit));
             throw;
         }
@@ -304,6 +318,47 @@ public sealed class TableSession
             {
                 _playing = false;
             }
+        }
+    }
+
+    /// <summary>
+    /// What this table has written down so far, or null if it was not asked to keep a journal
+    /// (P24.1).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The same record the console writes and <c>sim replay</c> reads</b> (P14): the header
+    /// is enough to set the same game up again — <see cref="TableOptions.Seed"/> is what the
+    /// match's own generator was seeded with, and nothing else draws from it — and the
+    /// decisions are every answer every seat gave, a person's exactly as a bot's. A seat is
+    /// attributed to <see cref="TableSeat.Attribution"/>, and to the name it carries <em>now</em>,
+    /// which is the name of whoever sat in it.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Ask between rounds, like everything else here.</b> The decisions are appended on
+    /// the round's own thread (§3.6), so a journal built mid-round would be torn. The host that
+    /// flushes after <see cref="PlayRound"/> returns is on the right side of that by
+    /// construction.
+    /// </para>
+    /// </remarks>
+    public GameJournal? Journal()
+    {
+        if (_journal is null)
+        {
+            return null;
+        }
+
+        lock (_gate)
+        {
+            return _journal.Build(new JournalHeader(
+                Seed: Options.Seed,
+                Seats: [.. _match.Players.Select(player => new JournalSeat(
+                    player, _strategies[player], _names[player]))],
+                Stakes: Options.Stakes,
+                Rounds: _match.RoundsPlayed,
+                Fidelity: _journal.Fidelity,
+                Game: 0,
+                Abandoned: _abandoned));
         }
     }
 

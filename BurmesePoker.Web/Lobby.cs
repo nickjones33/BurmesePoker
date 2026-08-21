@@ -66,6 +66,10 @@ public sealed class Lobby : IAsyncDisposable
             // time to look at fourteen cards and decide which one is worth the least.
             Patience = TimeSpan.FromSeconds(configuration.GetValue<int?>("patience") ?? 90),
             Hints = configuration.GetValue<bool?>("hints") ?? true,
+            // ⚠️ `--journal run.jsonl` writes the house table down as it plays (P24.1), in the
+            // format the console writes and `sim replay` reads. First table only — see the
+            // plan's own remarks for why the form does not offer it.
+            Journal = configuration.GetValue<string>("journal"),
             // ⚠️ Resolved through the dial rather than trusted (P18, P19): `--difficulty
             // rubbish` opens the house table on the default level rather than failing to boot,
             // and the name kept is the ladder's own spelling whatever case was typed.

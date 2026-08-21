@@ -18,8 +18,10 @@ list.** ✅ **The next packet is `P30.2` — the conformance harness and the fro
 (**Fable 5**)**, then
 **`P31`** (`warden`, the feeding ban played offensively) and **`P32`** (five seats as the default
 table), **both back on Opus**. ⚠️ **Set the model with `/model` before the session; the packet
-records which one and cannot choose it.** ⚠️ **`P24` was split**: **P24.1** is a journal for the
-hosted table, which P30.2's browser half needs, and **P24.2** is the reasoning said out loud.
+records which one and cannot choose it.** ⚠️ **`P24` was split**: ✅ **P24.1 — a journal for the
+hosted table — shipped 2026-08-21 on Fable 5** (`--journal` on `BurmesePoker.Web`, same file the
+console writes and `sim replay` reads, flushed after every settled round; it was P30.2's own
+unbuilt dependency), and **P24.2** is the reasoning said out loud, still Nick's call.
 **`BUILD-PLAN.md` §4 carries the ordering argument, and it is about wall clock and attribution
 rather than taste.**
 
@@ -35,7 +37,7 @@ made the documentation true again.** ⚠️ **P24 is now a question of *whether*
 (`BUILD-PLAN.md` §4): the objection that moved it behind P29 has been discharged, and building it
 is Nick's call.**
 
-🔥 **The tree is green at 672 tests, `RULES.md` is rev 24, and as of P29 every figure in
+🔥 **The tree is green at 677 tests, `RULES.md` is rev 24, and as of P29 every figure in
 `docs/STRATEGY.md` was measured under those rules.** Every rule the document records as Settled is
 implemented (§10 #13, #14, #16, #17 and #18 all discharged), and **the measurement is no longer
 outstanding.**
@@ -500,6 +502,7 @@ dotnet run --project BurmesePoker.Web -- --people 0                   # …just 
 dotnet run --project BurmesePoker.Web -- --seed 20260819 --pace 400   # …the same table, faster
 dotnet run --project BurmesePoker.Web -- --difficulty medium          # …how hard the computer is: easy, medium, hard, expert; the lobby form offers the same list
 dotnet run --project BurmesePoker.Web -- --mixed true                # …a different level in each computer seat (it takes a value, like --hints)
+dotnet run --project BurmesePoker.Web -- --journal table.jsonl       # …write the house table down as it plays (P24.1); same format as the console's, sim replay reads it
 dotnet run -c Release --project BurmesePoker.Sim -- --games 2000   # compare strategies
 dotnet run -c Release --project BurmesePoker.Sim -- bench          # time the cover searches, and every rung's decision
 dotnet run -c Release --project BurmesePoker.Sim -- bench --rounds 200 --strategies greedy,outs   # …is a rung affordable? (P21's budget is 10x greedy)

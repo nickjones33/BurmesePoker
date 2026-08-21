@@ -309,7 +309,8 @@ public class HostedTableTests
         int betweenSeconds = 0,
         int patienceSeconds = 0,
         string? difficulty = null,
-        IReadOnlyList<string>? difficulties = null) => new(
+        IReadOnlyList<string>? difficulties = null,
+        string? journal = null) => new(
         "test",
         new TablePlan
         {
@@ -317,6 +318,7 @@ public class HostedTableTests
             Seats = seats,
             People = people,
             Seed = seed,
+            Journal = journal,
             // ⚠️ Nothing here plays a round, so the pacing only has to be small enough that a
             // table which does start dealing does not hold the test up.
             Pace = TimeSpan.Zero,
