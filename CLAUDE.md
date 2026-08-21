@@ -11,8 +11,17 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **The plan is empty. P25–P29 all shipped 2026-08-21, and P24 is the only unbuilt packet
-left.** Every packet from §0 is done — P0–P12, P13.1–P13.6 and P14–P23 — and **four sessions with
+🔥 **The plan has a third branch, opened by the owner on 2026-08-21 after P29: verify, then arm,
+then move the table.** ✅ **The next packet is `P30.1` — a thorough code review, on Fable 5** —
+then **`P30.2`** the conformance harness and the front-end tests (**also Fable 5**), then
+**`P31`** (`warden`, the feeding ban played offensively) and **`P32`** (five seats as the default
+table), **both back on Opus**. ⚠️ **Set the model with `/model` before the session; the packet
+records which one and cannot choose it.** ⚠️ **`P24` was split**: **P24.1** is a journal for the
+hosted table, which P30.2's browser half needs, and **P24.2** is the reasoning said out loud.
+**`BUILD-PLAN.md` §4 carries the ordering argument, and it is about wall clock and attribution
+rather than taste.**
+
+🔥 **Everything below this line was true when P29 shipped. P25–P29 all shipped 2026-08-21.** Every packet from §0 is done — P0–P12, P13.1–P13.6 and P14–P23 — and **four sessions with
 Mya Lay and Aung Aung on 2026-08-20/21 closed twenty-three questions in `RULES.md` §9 and left
 four settled rules with no implementation at all.** ✅ **P25** the win condition by table size
 (§7.1.1), ✅ **P26** the money layer as it actually is (§4 — jokers permanent, ×3 and ×5),

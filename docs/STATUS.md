@@ -10,15 +10,42 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-🔥 **Every packet in the plan is done. P29 shipped 2026-08-21 and there is no next packet
-except the one that was re-sequenced behind it — P24.** P0–P12, P13.1–P13.6, P14–P23 and
+🔥 **A new branch was opened by the owner on 2026-08-21, after P29: verify, then arm, then move
+the table.** ✅ **The next packet is `P30.1` — a thorough code review, on Fable 5.** Then
+**`P30.2`** the conformance harness and the front-end tests, **also Fable 5**; then **`P31`**
+(`warden`, the feeding ban played offensively) and **`P32`** (five seats as the default table),
+**both back on Opus**. ⚠️ **Set the model with `/model` before starting the session — the packet
+records which one but cannot choose it.**
+
+⚠️ **`P24` was split** into **P24.1** (a journal for the hosted table — plumbing P30.2's browser
+half needs, and `Web`/`Server` contain the string `journal` **zero times**) and **P24.2** (the
+computer's reasoning said out loud — the product half, and still Nick's call whether to build it
+at all).
+
+🔥 **Why this order, and it is wall clock rather than taste.** P30 can invalidate the other two:
+if a front end is not playing by a Settled rule then `warden` is a rung built on a
+misunderstanding and the five-seat re-measurement measures the wrong game. **And P31 before P32 is
+deliberate** — each costs a full suite regeneration (`StandingAnswerTests` demands a published row
+for every rung), so measuring the new rung at **four** seats keeps it comparable with every
+historical figure, and the five-seat move then measures a field that is already complete.
+⚠️ **Merging them saves about three hours and costs the attribution**: a run that changed the
+table size *and* the field at once could not say which moved a number — **which is exactly the
+property that made P29's wrong prediction legible.**
+
+🔥 **And the review is not ceremony in front of the tests — it writes their list.** A conformance
+harness checks the rules somebody thought to check; **every defect class this project has actually
+shipped was found by reading, not by running** — a predicate written twice (§9 #30), a `switch`
+default that means something (`JournalFormat.Name`), a test that cannot fail (`ClickingPlayer`), a
+test asserting a property of round length without saying so (P21).
+
+**The plan as it stood before this branch: every packet was done. P29 shipped 2026-08-21.** P0–P12, P13.1–P13.6, P14–P23 and
 P25–P29 are all in; `RULES.md` is rev 24 and **every rule the document records as Settled has an
 implementation**; and as of P29 **every figure in `docs/STRATEGY.md` was measured under those
 rules** rather than under the ones the game played by before 2026-08-21.
 
-⚠️ **P24 is the only unbuilt packet, and its ordering is still a recommendation rather than a
-decision** (`BUILD-PLAN.md` §4). Its stated reason for going first is spent, and P26–P28 changed
-decisions it would have explained.
+⚠️ **P24's ordering was a recommendation rather than a decision** (`BUILD-PLAN.md` §4); its stated
+reason for going first is spent, and P26–P28 changed decisions it would have explained. ✅ **P24.1
+now has a reason of its own** — P30.2 cannot audit a browser round that nothing wrote down.
 
 🔥 **What P29 measured, and the headline is the reproduction going the other way.** `sim suite
 --games 8000 --seed 20260819` produced **91 measurements in 9,981 s** and **4 of the 91 rows came
@@ -1037,12 +1064,18 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P21** Outs: the first rung that looks ahead | P17, P18 | done 2026-08-20 — **it separates**: `+3.1 ± 1.0` over `greedy`, and the whole solution got 45% faster on the way |
 | ☑ | **P22** Money: is there a strategy in the side bet? | P17, P18 | done 2026-08-20 — **no at $5/$1, where the rule never fires at all; `+7.3 ± 3.3` a round at $5/$40** |
 | ☑ | **P23** The standing answer | P17, P19 | done 2026-08-20 — **the last packet**: the dial re-fitted (one ε moved), **59 of 77 rows byte-identical**, and "a rung cannot be added without being measured" made a test |
-| ☐ | **P24** The computer's reasoning, said out loud | P13.6, P14, P18, P21 | **planned 2026-08-20, not started** — the browser's arrow grows a *why*, and a journal that records where an expert disagreed |
+| ☐ | **P24** ~~The computer's reasoning~~ — **split 2026-08-21** | — | see P24.1 and P24.2 |
+| ☐ | **P24.1** A journal for the hosted table | P13.6, P14 | **new 2026-08-21** — `Web` and `Server` contain the string `journal` **zero times**; **P30's browser half needs one**, and the *why* does not belong in it |
+| ☐ | **P24.2** The computer's reasoning, said out loud | P24.1, P18, P21 | **planned 2026-08-20** — the browser's arrow grows a *why*, and the journal records where an expert disagreed. ⚠️ **Never explain through `FallibleAgent`** |
 | ☑ | **P25** The win condition is a function of the table size | — | **done 2026-08-21** — `TableRules.For(players)` is the §7.1.1 table as data; `HandEvaluator` takes it and **has no parameterless overload**. The search carries what is still owing **along** the partition; two-handed prunes sets out of the candidates; `Meld.IsClean` needs no case for the all-joker meld. 🔥 **The change is real and `drive-console.py` cannot see it** — both captures are byte-identical because neither script reaches a declaration. |
 | ☑ | **P26** The money layer as it actually is | — | **done 2026-08-21** — `Permanent` is **three values and eight cards**, `Multiplier(Card)` returns 0/1/**3**, and the ×5 is `Multiplier(card, owner, MoneyOwnership)` under a configuration `Settlement` reads **once a round**. 🔥 **The packet's stated prediction held**: a designation on the 7♦ and one on an ordinary card leave *exactly the same* money loose in the shoe, now an equality assertion. 🔥 **The side-bet went from `$8.50` to `$11.58 ± 0.34` a round at five seats — 42.5% → 58% of the round prize — and play did not move at all.** ⚠️ **The ×5 is fenced to the 7♦/A♠ pair** (§9 #32) by two tests. |
 | ☑ | **P27** The feeding ban | — | **done 2026-08-21** — §5.1 enforced **by construction**: `FeedingBan` is two rank sets a seat, `TurnContext.LegalDiscards` is the whole of the choice a turn presents and is **never empty**, and `CoverScore.Ranking` takes a context so **every rung including the runner-up is filtered without any rung remembering to**. 🔥 **The predicate is `Card.SameRankAs`, which is `Rank == other.Rank`** — nullable equality is what makes a joker close the other jokers (§9 #27), so the house ruling falls out of the type. 🔥 **A bot's cover count can now fall**, which breaks the monotonicity argument that says a table of bots terminates. ⚠️ Both front ends draw a closed card as **not a control** (`CardDisplayState.Unthrowable`). |
 | ☑ | **P28** The claim, the permission, and the seat you sit in | **P27** ✅ | **done 2026-08-21** — `MatchEngine` draws the seats before every deal after the first (§3), and `IPlayerAgent.ObjectToClaim` is the game's fifth question and **the only one asked of a seat that is not on turn** (§4.5). 🔥 **The objection predicate was read, not written twice**: `ClaimRequest.MayBeRefusedBy` asks `Card.SameRankAs`. 🔥 **A refused claim arms nothing** — the opener falls through to a blind draw — which is the one line where this touches P27. 🔥 **The finding that cost the most is older than the packet**: `JournalFormat.Name` ended `_ => "declare"`, so the fifth question was written to file as a *declaration* and only the file round-trip test could see it. ⚠️ Re-seating lives in `PlayRound()` and not in the scripted overload; ⚠️ `BoundedAgent` must not announce a turn for the seat it asks. |
 | ☑ | **P29** Re-measure, under the rules as they are | P25 ✅, P26 ✅, P27 ✅, P28 ✅ | **done 2026-08-21** — `measurements.csv` regenerated under P25–P28: **91 measurements in 9,981 s**, and **4 of 91 rows byte-identical — the four ε constants, which are the only rows a human chose.** 🔥 **Of three predictions written down in advance, two held and one was wrong**: the dial survives (all three steps separate; no ε moved), `prospector` separates a whole ratio lower ($5/$20 is `+5.32 ± 2.27`, was inside the interval) — and **`outs` did not narrow at all**, `+3.0 ± 1.0` against +3.1. 🔥 **What the win condition actually moved is `simple`**, which gained ~2 points on all three middle rungs: **a requirement no rung optimises for levels a ladder from the bottom.** ✅ **Refusing a claim is a null** (`+0.4 ± 1.0`), published. ✅ **Round length and abandoned counts are published for the first time** — the only non-zero abandoned count is the field containing `random`. |
+| ☐ | **P30.1** A thorough code review · **Fable 5** | — | **new 2026-08-21** — **writes a document, not code**: `docs/REVIEW-2026-08.md`, every finding triaged. 🔥 **It comes before the conformance harness because it writes the harness's list** — a test only checks what somebody thought of, and every defect class this project has shipped (a predicate written twice, a `switch` default that means something, a test that cannot fail) was found by reading. ⚠️ **Not a style pass**: the comments carry the reasoning and rewriting them is a loss. |
+| ☐ | **P30.2** Conformance — the rules as *played* · **Fable 5** | **P30.1**, P24.1 | **new 2026-08-21** — every Settled rule checked against **ordinary played rounds** at 4, 5 and 6 seats, plus **both front ends driven to a declaration for the first time**. 🔥 **Everything in the tree today proves a rule *can* hold; nothing proves it *does*.** ⚠️ A coverage test in the P23 idiom makes "every single rule" re-checkable rather than a claim. ⚠️ **The real work is `drive-console.py`** — its two scripts are fixed key lists that quit in round 2, so **no capture has ever contained a win**. |
+| ☐ | **P31** `warden` — the feeding ban as a weapon · **Opus** | P27 ✅, P30.2 | **new 2026-08-21** — the first rung to play §5.1 **offensively**. 🔥 **Today the ban reaches the agents as a legality filter and nothing else**: `LegalDiscards` is read in exactly two places and **no rung reads `MayNotBeFed` to decide anything.** Take the rank your upstream seat just threw and they may never throw it again — and **the release is under the taker's control**, so the rung must hold what it locks. ⚠️ **Three predictions written down in advance; the first is that it is a null.** |
+| ☐ | **P32** Five-handed is the default table · **Opus** | P30.2, P31 | **new 2026-08-21** — the standing set moves to **5 seats**, which is the size the game is actually played at, and **the dial is re-fitted there**. ⚠️ **At five or more, §7.1.1 requires no series at all** — the rule P29's whole headline turned on does not apply at the default size. ⚠️ **A cost blow-up hides in the ladder free-for-all**: `Balanced(6,5)` is 7,776 assignments against 1,296, taking that cell from 9,072 games to **15,552**. |
 
 **P14, P15 and P16 are all done, and not one of them needed a line of the engine.** P14 cost
 nothing measurable in throughput at either fidelity; P15 and P16 raised no rules question
