@@ -11,17 +11,17 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-**Every packet built so far is done — P0–P12, P13.1–P13.6 and P14–P22** — and **all four of §0's
-original goals are delivered**: the 2023 implementation is deleted, the
+**Every packet in the plan is done — P0–P12, P13.1–P13.6 and P14–P23. There is no next packet.**
+**All five of §0's goals are delivered**: the 2023 implementation is deleted, the
 whole rules core is built and tested, `dotnet run --project BurmesePoker.Console` fills the empty
 seats with paced, named bots and plays round after round with the banks carrying over,
 `dotnet run -c Release --project BurmesePoker.Sim` plays thousands of seeded games in parallel to
 compare strategies, and `dotnet run --project BurmesePoker.Web` is **a browser lobby you sit down
 in and play other people at**.
 
-⚠️ **A fifth goal was stated on 2026-08-19: a designed difficulty
-system, and a settled answer to what actually works.** That is **P17–P23**; **P17–P22 are done and
-P23 is the next packet — and the last one.** It is two jobs kept apart on
+✅ **A fifth goal was stated on 2026-08-19: a designed difficulty
+system, and a settled answer to what actually works.** That is **P17–P23**, and **all seven are
+done as of 2026-08-20.** It is two jobs kept apart on
 purpose — a *product* (difficulty as a table setting, per seat, in both front ends: **finished in
 P19**) and a *programme* (analysis and simulation enough to say which ways of playing are better,
 by how much, and with an interval).
@@ -30,7 +30,7 @@ not the same axis* — which is what keeps the difficulty menu from being a list
 instruments, and what makes the product independent of whether any given rung is worth anything.
 ✅ **The product half is finished.** `Domain/Agents/DifficultyLadder.cs` holds four levels —
 `easy`, `medium`, `hard`, `expert` — each the strongest rung there is with a **measured mistake
-rate** (0.9, 0.7, 0.5, 0.0), and both front ends offer **levels only**. See §9 of
+rate** (0.9, 0.7, 0.4, 0.0), and both front ends offer **levels only**. See §9 of
 `docs/STRATEGY.md` for the calibration.
 
 🔥 **Two facts set the order, and both are now discharged.** The ordinary `Sim` report used to
@@ -47,17 +47,17 @@ plausible rung worth +0.5 ± 0.55 points and P20 spent another and got less — 
 difference between it and the two nulls is *where the new key went* — above greedy's tie-break
 rather than beneath it. 🔥 **A new rung is not free of the dial, and this is the day that bill
 came due**: every level is `BotCatalog.Hardest` with an ε, `outs` is `Strength: 3`, so all four
-levels are `outs` now and the ε values 0.9/0.7/0.5/0.0 were spaced against `greedy`. The dial is
-still monotone — `sim suite` exits non-zero if it stops being — but **P23 owns re-spacing it and
-is no longer droppable.**
+levels are `outs` now and the ε values had been spaced against `greedy`. ✅ **P23 re-fitted them,
+and exactly one moved — `hard`, 0.5 → 0.4.**
 🔥 **P22 is the fourth and it asked a different question**: `prospector` is judged on `$/round`
 rather than on win rate, and the answer is **a function of the stakes**. At $5/$1 its rule never
 fires and it is literally the same player as `outs`; at $5/$40 it wins **20 points fewer rounds**
 and banks **`+7.3 ± 3.3` a round**. ⚠️ **The dial did not move** — `prospector` shares `outs`'
-`Strength`, so `BotCatalog.Hardest` is unchanged and no front end needed a line — but **the
-standing suite went from ~1h45 to ~3h15** and was not re-run, so
-**`docs/strategy/measurements.csv` is one rung behind the catalog and P23 owns catching it up**
-(`docs/STRATEGY.md` §11 records the gap).
+`Strength`, so `BotCatalog.Hardest` is unchanged and no front end needed a line — but it left
+**`docs/strategy/measurements.csv` a rung behind the catalog**. ✅ **P23 caught it up**, and paid
+the bill structurally: `BotRung.Ranked` has each rung declare whether **win rate** or **money**
+settles it, so the ladder tournament measures one set and the money sweep the other, and
+`prospector`'s six duplicate cells are gone without anybody typing a shorter field.
 
 ⚠️ **Before touching the browser client, read `BUILD-PLAN.md` §3.10 and §3.11.** The engine runs
 **server-side, always** (a hand is fully concealed with money on it, so a client-side engine cannot
@@ -242,11 +242,20 @@ another. **Disjointness was never the property; it was a coincidence of short ro
 and the local tests from 2m to 6m 33s**, both because six rungs is fifteen head-to-head cells and
 every difficulty level now pays `outs`' price.
 
-⚠️ **P23 is planned and unbuilt, and is the last packet** (goal 5, above). It is not droppable:
-P21 re-based the difficulty dial onto `outs`, and P22 left the standing suite a rung behind the
-catalog and three times slower to re-run. ⚠️ **Read P22's note in BUILD-PLAN before starting it** —
-six of the 21 head-to-head cells are `outs` against itself in all but name. See BUILD-PLAN §2 for
-how the seven projects fit together — the strategy programme adds no eighth project.
+✅ **P23 shipped 2026-08-20: the standing answer, and the last packet.** `docs/STRATEGY.md` is one
+document that answers *"which bot should I play, and what actually works in this game?"* and
+regenerates from one command. 🔥 **The headline is the reproduction — 59 of the suite's 77 rows
+came back byte-identical**, and the seven that moved are the difficulty dial and only the dial.
+🔥 **The dial was re-fitted against `outs` and exactly one ε moved** (`hard`, 0.5 → 0.4), taking
+the reference table from steps of 8.2/4.3/10.3 points to **7.9/6.7/7.7** — because the ε curve has
+nearly the same shape on a rung that looks ahead as on one that does not, so a mistake rate is
+close to being a property of *the mistake* rather than of the rung it is made against.
+⚠️ **The failure mode P21 left behind was a flat spot, not an inversion** — the dial was monotone
+and passing every standing check the whole time, which is why `Tests/Sim/StandingAnswerTests.cs`
+now asserts that **the ε values published are the ε values offered** and that **every rung in
+`BotCatalog` is the subject of a published row**. ⚠️ **`sim suite` is now about five hours**;
+budget it before adding a rung. See BUILD-PLAN §2 for how the seven projects fit together — the
+strategy programme added no eighth project and, in the end, changed nothing in the engine.
 
 ## Rules of engagement
 
@@ -284,9 +293,10 @@ dotnet run -c Release --project BurmesePoker.Sim -- --games 2000 --seating balan
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --games 2000          # rank every player against every other
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy,medium,hard,expert --pairs adjacent --games 8000   # calibrate the difficulty dial
 dotnet run -c Release --project BurmesePoker.Sim -- money --games 8000               # should you draw blind for the money? a sweep over four stakes ratios
-dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv (⚠️ ~3h15 since P22)
+dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv (⚠️ ~5h, measured at P23)
 
 python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0   # capture a scripted match (0 expert, 1 hard, 2 medium, 3 easy)
+python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0 --script human   # …the longer one, with a person in it
 python3 scripts/drive-console.py --out after.raw  --seed 20260819 --pick 0   # …after a front-end change
 cmp before.raw after.raw                                                    # prove it was a refactor
 ```
@@ -337,7 +347,7 @@ verified bug to show for it.
 | `docs/STATUS.md` | Cross-session progress. Read first, update last. |
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
-| `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration** and **§10 the side bet**. Every figure is generated — from `docs/strategy/measurements.csv`, or from `docs/strategy/money.csv` for §10 — never transcribed. ⚠️ **§11 records which tables are a rung behind.** |
+| `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration** and **§10 the side bet**. Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
 | `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it. Written for a person at the keyboard, not for a build session. |
 | `docs/RULES-TECHNICAL.md` | What the **old** code does and where it diverges. Defect list. Historical reference. |

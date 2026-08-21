@@ -10,8 +10,19 @@ namespace BurmesePoker.Sim;
 /// <summary>What the standing suite is run with.</summary>
 public sealed record SuiteOptions
 {
-    /// <summary>The ladder, weakest first.</summary>
-    public IReadOnlyList<Strategy> Strategies { get; init; } = StrategyCatalog.All;
+    /// <summary>
+    /// The ladder, weakest first — <b>the rungs settled on win rate</b>.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>A filter of the catalog and never a list</b> (BUILD-PLAN P18, P20, P23). The
+    /// default used to be every rung there is, which made <c>prospector</c> six head-to-head
+    /// cells that reproduce an identity a unit test already asserts — three quarters of an hour
+    /// of run time, and six more comparisons in the Holm family that every real verdict is
+    /// corrected against. It is measured by <see cref="Ratios"/>' sweep instead, which is what
+    /// <see cref="RankedOn"/> records and what <c>StandingAnswerTests</c> holds the two halves
+    /// of together.
+    /// </remarks>
+    public IReadOnlyList<Strategy> Strategies { get; init; } = StrategyCatalog.Ladder;
 
     /// <summary>
     /// The difficulty dial, weakest first (BUILD-PLAN P19).
@@ -40,13 +51,17 @@ public sealed record SuiteOptions
     /// The rung whose take decision reads the side bet, and the rung it is one change from.
     /// </summary>
     /// <remarks>
-    /// Named rather than assumed, because P21 moved the top of the ladder and P22's rung sits
-    /// one change from whatever is there now.
+    /// ⚠️ <b>Read off the catalog rather than typed</b> (BUILD-PLAN P23). Both were literals
+    /// until this packet, which is the same defect one layer up from the one P18 and P20 each
+    /// removed: a second stakes-reading rung would have been added to <see cref="BotCatalog"/>
+    /// and measured by nothing. The challenger is the stakes-sensitive rung; the reference is
+    /// the top of the ladder, which is <see cref="BotCatalog.Ladder"/>'s last entry because the
+    /// ladder is built upwards.
     /// </remarks>
-    public string MoneyChallenger { get; init; } = "prospector";
+    public string MoneyChallenger { get; init; } = BotCatalog.StakesSensitive[^1].Name;
 
     /// <inheritdoc cref="MoneyChallenger"/>
-    public string MoneyReference { get; init; } = "outs";
+    public string MoneyReference { get; init; } = BotCatalog.Ladder[^1].Name;
 
     /// <summary>Seats at the table (RULES.md §2.1).</summary>
     public int Seats { get; init; } = RoundEngine.MinimumPlayers;

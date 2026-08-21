@@ -3,6 +3,42 @@ using BurmesePoker.Domain.Abstractions;
 namespace BurmesePoker.Domain.Agents;
 
 /// <summary>
+/// What settles how good a rung is — which of the programme's instruments has the answer.
+/// </summary>
+/// <remarks>
+/// <para>
+/// 🔥 <b>Until P22 every rung answered one question and the question was <em>which way of
+/// playing wins more rounds</em>.</b> A rung whose decision reads the <b>stakes</b> does not:
+/// the stakes are fixed at the start of a game and are not a rule (RULES.md §4.3), so
+/// <c>prospector</c> is literally <c>outs</c> at $5/$1 and a different player at $5/$40, and
+/// <em>"how good is it"</em> has no answer until somebody says what the table is played for.
+/// </para>
+/// <para>
+/// ⚠️ <b>So it is measured somewhere else, and that is a statement about the instrument rather
+/// than about the rung.</b> The ladder tournament ranks a field that all play one stakes; a
+/// rung ranked on <see cref="Money"/> is measured by the money sweep instead, over four ratios,
+/// against the top of the ladder. <b>Every rung is measured by exactly one of the two</b>, and
+/// <c>StandingAnswerTests</c> is what says so — which is the same guarantee P18 and P20 built
+/// one layer at a time, now made total.
+/// </para>
+/// <para>
+/// 🔥 <b>And it is not only a saving of wall clock.</b> Putting <c>prospector</c> in the ladder
+/// field costs six head-to-head cells that reproduce a fact a unit test already asserts
+/// (<c>MoneySweepTests.AtTheStandardStakesTheTwoRungsPlayOneGameUnderTwoNames</c>) — but it also
+/// grows the Holm family those six cells are corrected in, and <b>a null cell added to a family
+/// makes every real verdict in it harder to reach.</b> A duplicate is not a free row.
+/// </para>
+/// </remarks>
+public enum RankedOn
+{
+    /// <summary>Win rate, in a field that all play one stakes — the ladder tournament.</summary>
+    WinRate,
+
+    /// <summary>Money a round, swept across stakes ratios — the money sweep (BUILD-PLAN P22).</summary>
+    Money
+}
+
+/// <summary>
 /// One rung of the ladder, as something a person could be offered as an opponent: what it is
 /// called, what it plays like in a sentence, how strong it is known to be, and how to seat a
 /// fresh one.
@@ -52,6 +88,17 @@ namespace BurmesePoker.Domain.Agents;
 /// </param>
 public sealed record BotRung(string Name, string Description, int Strength, Func<int, IPlayerAgent> Create)
 {
+    /// <summary>
+    /// Which instrument settles how good this rung is (BUILD-PLAN P22, P23).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Not a second strength and not a flag on the agent.</b> It says where the number
+    /// lives, so that <c>sim suite</c> can measure every rung there is without measuring any
+    /// rung twice — see <see cref="RankedOn"/> for why a stakes-reading rung cannot be ranked
+    /// in a field played at one stakes.
+    /// </remarks>
+    public RankedOn Ranked { get; init; } = RankedOn.WinRate;
+
     /// <summary>What a name may not contain, and why is in the remarks above.</summary>
     public const char Reserved = '#';
 
@@ -154,7 +201,47 @@ public static class BotCatalog
             "Plays like the last one, and would sooner dig in the deck than take what you threw — the deck's cards pay it and yours never will.",
             Strength: 3,
             _ => new ProspectorBotAgent())
+        {
+            // 🔥 The only rung whose decision reads the stakes, so the only one a field played
+            // at one stakes cannot rank (BUILD-PLAN P22, and see RankedOn). It is measured, and
+            // it is measured by the money sweep — docs/STRATEGY.md §10.
+            Ranked = RankedOn.Money
+        }
     ];
+
+    /// <summary>
+    /// The rungs the <b>ladder tournament</b> ranks — everything settled on win rate, in ladder
+    /// order.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠️ <b>Not a shorter list somebody typed, and the difference is the whole point</b>
+    /// (BUILD-PLAN P18, P20, P23). It is <see cref="All"/> filtered by
+    /// <see cref="BotRung.Ranked"/>, so a rung joins it by being a rung — and a rung that leaves
+    /// it does so by declaring, in the catalog, where its number lives instead. <b>A rung cannot
+    /// fall out of the programme by being forgotten</b>, which is what a hand-kept field allows
+    /// and what P18 and P20 each had to remove one layer apart.
+    /// </para>
+    /// <para>
+    /// <b>The ladder is built upwards</b>, so its last entry is its strongest and is what a
+    /// stakes-sensitive rung is measured against. That is an invariant rather than an
+    /// observation, and it is asserted.
+    /// </para>
+    /// </remarks>
+    public static IReadOnlyList<BotRung> Ladder { get; } =
+        [.. All.Where(rung => rung.Ranked is RankedOn.WinRate)];
+
+    /// <summary>
+    /// The rungs the <b>money sweep</b> settles: those whose play depends on what the table is
+    /// played for (BUILD-PLAN P22).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Together with <see cref="Ladder"/> this is exactly <see cref="All"/></b>, which is
+    /// how <c>sim suite</c> can promise to measure every rung there is without measuring one
+    /// twice.
+    /// </remarks>
+    public static IReadOnlyList<BotRung> StakesSensitive { get; } =
+        [.. All.Where(rung => rung.Ranked is RankedOn.Money)];
 
     /// <summary>
     /// The same rungs, <b>strongest first</b> — what a menu of opponents is ordered by.

@@ -413,8 +413,13 @@ static int RunMoney(string[] args)
 
     var options = new MoneySweepOptions
     {
-        Challenger = StrategyCatalog.Resolve(arguments.Value("challenger", "prospector")),
-        Reference = StrategyCatalog.Resolve(arguments.Value("reference", BotCatalog.Hardest.Name)),
+        // ⚠️ Both off the catalog and neither typed (P23): the challenger is the rung that
+        // declares itself ranked on money, the reference is the top of the ladder it is one
+        // change from. A literal here is how a second such rung would arrive measured by
+        // nothing at all.
+        Challenger = StrategyCatalog.Resolve(
+            arguments.Value("challenger", BotCatalog.StakesSensitive[^1].Name)),
+        Reference = StrategyCatalog.Resolve(arguments.Value("reference", BotCatalog.Ladder[^1].Name)),
         Ratios = Ratios(arguments.Value("ratios", string.Empty)),
         Seats = arguments.Number("seats", 4),
         GamesPerCell = arguments.Number("games", 2000),
@@ -597,7 +602,13 @@ static int RunSuite(string[] args)
 // P20). Four of these names were spelled out in three places until P20 added a fifth rung and
 // none of them saw it — which is the same defect P18 fixed one layer down, in a front end
 // nobody thinks of as one.
-static string WholeLadder() => string.Join(",", StrategyCatalog.All.Select(strategy => strategy.Name));
+//
+// 🔥 And it is BotCatalog.Ladder rather than all of it (P23): a rung whose play reads the
+// stakes has no win rate to rank until somebody says what the table is played for, so it is
+// measured by `sim money` instead of contributing k−1 duplicate cells to a field played at one
+// stakes — see RankedOn, and StandingAnswerTests, which is what says every rung reaches one
+// instrument or the other.
+static string WholeLadder() => string.Join(",", StrategyCatalog.Ladder.Select(strategy => strategy.Name));
 
 static IReadOnlyList<Strategy> Ladder(string names) =>
 [
@@ -799,6 +810,8 @@ static string Usage() => $"""
 
       --strategies a,b   who is playing, rotated through the seats  (greedy,simple)
                          the ladder, weakest first: {WholeLadder()}
+                         ranked on money, not win rate — see `money`:
+                           {string.Join(", ", StrategyCatalog.StakesSensitive.Select(rung => rung.Name))}
                          the difficulty dial: {string.Join(", ", StrategyCatalog.Levels.Select(level => level.Name))}
                          a calibration probe: greedy@0.35 — a rung with a mistake rate
       --seating S        rotate one pattern, or play every balanced

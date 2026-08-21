@@ -172,19 +172,49 @@ The computer's whole strategy is one question asked three ways: *of the thirteen
 left holding, how many meld?* Take the discard if it raises that number, claim the turned-up
 card if it raises that number, throw whichever card leaves it highest.
 
-**What separates the strong bot from the simple one is only the tie-break** — and it is worth
-1.6× the wins (30.7% of rounds against 19.3%, measured over 2,000 four-seat rounds). Early in
-a round almost every discard costs you nothing, so the count alone cannot choose. The strong bot
-then keeps:
+**What separates a thinking bot from a simple one is only the tie-break** — and it is worth
+half again as many wins: **29.8% of rounds against 20.3%**, at four seats over every way of
+seating the two (`docs/strategy/measurements.csv`, `headline.balanced.*`). Early in a round
+almost every discard costs you nothing, so the count alone cannot choose. It then keeps:
 
 - cards with **partners** — another suit of the same rank, or a neighbour in the same suit;
 - **jokers over everything**, since a joker fits anywhere.
 
-**And what separates the four difficulty settings is only how often it gets that tie-break
-wrong.** Every setting is the strong bot; *easy* throws the wrong one of two good cards nine
-times in ten, *medium* seven, *hard* one in two, and *expert* never. That is why a weaker
+**And the one thing that beats that is looking one card further ahead.** Where two discards
+leave the hand equally melded, the strongest player the computer has keeps the thirteen that
+**more of the pack would improve** — it counts, for each card still out there, whether drawing
+it would help. That is worth **3.1 ± 1.0 points** of win rate over the partner rule alone, and
+it is the only idea in this project that has ever beaten it. Three others were tried and
+measured nothing (`docs/STRATEGY.md`).
+
+**What separates the four difficulty settings is only how often it gets the choice wrong.**
+Every setting is that same strongest player; *easy* throws the wrong one of two good cards nine
+times in ten, *medium* seven, *hard* two in five, and *expert* never. That is why a weaker
 setting still plays a game you recognise instead of a stranger's — it plays the right idea and
 slips, which is what a weaker person does.
+
+### Which one should you play?
+
+**Start at *hard* and move.** The four are spaced by measurement rather than by taste, about
+**seven and a half points of win rate apart** at a table of all four — far enough that a step is
+something you feel within a session, close enough that *"a bit easier"* is a real request. At a
+four-handed table a fair share is 25% of the rounds, and against three of the same setting these
+win **13.8% / 21.7% / 28.4% / 36.1%** of them, weakest first.
+
+- ***easy*** feeds you cards. It knows what to keep and throws the wrong one nearly every turn,
+  so the discard beside you is often the one you wanted.
+- ***medium*** is the one to sit at while the melds are still unfamiliar. It gets the close
+  choices wrong more often than not, and you will win more rounds than it does.
+- ***hard*** is a real game. It slips about twice in five on the cards it is choosing between,
+  which is roughly what a good player does when they are not concentrating.
+- ***expert*** never slips at all, and beats the other three every way this has been measured.
+  It is what a hint is asked of, and what takes over your seat if you stop answering — a hint
+  that got worse as you lowered the difficulty would be absurd.
+
+⚠️ **The setting is the *computer's*, not yours.** Nothing about your own hand, your hint or the
+deal changes with it. And **a mixed table is a browser thing** — the console asks once for the
+whole table; the lobby's *mixed* checkbox gives each computer seat a different setting, and names
+each seat for how it plays so you can see who the easy one is.
 
 Two things worth knowing at the table:
 

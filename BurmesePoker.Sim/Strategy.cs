@@ -72,6 +72,23 @@ public static class StrategyCatalog
     public static IReadOnlyList<Strategy> All { get; } = [.. BotCatalog.All.Select(Strategy.Of)];
 
     /// <summary>
+    /// The rungs the ladder tournament ranks — <see cref="BotCatalog.Ladder"/>, as the harness
+    /// names them.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>What <c>sim suite</c> and <c>sim tournament</c> default to, and it is a filter of
+    /// the catalog rather than a list</b> (BUILD-PLAN P23). A rung whose play reads the stakes
+    /// cannot be ranked in a field that all play one stakes — it would be a null cell wearing a
+    /// comparison's clothes, six of them, corrected in the same family as every real verdict.
+    /// It is measured by <c>sim money</c> instead; see <see cref="RankedOn"/>.
+    /// </remarks>
+    public static IReadOnlyList<Strategy> Ladder { get; } = [.. BotCatalog.Ladder.Select(Strategy.Of)];
+
+    /// <summary>The rungs the money sweep settles — <see cref="BotCatalog.StakesSensitive"/>.</summary>
+    public static IReadOnlyList<Strategy> StakesSensitive { get; } =
+        [.. BotCatalog.StakesSensitive.Select(Strategy.Of)];
+
+    /// <summary>
     /// The difficulty dial, <b>weakest first</b> — the product rather than the instrument
     /// (BUILD-PLAN §3.12).
     /// </summary>

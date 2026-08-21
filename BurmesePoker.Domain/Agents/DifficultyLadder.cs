@@ -191,16 +191,30 @@ public static class DifficultyLadder
     /// Every setting, <b>weakest first</b> — the dial read from the bottom up.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// ⚠️ <b>The ε values are measured, and the spacing is the measurement rather than the
     /// dial</b> (see <see cref="DifficultyLevel.MistakeRate"/>). ε is very far from linear in
     /// what it costs — the sweep
-    /// <c>BurmesePoker.Sim -- --strategies greedy@0,greedy@0.1,greedy@0.2,greedy@0.35,greedy@0.5,greedy@0.75,greedy@1
-    /// --seating balanced --games 4802</c> put ε = 0 to ε = 0.5 at eight points of win rate and
-    /// ε = 0.5 to ε = 1 at seventeen — so these four are placed to be <b>evenly spaced in
-    /// results</b>, about seven points apart at the reference table, and not evenly spaced in ε.
+    /// <c>BurmesePoker.Sim -- --strategies outs@0,outs@0.1,outs@0.2,outs@0.35,outs@0.5,outs@0.75,outs@1
+    /// --seating balanced --games 4802</c> put ε = 0 to ε = 0.5 at nine and a half points of win
+    /// rate and ε = 0.5 to ε = 1 at sixteen and a half — so these four are placed to be
+    /// <b>evenly spaced in results</b>, about seven and a half points apart at the reference
+    /// table, and not evenly spaced in ε.
     /// <c>BurmesePoker.Sim -- tournament --strategies easy,medium,hard,expert --pairs adjacent
     /// --games 8000</c> is the check; the numbers are in <c>docs/strategy/measurements.csv</c>
     /// under <c>difficulty.*</c> and are quoted by <c>docs/STRATEGY.md</c>.
+    /// </para>
+    /// <para>
+    /// 🔥 <b>Re-fitted in P23 against <c>outs</c>, and only one value moved.</b> P19 placed these
+    /// against <c>greedy</c>; P21 promoted <c>outs</c> and re-based every level onto it without
+    /// re-spacing, which left the reference table at steps of <b>8.2 / 4.3 / 10.3</b> points —
+    /// ordered, and visibly not a dial. The re-fit moved <c>hard</c> from 0.5 to <b>0.4</b> and
+    /// left the other three alone, giving <b>7.9 / 6.7 / 7.7</b>. ⚠️ <b>That one value is the
+    /// finding: ε's curve has very nearly the same shape on a rung that looks ahead as on one
+    /// that does not</b>, so a mistake rate is close to being a property of the mistake rather
+    /// than of the rung it is made against — which is why the next rung to raise the ceiling
+    /// should expect to re-check this and not to re-derive it.
+    /// </para>
     /// </remarks>
     public static IReadOnlyList<DifficultyLevel> All { get; } =
     [
@@ -216,9 +230,9 @@ public static class DifficultyLadder
             MistakeRate: 0.7),
         new(
             "hard",
-            "Plays well, and slips about half the time on the cards it is choosing between.",
+            "Plays well, and slips about two times in five on the cards it is choosing between.",
             BotCatalog.Hardest,
-            MistakeRate: 0.5),
+            MistakeRate: 0.4),
         new(
             "expert",
             "Throws the best card it can see, every single turn.",
