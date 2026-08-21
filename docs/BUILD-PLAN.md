@@ -1016,7 +1016,18 @@ which instrument settles it rather than by shortening a field by hand. 🔥 **Th
 ladder calibrated with the interval-free report today's harness prints would be a guess wearing
 a number.
 **P13 is now the only outstanding packet — the only one that would change the architecture,
-and the only one that is purely optional.**
+and the only one that is purely optional.** ⚠️ **Stale since 2026-08-19: P13 is done, and so is
+everything else through P23.**
+
+🔥 **A third branch opened on 2026-08-20, and it did not come from the plan — it came from a
+playtest.** **P24** (the computer's reasoning, said out loud) hangs off **P13.6, P14, P18 and
+P21**: it is a debug instrument for playing beside an expert, and it needs the browser seat, the
+journal format, one catalog, and the rung that actually advises. Beside it sits the **unwritten
+§5.1 packet** (the feeding ban), which is blocked on `RULES.md` §9 #16–#19, #25 and #27 and is
+the first work
+since P0 that changes what a legal turn *is*. ⚠️ **They are not independent in one direction**:
+§5.1 filters every agent's discard ranking, which is the very ranking P24 renders — so P24 first
+means one small amendment later, and §5.1 first means waiting on a conversation. **P24 first.**
 
 | Packet | Title | Depends on | Size |
 |---|---|---|---|
@@ -4101,6 +4112,169 @@ structural saving that *was* available has been taken; there is not a second one
 this tree is **identical from the `Seating:` line on — 7,025 bytes for `--script bots` and 88,805
 for `--script human`**. The prompt above that line differs by one word, because `hard`'s
 description says *two times in five* now.
+
+---
+
+### P24 — The computer's reasoning, said out loud ☐
+
+**Goal.** The arrow on the card grows a sentence: **why that card, and what it beat.** A debug
+instrument first and a teaching aid second — built so that a session played beside an expert
+leaves a **record of where the expert disagreed**, computable rather than transcribed.
+
+**Read first.** §3.5 (*the engine asks for a move and must never be able to ask for a ranking*),
+§3.9 (a seed is a pointer; a journal is the artifact), §3.11 items **A1**, **A4**, **B9** and
+**C12**, §3.12. In the tree: `Domain/Agents/CoverScore.cs`, `Domain/Agents/IRanksDiscards.cs`,
+`Domain/Agents/OutsBotAgent.cs`, `Domain/Agents/FallibleAgent.cs`,
+`Domain/Agents/JournalingAgent.cs`, `Presentation/ComputerAdvice.cs`, `Server/SeatPrompt.cs`,
+`Server/TableSession.cs`, `Web/Components/Table/YourSeat.razor`.
+
+**Depends on.** P13.6 (the browser seat), P14 (journals), P18 (one catalog), P21 (`outs` is the
+rung that advises).
+
+**Scope, decided by Nick 2026-08-20.** **Browser only** — the console keeps its arrow and gains
+nothing, so `drive-console.py` captures stay comparable and no Spectre work is in this packet.
+**All four questions**, not the discard alone. The explanation is **winner versus runner-up**,
+not a ranking table. And it is **written down** as well as drawn.
+
+⚠️ **What was considered and not taken, so nobody re-opens it silently.** A **full ranking table**
+— every candidate with all three keys — was the obvious instrument and is the wrong product: it
+renders the decision procedure instead of the decision, and what an expert argues with is a
+*claim*, not a spreadsheet. **Both** (a sentence with the table behind a second disclosure) was
+rejected as the same table wearing a summary. A **separate `--explain <path>` sidecar** was
+rejected in favour of the journal: a second file with its own format is a second thing to join,
+and P14 already owns *what happened at this table*. And the **console** was left alone
+deliberately — it is where a debug tool is cheapest, but it is not where you sit with somebody,
+and touching it would spend P21's and P23's byte-identical captures for no reader.
+
+**Build.**
+
+- **A rung describes its own keys.** `CoverScore.Ranking` already computes everything an
+  explanation needs and throws all of it away except the order: cover count, the optional
+  `Refinement`, and the tie-break. A variant returns the *scored* candidates, and a new public
+  interface — `IExplainsDiscards`, a sibling of `IRanksDiscards` and separate from
+  `IPlayerAgent` for the same reason — lets a rung hand that back **with its keys labelled**.
+  Implemented on `OutsBotAgent`; `GreedyBotAgent` gets it for two keys instead of three.
+  🔥 **The keys are packed for sorting, not for reading, and this is the trap the packet exists
+  to avoid.** `outs` stores its key as `-LiveOuts.Count(…)` because the sort takes lowest first;
+  `CoverScore.Potential` returns `int.MaxValue` for a joker; `CautiousBotAgent` packs two keys
+  into one `long`. A front end that read the raw numbers would draw *"−14 outs"* and
+  *"2147483647 partners"*. **A rung supplies each key's name and direction; presentation never
+  interprets a bare `long`.**
+- **The other three questions.** Take-or-draw, the §4.5 claim and the declaration have no ranking
+  behind them — only a `CoverScore.Improves` call — so their rationale is a **gain**: *"taking
+  the 7♦ raises your melded count from 8 to 11."* One `Gain` call each. ⚠️ **Say plainly that the
+  declaration's explanation is near-vacuous** (`Declare` is `=> true`; the engine only asks when
+  the hand already wins) rather than dressing it up into something that sounds like judgement.
+- **`ComputerAdvice` explains, at today's price.** One new method per question returning an
+  `AdviceRationale`. ⚠️ **The discard path calls the explaining ranking once and takes its head.**
+  `outs` is 8.2× a greedy round (P21); a second call per turn would double what every human turn
+  at every table costs, for a sentence.
+- **The sentence is assembled from `[0]` and `[1]`** — the first key on which the winner and the
+  runner-up differ, said out loud. **The target, written down so the packet has something to be
+  measured against:**
+
+  > 3♠ and 9♦ both leave 8 of your cards melded. 3♠ leaves the hand 14 cards of the pack could
+  > improve; 9♦ leaves 11. That is why.
+
+  ⚠️ **Two cases are the interesting ones and neither may be hidden**: *nothing separated them*
+  (every key tied and the hand's own order decided — **the bot is indifferent and the expert will
+  not be**, which is one of the more valuable turns this instrument can catch), and *there is no
+  runner-up* (`Ranking` dedupes by value, so a hand holding a pair yields a shorter list than it
+  holds cards).
+- ⚠️ **The explaining interface is public; everything it reports on is internal.** `CoverScore`,
+  `LiveOuts` and `ThreatScore` are `internal`, and the domain's only `InternalsVisibleTo` is
+  `BurmesePoker.Tests` (P21) — which Presentation is not. So the keys cross the boundary as a
+  **described** result on a public interface, and not by widening `InternalsVisibleTo`, which
+  would hand a front end the machinery instead of the answer.
+- ⚠️ **`ComputerAdvice` resolves the adviser from the catalog and must keep doing so.**
+  `LayeringTests` fails the build if any project outside `Domain/Agents` constructs a rung (P18);
+  asking `BotCatalog.Hardest` for one is how Presentation is allowed to have an adviser at all.
+- 🔥 **`FallibleAgent` must never be in the advice path, and this is a new trap P19 created.** A
+  difficulty *level* is `Hardest` wrapped in a mistake rate, and `FallibleAgent`'s mistake is
+  **the runner-up of the very ranking this packet renders**. Explain through a level and the page
+  would confidently justify a move the computer chose *because it was second best*. The adviser is
+  the bare rung at ε = 0 — as `ComputerAdvice` already says in prose, and as this packet is the
+  first thing that could get wrong.
+- **The browser: a `<details>` under your seat**, gated on the existing hints checkbox.
+  ⚠️ **This is fixed by a test rather than by taste.** `MarkupStandardsTests.NoParagraphOnTheTableIsAWallOfText`
+  allows **80 characters** of visible prose on the felt and exempts exactly two things — a
+  `<details>` and a `<span class="said">` (§3.11 B9). A three-sentence explanation is well over
+  it. `<summary>` at 40px (§3.11 A11); no new `CardDisplayState`, so `DisplayTokens` and the
+  contrast tests are untouched.
+- ⚠️ **The rationale rides on `SeatPrompt` and never on a `TableEvent`.** `SeatPrompt` is already
+  seat-private; `ConcealmentTests` sweeps every event against what each viewer may see, and one
+  seat's reasoning on the bus is precisely the leak §3.11 A1 exists to catch.
+  `IRanksDiscards`' own remarks say this in advance.
+- 🔥 **Journalling the hosted table, which does not exist yet.** `--journal` is on the console and
+  the harness; `BurmesePoker.Web` and `BurmesePoker.Server` contain the string **zero times**.
+  `TableSession` builds its agents and hands them to `MatchEngine` with nothing wrapping them.
+  So this packet owes: a `GameJournalBuilder` per table, `JournalingAgent.Wrap` over the agent
+  dictionary, `--journal <path>` on `TablePlan`/`TableOptions`, and a flush when the match ends.
+  **It is not large, but it is a piece of work rather than a field on an existing writer.**
+- 🔥 **What is recorded is not a rationale — it is an *opinion beside an answer*.**
+  `JournalingAgent` records the answer *the seat gave*, and at a table with an expert in it that
+  answer is **hers**. The computer's recommendation is a different agent's opinion about the same
+  moment, so the record is `JournalDecision` + **advice** — the card the adviser would have
+  thrown, the rationale that names why, and the rung that said it. **Then disagreement is a query
+  (`Answer != Advice.Card`) rather than something a person notices and writes down.** That is the
+  artifact this packet is for.
+  ⚠️ **It contradicts `JournalingAgent`'s stated stance — *"it records answers, not intentions"* —
+  and the contradiction is deliberate and narrower than it looks.** The intention recorded is a
+  **different agent's**, taken on the same context, which is a fact about the game rather than a
+  guess about the player. Amend the remarks; do not leave the file saying the opposite of what it
+  does.
+  ⚠️ **Advice is attached only for seats a person is playing.** A bot seat's advice is its own
+  answer, and recording it would run `outs` twice a turn to learn nothing.
+  ⚠️ **The advised card is written by `CardId`, exactly as the answer already is** (§3.1): two
+  decks hold two 5♥, and a comparison that said *"she agreed"* because the values matched would be
+  wrong on precisely the hands worth studying.
+  ✅ **Replay is unaffected**: `JournalPlayerAgent` ignores the field and
+  `JournalHeader.CurrentRulesRevision` does not move.
+
+**Two mechanical guarantees, in the shape P18/P20/P23 each had to build one layer at a time.**
+
+- 🔥 **`BotCatalog.Hardest` must implement `IExplainsDiscards`**, asserted. The adviser is always
+  `Hardest` (`ComputerAdvice`); promote a rung that cannot explain itself and the browser loses
+  the feature **silently**. This is `StandingAnswerTests`' shape and `LayeringTests`' teeth.
+- **Every key a rung declares carries a name and a direction**, asserted over the catalog, so a
+  fourth key added later cannot reach the screen as a bare number.
+
+**Acceptance.**
+
+1. Playing a browser seat with hints on, every one of the four questions can be opened and read,
+   and the discard's explanation names **the key that separated the chosen card from the next
+   best** — including when the answer is *nothing did*.
+2. The explanation costs **no extra `PartialCover.Best` calls** over today's hint — asserted, not
+   assumed.
+3. A browser table played with `--journal` writes a file in which a human seat's decisions carry
+   the adviser's card and rationale, and **`Answer != Advice.Card` picks out the disagreements**.
+4. `ConcealmentTests` still passes with no rationale reachable from any `TableEvent`, and
+   `MarkupStandardsTests` still passes with the prose inside a `<details>`.
+5. A rung promoted to `Hardest` without an explanation **fails the build**.
+6. 🔥 **The explanation is the bare rung's and never a level's** — asserted at every difficulty,
+   including `easy`. A page that justified `FallibleAgent`'s deliberate slip would be the worst
+   failure this packet can have, because it is the one that still looks right.
+
+**Done when.** You can sit beside Mya Lay, ask the computer why, and afterwards run a query over
+the file that lists every turn on which she and it chose differently.
+
+⚠️ **Sequencing, and the one real concern.** `RULES.md` §5.1 — the feeding ban — is **Settled and
+wholly unimplemented**: `RoundEngine` accepts any of the fourteen, so `CoverScore.Ranking` can
+rank — and this feature would then **confidently justify** — a discard the rule forbids. Beside an
+expert that produces disagreements which are noise about a rule rather than signal about
+strategy — the opposite of what the instrument is for. **Build P24 first anyway**: §5.1 is
+blocked on six unanswered specification questions (§9 **#16–#19, #25 and #27**, `QUESTIONS-FOR-MYA-LAY.md`
+**Q4**), and this is the thing that makes the next conversation with the person who raised the
+rule productive, those six included. 🔥 **But when §5.1 lands, it lands here too** — Nick's two
+rulings of 2026-08-20 are that a banned card is *not a legal discard* and that **where nothing is
+legal the ban yields for that turn** (§9 #20, raised and closed the same day). So **every agent's
+ranking is filtered to legal cards** — *the hand minus the banned ranks, or the whole hand if that
+is empty*, which is **never empty by construction** — and the explanation gains a fourth thing it
+can say: *"9♦ was not throwable — you would be feeding."* ⚠️ **And a fifth, on the rarest turn
+there is**: under the floor every card is legal again, so an explanation that has been saying
+*"not throwable"* all round must not keep saying it — the filter is per turn, and a rationale
+computed from a stale ban would be confidently wrong in exactly the situation nobody has seen
+before.
 
 ---
 

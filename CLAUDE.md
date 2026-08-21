@@ -11,7 +11,40 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-**Every packet in the plan is done — P0–P12, P13.1–P13.6 and P14–P23. There is no next packet.**
+**Every packet in the plan is done — P0–P12, P13.1–P13.6 and P14–P23.**
+🔥 **P24 is the next one, planned 2026-08-20 and not started**: *the computer's reasoning, said
+out loud* — the browser's hint arrow grows a **why**, and the hosted table gains a journal that
+records **where an expert disagreed with it**. Browser only, all four questions, winner versus
+runner-up. ⚠️ **Two things a cold session must know before opening it**: `BurmesePoker.Web` and
+`BurmesePoker.Server` contain the string `journal` **zero times**, and what gets recorded is an
+**opinion beside an answer** rather than a rationale on a decision — which is what makes
+disagreement a query instead of a transcription job. See `BUILD-PLAN.md` §5 P24.
+🔥 **The plan is no longer the whole of the work.** A playtest with Mya Lay on **2026-08-20**
+produced a rule the game does not implement: **`RULES.md` §5.1, the feeding ban** — *you may not
+discard a rank the next player has taken in the open*, until they throw that rank back (which
+frees it for the rest of the round, permanently) or you are going out on it. **Rank only; suit is
+irrelevant.** It is `EXPERT` and **Settled**, and it is **the first rule in the document that
+constrains which card a player may discard** — `RoundEngine` accepts any of the fourteen.
+🔥 **It is enforced by construction: a banned card is not an infraction but an impossible move**,
+never offered and unchoosable, so there is no penalty. That is free of the concealment model (every
+fact the ban is computed from is already public) but it means `TurnContext` must carry the banned
+ranks and **every agent's discard ranking must be filtered to legal cards — `FallibleAgent`'s
+runner-up included**, because a mistake still has to be a legal move.
+🔥 **And it has a floor, which is the line that makes impossible-move enforcement safe**: where the
+ban would leave a player **no legal discard at all**, the ban **yields for that turn**. So the legal
+set is *the hand minus the banned ranks, **or the whole hand if that is empty*** — **never empty by
+construction**, and a turn cannot deadlock. The discard is mandatory (§7.1); the ban is not. ⚠️ It
+is **not** the unrecovered exception to the mandatory discard in §9 #6 — it is the reverse, and #6
+is still open.
+⚠️ **Do not write the packet yet.** Six details are unrecorded (`RULES.md` §9 **#16–#19, #25 and
+#27**) and,
+unlike the rest of §9, they are not fidelity questions with safe defaults — they are the rule's
+specification. `QUESTIONS-FOR-MYA-LAY.md` **Q4** carries them for the person who raised the rule.
+🔥 **And the ban matches on *rank alone* — a third identity notion the domain has not got.** `==`
+on `Card` is instance identity; `SameValueAs` is rank **and** suit **and** colour, which is what
+§4.2's money designation needs. **Reaching for `SameValueAs` here implements the wrong rule** — it
+would leave the Q♣ Mya Lay actually objected to perfectly legal.
+
 **All five of §0's goals are delivered**: the 2023 implementation is deleted, the
 whole rules core is built and tested, `dotnet run --project BurmesePoker.Console` fills the empty
 seats with paced, named bots and plays round after round with the banks carrying over,

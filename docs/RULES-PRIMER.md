@@ -24,7 +24,8 @@ structural point (see `RULES.md` §8).
 - **Agree two stakes before playing:** a **round value** and a **money card value**.
   Standard is **$5 / $1**. **[✓]**
 - **Two decks shuffled together, jokers in — 108 cards.**
-- **4 to 6 players.** Fewer than 4 isn't played; more than 6 leaves too thin a draw pile. **[~]** **[⚠ hardcoded to 5]**
+- **2 to 6 players** — and **the rules change with the count**, see *Winning*. More than 6
+  leaves too thin a draw pile. **[✓]** **[⚠ engine's minimum is 4]**
 - **13 cards** each, dealt one at a time.
 - Then **two money cards are turned up** — one from the bottom of the deck, one from the top.
 
@@ -66,6 +67,14 @@ the fives. **[✓]**
 1. Take either the previous player's discard, or the top of the deck blind.
 2. Discard one card.
 
+**You may not feed the next player. [✓] [⚠ not implemented]** If the player after you has
+taken a card in the open, you may not discard **that rank** again — *any* suit — for the rest
+of the round. Two ways out: they discard that rank themselves, which opens it up **permanently**
+even if they pick another one up later; or you are **going out** on it. Rank taken → rank closed,
+one rank at a time. **It isn't a foul, it's not a move** — a banned card simply isn't one you can
+throw, so there's no penalty to argue about. And if the ban ever left you with **nothing** legal to
+throw, **the ban yields** for that turn: you must discard, so you may. See `RULES.md` §5.1.
+
 **The opening turn is special:** that player may take the turned-up top money card instead
 of drawing — taking the **actual card**, which leaves the table. **[~]** **[⚠ code clones it]**
 Whether this needs another player's permission, and whether it recurs each round, is
@@ -85,16 +94,28 @@ even though two decks make it holdable. A set therefore caps at **4 cards**. **[
 
 **Nothing is ever played to the table.** You build entirely in hand and keep your intended
 melds secret until you go out, then reveal all 13 at once. There is **no laying off** on
-your own or anyone else's melds. The only public information is the discards.
+your own or anyone else's melds. The only public information is the discards — **and those are
+properly public: you may pick a pile up and look through it, not just see the top card.** **[✓]**
 
 ## Winning **[⚠ not implemented]**
 
-**Meld all 13 cards, then discard.** You hold 13, draw to 14, meld 13, discard 1 — the
-arithmetic closes cleanly. **[~]**
+**Discard, then lay down all 13.** You hold 13, take one to make 14, **throw one away**, and
+*then* reveal the thirteen melded. The discard comes first. **[✓]**
 
-- There's **some exception** to the mandatory discard, not yet recovered. **[?]**
-- A **pure** (joker-free) sequence is probably *not* required here — melding all 13 is
-  already stricter than Indian Rummy's bar. **[?]**
+- **You always discard. There are no exceptions.** **[✓]**
+
+**What the thirteen must contain depends on how many are playing** — this is the part people
+forget, and **the runs you are *required* to have must be clean** (no jokers in them): **[✓]**
+
+| Players | Your hand must contain | …clean? |
+|---:|---|---|
+| **2** | **runs only** — sets aren't allowed at all | doesn't matter |
+| **3** | at least **two runs** | **both of them** |
+| **4** | at least **one run** | **that one** |
+| **5+** | anything — no requirement | doesn't matter |
+
+*Fewer players means more of the deck each, so the hand is made harder to make up for it — and
+the clean-run count is just the required-run count. Nought and nought, one and one, two and two.*
 
 ## Settlement **[✓]**
 
@@ -113,12 +134,19 @@ should be deleted.
 
 ## What's still unrecorded
 
-Only two things block a complete playable game:
+⚠️ **This section is stale** — both items below were settled long ago (deck exhaustion: gather
+the discards and shuffle; match end: there isn't one, banks carry over and you stop when you
+stop). **It is kept only so the rot is visible**; the live list is `RULES.md` §9, which currently
+has **twenty** open items, none of which blocks play.
 
-1. **What happens when the deck runs out?**
-2. **What ends a match** — a money target, a fixed number of rounds, or last player standing?
+1. ~~**What happens when the deck runs out?**~~
+2. ~~**What ends a match** — a money target, a fixed number of rounds, or last player standing?~~
 
 Everything else has a safe default. Full list in `RULES.md` §9 — Mya Lay may be able to
 settle several of them.
+
+**One rule is settled but unwritten:** the feeding ban above (§5.1) is `EXPERT`-confirmed and
+nothing in the code enforces it. Six details of it are unrecorded — `RULES.md` §9 #16–#19, #25
+and #27 — and unlike everything else in §9 they are not optional: they are what the rule *means*.
 
 Full list in `RULES.md` §9. Algorithms, edge cases and verified bugs in `RULES-TECHNICAL.md`.
