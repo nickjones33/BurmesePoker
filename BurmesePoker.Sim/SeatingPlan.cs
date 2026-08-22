@@ -25,7 +25,22 @@ public static class SeatingPlan
     /// Beyond this many assignments a "balanced" run is really a sampling scheme wearing the
     /// wrong name, and is refused rather than silently truncated.
     /// </summary>
-    public const int MaximumAssignments = 4096;
+    /// <remarks>
+    /// 🔥 <b>Raised from 4,096 to 32,768 by P32, and the number is a budget rather than a
+    /// taste.</b> Moving the standing set to five seats takes the ladder's crossing from
+    /// <c>7⁴ = 2,401</c> to <c>7⁵ = 16,807</c>, so the old cap refused the one cell the whole
+    /// field sits down together in — and the packet's own choice was *full crossing or a stated
+    /// subsample*. ⚠️ <b>It was decided by measuring rather than by guessing</b>: a full pass of
+    /// the seven-rung crossing at four seats is <b>2,401 games in 51 s</b>, so the five-handed
+    /// pass is about seven minutes of an eleven-thousand-second suite. <b>The full crossing is
+    /// played and nothing is subsampled</b> (<c>STRATEGY.md</c> §11, "no silent caps").
+    /// ⚠️ <b>What the cap is really protecting against is a run shorter than one pass</b>, in
+    /// which "balanced" means "the first few thousand of them". Every cell of a tournament
+    /// rounds its game count up to a whole number of passes
+    /// (<see cref="TournamentOptions.GamesFor"/>); a hand-driven <c>--seating balanced</c> run
+    /// does not, which is why the ceiling is kept rather than removed.
+    /// </remarks>
+    public const int MaximumAssignments = 32768;
 
     /// <summary>
     /// Every way of seating <paramref name="strategies"/> across <paramref name="seats"/> seats

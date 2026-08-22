@@ -215,6 +215,28 @@ public static class DifficultyLadder
     /// than of the rung it is made against — which is why the next rung to raise the ceiling
     /// should expect to re-check this and not to re-derive it.
     /// </para>
+    /// <para>
+    /// 🔥 <b>Re-fitted again in P32 when the standing table moved to five seats, and this time
+    /// <em>nothing</em> moved.</b> The sweep
+    /// <c>BurmesePoker.Sim -- --strategies outs@0,outs@0.1,outs@0.2,outs@0.35,outs@0.5,outs@0.75,outs@1
+    /// --seating balanced --seats 5 --games 16807</c> puts the curve at
+    /// <b>27.5 / 26.3 / 24.7 / 22.9 / 19.4 / 13.1 / 6.0</b> points of win rate, and fitting four
+    /// evenly-spaced levels on it asks for <c>hard</c> ≈ 0.42 and <c>medium</c> ≈ 0.67 — the
+    /// shipped 0.4 and 0.7 inside the rounding. ⚠️ <b>The prediction written down before that run
+    /// was that at least one value would have to move</b>, because a five-handed table's base win
+    /// rate is 20% rather than 25% and the steps should compress with it. <b>They did not</b>: the
+    /// reference table reads 9.9 / 15.9 / 23.8 / 30.4 for steps of <b>6.0 / 7.9 / 6.6</b> against
+    /// four-handed's 7.1 / 7.9 / 8.0, and all three adjacent margins still survive Holm.
+    /// 🔥 <b>So ε is close to being a property of the mistake rather than of the rung <em>or of
+    /// the table</em></b> — P23's finding, holding across a second axis it was never tested on.
+    /// </para>
+    /// <para>
+    /// ✅ <b>One dial, not one dial per table size</b> (BUILD-PLAN P32's first open decision).
+    /// A level ought to mean the same thing wherever you sit, and a per-size dial would be three
+    /// calibrations to keep true and three ways for the menu to lie. The values are fitted at
+    /// five seats, and the dial is <b>checked monotone and separated at four, five and six</b> —
+    /// which is only affordable as a decision because the re-fit turned out to be a no-op.
+    /// </para>
     /// </remarks>
     public static IReadOnlyList<DifficultyLevel> All { get; } =
     [

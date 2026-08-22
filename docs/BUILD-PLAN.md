@@ -1000,7 +1000,7 @@ P16 ─┘                         ├─► P21  outs rung       (lookahead)  �
                                            └───────┴─► P32  five-handed is the ☐   ← Opus
                                                              default table
 
-   P24.2  the computer's reasoning ☐  ← the product half; Nick's call whether to build it
+   P24.2  the computer's reasoning ☐  ← ✅ asked for by Nick 2026-08-22; next after P32
 ```
 
 🔥 **P25–P29 are new on 2026-08-21 and they are the first packets in this plan that came from
@@ -1053,8 +1053,20 @@ separate sessions — they touch `Melds/`, `Money/` and the turn respectively, a
 alone, `RULES.md` §9 #30) and writing it twice is the defect to avoid. **P29 depends on all
 four**, because each of them changes what a round is worth.
 
-⚠️ **P24 is now the only unbuilt packet, and the question is whether to build it rather than
-when.** It was re-sequenced on 2026-08-21 and its own reason for going first is spent. It was
+✅ **P24.2's *whether* was answered on 2026-08-22: Nick asked for it, from the browser, and it is
+next after P32.** He was playing a five-handed table, saw the hint arrow and went looking for the
+sentence behind it — which is this packet's acceptance criterion arriving as a bug report. 🔥 **The
+arrow reads as a promise**, and the promise is the half of P24 that never shipped: P24.1's journal
+landed inside P30.2, P24.2 did not. **See §5 P24.2's re-plan block for what has changed underneath
+it** — most usefully that P31 already built half of its first build item (`IRanksDiscards`), and
+most dangerously that P32 made five seats the default, where `RULES.md` §7.1.1 asks for **no series
+at all** and a sentence phrased in runs would simply be false.
+
+⚠️ **The paragraph below is the argument that kept it waiting, and it is kept because it was
+right and is now spent.**
+
+⚠️ **P24 was for a long time the only unbuilt packet, and the question was whether to build it
+rather than when.** It was re-sequenced on 2026-08-21 and its own reason for going first is spent. It was
 placed ahead of the §5.1 work deliberately — *"§5.1 filters the very ranking P24 renders, but it
 is blocked on §9 #16–#19, and P24 is what makes that conversation productive."* **That conversation
 happened and §5.1 is fully specified**, so the argument has expired. 🔥 **And the case for moving
@@ -1166,7 +1178,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | P17–P23 | The strategy programme | P15, P16, P18 | ☑ all done 2026-08-19/20 — see §4's second graph |
 | P24 | ~~The computer's reasoning, said out loud~~ — **split 2026-08-21 into P24.1 and P24.2** | — | ☐ see the two below |
 | **P24.1** | **A journal for the hosted table** | P13.6, P14 | S — ☑ **done 2026-08-21** · **Fable 5** — `TableOptions.Journal` opts a `TableSession` into `JournalingAgent.Wrap`; `TableSession.Journal()` hands the record back and the host writes the file (`--journal` on the Web, flushed after every settled round). Same format, replays identically |
-| **P24.2** | **The computer's reasoning, said out loud** | P24.1, P18, P21 | M — ☐ the *why* beside the arrow, and where an expert disagreed |
+| **P24.2** | **The computer's reasoning, said out loud** | P24.1 ✅, P18 ✅, P21 ✅, **P31 ✅** (`IRanksDiscards` is half of build item 1), **P32** (five seats changes what a true sentence says) | M — ☐ **next, after P32** · ✅ **Nick asked for it 2026-08-22**, from the browser: the arrow is there and the *why* is not. See §5 P24.2's re-plan block |
 | **P25** | **The win condition is a function of the table size** | — | L — ☑ **done 2026-08-21** — `TableRules`, and the search carries the counts |
 | **P26** | **The money layer as it actually is** | — | M — ☑ **done 2026-08-21** — eight permanent cards, ×3, and a ×5 that needs the round's ownership |
 | **P27** | **The feeding ban** | — | L — ☑ done 2026-08-21 — **the first work since P0 that changed what a legal turn is**; a bot's cover count can now fall |
@@ -1176,8 +1188,11 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P30.2** | **Conformance — the rules as *played*** | **P30.1**, P24.1 (browser half only) | L — ☑ **done 2026-08-21** · **Fable 5** — `RuleConformance` + coverage registry + both front ends driven to a declaration; R1 and R8 fixed; 29 review fixes landed |
 | **P31** | **`warden` — the feeding ban as a weapon** | P27 ✅, P30.2 | L — ☑ **done 2026-08-22** · **Opus** — it **lost**, `−9.3 ± 1.0` against `outs`; the ban bites on 9.4% of turns and the rung is what failed |
 | **P33** | **The clean bonus (§7.3)** | P31 ✅ | M — ☑ **done 2026-08-22 (Opus 5)** · jokerless pays ×2 at 2/3/4 and ×3 at 5+; **§10 #19 discharged** and the suite regenerated at four seats — **111 of 116 shared rows byte-identical, the 5 that moved are exactly the rows denominated in dollars a round** |
-| **P32** | **Five-handed is the default table** | P30.2, P31 ✅, **P33 ✅** | L — ☐ **next** · **Opus** — ⚠️ **P33 did not fold it in, deliberately** (attribution; see §5 P32) and left it a clean four-handed baseline to move from. **Decide the free-for-all subsample before starting** |
-| **P34** | **A front door, and docs that cannot go stale quietly** | — | S — ☐ **new 2026-08-22** — `README.md`, staleness banners, and the anti-staleness habit as tests. **Needs no expert answer.** |
+| **P32** | **Five-handed is the default table** | P30.2, P31 ✅, **P33 ✅** | L — ☑ **done 2026-08-22** · **Opus 5** — the standing set is five-handed; **123 measurements in 12,445 s**. 🔥 **P29's explanation is falsified**: the five-handed ladder is the four-handed ladder divided by 1.25 (median margin ratio **0.801** against a base-rate scale of 0.800), so removing §7.1.1's series requirement did **nothing** to `simple`'s gaps. ✅ Full crossing, **no ε moved**, four-handed set kept frozen |
+| **P34** | **A front door, and docs that cannot go stale quietly** | — | S — ☐ **new 2026-08-22** — `README.md`, staleness banners, and the anti-staleness habit as tests. **Needs no expert answer.** ⚠️ **Was the cheapest thing on the plan and is no longer next**: P24.2 was asked for by name on 2026-08-22 and goes first |
+| **P35** | **The two scoring rules that reach outside a round** | P33 ✅, P32, **P36** | L — ☐ **new 2026-08-22** — `RULES.md` **§7.4** (a win on the initial deal pays ×2) and **§7.5** (a third consecutive win is paid **entirely by the seat above you**), both `EXPERT` from Aung Aung. 🔥 **§7.5 is the first rule that cannot be settled from one round**, and **no measurement in this project can see it** (`Sim` plays `RoundsPerGame = 1`). ✅ **Unblocked 2026-08-22**: §9 #43 was asked and closed — the seats do **not** re-draw every round — ⚠️ **but that makes it depend on P36**, since the blame needs a seating that survives three rounds |
+| **P36** | **How long a seating holds** | — | S–M — ☐ **new 2026-08-22** — `RULES.md` **§3 step 2, corrected in rev 28**: a seating is drawn **once and held**. 🔥 **The engine contradicts the document again** (§10 #22), in the **opposite** direction to the error P28 fixed. ⚠️ **Revert-shaped and must not be a revert** — pre-P28 held a seating and could never change it. ✅ **No measurement moves** (`RoundsPerGame = 1`) |
+| **P37** | **Asking the table to change seats** | **P36** | M — ☐ **new 2026-08-22** — §10 **#23**, and §9 #45 as Nick ruled it: a re-seating happens **when the players agree**. 🔥 **The first *public* question this project has ever asked** — `SeatPrompt` is seat-private by construction and this one is put to everybody at once — and the first asked **between** rounds. ✅ **A computer seat consents** (a design decision, recorded in §3, not a rule); ⚠️ **§9 #47 open — everybody or most?** |
 
 ⚠️ **P25–P29 are the only packets in this table that do not descend from §0.** They come from
 `RULES.md` — four sessions with Mya Lay and Aung Aung on 2026-08-20/21 that closed twenty-three
@@ -4296,13 +4311,111 @@ description says *two times in five* now.
 > - **P24.2 — the reasoning, said out loud.** Everything below: the hint arrow grows a *why*, and
 >   the journal grows an **opinion beside an answer** so that *where an expert disagreed with the
 >   computer* is a query rather than something somebody has to notice. **Scope unchanged** —
->   browser only, all four questions, winner versus runner-up — and it is Nick's call whether to
->   build it at all.
+>   browser only, all four questions, winner versus runner-up. ✅ **The *whether* is settled: Nick
+>   asked for it on 2026-08-22 and it is next after P32** — see the re-plan block below.
 >
 > ⚠️ **The warning below about `FallibleAgent` belongs to P24.2 and is the most important line in
 > this packet.**
 
 **The body below is P24.2's, and P24.1 is the first two paragraphs of its *Build* section.**
+
+---
+
+#### ✅ Re-planned 2026-08-22 (Opus 5) — **Nick said build it**, and eight packets have shipped underneath it
+
+🔥 **The *whether* is answered: yes.** The scope was set by Nick on 2026-08-20 and *whether to
+build it at all* was left his call and stayed open for two days. **He asked for it on 2026-08-22**,
+from the browser, playing a five-handed table — *"I see the suggested card for me to discard but I
+don't see where the explanation for that is."* ⚠️ **That is the packet's own acceptance criterion
+arriving as a bug report**, and it is worth recording as the reason rather than as an anecdote: the
+arrow reads as a promise of a sentence that is not there. **P24.2 is next after P32.**
+
+⚠️ **What a person sees today, stated precisely — because getting this wrong once already sent
+this re-plan out with a false premise in it.** 🔥 **The browser has a *Why?* affordance already,
+and it is not this packet's.** `TurnPrompt.razor` carries **five `<details class="why">`
+disclosures**, one per question, and they hold **static rule text**: the discard's reads *"Every
+turn is take one, throw one (RULES.md §5). The number on a card is what throwing it costs you."*
+**Every player sees the same sentence every turn.** ✅ **They explain the game.** ⚠️ **They are
+deliberately *not* gated on the hints checkbox**, and correctly so — a rule is not advice, which
+is the same distinction `HandPanel.Words` draws when it tells the ear about §5.1's ban outside the
+gate.
+
+⚠️ **What is missing is the other kind of sentence entirely: a *decision* explanation, computed
+per turn.** The hint itself is still a bare `Card?` — `ComputerAdvice` returns one, `HandView`
+turns it into `CardDisplayState.SuggestedThrow`, `DisplayTokens` draws `←` — and **nothing
+anywhere says why that card**. The nearest things are the **cost badge** (`−1`, `−2`: melded cards
+given up) and the card button's accessible name, *"throwing it gives up 2 melded cards, the
+computer would throw this one"* — which reports the arrow rather than explaining it. **The keys
+that actually decided it are computed, compared and thrown away inside `CoverScore.Ranking`.**
+
+🔥 **So the browser half of this packet is cheaper than the body below assumes, and its one real
+design constraint changes shape.** The body plans *"a `<details>` under your seat, gated on the
+existing hints checkbox"*; **the `<details>` exists, is in the right place, and already passes
+`MarkupStandardsTests.NoParagraphOnTheTableIsAWallOfText`** (which exempts exactly a `<details>`
+and a `<span class="said">` from its 80-character prose budget). ⚠️ **What the packet adds is a
+*computed paragraph inside an existing disclosure* — and that paragraph, unlike the rule text
+around it, must be gated on hints**, because it is advice. **A Why block that is half ungated rule
+and half gated advice is the fiddly part of this packet**, and it is fiddly in markup rather than
+in the domain.
+
+**Five things have changed under this packet since the body below was written (2026-08-20), and
+three of them make it cheaper.**
+
+1. 🔥 **Half of build item 1 is already built, by a packet that wanted it for something else.**
+   P31 added **`IRanksDiscards.RankDiscards(context, candidates)`** — *an instrument the engine may
+   never call* — to measure the feeding ban's counterfactual, and it hands back an **ordered**
+   candidate list over an arbitrary candidate set. ⚠️ **What is missing is not the ranking; it is
+   the keys.** `IExplainsDiscards` should be written as **the described sibling of a shipped
+   interface** rather than as a new capability, and the packet should say so in one line rather
+   than re-deriving it. **Read `Domain/Agents/IRanksDiscards.cs` before writing a line of it.**
+2. ✅ **The sequencing objection is fully spent, and this is the last note that needs to say so.**
+   The paragraph at the end of this packet reversed itself once already; it is now moot. §5.1 is
+   built (P27), the win condition is a function of the table size (P25), the money layer is as it
+   really is (P26), the claim's permission exists (P28) and the clean bonus is paid (P33) — and
+   P29, P33 and P32 have each re-measured underneath them. **The decisions this packet renders are
+   no longer about to change.** *An explanation of decisions that are about to change is a sentence
+   written twice and believed once* — that was the objection, and the second writing has happened.
+3. 🔥 **The feeding ban is enforced as an impossible move, so the fourth sentence is buildable
+   today and one half of it already exists.** `TurnContext.LegalDiscards` is the whole of the
+   choice, `CardView.CanBeThrown` already crosses into Presentation, and the browser already says
+   *"you may not throw it: the player after you took that rank in the open"* **to the ear and not
+   behind the hints gate** — because it is a rule and not advice (`HandPanel.Words`). ⚠️ **So the
+   explanation must not repeat it as though it were a reason the computer chose**, and the packet's
+   own warning about the ban's **floor** (§5.1 yields where nothing else is legal, so every card is
+   throwable again on that turn) is now a real state with a named test rather than a hypothetical.
+4. ⚠️ **The default table is five seats now (P32), and that changes what a true sentence says.**
+   By `RULES.md` §7.1.1 a five-handed declaration owes **no series at all**, where four-handed owes
+   a joker-free run — so an explanation phrased in terms of runs is **wrong at the table the
+   browser now deals**. 🔥 **The rationale has to read the same `TableRules` the evaluator does**,
+   and *"why that card"* is a different sentence at four seats and at five. **Nothing in the body
+   below anticipated this**; it is the newest thing in the packet.
+5. ⚠️ **§7.3's clean bonus adds a sentence the computer is not entitled to say.** A jokerless
+   declaration pays ×2 or ×3 (P33), and **no rung plays for it**: `CoverScore.Potential` returns
+   `int.MaxValue` for a joker, so the adviser will never part with one and every clean win it
+   collects is an accident. 🔥 **So the honest sentence about a joker is *"it will never throw
+   this"*, not *"it is holding it for the bonus"*** — and an explanation that implies the second is
+   the same class of failure as justifying `FallibleAgent`'s slip: **confidently right-looking and
+   false.** Say it in the packet, because the arithmetic (§14: the bonus is collected about one
+   round in six and is worth +$5 a head at four seats) makes the wrong sentence *tempting*.
+
+**Two costs re-measured, so the budget is current rather than quoted.**
+
+- ⚠️ **`outs` is 7.7× a greedy round at five seats and 6.3× at four** (`sim bench --seats 5`, P32),
+  not the 8.2× the body quotes from P21. **The one-call rule below is unchanged and is the whole
+  budget**: the discard path calls the explaining ranking **once** and takes its head.
+- ⚠️ **`BotCatalog.Hardest` is not `BotCatalog.Ladder[^1]`.** The catalog became a *tree* at P31 —
+  `warden` and `prospector` both hang off `outs` — and P31 found three places that had written the
+  old coincidence down as a law. **The assertion in *Two mechanical guarantees* below must name
+  `Hardest`**, which is what it already says; this note exists so that nobody "simplifies" it.
+
+⚠️ **One thing to decide in the packet and not before it**: whether the §4.5 claim's *why* is in
+scope. The body flags it as the question a rationale helps most on — refusing costs the seat a rank
+**and discloses that it holds one** — and P29 then measured that refusing is worth **nothing**
+(`+0.4 ± 1.0` on win rate, `+0.06 ± 0.29` on money). 🔥 **A null makes the explanation more
+interesting rather than less**: the honest sentence is *"it makes no measurable difference either
+way"*, which is a thing this project knows and no player does.
+
+---
 
 
 **Goal.** The arrow on the card grows a sentence: **why that card, and what it beat.** A debug
@@ -4386,6 +4499,9 @@ and touching it would spend P21's and P23's byte-identical captures for no reade
   the bare rung at ε = 0 — as `ComputerAdvice` already says in prose, and as this packet is the
   first thing that could get wrong.
 - **The browser: a `<details>` under your seat**, gated on the existing hints checkbox.
+  ⚠️ **Amended 2026-08-22 — the `<details>` already exists.** `TurnPrompt.razor` has five of them
+  holding static rule text, ungated because a rule is not advice. **This packet adds a computed
+  paragraph inside them, and that paragraph is gated while the rule text around it is not.**
   ⚠️ **This is fixed by a test rather than by taste.** `MarkupStandardsTests.NoParagraphOnTheTableIsAWallOfText`
   allows **80 characters** of visible prose on the felt and exempts exactly two things — a
   `<details>` and a `<span class="said">` (§3.11 B9). A three-sentence explanation is well over
@@ -4443,6 +4559,17 @@ and touching it would spend P21's and P23's byte-identical captures for no reade
 6. 🔥 **The explanation is the bare rung's and never a level's** — asserted at every difficulty,
    including `easy`. A page that justified `FallibleAgent`'s deliberate slip would be the worst
    failure this packet can have, because it is the one that still looks right.
+7. ✅ **Added 2026-08-22.** A card the feeding ban has taken out of the choice is explained as a
+   **rule and not as a judgement** — and on a turn where the ban's floor yields (§5.1: every card
+   legal again, because nothing else was), the explanation **stops saying it**. ⚠️ A rationale
+   computed from a stale ban is confidently wrong in the one situation nobody has seen.
+8. ✅ **Added 2026-08-22.** The sentence is true **at the table it is played at**: it reads the
+   same `TableRules` the evaluator does, so it does not tell a five-handed player that a card
+   matters to a series requirement five-handed play does not have (`RULES.md` §7.1.1). **Asserted
+   at four and five seats**, which are different games.
+9. ✅ **Added 2026-08-22.** No explanation implies the computer is **playing for the clean bonus**
+   (§7.3). It is not: `CoverScore.Potential` returns `int.MaxValue` for a joker, so the true
+   sentence is that it will never throw one — asserted on a hand holding a joker.
 
 **Done when.** You can sit beside Mya Lay, ask the computer why, and afterwards run a query over
 the file that lists every turn on which she and it chose differently.
@@ -5448,7 +5575,38 @@ implements.
 
 ---
 
-### P32 — Five-handed is the default table ☐ — ✅ **unblocked 2026-08-22; P33 shipped and this is next**
+### P32 — Five-handed is the default table ☑ — **done 2026-08-22 (Opus 5)**
+
+> ✅ **Shipped.** `RoundEngine.DefaultPlayers = 5` is the one place the default table is written
+> down; `SuiteOptions.DefaultSeats`, every `--seats` default in `Sim` and the browser lobby all
+> read it. `sim bench` gained `--seats` (it had none, so a five-handed round could not be priced).
+>
+> 🔥 **The headline is a negative result about this project's own explanation.** P29 attributed the
+> four-handed levelling of `simple` to §7.1.1's joker-free series requirement; at five seats that
+> requirement is gone and **the gap did not re-open**. ⚠️ **The raw margins would have said it
+> narrowed and that is also wrong** — a fifth seat rescales *every* margin by 0.800. **Median ratio
+> over eighteen cells: 0.801**, the six `random` rows on 0.800 to three digits, and `simple`'s gaps
+> to `greedy` and `counting` within a tenth of a point of pure scale. **Every Holm verdict is
+> identical at both sizes.** ⚠️ **What causes the levelling is now unknown.**
+>
+> ✅ **Four of five written-down predictions held**: jokerless rate fell 15.4% → **12.1%**, the
+> bonus's value rose +$15 → **+$40**, value beat rate (**$2.31 → $4.84** a round), the null cell
+> read 20%. ❌ **The dial prediction was wrong and usefully so** — the steps did not compress and
+> **no ε moved**, so ε is close to a property of *the mistake* rather than of the rung **or the
+> table**.
+>
+> ✅ **All three open decisions were taken on measurement.** *Full crossing* — ⚠️ **this entry's own
+> fear that the free-for-all would be "plausibly the majority of the run" was wrong**: a full pass
+> at four seats is 2,401 games in **51 s**, so the five-handed pass is ~7 min of a 12,445 s suite;
+> `SeatingPlan.MaximumAssignments` went 4,096 → 32,768. *One dial* — separated at four, five and
+> six (`docs/strategy/dial-away-from-the-default-table.md`). *Four-handed kept* — frozen at
+> `docs/strategy/measurements-4-handed.csv` and fenced by a test.
+>
+> ⚠️ **One leftover, deliberately**: `BurmesePoker.Console`'s seat prompt still defaults to
+> `MinimumPlayers`. Changing it invalidates `drive-console.py`'s captures and was not in the build
+> list. **One line plus a re-capture.**
+
+**The record of what it was built from follows.**
 
 ⚠️ **The recommendation to fold this packet into P33 was not taken, and the amendment is here so
 that nobody re-litigates it.** Rev 26 observed that at five seats the bonus is the only thing
@@ -5556,6 +5714,301 @@ denominator is not a measurement.
 
 **Done when.** The standing answer is about the table this game is played at, and the four-handed
 figures are kept beside it as the different game they measure.
+
+---
+
+### P37 — Asking the table to change seats ☐ — **added 2026-08-22**
+
+**Goal.** `RULES.md` §3 step 2's other half, and §10 **#23**: a held seating can be **re-drawn when
+the players agree to it** (§9 #45, `PLAYER`, Nick 2026-08-22).
+
+**Read first.** `RULES.md` **§3**, **§9 #45 and #47**, **§10 #23**; `BUILD-PLAN` **§3.5**
+(the engine asks for a move and must never be able to ask for a ranking), **§3.10** and **§3.11**.
+In the tree: `Server/SeatPrompt.cs`, `Server/TableSession.cs`, `Server/HostedTable.cs`,
+`Domain/Abstractions/IPlayerAgent.cs`, `Domain/Play/JournalFormat.cs`,
+`Web/Components/Table/TurnPrompt.razor`, `Tests/Server/ConcealmentTests.cs`.
+
+**Depends on.** **P36** — there is nothing to change until a seating is held.
+
+🔥 **This packet's difficulty is a shape, not a feature: it is the first *public* question this
+project has ever asked.** Every question the engine asks is put to **one seat** and answered
+privately — `SeatPrompt` is seat-private by construction, and `ConcealmentTests` sweeps every event
+against what each viewer may see (P13.2: *exactly one event in the whole narration is private, so
+the security boundary is one `if`*). **"Shall we change seats?" is put to everybody at once and
+every answer is public.** ⚠️ **Do not reach for `SeatPrompt` and widen it** — a public question
+wearing a private question's type is how a concealment boundary stops meaning anything.
+
+⚠️ **And it is asked *between* rounds, which is a place no question is asked from.** All five
+existing questions belong to a turn. This one belongs to the gap `HostedTable` already has
+(`BetweenRounds`, 12 s by default) — so **the patience clock, the stand-in bot and the
+handed-over-seat rules all apply to it and none of them was written with it in mind.**
+
+#### The decision this packet takes, and it is a design decision rather than a rules one
+
+🔥 **A computer seat consents.** A rung decides about cards; *"shall we move seats"* is not a card
+decision, and **a bot that abstained would make the rule dead at every table with a computer in
+it** — which at a solo table is every table. ⚠️ **A rung answering it on some invented basis would
+be a strategy claim nobody measured**, which P15's discipline forbids. ✅ **`RULES.md` §3 says *the
+players* agree, and a bot is not a player in the sense the rule is about** — so this belongs in
+`BUILD-PLAN` §3 as a design decision, and **no rule is invented in `RULES.md` to justify it.**
+
+⚠️ **§9 #47 is open — does *agree* mean everybody, or most of them?** Recommended **unanimous among
+the people**, because a majority vote moves somebody's seat against their will in a game with money
+on it. **Build the default, fence it with a test named for the question**, and say so in the report
+— P26's and P33's idiom.
+
+#### Build
+
+1. **A public question**, and a type of its own rather than a widened `SeatPrompt`. It is asked of
+   every seat, its answers are public, and ⚠️ **`ConcealmentTests` must be extended to say so
+   deliberately** rather than passing because nothing new was added to the bus.
+2. **A sixth `IPlayerAgent` question**, defaulting to consent for every rung — **one
+   implementation on the base and none per rung**, so a new rung cannot forget it and cannot
+   accidentally make a strategy claim by answering it.
+3. ⚠️ **The journal.** A new decision kind, and 🔥 **`JournalFormat.Name`'s default arm is exactly
+   where P28's mistranslation lived** — a fifth question was written to file as a *declaration*,
+   and **only the file round-trip test could see it**. **Write the round-trip test first.**
+4. **Both front ends.** The browser's between-rounds gap is where it goes; the console gets the
+   same question in its own idiom. ⚠️ **`drive-console.py` will need a re-capture** and the driver
+   answers prompts adaptively (P30.2), so a new prompt is a driver change too.
+5. **What happens when nobody answers.** The patience clock ends a table nobody is at (P13.2); an
+   unanswered re-seat question must **fail closed — the seats do not change** — because the rule is
+   that people agree, and silence is not agreement.
+
+#### Acceptance
+
+1. A table of people can agree to re-seat between rounds, and the next deal uses the new seating.
+2. `RULES.md` §10 **#23 is discharged**, and §3 step 2 is checked by `RuleConformance` in both
+   halves: **held by default, changed only by agreement.**
+3. 🔥 **The question is public and asserted to be public** — `ConcealmentTests` has a case for it,
+   rather than being silent about it.
+4. A journal round-trips a re-seating agreement, and **replay reproduces the new seating** — the
+   test written before the serializer.
+5. **A solo table with four bots can re-seat**, which is the case the consent decision exists for,
+   and it is asserted.
+6. §9 #47's default is **named in the report and fenced by a test named for the question.**
+7. **No figure in `docs/strategy/measurements.csv` moves** — `RoundsPerGame = 1` makes it
+   impossible, and a moved row means the question leaked into the harness.
+
+**Done when.** The table stays as it is until the people at it decide otherwise, and the deciding
+is something they do together.
+
+---
+
+### P36 — How long a seating holds ☐ — **added 2026-08-22**
+
+**Goal.** `RULES.md` §3 step 2, as rev 28 corrects it: a seating is **drawn once and held** rather
+than re-drawn as a step of the deal. ⚠️ **Changing it is P37's** — this packet stops the engine
+contradicting the document and builds the policy P37 needs.
+
+**Read first.** `RULES.md` **§3** (the whole of it, including the withdrawn paragraph), **§7.5**,
+**§9 #45 and #46**, **§10 #22**. In the tree: `Domain/Play/MatchEngine.cs`,
+`Server/HostedTable.cs`, `Server/TableSession.cs`, `Web/TablePlan.cs`, `Web/Components/Table/`,
+`Console/Program.cs`.
+
+**Depends on.** Nothing. ⚠️ **P35 depends on *this*** — §7.5 blames the seat above the winner for a
+three-round streak, and that is only a coherent sentence once a seating survives three rounds.
+
+🔥 **This is a revert-shaped packet that must not be a revert.** Before P28 a seating was drawn
+once and held for a whole match; P28 replaced that with a fresh draw before every deal, on rev 19's
+reading; rev 28 withdraws that reading. ⚠️ **The pre-P28 behaviour is *nearly* right and is not
+right** — it has no way to re-seat at all, and the rule is precisely that you can. **`git revert`
+is the wrong instinct here and the diff will look like it is the right one.**
+
+✅ **No published measurement moves, and the argument is P28's own, run backwards.** Every
+experiment in `BurmesePoker.Sim` runs `RoundsPerGame = 1`, so there is never a second round for a
+re-draw to precede. **This packet needs no re-measurement**, which is the whole reason it is an M
+and P35 is an L.
+
+---
+
+#### ✅ Split on 2026-08-22, the day it was written — P36 holds the seating, **P37** is the agreeing
+
+⚠️ **§9 #45 was ruled while this packet was being written, and it made the packet bigger.** Nick:
+a re-seating happens **"when people agree to do it"** — not when one player asks. 🔥 **That reverses
+this entry's own recommendation.** It had argued for *one asking is enough* precisely because it
+invents no machinery; **agreement is the expensive reading and it is the one taken**, by the person
+whose game it is. `PLAYER`, so `EXPERT` may still overturn it.
+
+**So the work is two packets, and the seam between them is the one this entry already identified:**
+*when a re-draw happens* is a **policy**. **P36 builds the policy and the held seating** — which is
+what §10 #22 actually asks for and needs no agreement machinery at all. **P37 puts the table's
+agreement behind it** (§10 #23).
+
+| | **P36 — hold the seating** | **P37 — ask the table** |
+|---|---|---|
+| **Discharges** | §10 **#22** — the engine stops contradicting §3 | §10 **#23** — a held seating can be changed |
+| **Domain** | `MatchEngine` re-draws on a **policy** instead of unconditionally — one field, one condition | the policy's answer comes from the table |
+| **Server** | nothing | 🔥 **a public, table-level question, which does not exist.** `SeatPrompt` is **seat-private by construction** (P13.2: exactly one event in the whole narration is private, and `ConcealmentTests` sweeps for it). *"Shall we change seats"* is asked of **everybody at once** — the first of its kind |
+| **Agents** | nothing | ⚠️ **a sixth `IPlayerAgent` question that no rung can answer.** Every rung decides about cards; this is not a card decision |
+| **Front ends** | one lobby field, one console prompt | a between-rounds flow in both, a timeout, and what happens when a seat has stopped answering (`HostedTable`'s patience clock) |
+| **Journal** | one header field | a new decision kind — ⚠️ and `JournalFormat.Name`'s default arm is **exactly where P28's mistranslation lived**: a fifth question was written to file as a *declaration*, and only the round-trip test could see it |
+| **Sim** | invisible (`RoundsPerGame = 1`) | invisible |
+| **Size** | **S–M** | **M** |
+
+🔥 **The design question P37 cannot avoid, stated here so it is not discovered late: what does a
+computer seat do when the table is asked to agree?** A bot cannot meaningfully want this either
+way, and **a bot that abstained would make the rule dead at every table with a computer in it** —
+which, at a solo table, is every table. ⚠️ **A rung answering it arbitrarily would be a strategy
+claim nobody measured** (P15's discipline). **The honest shape is that a computer seat consents:
+the rule is about people, and a bot is not one.** ✅ **That is a design decision and not a rules
+decision** — `RULES.md` §3 says *the players agree*, and a bot is not a player in the sense the rule
+is about. **P37 records it in `BUILD-PLAN` §3 rather than inventing a rule in `RULES.md`.**
+
+⚠️ **What P36 must not do is call its setting the rule.** §3 says *when the players agree*, and a
+number fixed when the table opens is **not** people agreeing. **The policy is the mechanism; P37 is
+the rule.** ✅ **But P36 is independently correct and worth shipping alone**: a table that re-seats
+every *N* rounds with *N* chosen at the start is a legitimate house arrangement, is what a solo
+player against bots actually wants, and is the only shape that works before P37 exists.
+
+#### Build
+
+1. **A seating policy on the match.** `MatchEngine` stops re-drawing unconditionally. The default
+   is **hold** — drawn once, kept — because that is the rule; a `RoundsBetweenSeatings` of *N*
+   re-draws every *N* rounds and **0 or absent means never**. ⚠️ **One condition in one place**;
+   the temptation is a bool beside a number and that is two states too many.
+2. ⚠️ **The seed story must be stated.** P28 recorded that *"a seed from before P28 no longer plays
+   the same match — the seating draw takes numbers the deal used to take."* **This packet moves
+   those numbers again**, so a journal or seed from between P28 and P36 replays differently.
+   `JournalHeader.CurrentRulesRevision` is **28** already, which is what makes that detectable
+   rather than mysterious — **say it in the report and check `JournalReplayTests`.**
+3. **Both front ends offer the setting**, in the shape they already offer difficulty (P18/P19: one
+   list, resolved through the domain, never re-typed). ⚠️ **The console's capture changes** —
+   `drive-console.py` prints the seating line — so **re-capture and say so**.
+4. 🔥 **The browser is where this is visible and it is an improvement.** P13.5 puts *you at the
+   front whichever seat you were dealt*, so today the table visibly rearranges itself around a
+   fixed viewer every deal — something `TableRing` was never asked to do and which P28's own entry
+   flagged as a UX question it had not answered. **Holding the seating removes that**, and the
+   packet should check it rather than assume it.
+5. **Leave the *changing* to P37, and fence it.** §9 #45 is ruled (`PLAYER`: the players agree)
+   and §9 #47 is open (everybody, or most). A test named for each, so neither can be quietly
+   assumed by a policy that only counts rounds.
+
+#### Acceptance
+
+1. A match of *n* rounds deals **one** seating unless the policy says otherwise, and `RULES.md` §10
+   **#22 is discharged**.
+2. The policy is **one decision in one place**, asserted — no front end and no harness re-derives
+   *when a re-draw happens*.
+3. ⚠️ **`RuleConformance` checks §3 step 2 as corrected** — it re-derives every Settled rule, and
+   `SettledRuleCoverageTests` fails the build on a Settled section nothing checks. **§3 is Settled
+   and has just changed**, so this is the packet's own alarm.
+4. **No figure in `docs/strategy/measurements.csv` moves**, and that is asserted rather than hoped:
+   `RoundsPerGame = 1` makes it impossible, and a moved row means the policy leaked into a place it
+   has no business being.
+5. A journal from a held-seating match replays byte-identically, and the report says plainly that
+   seeds from between P28 and P36 do not.
+
+**Done when.** You sit down, the table stays as it is, and changing it is something somebody does
+rather than something that happens to you.
+
+---
+
+### P35 — The two scoring rules that reach outside a round ☐ — **added 2026-08-22**
+
+**Goal.** Build `RULES.md` **§7.4** (a win from the initial deal pays ×2) and **§7.5** (a third
+consecutive win is paid entirely by the seat above the winner), and re-measure underneath them.
+
+**Read first.** `RULES.md` **§7.2, §7.3, §7.4, §7.5**, **§3**, and **§9 #38–#44** — every one of
+the seven is this packet's. In the tree: `Domain/Money/Settlement.cs`, `Domain/Melds/TableRules.cs`,
+`Domain/Play/RoundEngine.cs`, `Domain/Play/MatchEngine.cs`, `Sim/SimulationOptions.cs`,
+`Tests/Conformance/RuleConformance.cs`.
+
+**Depends on.** P33 (§7.3 is the multiplier this composes with), P32 (a current five-handed
+baseline to re-measure against).
+
+✅ **Unblocked on 2026-08-22, the day it was written.** §9 #43 was put to Aung Aung and closed:
+**the seats do not re-draw every round** — *"only when people ask for it"* — so §7.5's blame names
+the same person for the whole streak and is coherent. `RULES.md` is at **rev 28** and §3 step 2 is
+corrected.
+
+⚠️ **But the answer moved the dependency rather than removing it: P35 now depends on P36.** A
+three-round streak blamed on *the seat above you* needs a seating that survives three rounds, and
+the engine still re-draws before every deal (§10 #22). **Build P36 first**; §9 #46 (a re-seating
+*mid*-streak) is this packet's, and its recommendation — settle from the round being settled — is
+old #42's, surviving into the one case that can still produce it.
+
+---
+
+#### Why this is an L and not the M it looks like
+
+🔥 **§7.5 is the first rule in this project that cannot be settled from a single round**, and that
+breaks two things at once.
+
+1. ⚠️ **`Settlement` is a pure function of one round and holds no history.** A streak lives above
+   it. The count belongs to whatever owns a sequence of rounds — `MatchEngine` — and **the
+   settlement must be told the answer rather than computing it**, exactly as P33 made
+   `Settlement.RoundPayment` take `jokerless` rather than deriving it. 🔥 **P33's own trap applies
+   here verbatim and harder**: a net delta is split in three places and only one of them is the
+   domain — the console's settlement panel and `Sim`'s `SeatRow.Flat`/`SideBet` **both re-derive
+   the round/side-bet split to display it**. §7.5 changes *who pays*, which neither of them models
+   at all: both assume every loser pays the same amount. **Left alone, a streak round would be
+   displayed as an ordinary one and every money measurement would read a number that never
+   happened.**
+2. 🔥 **No measurement in this project can currently observe §7.5.** `BurmesePoker.Sim` plays
+   `RoundsPerGame = 1` — a deliberate design decision (§3.8), because the game is the unit of
+   independence and a match of correlated rounds would break every interval in `STRATEGY.md`.
+   **A three-round streak cannot occur in a one-round game.** ⚠️ **So the packet must decide, and
+   say, whether §7.5 is measured at all** — and *"it is built, fenced by conformance, and
+   deliberately not in the standing set"* is a legitimate answer that must be **stated** rather
+   than arrived at by silence (`STRATEGY.md` §11, "no silent caps").
+
+⚠️ **And §7.4 may change the shape of a round rather than its arithmetic.** Under §9 #38's
+recommended reading — *the dealt thirteen alone* — `RoundEngine` must offer a declaration
+**before the first turn**, and it has no such path: a round begins by asking seat 0 to take a card.
+🔥 **That is the first change to the shape of a round since P0.** Under the other reading (the
+winner's first turn) it is a turn counter and nothing more. **The two readings differ by a whole
+engine path, which is why #38 is listed first in §9.**
+
+#### Build
+
+1. **§7.4, the deal bonus.** A second multiplier beside `TableRules.JokerlessMultiplier`.
+   ⚠️ **Unlike §7.3's, it is not a function of the player count**, so it does not belong in
+   `TableRules`' per-seat-count table — putting it there would imply a seam it does not have.
+   `Settlement.RoundPayment` grows one more argument, or takes a small record of *what this win
+   was*; **prefer the record** — this is the third thing to multiply the round prize in three days
+   (§7.2's step 1 now carries four qualifications) and a fourth should be expected.
+2. **How §7.3 and §7.4 compose** — §9 #39, recommended **multiply**, and ⚠️ **fenced by a named
+   test either way**, in P26's and P33's idiom. State the default in the packet report.
+3. **§7.5, the streak.** `MatchEngine` counts consecutive wins by the same player and hands the
+   round the answer; `Settlement` takes *who pays* rather than assuming everybody does.
+   ⚠️ **The seat is identified by the round's own seating** (§9 #42's recommendation) and the
+   engine already re-draws it (§3, P28) — `MatchEngine.PlayRound(drawOrder)` is where a deal
+   written down for a seating lives.
+4. 🔥 **Both consumers that re-derive the split must be fixed in the same packet**, and this is
+   item 3's real cost. `Settlement` returning one number per seat is not enough: the console panel
+   and `SeatRow` each need to be able to show *"everybody paid nothing; the seat above paid the
+   lot"* without inventing it. **P33's unchanged `money.side-margin.*` rows are the evidence that
+   this can be done right; do the same check.**
+5. **Conformance.** `RuleConformance` re-derives every Settled rule independently, and
+   `SettledRuleCoverageTests` **fails the build on a Settled section nothing checks or exempts** —
+   so §7.4 and §7.5 will make the tree red the moment they are marked Settled and unchecked.
+   ⚠️ **They are Settled *now***, which means that test is the packet's own alarm and must be
+   answered with `Checked(...)`, not silenced with `Exempt(...)` — P33's precedent.
+   ⚠️ **§7.5 needs a multi-round conformance case**, which `RuleConformance` has never had: it
+   audits 180 *ordinary rounds*. That is new harness, not a new assertion.
+6. **Re-measure.** A settlement change invalidates every money figure, exactly as P33's did.
+   ⚠️ **Expect P33's reproduction shape, not P29's**: no rung reads either rule, so **play cannot
+   move and only money can** — and if a win rate moves, that is a bug and not a finding. **Write
+   the prediction down before the run.** §7.5 is the exception and it is the interesting one: it
+   is invisible to a one-round-per-game suite, so **its rows should not move at all**.
+
+#### Acceptance
+
+1. §7.4 and §7.5 are implemented, and `SettledRuleCoverageTests` passes with both **`Checked`**.
+2. Every §9 default this packet builds on is **named in the report** and **fenced by a test named
+   for the question**, so the answer arriving is a one-line change with a failing test to find it
+   (P26 #32, P33 #36 and #37 are the precedent).
+3. The console's settlement panel and `Sim`'s `SeatRow` both show a §7.5 round correctly, and the
+   `money.side-margin.*` rows are **unchanged** — the proof the substitution landed in the round
+   column.
+4. 🔥 **Whether §7.5 is in the standing set is stated either way**, with its reason, in
+   `docs/STRATEGY.md` §11.
+5. `RULES.md` §10 #20 and #21 are discharged, and the document records nothing Settled that
+   nothing implements.
+
+**Done when.** The two rules Aung Aung gave on 2026-08-22 are played, and the one that reaches
+across rounds is either measured or explicitly and visibly not.
 
 ---
 

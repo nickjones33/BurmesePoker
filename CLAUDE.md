@@ -11,68 +11,92 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **READ THIS FIRST — `P33` shipped 2026-08-22 on Opus 5. `RULES.md` is rev 26, §7.3 is built, and
-`P32` is the next packet.**
+🔥 **READ THIS FIRST — `P32` shipped 2026-08-22 on Opus 5. The standing answer is about a
+*five-handed* table, `RULES.md` is **rev 29**, and `P24.2` is the next packet — Nick asked for it
+by name.**
 
-**§7.3, the clean bonus: a *jokerless* declaration pays ×2 at two, three or four seats and ×3 at
-five or more.** `Domain/Melds/TableRules.cs` carries `JokerlessMultiplier` beside §7.1.1's table —
-**the two rules whose content changes with the player count split at exactly the same seam** —
-`Settlement.IsJokerless` is the predicate and `Settlement.RoundPayment(stakes, rules, jokerless)` is
-the arithmetic. ⚠️ **`Meld.IsClean` is NOT the predicate**: it implements §7.1.1's *required clean
-series*, a different rule sharing a word. §7.3 asks whether the declared **thirteen** hold a joker
-at all — a property of the **cards**, not of the partition, which is why `HandEvaluator` needed
-nothing. ✅ **§10 #19 is discharged and `RULES.md` again records nothing Settled that nothing
-implements.**
+**The default table is five seats and it is written down once: `RoundEngine.DefaultPlayers`.**
+`SuiteOptions.DefaultSeats`, every `--seats` default in `Sim` and the browser lobby all read it.
+⚠️ **It is not `MinimumPlayers`, and conflating the two is what this packet existed to fix**: every
+figure published between P12 and P33 was four-handed **because four is the smallest legal table,
+not because anybody chose it.** By §7.1.1 a four-handed declaration owes a joker-free series and a
+five-handed one owes **none**; by §7.3 a jokerless hand pays ×2 at four and ×3 at five. **Four-handed
+is a different game, kept whole and frozen at `docs/strategy/measurements-4-handed.csv`.**
 
-🔥 **The measurement is the cleanest reproduction this project has recorded: 111 of the 116 shared
-CSV rows byte-identical, and the five that moved are exactly — and only — the five denominated in
-dollars a round.** The prediction was written before the run (no rung reads the bonus, so play
-cannot move and only money can) and the file shows it with nothing left over. ⚠️ **Contrast P29's
-4 of 91 across a rules change and P31's 71 of 88 across a new rung — "does it reproduce" has a
-third answer now, *it reproduces everywhere the change could not reach*, and the three shapes
-together tell you what kind of change a run just made. Expect it; do not go looking for the bug.**
+🔥 **The headline is a *falsification of this project's own published explanation*, and it needed
+the right instrument to see.** P29 attributed the four-handed levelling of `simple` to §7.1.1's
+joker-free series requirement. At five seats that requirement is gone, so the gap should have
+re-opened. ❌ **It did not.** ⚠️ **Reading the raw margins would have said it *narrowed*, and that is
+also wrong**: a fifth seat drops the base win rate 25% → 20%, so **every margin rescales by 0.800**.
+**Median ratio over all eighteen head-to-head cells: 0.801**, the six `random` rows on **0.800 to
+three digits**, and `simple`'s gaps to `greedy` and `counting` within a tenth of a point of pure
+scale. 🔥 **The five-handed ladder is the four-handed ladder divided by 1.25** — every Holm verdict
+identical — **and what causes the levelling is now unknown.** ⚠️ **Compare a margin across table
+sizes as a *ratio to the base rate*, never as a difference.**
 
-🔥 **And the five rows are a finding: the clean bonus is a tax on trading wins for money.** Every one
-is a `prospector`-over-`outs` money margin and every one fell — **`+5.32 → +4.13`** at $5/$20,
-**`+14.63 → +13.43`** at $5/$40, both still separated. **The bonus multiplies the round prize and the
-round prize is what `prospector` sells.** ✅ **The first measured interaction between the money layer
-and the scoring layer.**
+✅ **Four other predictions held: the jokerless rate fell 15.4% → 12.1%, the bonus's value rose +$15
+→ +$40, value beat rate ($2.31 → $4.84 a round), and the null cell read 20%.** ❌ **The fifth was
+wrong and usefully so**: the dial's steps were expected to compress with the base rate and **no ε
+moved.** `hard` ≈ 0.42 and `medium` ≈ 0.67 fitted at five seats are the shipped 0.4 and 0.7.
+✅ **So ε is close to a property of *the mistake* rather than of the rung *or of the table*** —
+P23's finding on an axis it was never tested on — and **one dial serves four, five and six seats**,
+each separately measured (`docs/strategy/dial-away-from-the-default-table.md`).
 
-🔥 **Measured: the bonus is collected in about one round in six** — 15.4% at the ladder — **by rungs
-that have never heard of the rule** (`docs/STRATEGY.md` §14). ⚠️ **It is published as a floor for two
-reasons**: `CoverScore.Potential` returns `int.MaxValue` for a joker so **no rung will part with
-one**, and §9 **#33**'s default may make the bonus unreachable for a hand that must shed one early.
-✅ **No rung plays for the bonus on purpose** — that is a **new rung** under P15's discipline, and the
-arithmetic says it is worth trying.
-
-⚠️ **The trap this packet is really about, and it will recur: a net delta is split in three places
-and only one of them is the domain.** `Settlement` returns one number; **the console's settlement
-panel and `Sim`'s `SeatRow.Flat`/`SideBet` each re-derive the round/side-bet split to display it**,
-and both computed the round half as `RoundValue`. Left alone, the bonus would have landed **silently
-in the side-bet column every money measurement reads**. **Any future change to what a round pays goes
-through `Settlement.RoundPayment`.** ✅ **The unchanged `money.side-margin.*` rows are the proof it
-did.**
-
-⚠️ **`P32` (five seats as the default table) is next, and P33 deliberately did *not* fold it in** —
-attribution over wall clock, on the plan's own P31-before-P32 argument; see `BUILD-PLAN.md` §5 P32.
-✅ **It inherits a complete, current four-handed baseline** and **a prediction worth writing down**:
-§7.1.1 asks for a clean series at four seats and **nothing** at five while §7.3 pays ×2 at four and
-×3 at five, **so the jokerless rate should fall and what it is worth should rise — and which wins is
-the most interesting number that packet can produce.** ⚠️ **Decide the free-for-all's crossing before
-starting** (`Balanced(7,5)` is 16,807 assignments) and **set the model with `/model`.**
-⚠️ **§9 #33, #36 and #37 are still open**, each built on its recorded default and each fenced by a
-named test. **P24.2** is still Nick's call.
-
-✅ **And one packet needs no answer at all: `P34`, the front door.** **There is no `README.md`** —
-a visitor's first sight of this project is *this file*, which is written for a cold session rather
-than for a person, and three of the ten documents in `docs/` are wholly historical without saying
-so above the fold. P34 builds the front door (current-only) and **turns the anti-staleness habit
-into tests**, in the idiom P23 and P30.2 established. It needs no expert answer, regenerates
-nothing, is the cheapest thing on the plan and collides with nothing.
+⚠️ **Two costing lessons.** `BUILD-PLAN` feared the five-handed free-for-all (`7⁵ = 16,807`) would
+be "plausibly the majority of the run" — **wrong**: a full pass at four seats is 2,401 games in
+**51 s**, so the five-handed pass is ~7 min of a 12,445 s suite. **Full crossing, nothing
+subsampled**; `SeatingPlan.MaximumAssignments` is 32,768. And **`sim bench` gained `--seats`** — it
+had none, so a five-handed round could not be priced at all. **Measure before deciding; the plan's
+guess was off by an order of magnitude.**
 
 ---
 
-*Everything below was written before P33. ⚠️ Where it says §7.3 is unbuilt or that P33 is next,
+🔥 **`RULES.md` went 26 → 29 in one conversation on 2026-08-22, and none of it is built.**
+`JournalHeader.CurrentRulesRevision` is **29**.
+
+- **Rev 27 — §7.4 and §7.5, `EXPERT` (Aung Aung).** A win **on the initial deal** pays ×2; a
+  **third consecutive win** is paid **entirely by the seat above the winner** (blamed for feeding).
+  🔥 **§7.5 is the first rule that cannot be settled from a single round** and the first that
+  changes **who pays**. ✅ **Third independent saying to single out the upstream seat** — §5.1,
+  §4.5, §7.5. **Seven questions opened (§9 #38–#44); §10 #20 and #21; packet P35.**
+- 🔥 **Rev 28 — §7.5 contradicted §3, and the *old* rule was wrong.** *"In real games you don't
+  shuffle seats every round, only when people ask for it."* ✅ **§3 step 2 corrected: a seating is
+  drawn once and held**; rev 19's *"every round, not once"* is **withdrawn**. ⚠️ **So the engine
+  contradicts the document again, in the opposite direction to the error P28 fixed** (§10 **#22**).
+  **The fix is not a revert** — pre-P28 held a seating and could never change it. **P36.**
+- **Rev 29 — Nick ruled §9 #45**: a re-seating happens *"when people agree to do it"*, `PLAYER`.
+  Opens **#47** and §10 **#23**. **P37.**
+
+🔥 **The heuristic that found rev 28, written into §9 as a prediction *before* #43 was asked and
+right: when two Settled `EXPERT` rules collide, suspect the older recording rather than the newer
+saying.** This game's rules are recalled as **wholes**, and a new rule exposing an old one as
+mis-recorded is now a documented pattern rather than a surprise.
+
+⚠️ **`SettledRuleCoverageTests` fired the moment §7.4 and §7.5 were marked Settled** — the alarm
+working. They are `Exempt(...)` naming §10 #20/#21 and P35. 🔥 **The exemption ceiling moved 5 → 7,
+and a stronger assertion went in beside it: every whole exemption must name the packet that will
+discharge it.** A count was a proxy; **an exemption nobody owns is a rule quietly abandoned**, and
+a bare number never caught that.
+
+---
+
+⚠️ **`P24.2` is next — Nick asked for it 2026-08-22, from the browser**: the hint arrow is there
+and the *why* is not. 🔥 **Two things a cold session must know before opening it.** **(1) P31
+already built half of build item 1** — `IRanksDiscards.RankDiscards(context, candidates)` returns
+an ordered candidate list; **what is missing is the keys, not the ranking.** **(2) The browser
+already has five `<details>Why?</details>` blocks** in `TurnPrompt.razor` holding **static rule
+text**, ungated because a rule is not advice — **so the affordance exists and what P24.2 adds is a
+computed paragraph inside it, gated on hints while the rule text around it is not.**
+⚠️ **And P32 created a new trap**: at five seats §7.1.1 asks for **no series at all**, so an
+explanation phrased in runs is **false at the table the browser now deals.**
+**Then `P36`, `P37`, `P35`, `P34`.**
+
+⚠️ **One leftover P32 did not take: `BurmesePoker.Console` still deals four** — its seat prompt
+defaults to `MinimumPlayers`. **One line plus a `drive-console.py` re-capture.**
+
+---
+
+*Everything below was written before P32 (and most of it before P33). ⚠️ Where it says §7.3 is unbuilt or that P33 is next,
 read the block above.*
 
 🔥 **`P31` shipped 2026-08-22 on Opus 5: `warden`, the feeding ban played offensively — and it
@@ -599,7 +623,7 @@ dotnet test                                     # run all tests
 dotnet test --filter-method "*SomeTestName*"     # single test (xunit v3 / MTP syntax)
 dotnet test --filter-class "*CardTextTests*"     # single test class
 dotnet run --project BurmesePoker.Console       # play a round (needs a real terminal)
-dotnet run --project BurmesePoker.Web           # a browser lobby at http://localhost:5188 — sit down and play
+dotnet run --project BurmesePoker.Web           # a browser lobby at http://localhost:5188 — sit down and play (five seats by default since P32)
 dotnet run --project BurmesePoker.Web -- --people 1                   # …a solo table; it deals as soon as you sit
 dotnet run --project BurmesePoker.Web -- --people 0                   # …just watch; every seat is a bot
 dotnet run --project BurmesePoker.Web -- --seed 20260819 --pace 400   # …the same table, faster
@@ -608,6 +632,7 @@ dotnet run --project BurmesePoker.Web -- --mixed true                # …a diff
 dotnet run --project BurmesePoker.Web -- --journal table.jsonl       # …write the house table down as it plays (P24.1); same format as the console's, sim replay reads it
 dotnet run -c Release --project BurmesePoker.Sim -- --games 2000   # compare strategies
 dotnet run -c Release --project BurmesePoker.Sim -- bench          # time the cover searches, and every rung's decision
+dotnet run -c Release --project BurmesePoker.Sim -- bench --seats 5   # …at a table size; it hard-coded four until P32, so a five-handed round could not be priced
 dotnet run -c Release --project BurmesePoker.Sim -- bench --rounds 200 --strategies greedy,outs   # …is a rung affordable? (P21's budget is 10x greedy)
 dotnet run -c Release --project BurmesePoker.Sim -- --games 100 --journal run.jsonl   # keep every decision
 dotnet run -c Release --project BurmesePoker.Sim -- replay run.jsonl                  # play them back
@@ -618,7 +643,8 @@ dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy
 dotnet run -c Release --project BurmesePoker.Sim -- money --games 8000               # should you draw blind for the money? a sweep over four stakes ratios
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs/refuse,outs/allow --pairs adjacent --games 8000   # is refusing a claim worth anything? (P29: no)
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs,warden --pairs adjacent --games 8000              # is playing the feeding ban offensively worth anything? (P31: no, −9.3 ± 1.0)
-dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv (⚠️ ~3h06, 11,159 s measured at P33)
+dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv — five seats by default since P32 (⚠️ ~3h27, 12,445 s measured)
+dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seats 4     # …the four-handed game, kept frozen at docs/strategy/measurements-4-handed.csv
 
 python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0   # capture a scripted match (0 expert, 1 hard, 2 medium, 3 easy)
 python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0 --script human   # …the longer one, with a person in it

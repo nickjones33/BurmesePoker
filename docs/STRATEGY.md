@@ -11,59 +11,69 @@ transcribed, out of `docs/strategy/measurements.csv`, which is written by one co
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seed 20260819
 ```
 
-Last generated **2026-08-22** (BUILD-PLAN P33). **119 measurements in 11,159 s — three hours** —
-the ladder ranked, the difficulty dial calibrated beside it, the money sweep, P12's headline under
-both seatings, how long a round runs, what the claim's permission is worth, how often the feeding
-ban bites, and, new in this run, **how often the clean bonus is actually collected** (§14).
+Last generated **2026-08-22** (BUILD-PLAN P32). **123 measurements in 12,445 s — three and a half
+hours** — the ladder ranked, the difficulty dial calibrated beside it, the money sweep, P12's
+headline at **two** table sizes under both seatings, how long a round runs, what the claim's
+permission is worth, how often the feeding ban bites and how often the clean bonus is collected.
 
-✅ **Everything here is measured under the rules as they actually are** — `RULES.md` rev 26, with
-P25's win condition, P26's money layer, P27's feeding ban, P28's claim permission **and P33's
-clean bonus (§7.3)** all in force. ✅ **`RULES.md` again records nothing Settled that nothing
-implements**, which has not been true since rev 25.
+🔥 **This document is about a five-handed table now, and that is the whole of P32.**
+`SuiteOptions.Seats` read `RoundEngine.MinimumPlayers` until this run — so every figure published
+between P12 and P33 was four-handed **because four is the smallest legal table and not because
+anybody chose it.** ⚠️ **The two are not interchangeable**: by `RULES.md` §7.1.1 a four-handed
+declaration owes a joker-free series and a five-handed one owes **no series at all**, and by §7.3 a
+jokerless hand is paid **×2** at four and **×3** at five. **Four-handed is a different game, not an
+old version of this one** — so it is kept, whole and frozen, at
+`docs/strategy/measurements-4-handed.csv`, and a test asserts every row of it says `seats=4`.
 
-🔥 **The headline is a reproduction, and it is the cleanest separation this document has ever
-recorded: 111 of the 116 rows both runs contain came back byte-identical, and the five that moved
-are exactly — and only — the five rows denominated in dollars a round.** Every win rate, every
-head-to-head cell, every pairing ratio, the whole difficulty dial, every take rate, **every
-side-bet margin**, the turn counts, the abandoned counts, the claim rates and the whole of §13
-reproduced to the digit.
+✅ **Measured under the rules as the engine plays them** — `RULES.md` rev 26's play, with P25's win
+condition, P26's money layer, P27's feeding ban, P28's claim permission and P33's clean bonus all
+in force. ⚠️ **`RULES.md` is at rev 29 as this is written**, and the three revisions since are §7.4,
+§7.5 (settlement, unbuilt — P35) and §3's corrected seating (unbuilt — P36). **None of them can
+reach a figure here**: the first two are unimplemented, and the third cannot matter because every
+experiment runs one round a game.
 
-| | |
-|---|---|
-| **What P33 changed** | what a win is **worth** — a jokerless declaration pays ×2 at two, three or four seats and ×3 at five or more (`RULES.md` §7.3) |
-| **What it did not change** | **anything any player does.** No rung knows the bonus exists: `CoverScore.Potential` still returns `int.MaxValue` for a joker, so no rung will part with one |
-| **What the file shows** | precisely that, with nothing left over. **The prediction was written down before the run and the CSV is the check** |
+🔥 **The headline is a negative result about this document's own explanation, and it needed the
+right instrument to see.** P29 attributed the four-handed levelling of `simple` to §7.1.1's
+joker-free series requirement — *"a requirement nobody optimises for is paid by everybody who could
+otherwise have optimised past it, so it compresses a ladder from the bottom rather than tilting
+it."* **At five seats that requirement is gone**, so P32 predicted, before the run, that the gap
+over `simple` would re-open. ❌ **It did not.**
 
-⚠️ **Contrast P29, which reproduced 4 of 91 rows across P25–P28.** Those packets changed what a
-winning hand *is*, so every seat played differently and nothing could survive. This one changed
-what winning *pays*, and the file separates the two kinds of change by itself. 🔥 **"Does it
-reproduce" now has a third answer** — *it reproduces everywhere the change could not reach* —
-which is a sharper instrument than either of the first two.
+⚠️ **Reading the raw margins would have said it narrowed, and that would have been wrong too.**
+A fifth seat drops the base win rate from 25% to 20%, so **every** margin rescales by 0.800:
 
-🔥 **And the five rows that moved are a finding, not bookkeeping. The clean bonus is a tax on
-trading wins for money.** Every one of them is a `net per round margin` for a rung that buys money
-cards at the cost of rounds, and every one of them **fell**:
+| cell | 4-handed | 5-handed | ratio |
+|---|--:|--:|--:|
+| `random` over each of the other six | −49.4 … −49.8 | −39.6 … −39.8 | **0.800** ×6 |
+| `simple` over `greedy` | −9.20 | −7.42 | 0.806 |
+| `simple` over `counting` | −9.87 | −7.96 | 0.807 |
+| `simple` over `cautious` | −8.80 | −8.06 | 0.916 |
 
-| row | P31 | **P33** |
-|---|--:|--:|
-| `prospector` over `outs` at **$5/$20** | +5.32 ± 2.27 | **+4.13 ± 2.26** |
-| `prospector` over `outs` at **$5/$40** | +14.63 ± 4.48 | **+13.43 ± 4.47** |
-| …at $5/$10 | −0.21 ± 1.15 | **−0.66 ± 1.15** |
-| …at $5/$1 (the identity cell) | +0.05 ± 0.25 | **+0.07 ± 0.29** |
-| `outs/refuse` over `outs/allow`, money | +0.02 ± 0.25 | **+0.06 ± 0.29** |
+**Median ratio over all eighteen cells: 0.801, against a base-rate scale of 0.800.** The six
+`random` rows land on 0.800 to three digits. So `simple`'s gaps to `greedy` and `counting` are
+**exactly the rescaling** — pure scale predicts 7.36 and 7.90 and the run measured 7.42 and 7.96,
+both within a tenth of a point of an interval of ±0.8. 🔥 **Removing the requirement did nothing,
+so the requirement was not what caused the levelling.** `cautious` is the one cell that moved
+(predicted 7.04, measured 8.06 — 1.0 point against ±0.8), and one of three barely outside its
+interval is not an effect.
 
-**The mechanism is one sentence: the bonus multiplies the round prize, and the round prize is what
-`prospector` sells.** It wins **20 points fewer rounds** at the high ratios, so `outs` collects the
-multiplier far more often than it does, and the margin narrows by about **$1.20 a round** at both
-separated cells. ✅ **Both are still separated under Holm and the ranking is unchanged** — but the
-side bet is now competing against a prize that is sometimes double, and **§10's crossover has moved
-back up the stakes scale a little for the first time since P22.** ⚠️ **The `money.side-margin.*`
-rows did not move at all**, which is the check that the bonus landed in the round column rather than
-being mis-attributed to the side bet — the failure mode P33 had to fix in two places to avoid.
+✅ **So the five-handed ladder is the four-handed ladder divided by 1.25**, and every Holm verdict
+is identical at both sizes: the same eighteen separated, the same three inside. ⚠️ **P29's
+explanation does not survive its own test, and what actually causes the levelling is unknown.**
 
-⚠️ **The suite cost 11,159 s against P31's 11,020 s** for three rows more. **The bonus is free**: it
-is one scan of thirteen cards at the end of a round, and nothing in the search or the decision
-touches it.
+**Four other predictions were written down before the run and all four held.**
+
+| | predicted | measured |
+|---|---|---|
+| jokerless rate | **falls** — §7.1.1 pushes four-handed play toward clean hands and pushes five-handed play not at all | 15.4% → **12.1%** ✅ |
+| what the bonus is worth | **rises** — ×3 to four losers, not ×2 to three | $15 → **$40** over flat ✅ |
+| the two together | value wins | **$2.31 → $4.84** a round expected ✅ |
+| the null cell | **20%**, not 25% | **20.3 / 19.7** ✅ |
+
+🔥 **So the bonus is collected less often and is worth more than twice as much, and the second
+effect is the larger by better than two to one.** ⚠️ **The one prediction about the dial was also
+wrong, and in the useful direction** — see §9: the steps were expected to compress with the base
+rate and **no ε had to move at all.**
 
 The fuller report the tables below are drawn from comes from the same seed:
 
@@ -85,7 +95,8 @@ this project at least once.**
    holds one seat in some games of a crossed run and three in others. Averaging the per-game
    ratios unweighted over-weights the games where it held fewest seats — which, for a strong
    strategy, are the games it does best in. **Measured, that is worth 1.05 points at four
-   seats**, as large as the whole seating effect in §5. Every figure here is the ratio
+   seats**, as large as the whole seating effect in §5. ⚠️ **That figure has not been re-measured
+   at five**; the estimator is unchanged and the argument does not depend on the table size. Every figure here is the ratio
    estimator, so it is the same quantity P12, P15 and P16 published, now with an interval.
 3. **Every interval is 95% and normal-approximate.** Honest at thousands of games; it would not
    be at a dozen.
@@ -158,9 +169,9 @@ to appear in it.
 ## 3. The ranking
 
 **Head to head at every seating in which both are at the table** — 14 of the 16 assignments of
-two strategies across four seats, the two homogeneous ones excluded because a game one of them
-is not at says nothing about the pair. 8,008 games a cell, each strategy sitting in each seat
-exactly 4,004 times *by construction*.
+two strategies across **five** seats — **30 of the 32 assignments**, the two homogeneous ones
+excluded because a game one of them is not at says nothing about the pair. **8,010 games a cell**,
+each strategy sitting in each seat exactly 1,602 times *by construction*.
 
 ⚠️ **Seven rungs and not the catalog's eight**: `prospector` is settled by §10 rather than here,
 for the reason §2 gives. 🔥 **Its absence costs this matrix nothing, and that is measured rather
@@ -172,25 +183,25 @@ before it** (§11).
 
 | | `random` | `simple` | `greedy` | `cautious` | `counting` | `outs` | `warden` |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| **`random`** | · | −49.8 ± 0.4 \* | −49.7 ± 0.4 \* | −49.7 ± 0.4 \* | −49.7 ± 0.4 \* | −49.8 ± 0.4 \* | −49.4 ± 0.4 \* |
-| **`simple`** | +49.8 ± 0.4 \* | · | −9.2 ± 1.0 \* | −8.8 ± 1.0 \* | −9.9 ± 1.0 \* | −13.8 ± 1.0 \* | −2.5 ± 1.0 \* |
-| **`greedy`** | +49.7 ± 0.4 \* | +9.2 ± 1.0 \* | · | +0.1 ± 1.0 | +0.4 ± 1.0 | **−3.0 ± 1.0** \* | **+6.2 ± 1.0** \* |
-| **`cautious`** | +49.7 ± 0.4 \* | +8.8 ± 1.0 \* | −0.1 ± 1.0 | · | +0.5 ± 1.0 | **−3.0 ± 1.0** \* | **+6.1 ± 1.0** \* |
-| **`counting`** | +49.7 ± 0.4 \* | +9.9 ± 1.0 \* | −0.4 ± 1.0 | −0.5 ± 1.0 | · | **−3.3 ± 1.0** \* | **+6.2 ± 1.0** \* |
-| **`outs`** | +49.8 ± 0.4 \* | +13.8 ± 1.0 \* | **+3.0 ± 1.0** \* | **+3.0 ± 1.0** \* | **+3.3 ± 1.0** \* | · | **+9.3 ± 1.0** \* |
-| **`warden`** | +49.4 ± 0.4 \* | +2.5 ± 1.0 \* | **−6.2 ± 1.0** \* | **−6.1 ± 1.0** \* | **−6.2 ± 1.0** \* | **−9.3 ± 1.0** \* | · |
+| **`random`** | · | -39.8 ± 0.3 \* | -39.8 ± 0.3 \* | -39.8 ± 0.3 \* | -39.8 ± 0.3 \* | -39.8 ± 0.3 \* | -39.6 ± 0.4 \* |
+| **`simple`** | +39.8 ± 0.3 \* | · | -7.4 ± 0.8 \* | -8.1 ± 0.8 \* | -8.0 ± 0.8 \* | -10.8 ± 0.8 \* | -2.8 ± 0.8 \* |
+| **`greedy`** | +39.8 ± 0.3 \* | +7.4 ± 0.8 \* | · | +0.0 ± 0.8 | +0.6 ± 0.8 | **-2.7 ± 0.8 \*** | **+4.5 ± 0.8 \*** |
+| **`cautious`** | +39.8 ± 0.3 \* | +8.1 ± 0.8 \* | -0.0 ± 0.8 | · | +0.1 ± 0.8 | **-2.9 ± 0.8 \*** | **+4.7 ± 0.8 \*** |
+| **`counting`** | +39.8 ± 0.3 \* | +8.0 ± 0.8 \* | -0.6 ± 0.8 | -0.1 ± 0.8 | · | **-2.9 ± 0.8 \*** | **+5.0 ± 0.8 \*** |
+| **`outs`** | +39.8 ± 0.3 \* | +10.8 ± 0.8 \* | **+2.7 ± 0.8 \*** | **+2.9 ± 0.8 \*** | **+2.9 ± 0.8 \*** | · | **+7.3 ± 0.8 \*** |
+| **`warden`** | +39.6 ± 0.4 \* | +2.8 ± 0.8 \* | **-4.5 ± 0.8 \*** | **-4.7 ± 0.8 \*** | **-5.0 ± 0.8 \*** | **-7.3 ± 0.8 \*** | · |
 
 \* survives Holm at α = 0.05 over the family of twenty-one.
 
 | # | strategy | mean margin over the field | free-for-all win % | beat / lost / undecided |
 |---|---|---:|---:|---:|
-| 1 | `outs` | +13.7 | 34.8 ± 1.1 | **6 / 0 / 0** |
-| 2 | `greedy` | +10.4 | 30.6 ± 1.1 | 3 / 1 / 2 |
-| 3 | `cautious` | +10.3 | 30.8 ± 1.1 | 3 / 1 / 2 |
-| 4 | `counting` | +10.3 | 30.0 ± 1.1 | 3 / 1 / 2 |
-| 5 | `warden` | +4.0 | 25.6 ± 1.1 | 2 / 4 / 0 |
-| 6 | `simple` | +0.9 | 23.0 ± 1.0 | 1 / 5 / 0 |
-| 7 | `random` | −49.7 | 0.0 ± 0.1 | 0 / 6 / 0 |
+| 1 | `outs` | +11.1 | 27.5 ± 0.7 | 6 / 0 / 0 |
+| 2 | `cautious` | +8.3 | 24.8 ± 0.7 | 3 / 1 / 2 |
+| 3 | `greedy` | +8.3 | 24.9 ± 0.7 | 3 / 1 / 2 |
+| 4 | `counting` | +8.2 | 25.5 ± 0.7 | 3 / 1 / 2 |
+| 5 | `warden` | +3.5 | 20.2 ± 0.7 | 2 / 4 / 0 |
+| 6 | `simple` | +0.5 | 16.8 ± 0.6 | 1 / 5 / 0 |
+| 7 | `random` | -39.8 | 0.1 ± 0.1 | 0 / 6 / 0 |
 
 🔥 **`warden` is the largest negative result this programme has produced, and it lands in the
 middle of the ladder.** It plays `RULES.md` §5.1 *offensively* — it will take a card it does not
@@ -252,27 +263,27 @@ this resolution and §4 says so.**
 
 | comparison | margin | p | Holm threshold | raw | corrected |
 |---|---:|---:|---:|---|---|
-| `random` vs `cautious` | −49.7 ± 0.4 | < 1e-300 | 0.00238 | separated | **survives** |
-| `random` vs `counting` | −49.7 ± 0.4 | < 1e-300 | 0.00250 | separated | **survives** |
-| `random` vs `greedy` | −49.7 ± 0.4 | < 1e-300 | 0.00263 | separated | **survives** |
-| `random` vs `outs` | −49.8 ± 0.4 | < 1e-300 | 0.00278 | separated | **survives** |
-| `random` vs `simple` | −49.8 ± 0.4 | < 1e-300 | 0.00294 | separated | **survives** |
-| `random` vs `warden` | −49.4 ± 0.4 | < 1e-300 | 0.00313 | separated | **survives** |
-| `simple` vs `outs` | −13.8 ± 1.0 | 3.2e-167 | 0.00333 | separated | **survives** |
-| `simple` vs `counting` | −9.9 ± 1.0 | 9.6e-84 | 0.00357 | separated | **survives** |
-| `simple` vs `greedy` | −9.2 ± 1.0 | 8.5e-73 | 0.00385 | separated | **survives** |
-| `outs` vs `warden` | **+9.3 ± 1.0** | 1.7e-72 | 0.00417 | separated | **survives** |
-| `simple` vs `cautious` | −8.8 ± 1.0 | 1.9e-66 | 0.00455 | separated | **survives** |
-| `counting` vs `warden` | **+6.2 ± 1.0** | 2.2e-33 | 0.00500 | separated | **survives** |
-| `greedy` vs `warden` | **+6.2 ± 1.0** | 3.2e-33 | 0.00556 | separated | **survives** |
-| `cautious` vs `warden` | **+6.1 ± 1.0** | 1.3e-32 | 0.00625 | separated | **survives** |
-| `counting` vs `outs` | −3.3 ± 1.0 | 9.0e-11 | 0.00714 | separated | **survives** |
-| `greedy` vs `outs` | −3.0 ± 1.0 | 4.6e-09 | 0.00833 | separated | **survives** |
-| `cautious` vs `outs` | −3.0 ± 1.0 | 8.5e-09 | 0.01000 | separated | **survives** |
-| `simple` vs `warden` | −2.5 ± 1.0 | 1.3e-06 | 0.01250 | separated | **survives** |
-| `cautious` vs `counting` | +0.5 ± 1.0 | 0.30 | 0.01667 | inside | does not survive |
-| `greedy` vs `counting` | +0.4 ± 1.0 | 0.39 | 0.02500 | inside | does not survive |
-| `greedy` vs `cautious` | +0.1 ± 1.0 | 0.81 | 0.05000 | inside | does not survive |
+| `random` vs `cautious` | -39.8 ± 0.3 | < 1e-300 | 0.00238 | separated | **survives** |
+| `random` vs `counting` | -39.8 ± 0.3 | < 1e-300 | 0.00250 | separated | **survives** |
+| `random` vs `greedy` | -39.8 ± 0.3 | < 1e-300 | 0.00263 | separated | **survives** |
+| `random` vs `outs` | -39.8 ± 0.3 | < 1e-300 | 0.00278 | separated | **survives** |
+| `random` vs `simple` | -39.8 ± 0.3 | < 1e-300 | 0.00294 | separated | **survives** |
+| `random` vs `warden` | -39.6 ± 0.4 | < 1e-300 | 0.00313 | separated | **survives** |
+| `simple` vs `outs` | **-10.8 ± 0.8** | 4.8e-160 | 0.00333 | separated | **survives** |
+| `simple` vs `cautious` | **-8.1 ± 0.8** | 8.1e-87 | 0.00357 | separated | **survives** |
+| `simple` vs `counting` | **-8.0 ± 0.8** | 1.0e-84 | 0.00385 | separated | **survives** |
+| `simple` vs `greedy` | **-7.4 ± 0.8** | 1.6e-73 | 0.00417 | separated | **survives** |
+| `outs` vs `warden` | **+7.3 ± 0.8** | 3.4e-71 | 0.00455 | separated | **survives** |
+| `counting` vs `warden` | **+5.0 ± 0.8** | 1.8e-34 | 0.00500 | separated | **survives** |
+| `cautious` vs `warden` | **+4.7 ± 0.8** | 1.4e-30 | 0.00556 | separated | **survives** |
+| `greedy` vs `warden` | **+4.5 ± 0.8** | 1.3e-27 | 0.00625 | separated | **survives** |
+| `cautious` vs `outs` | **-2.9 ± 0.8** | 2.0e-12 | 0.00714 | separated | **survives** |
+| `counting` vs `outs` | **-2.9 ± 0.8** | 2.5e-12 | 0.00833 | separated | **survives** |
+| `simple` vs `warden` | **-2.8 ± 0.8** | 5.6e-12 | 0.01000 | separated | **survives** |
+| `greedy` vs `outs` | **-2.7 ± 0.8** | 1.1e-10 | 0.01250 | separated | **survives** |
+| `greedy` vs `counting` | **+0.6 ± 0.8** | 1.4e-01 | 0.01667 | inside | does not survive |
+| `cautious` vs `counting` | **+0.1 ± 0.8** | 8.1e-01 | 0.02500 | inside | does not survive |
+| `greedy` vs `cautious` | **+0.0 ± 0.8** | 9.4e-01 | 0.05000 | inside | does not survive |
 
 ⚠️ **The `p` and `threshold` columns are recomputed here from the mean and standard error the CSV
 carries**, by the two-sided normal test and the Holm ladder the harness uses; **the `corrected`
@@ -299,23 +310,26 @@ than stored.
 
 ## 4. Everybody at one table
 
-The fully crossed table — every assignment of the field across four seats. Seven rungs is
-`7⁴ = 2,401` seatings, so 8,000 games rounds up to **9,604**, and a given strategy is at the table
-in about 4,420 of them.
+The fully crossed table — every assignment of the field across **five** seats. Seven rungs is
+`7⁵ = 16,807` seatings, so 8,000 games rounds up to **16,807** — ✅ **one full pass, nothing
+subsampled** (P32 costed the crossing before choosing it) — and a given strategy is at the table
+in **9,031** of them.
 
 | strategy | win rate |
 |---|---:|
-| `outs` | 34.8 ± 1.1 |
-| `cautious` | 30.8 ± 1.1 |
-| `greedy` | 30.6 ± 1.1 |
-| `counting` | 30.0 ± 1.1 |
-| `warden` | 25.6 ± 1.1 |
-| `simple` | 23.0 ± 1.0 |
-| `random` | 0.0 ± 0.1 |
+| `outs` | 27.5 ± 0.7 |
+| `counting` | 25.5 ± 0.7 |
+| `greedy` | 24.9 ± 0.7 |
+| `cautious` | 24.8 ± 0.7 |
+| `warden` | 20.2 ± 0.7 |
+| `simple` | 16.8 ± 0.6 |
+| `random` | 0.1 ± 0.1 |
 
 ⚠️ **Every figure here moved when P21 added a rung, and none of that was a change in play.** Six
 strategies crossed over four seats is a different field from five, so each is at the table less
-often and against a stronger average opponent. **This is the column to distrust when a rung is
+often and against a stronger average opponent. 🔥 **P32 moved every figure in this table again, and
+this time for a third reason: a fifth seat.** Base win rate is 20% rather than 25%, so the whole
+column is smaller and **none of that is play either**. **This is the column to distrust when a rung is
 added; §3's margins are the column that survives it.**
 
 🔥 **P20's run of `greedy` / `counting` / `cautious` in a five-rung field had them 32.8 / 33.5 /
@@ -342,13 +356,17 @@ opponent once. P16 is the packet that learned they differ, and both are reported
 
 ## 5. The seating matters, and by how much
 
-P12's headline — `greedy` against `simple` at four seats — under both seating schemes, at the
-same seed:
+P12's headline — `greedy` against `simple` — at **both** table sizes and under both seating
+schemes, at the same seed. 🔥 **Two tables since P32**: §7.1.1 makes four- and five-handed
+**different games**, and this is the longest-running measurement in the project — losing its
+continuity to gain the default would have been a bad trade when both fit in one run.
 
-| seating | greedy | simple | gap |
-|---|---:|---:|---:|
-| rotated `[g,s,g,s]` (8,000 games) | **30.43 ± 0.53** | 19.57 ± 0.53 | 10.9 |
-| balanced, all 16 assignments (7,500 games) | **29.00 ± 0.47** | 21.00 ± 0.47 | 8.0 |
+| table | seating | greedy | simple | gap |
+|---|---|---:|---:|---:|
+| four seats | rotated `[g,s,g,s]` | **30.43** | 19.57 | 10.9 |
+| four seats | balanced, all 16 assignments | **29.00** | 21.00 | 8.0 |
+| **five seats** | rotated `[g,s,g,s,g]` | **24.54** | 15.47 | 9.1 |
+| **five seats** | balanced, all 32 assignments | **23.86** | 16.13 | 7.7 |
 
 ⚠️ **The rotation flatters `greedy` by 1.43 points a seat — about a sixth of the gap** — because
 it seats every `greedy` downstream of a `simple`. It is not wrong: it answers *"what happens at
@@ -371,7 +389,7 @@ unless they are not really playing.*
 
 ## 6. The harness measuring itself
 
-**The null test.** One rung against a copy of itself under another name, 8,008 games. Two labels
+**The null test.** One rung against a copy of itself under another name, 8,010 games. Two labels
 of one strategy differ in *nothing*, so any gap between them is the apparatus — a seat that opens
 first, a seating that is not balanced, an estimator that counts seats as trials.
 
@@ -451,7 +469,7 @@ changes touched — so a run that moved 87 of 91 published numbers moved this ta
 
 ## 7. What this apparatus can and cannot resolve
 
-At 8,008 games a cell the standard error on a head-to-head margin between two thinking rungs is
+At 8,010 games a cell the standard error on a head-to-head margin between two thinking rungs is
 **0.52 points**, so the 95% half-width is **1.02**.
 
 - **Anything smaller than about a point is reported as inside the interval** and is not claimed.
@@ -520,7 +538,7 @@ is now the reason nobody has to wonder.
   — how many runs a rank sits in at all, and second-order blockages.
 - **`counting` — remember every card you have been shown.** Worth **`+0.4 ± 1.0` points to
   `greedy`**, i.e. not separated and pointing the wrong way; `cautious` is `+0.5 ± 1.0` ahead of
-  it (8,008 games a cell). 🔥 **It is not that the memory does not work — it does, and a
+  it (8,010 games a cell). 🔥 **It is not that the memory does not work — it does, and a
   test says so.** A counting seat's estimate of what is left really does fall below what
   `cautious` would say for every card it has watched go by, and stays at the full two copies for
   every value it has not.
@@ -540,7 +558,7 @@ is now the reason nobody has to wonder.
 - **`warden` — play the feeding ban at somebody.** Worth **`−9.3 ± 1.0` points against `outs`**,
   and `−6.2 / −6.1 / −6.2` against `greedy`, `cautious` and `counting`; it beats `simple` by
   `+2.5 ± 1.0` and nothing else. **All six margins survive Holm over a family of twenty-one**
-  (8,008 games a cell). 🔥 **It is the only rung whose failure has a measured mechanism rather than
+  (8,010 games a cell). 🔥 **It is the only rung whose failure has a measured mechanism rather than
   an argued one**, and §13 is that measurement: the rule it plays **bites on 9.4% of every turn in
   the field**, so the idea was not starved of opportunity. ⚠️ **What it got wrong is the price, and
   the price is in the wrong currency.** It refuses to buy a lock that would cost it a *melded
@@ -565,6 +583,21 @@ entitled to be incomplete, and its lower rungs play a *different and worse idea*
 right idea badly. **A weaker player plays the right idea and slips.** So every level is the
 strongest rung there is wearing a **mistake rate** — with probability ε it throws the card that
 rung ranked *second* instead of the one it ranked first, and nothing else about it changes.
+
+🔥 **Re-fitted a third time by P32, at five seats — and this time nothing moved at all, against a
+prediction that at least one value would have to.** The reasoning behind the prediction was sound:
+a five-handed table's base win rate is 20% rather than 25%, so every margin rescales by 0.800 (see
+the top of this document) and the dial's steps should compress with them toward the ~1-point
+resolution floor. ❌ **They did not compress.** The sweep at five seats asks for `hard` ≈ 0.42 and
+`medium` ≈ 0.67 — **the shipped 0.4 and 0.7 inside the rounding** — and the reference table's steps
+came out **6.0 / 7.9 / 6.6** against four-handed's 7.1 / 7.9 / 8.0. ✅ **All three adjacent margins
+still survive Holm**, at five seats and, separately checked, at four and six
+(`docs/strategy/dial-away-from-the-default-table.md`).
+
+🔥 **So ε is close to being a property of the mistake rather than of the rung *or of the table*** —
+P23's finding holding across a second axis it was never tested on. ✅ **That is what makes *one
+dial* the right product decision** rather than one calibration per table size: a level means the
+same thing wherever you sit, and three calibrations would be three ways for the menu to lie.
 
 ✅ **Re-fitted on 2026-08-20 against `outs`, and re-measured unchanged on 2026-08-21 under
 P25–P28.** P19 placed these four against `greedy`; P21 promoted `outs` (§3) and re-based every
@@ -591,12 +624,13 @@ place is what produced the 4.3-point middle step above, which is a dial with a f
 | `medium` | 0.70 | throws the wrong one of two good cards more often than not |
 | `easy` | 0.90 | gets it wrong nearly every time |
 
-⚠️ **ε is not the dial; results are.** Measured over a sweep of seven mistake rates on `outs`,
-4,802 games at every balanced seating:
+⚠️ **ε is not the dial; results are.** Re-swept at **five seats** by P32 — seven mistake rates on
+`outs`, **16,807 games**, one full pass of every balanced seating
+(`docs/strategy/epsilon-sweep-5-handed.txt`):
 
 | ε | 0 | 0.1 | 0.2 | 0.35 | 0.5 | 0.75 | 1 |
 |---|--:|--:|--:|--:|--:|--:|--:|
-| win % | 33.6 | 33.7 | 30.9 | 27.1 | 24.1 | 18.1 | 7.5 |
+| win % | 27.5 | 26.3 | 24.7 | 22.9 | 19.4 | 13.1 | 6.0 |
 
 **Levels spaced evenly in ε would not be spaced evenly in play** — the last quarter of the dial is
 worth more than the first half of it — so the four are placed by inverting that curve. 🔥 **And
@@ -607,14 +641,16 @@ two names for one opponent.
 
 ### The reference table — all four levels at one table, fully crossed
 
-256 assignments across four seats, 8,192 games, 5,600 of them holding any one level.
+**1,024** assignments across **five** seats, 8,192 games, 6,248 of them holding any one level.
+⚠️ **A five-handed table's base win rate is 20%, not 25%**, so every figure here is lower than
+the four-handed one by construction — the **steps** are the measurement.
 
 | level | win % | step |
 |---|--:|--:|
-| `expert` | **36.74 ± 0.87** | — |
-| `hard` | **28.67 ± 0.84** | −8.1 |
-| `medium` | **20.84 ± 0.78** | −7.9 |
-| `easy` | **13.75 ± 0.68** | −7.1 |
+| `expert` | **30.58 ± 0.73** | — |
+| `hard` | **22.97 ± 0.69** | −7.6 |
+| `medium` | **16.15 ± 0.63** | −6.8 |
+| `easy` | **10.30 ± 0.55** | −5.8 |
 
 ### The steps, head to head
 
@@ -625,9 +661,9 @@ at the table, and each margin is the **paired** one (§1 rule 4).
 
 | step | margin | Holm |
 |---|--:|---|
-| `expert` over `hard` | **+7.03 ± 1.01** | separated |
-| `hard` over `medium` | **+9.33 ± 1.01** | separated |
-| `medium` over `easy` | **+11.06 ± 1.00** | separated |
+| `expert` over `hard` | **+6.54 ± 0.80** | separated |
+| `hard` over `medium` | **+7.93 ± 0.80** | separated |
+| `medium` over `easy` | **+9.12 ± 0.79** | separated |
 
 ✅ **Every step clears the correction, and the narrowest of them is 7.0× the half-width.** A level
 that could not be separated from its neighbour would be deleted rather than shipped (§3.12
@@ -667,8 +703,12 @@ than none, and proofreading is not a mitigation.**
 # the calibration, on its own
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy,medium,hard,expert --pairs adjacent --games 8000 --seed 20260819
 
+# the dial away from the default table — P32's monotonicity check, kept verbatim in
+# docs/strategy/dial-away-from-the-default-table.md because it is not part of the standing set
+dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy,medium,hard,expert --pairs adjacent --seats 6 --games 2000 --seed 20260819
+
 # the sweep that placed the four values
-dotnet run -c Release --project BurmesePoker.Sim -- --strategies outs@0,outs@0.1,outs@0.2,outs@0.35,outs@0.5,outs@0.75,outs@1 --seating balanced --games 4802 --seed 20260819
+dotnet run -c Release --project BurmesePoker.Sim -- --strategies outs@0,outs@0.1,outs@0.2,outs@0.35,outs@0.5,outs@0.75,outs@1 --seating balanced --seats 5 --games 16807 --seed 20260819
 
 # and the candidate spacing, checked at the reference table before the full run
 dotnet run -c Release --project BurmesePoker.Sim -- --strategies outs@0.9,outs@0.7,outs@0.4,outs@0 --seating balanced --games 8192 --seed 20260819
@@ -708,17 +748,17 @@ melded cards is the round, so one card is a thirteenth of it.
 
 ### The sweep
 
-Head to head against `outs`, 8,008 games a cell, every seating in which both are at the table,
+Head to head against `outs`, 8,010 games a cell, every seating in which both are at the table,
 paired margins (§1 rule 4), Holm-corrected over the four cells. ⚠️ **The money column is the
 verdict and the win rate is beside it**, because a rung that wins fewer rounds and banks more is
 the better player.
 
 | stakes | money card is worth | `prospector` take % | **$ a round** | win % | Holm |
 |---|--:|--:|--:|--:|---|
-| **$5/$1** — as played | 0.2 rounds | 24.3 | **+0.07 ± 0.29** | +0.5 ± 1.0 | inside |
-| $5/$10 | 2 rounds | 13.8 | **−0.66 ± 1.15** | −7.9 ± 1.0 | inside |
-| $5/$20 | 4 rounds | 0.1 | **+4.13 ± 2.26** | −20.2 ± 0.9 | **separated** |
-| $5/$40 | 8 rounds | 0.0 | **+13.43 ± 4.47** | −20.2 ± 0.9 | **separated** |
+| **$5/$1** — as played | 0.2 rounds | 24.8 | **-0.23 ± 0.32** | -0.6 ± 0.8 | inside |
+| $5/$10 | 2 rounds | 14.7 | **-0.35 ± 1.24** | -5.9 ± 0.8 | inside |
+| $5/$20 | 4 rounds | 0.1 | **+3.98 ± 2.43** | -16.0 ± 0.8 | **separated** |
+| $5/$40 | 8 rounds | 0.0 | **+14.20 ± 4.81** | -16.0 ± 0.8 | **separated** |
 
 `outs` takes about 24% of its cards off the pile in every cell, which is the control: the only
 thing moving down that column is the rule firing.
@@ -744,7 +784,7 @@ four rounds" to "at or below four rounds".**
 ### The answer
 
 🔥 **No — at the stakes this game is actually played for, and P26 did not change that.** At
-$5/$1 the rule **never fires at all**: one melded card is worth about a dollar at a four-handed
+$5/$1 the rule **never fires at all**: one melded card is worth about a dollar at this
 table and the ownership a blind draw confers is worth pennies, so the comparison is never close.
 `prospector` and `outs` are **the same player under two names at $5/$1**, and that is an identity
 rather than a measurement — two tables of one rung each, dealt from the same shoes, play the same
@@ -797,7 +837,9 @@ and measured by nothing is the failure this whole section exists to make impossi
 ## 11. Regenerating this document's data
 
 ```bash
-# the standing set — writes docs/strategy/measurements.csv. ⚠️ About three hours (11,159 s at P33).
+# the standing set — writes docs/strategy/measurements.csv. ⚠️ About three and a half hours
+# (12,445 s at P32, five-handed). It is five seats by default since P32 — `--seats 4` regenerates
+# the four-handed set, which is kept frozen at docs/strategy/measurements-4-handed.csv.
 # No --strategies: the field is a filter of BotCatalog, and between the ladder tournament
 # and the money sweep every rung there is gets measured exactly once.
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seed 20260819
@@ -889,9 +931,9 @@ never published.**
 
 | field | turns a round | games abandoned at the turn cap |
 |---|--:|--:|
-| the ladder, all seven rungs crossed | 28.8 | **0.094%** — 9 games of 9,604 |
-| the difficulty dial, all four levels crossed | 30.0 | 0 of 8,192 |
-| `outs/refuse` against `outs/allow` | 23.9 | 0 of 8,008 |
+| the ladder, all seven rungs crossed | 29.9 | **0.006%** — 1 game of 16,807 |
+| the difficulty dial, all four levels crossed | 31.9 | 0 of 8,192 |
+| `outs/refuse` against `outs/allow` | 25.5 | 0 of 8,010 |
 
 🔥 **Why this is here at all, and it is P27's doing.** Every rung's cover count used to be
 monotone — *throwing back the card just taken restores the hand exactly* — which is
@@ -935,10 +977,10 @@ holder may refuse. So P29 measured it.
 
 | | value |
 |---|--:|
-| rounds in which the opener asks for the card | **24.8–28.5%** |
-| of those, how often the upstream seat vetoes | **51.7%** at the ladder, **53.7%** at the dial |
-| `outs/refuse` over `outs/allow`, win rate | **+0.4 ± 1.0** — inside the interval |
-| `outs/refuse` over `outs/allow`, money a round | **+0.06 ± 0.29** — inside the interval |
+| rounds in which the opener asks for the card | **25.3–28.6%** |
+| of those, how often the upstream seat vetoes | **51.0%** at the ladder, **54.2%** at the dial |
+| `outs/refuse` over `outs/allow`, win rate | **-0.3 ± 0.8** — inside the interval |
+| `outs/refuse` over `outs/allow`, money a round | **-0.11 ± 0.32** — inside the interval |
 
 ✅ **The money row is paired now and the correction has landed** (review R3, raised 2026-08-21,
 regenerated by P31 the same day). It had been computed with the independent formula on a
@@ -956,7 +998,7 @@ veto rate and the round lengths — **the two arms play the same rounds they alw
 stands, on a slightly larger currency.
 
 🔥 **A null, published** (the discipline P20 set). Two arms of one rung differing in exactly that
-one answer, 8,008 games, and neither the win rate nor the money can tell them apart. ⚠️ **This is
+one answer, 8,010 games, and neither the win rate nor the money can tell them apart. ⚠️ **This is
 not "the rule does not matter"** — it is *"which way you answer it does not matter, at this
 resolution, to a rung that models neither the disclosure nor the lock"*. §7 puts the floor at
 about a point of win rate; the effect is somewhere inside that.
@@ -1008,8 +1050,8 @@ nothing in the engine may call, ranking the *whole hand* beside the ranking of t
 
 | field | discards chosen | the lock was **live** | of those, the lock **bit** | share of every turn |
 |---|---:|---:|---:|---:|
-| the ladder, all seven rungs crossed | 275,958 | **30.5%** | **30.8%** | **9.4%** |
-| the difficulty dial, all four levels crossed | 246,168 | **26.3%** | **22.3%** | **5.9%** |
+| the ladder, all seven rungs crossed | 502,830 | **26.1%** | **29.8%** | **7.8%** |
+| the difficulty dial, all four levels crossed | 260,976 | **23.0%** | **21.9%** | **5.0%** |
 
 *Live* means the ban had removed at least one held card from the choice. *Bit* means the card the
 seat would have thrown over its whole hand is not the card it threw over its legal set.
@@ -1046,18 +1088,19 @@ bought it comparable with the 108 rows that did not.
 about what a win is *worth* rather than about who wins.**
 
 🔥 **The rule.** A declaration with **no joker anywhere in the thirteen** pays the winner **×2** the
-round value at two, three or four seats and **×3** at five or more. It is `EXPERT` and Settled, and
+round value at two, three or four seats and **×3** at five or more — so at this document's table it
+is **×3**. It is `EXPERT` and Settled, and
 it was volunteered — and then corrected the same day — by Mya Lay while she was answering a
 question about something else. At the standard $5 stakes it takes a four-handed win from $15 to
-**$30** and a five-handed one from $20 to **$60**.
+**$30**, and a five-handed one from $20 to **$60**.
 
 | field | rounds settled | **won jokerless** |
 |---|---:|---:|
-| the ladder, all seven rungs crossed | 9,595 | **15.4%** |
-| the difficulty dial, all four levels crossed | 8,192 | **16.2%** |
-| the two-arm claim-permission cell | 8,008 | **17.4%** |
+| the ladder, all seven rungs crossed | 16,806 | **12.1%** |
+| the difficulty dial, all four levels crossed | 8,192 | **12.0%** |
+| the two-arm claim-permission cell | 8,010 | **12.4%** |
 
-**So about one round in six is worth double**, at a four-handed table of rungs that have never
+**So about one round in eight is worth triple**, at a five-handed table of rungs that have never
 heard of the rule.
 
 ⚠️ **Read that as a floor, and there are two independent reasons why.**
@@ -1086,14 +1129,20 @@ arrived without either being changed for the other's sake.
 jokerless — only how often one was. A rung that valued the bonus would trade cover count for
 cleanliness and the rate would move; **by how much is unmeasured and is the obvious next
 experiment.** 🔥 **And the arithmetic already says roughly what the prize for trying is worth**:
-at four seats the bonus pays **+$5 a head**, against a whole round's flat prize of $5 a head — so a
-rung that could turn one round in six into one in three would be collecting an extra sixth of a
-round's prize every round, which is well inside what this apparatus resolves (§7).
+at five seats the bonus pays **+$10 a head** against a whole round's flat prize of $5 a head — so a
+rung that could turn one round in eight into one in four would be collecting an extra half of a
+round's prize every round, which is far inside what this apparatus resolves (§7).
 
-⚠️ **And it does not reach five seats, where the rule pays most.** Everything above is four-handed,
-and §7.1.1 requires a joker-free series at four seats and nothing at all at five — so at five seats
-the bonus is **the only thing cleanliness is ever worth**, and it pays ×3 rather than ×2. **That is
-`BUILD-PLAN.md` P32's measurement, not this one's.**
+✅ **P32 answered the paragraph that used to stand here, which said this had not reached five
+seats.** It has: everything above **is** five-handed now, and the four-handed figures it is
+compared against are frozen at `docs/strategy/measurements-4-handed.csv`. 🔥 **Both halves of the prediction
+held, and they pull opposite ways.** §7.1.1 requires a joker-free series at four seats and nothing
+at all at five, so four-handed play is pushed toward clean hands and five-handed play is not — and
+the rate **fell**, 15.4% → **12.1%**. But the bonus pays **×3 to four losers** rather than ×2 to
+three, so a clean win is worth **+$40** over flat rather than +$15. ✅ **Expected value a round went
+$2.31 → $4.84**: collected less often, worth more than twice as much, **and value wins by better
+than two to one.** ⚠️ **So the incentive to build a rung that plays for the bonus is larger at the
+default table than the four-handed arithmetic suggested**, not smaller.
 
 ```bash
 # the ladder cell this rate comes from — the bonus rows are bonus.jokerless-rate.*

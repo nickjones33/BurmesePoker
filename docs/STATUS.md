@@ -10,94 +10,128 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-🔥 **`P33` shipped 2026-08-22 on Opus 5: `RULES.md` §7.3, the clean bonus, is built — and the
-regeneration behind it is the cleanest reproduction this project has recorded.** A **jokerless**
-declaration pays **×2** at two, three or four seats and **×3** at five or more.
-`TableRules.JokerlessMultiplier` holds that table beside §7.1.1's, in the one place a
-per-seat-count rule is written down; `Settlement.IsJokerless` is the predicate — a scan of the
-declared thirteen — and `Settlement.RoundPayment(stakes, rules, jokerless)` is the whole of the
-arithmetic. ⚠️ **`Meld.IsClean` is not consulted anywhere in it**: that implements §7.1.1's
-*required clean series*, a different rule that shares a word.
-✅ **§10 #19 is discharged, and `RULES.md` again records nothing Settled that nothing implements.**
+🔥 **`P32` shipped 2026-08-22 on Opus 5: the standing answer is about a *five-handed* table, and
+the headline is a negative result about this project's own published explanation.**
+`SuiteOptions.Seats` read `RoundEngine.MinimumPlayers` until this packet — so **every figure
+published between P12 and P33 was four-handed because four is the smallest legal table, not
+because anybody chose it.** `RoundEngine.DefaultPlayers = 5` is now the one place the default
+table is written down; the browser lobby and every `--seats` default in `Sim` read it.
 
-🔥 **The headline: 111 of the 116 shared CSV rows came back byte-identical, and the five that moved
-are exactly — and only — the five rows denominated in dollars a round.** The prediction was written
-down before the run: **no rung reads the bonus, so play cannot move and only money can.** Every win
-rate, every head-to-head cell, every take rate, the whole difficulty dial, **every side-bet
-margin**, the turn counts and the whole of §13 reproduced to the digit.
-⚠️ **Contrast P29's 4 of 91.** P25–P28 changed what a winning hand *is*, so nothing could survive;
-this changed what winning *pays*. 🔥 **"Does it reproduce" has a third answer now — *it reproduces
-everywhere the change could not reach* — which is a sharper instrument than either of the first
-two, and a later packet that changes one layer should expect to see it.**
+🔥 **❌ P29's explanation is falsified.** P29 attributed the four-handed levelling of `simple` to
+§7.1.1's joker-free series requirement. At five seats that requirement is **gone**, so the gap
+should have re-opened. ⚠️ **Reading the raw margins would have said it *narrowed*, and that is
+also wrong**: a fifth seat drops the base win rate 25% → 20%, so **every margin rescales by
+0.800**. **Median ratio over all eighteen head-to-head cells: 0.801**, and the six `random` rows
+land on 0.800 to three digits. `simple`'s gaps to `greedy` and `counting` came in at **7.42 and
+7.96 against a pure-scale prediction of 7.36 and 7.90** — within a tenth of a point of an interval
+of ±0.8. **Removing the requirement did nothing.** 🔥 **The five-handed ladder is the four-handed
+ladder divided by 1.25** — every Holm verdict identical, the same eighteen separated and the same
+three inside — **and what actually causes the levelling is now unknown.**
 
-🔥 **The five rows are a finding, not bookkeeping: the clean bonus is a tax on trading wins for
-money.** Every one is a `prospector`-over-`outs` `net per round margin`, and every one **fell** —
-**`+5.32 → +4.13`** at $5/$20 and **`+14.63 → +13.43`** at $5/$40, about $1.20 a round at both
-separated cells (**both still separate under Holm**). The mechanism is one sentence: **the bonus
-multiplies the round prize, and the round prize is what `prospector` sells.** It wins twenty points
-fewer rounds, so `outs` collects the multiplier far more often. ✅ **This is the first measured
-interaction between the money layer and the scoring layer in this project.**
+✅ **Four other predictions were written down before the run and all four held.** The jokerless
+rate **fell** 15.4% → **12.1%** (§7.1.1 pushes four-handed play toward clean hands and five-handed
+play not at all); what the bonus is worth **rose** from +$15 to **+$40** over flat (×3 to four
+losers, not ×2 to three); **value wins by better than two to one** — expected **$2.31 → $4.84 a
+round**; and the null cell reads **20.3 / 19.7** against 20%.
 
-🔥 **Measured: the bonus is collected in about one round in six** — **15.4%** at the ladder, 16.2%
-at the dial, 17.4% at the two-arm cell (`docs/STRATEGY.md` §14) — **by rungs that have never heard
-of the rule.** ⚠️ **Published as a floor, for two independent reasons.** (1) `CoverScore.Potential`
-returns `int.MaxValue` for a joker, so **no rung will part with one** and every declaration counted
-came out clean by accident. (2) §9 **#33** is open on whether a joker may be shed before the
-declaring discard, and P33 built the default that says it may not — so a hand needing to shed one a
-turn early **cannot reach the bonus at all**.
+🔥 **The dial prediction was the fifth, and it was wrong in the useful direction.** The steps were
+expected to compress with the base rate and force at least one ε to move. **Nothing moved.** The
+five-handed sweep asks for `hard` ≈ 0.42 and `medium` ≈ 0.67 — the shipped 0.4 and 0.7 inside the
+rounding — and the reference table reads **6.0 / 7.9 / 6.6** against four-handed's 7.1 / 7.9 / 8.0.
+✅ **So ε is close to a property of *the mistake* rather than of the rung *or of the table***,
+which is P23's finding holding on an axis it was never tested on. ✅ **One dial, not one per table
+size** — the packet's first open decision, taken on measurement: **separated at four, five and six
+seats**, evidence kept verbatim at `docs/strategy/dial-away-from-the-default-table.md`.
 
-⚠️ **The defect surface this packet is really about, and it is worth remembering: a net delta is
-split in three places and only one of them is the domain.** `Settlement` returns one number;
-**two consumers re-derive the round/side-bet split in order to display it** — the console's
-settlement panel and `Sim`'s `SeatRow.Flat`/`SideBet` — and both computed the round half as
-`RoundValue`. **Left alone, the bonus would have landed silently in the side-bet column that every
-money measurement reads**, and every `money.side-margin.*` row would have moved for a reason having
-nothing to do with the side bet. ✅ **`Settlement.RoundPayment` is public for exactly that**, and
-**the unchanged side-margin rows are the evidence it was done right.**
+✅ **The packet's other two decisions, both measured rather than guessed.** **(1) Full crossing,
+nothing subsampled.** `BUILD-PLAN` feared the five-handed free-for-all (`7⁵ = 16,807`) would be
+"plausibly the majority of the run" — ⚠️ **that guess was wrong**: a full pass of the seven-rung
+crossing at four seats is **2,401 games in 51 s**, so the five-handed pass is ~7 minutes of a
+12,445 s suite. `SeatingPlan.MaximumAssignments` raised 4,096 → 32,768 with the measurement in the
+remark. **(2) The four-handed set is kept whole**, frozen at
+`docs/strategy/measurements-4-handed.csv`, fenced by a test asserting every row of it says
+`seats=4`. **P12's headline is published at both sizes** — `headline.*.4-handed.*` and
+`headline.*.5-handed.*` — so the project's longest-running measurement keeps its continuity.
 
-⚠️ **P32 was deliberately not folded in, against `BUILD-PLAN`'s own recommendation.** Rev 26 argued
-that at five seats the bonus is the only thing cleanliness is worth, so the two are one measurement.
-**P33 ran four-handed anyway**, on this plan's own P31-before-P32 argument: a run that changes the
-scoring rule *and* the table size cannot say which moved a number — **and the entire result above is
-a statement about which rows a change can reach.** ✅ **It cost a second three-hour suite and bought
-the cleanest reproduction in the project; P32 now starts from a complete, current baseline.**
-🔥 **P32 also inherits a prediction**: §7.1.1 asks for a clean series at four seats and **nothing**
-at five, while §7.3 pays ×2 at four and ×3 at five — **so the jokerless rate should fall and what it
-is worth should rise. Which of those wins is the most interesting number that packet can produce,
-and it should be written down before the run.**
+⚠️ **`sim bench` gained `--seats`, and it had none**: there was no way to price a five-handed round
+at all. A five-handed round costs ~15% more than a four-handed one for the `outs` family (8.5 vs
+9.8 rounds/s), and 🔥 **`HandEvaluator` is *cheaper* at five seats** (108 vs 110 µs/hand) — §7.1.1
+asks less of a five-handed hand, exactly as predicted.
 
-⚠️ **Six tests changed their expected payouts and none of them was wrong before** — every
-hand-computed four-handed settlement in the suite turned out to be a jokerless declaration, so all
-six doubled. 🔥 **That is a small measurement of its own**: the scripted hands this project reaches
-for when it wants a winning thirteen are clean ones, which hints the 15.4% floor understates what a
-*person* would reach.
+⚠️ **The suite cost 12,445 s (3h27) against P33's 11,159 s**, for 123 measurements against 119.
 
-✅ **No rung plays for the bonus, and that was deliberate** (the packet's build item 3). A rung that
-sheds a joker for the multiplier is a **new rung** under P15's discipline — measured before it joins
-the ladder — not a change to `outs`. 🔥 **The arithmetic says it is worth trying**: at four seats the
-bonus pays **+$5 a head** against a whole round's flat prize of $5 a head, so turning one round in
-six into one in three is worth about a sixth of a round's prize every round — **well inside what the
-apparatus resolves** (`STRATEGY.md` §7).
+---
 
-✅ **§7.3's registry entry is `Checked(...)` now rather than `Exempt(...)`** — the alarm rev 26 set
-off is answered rather than silenced. `RuleConformance` re-derives the bonus from the seat count and
-the melds laid down, and the mutant catches a clean hand paid flat, a jokered one paid the bonus,
-**and five seats paid at the four-seat multiplier**. ✅ **`docs/STRATEGY.md` §14 is new**, and
-`StandingAnswerTests.TheDocumentSaysHowOftenTheCleanBonusIsActuallyCollected` fails the build if the
-rate stops being published.
+## Rules: three revisions landed this session, and one of them makes the engine wrong
 
-⚠️ **No rules question arose and `RULES.md` stays at rev 26** — §7.3's *"nothing here is built"* is
-replaced and §10 #19 is discharged, both status rather than a rule moving, so
-`JournalHeader.CurrentRulesRevision` is unchanged at 26. **§9 #33, #36 and #37 remain open**, each
-built on its recorded default and each fenced by a named test.
+🔥 **`RULES.md` went 26 → 29 on 2026-08-22, from a conversation with Nick and Aung Aung, and none
+of it is built.** `JournalHeader.CurrentRulesRevision` is **29**.
 
-⚠️ **A `drive-console.py` capture from before this packet no longer compares** — the settlement
-panel says *"Jokerless — the round pays ×N"* when the bonus is paid, and the Round column doubles.
-The driver's own arithmetic check passes (it verifies the split rather than the amount), and a fresh
-capture was taken and verified during the packet.
+- **Rev 27 — §7.4 and §7.5, from Aung Aung.** *"If you win on an initial deal you get double
+  payout"*, and *"if you win three in a row then the player proceeding you in turn order pays your
+  whole payout (blamed for feeding)."* 🔥 **§7.5 is the first rule in this document that cannot be
+  settled from a single round**, and the first that changes **who pays** rather than how much.
+  ✅ **It is also the third independent saying to single out the seat *above* you** — §5.1 bans
+  feeding the seat below, §4.5 needs the permission of the seat above, §7.5 blames the seat above.
+  **Seven questions opened at once (§9 #38–#44)**, the largest single addition that section has
+  taken. **§10 #20 and #21; packet P35.**
+- 🔥 **Rev 28 — §7.5 contradicted §3, and the *old* rule was the wrong one.** §7.5's blame means
+  nothing if the seat above you changes every deal. Asked directly (§9 #43), **Aung Aung: in real
+  games you don't shuffle seats every round, only when people ask for it.** ✅ **§3 step 2 is
+  corrected — a seating is drawn once and held** — and rev 19's *"every round, not once"* is
+  **withdrawn**. ⚠️ **So the engine contradicts the document again, in the opposite direction to
+  the error P28 fixed** (§10 **#22**): P28 built the reading now withdrawn, and pre-P28 held a
+  seating but could never change it. **The fix is not a revert.**
+- **Rev 29 — Nick ruled §9 #45**: a re-seating happens *"when people agree to do it"*, not when one
+  player asks. `PLAYER`, so `EXPERT` may still overturn it. ⚠️ **It reverses that row's own
+  recommendation** — *one asking is enough* was recommended because it invents no machinery, and
+  **the more expensive reading is the one taken.** Opens **#47** (everybody, or most?) and §10
+  **#23**.
 
-🔥 **Nothing is in progress and the tree is green at 733 passed / 0 failed**, from 715. **`P32` is
-next**; **`P34`** (the front door) needs no expert answer and collides with nothing.
+🔥 **The heuristic that found rev 28 is worth keeping: when two Settled `EXPERT` rules collide,
+suspect the older recording rather than the newer saying.** It was written into §9 as a
+prediction *before* #43 was asked, and it was right.
+
+✅ **No published measurement is affected by any of it.** §7.4 and §7.5 are unbuilt; §3's
+correction cannot reach a figure because every experiment runs `RoundsPerGame = 1`.
+
+⚠️ **`SettledRuleCoverageTests` fired, exactly as designed**, the moment §7.4 and §7.5 were marked
+Settled. They are registered `Exempt(...)` with reasons naming §10 #20/#21 and P35 — **converting
+them to `Checked(...)` is P35's acceptance 1**, in the way P33 converted §7.3's. ⚠️ **§3's entry
+now says out loud that `TheSeatingIsRedrawnEveryRoundAfterTheFirst` pins a behaviour the rules
+authority contradicts**, and it is left standing rather than deleted so the seating is not
+unasserted altogether.
+
+---
+
+## What is next, and it changed twice this session
+
+1. **`P24.2` — the computer's reasoning, said out loud.** ✅ **Nick asked for it on 2026-08-22**,
+   from the browser: the hint arrow is there and the *why* is not. Its *whether* had been open
+   since 2026-08-20. 🔥 **Two things a cold session must know.** **(1) P31 already built half of
+   build item 1** — `IRanksDiscards.RankDiscards(context, candidates)` returns an ordered
+   candidate list; **what is missing is the keys, not the ranking.** **(2) The browser already has
+   five `<details>Why?</details>` blocks** in `TurnPrompt.razor` holding **static rule text**,
+   ungated because a rule is not advice. **The affordance exists; what P24.2 adds is a computed
+   paragraph inside it, gated on hints while the rule text around it is not.**
+   ⚠️ **And P32 created a new trap for it**: at five seats §7.1.1 asks for **no series at all**, so
+   an explanation phrased in terms of runs is **false at the table the browser now deals.**
+2. **`P36` — how long a seating holds** (§10 #22). ⚠️ **Revert-shaped and must not be a revert.**
+3. **`P37` — asking the table to change seats** (§10 #23, §9 #45). 🔥 **The first *public* question
+   this project has ever asked** — `SeatPrompt` is seat-private by construction — and the first
+   asked *between* rounds. ✅ **A computer seat consents**: a design decision, recorded in
+   `BUILD-PLAN` §3 rather than invented as a rule, because a bot that abstained would make the
+   rule dead at every table with a bot in it.
+4. **`P35` — §7.4 and §7.5.** ✅ Unblocked by rev 28, ⚠️ **but now depends on P36**: a streak
+   blamed on the seat above you needs a seating that survives three rounds.
+5. **`P34` — the front door.** Still needs no expert answer and collides with nothing.
+
+⚠️ **One leftover P32 did not take: the console still deals four.** `Console/Program.cs`'s seat
+prompt defaults to `RoundEngine.MinimumPlayers`. The browser was moved to `DefaultPlayers` when
+Nick asked for it mid-session; the console was left because changing it invalidates
+`drive-console.py`'s captures and was not in P32's build list. **One line plus a re-capture.**
+
+⚠️ **The tree is green at 736 tests**, from 733.
 
 ---
 

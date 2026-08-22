@@ -42,7 +42,37 @@ public sealed class RoundEngine
     public const int HandSize = 13;
 
     /// <summary>Fewest players a round may be dealt for.</summary>
+    /// <remarks>
+    /// ⚠️ <b>Not the same thing as <see cref="DefaultPlayers"/>, and P32 is the packet that
+    /// found out why it matters.</b> Every default in the project read this constant, so the
+    /// table everything was built and measured at was four <em>because four is the smallest
+    /// legal one</em> and not because anybody chose it.
+    /// </remarks>
     public const int MinimumPlayers = 4;
+
+    /// <summary>
+    /// Players a table is dealt for unless somebody says otherwise — <b>five</b> (BUILD-PLAN P32).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>A decision, written down once.</b> Five is the size this game is actually played
+    /// at, and by <c>RULES.md</c> §7.1.1 and §7.3 it is a genuinely different game from the
+    /// four-handed one: a five-handed declaration owes <em>no series at all</em> where a
+    /// four-handed one owes a joker-free run, and a jokerless hand is paid ×3 rather than ×2.
+    /// <b>"The minimum table" and "the default table" are not interchangeable</b>, and reading
+    /// one for the other is how the whole standing measurement set came to be about a table
+    /// nobody had chosen.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Every front end and the harness read this</b> — the browser lobby's opening plan
+    /// and <c>SuiteOptions.DefaultSeats</c> — so moving the default table is one edit rather
+    /// than five. The difficulty dial is calibrated at this size and is separately measured to
+    /// be monotone and separated at four and six
+    /// (<c>docs/strategy/dial-away-from-the-default-table.md</c>), so a level means the same
+    /// thing wherever somebody sits.
+    /// </para>
+    /// </remarks>
+    public const int DefaultPlayers = 5;
 
     /// <summary>
     /// Most players a round may be dealt for. Six is where the arithmetic runs out: at seven

@@ -65,7 +65,7 @@ static int Run(string[] args)
     }
 
     var strategies = Ladder(arguments.Value("strategies", "greedy,simple"));
-    var seats = arguments.Number("seats", 4);
+    var seats = arguments.Number("seats", SuiteOptions.DefaultSeats);
     var balanced = arguments.Value("seating", "rotate").Equals("balanced", StringComparison.OrdinalIgnoreCase);
 
     var options = new SimulationOptions
@@ -139,7 +139,7 @@ static int Neighbours(string[] args)
         Levels = Ladder(arguments.Value("levels", "random,simple,greedy,cautious")),
         Filler = StrategyCatalog.Resolve(arguments.Value("filler", "simple")),
         Reference = StrategyCatalog.Resolve(arguments.Value("reference", "greedy")),
-        Seats = arguments.Number("seats", 4),
+        Seats = arguments.Number("seats", SuiteOptions.DefaultSeats),
         GamesPerCell = arguments.Number("games", 2000),
         MasterSeed = arguments.Number("seed", 20260819),
         TurnCap = arguments.Number("turn-cap", 400),
@@ -238,7 +238,7 @@ static int RunTournament(string[] args)
     var options = new TournamentOptions
     {
         Strategies = strategies,
-        Seats = arguments.Number("seats", 4),
+        Seats = arguments.Number("seats", SuiteOptions.DefaultSeats),
         GamesPerCell = arguments.Number("games", 2000),
         MasterSeed = arguments.Number("seed", 20260819),
         TurnCap = arguments.Number("turn-cap", 400),
@@ -423,7 +423,7 @@ static int RunMoney(string[] args)
             arguments.Value("challenger", BotCatalog.StakesSensitive[^1].Name)),
         Reference = StrategyCatalog.Resolve(arguments.Value("reference", BotCatalog.Ladder[^1].Name)),
         Ratios = Ratios(arguments.Value("ratios", string.Empty)),
-        Seats = arguments.Number("seats", 4),
+        Seats = arguments.Number("seats", SuiteOptions.DefaultSeats),
         GamesPerCell = arguments.Number("games", 2000),
         MasterSeed = arguments.Number("seed", 20260819),
         TurnCap = arguments.Number("turn-cap", 400),
@@ -549,7 +549,7 @@ static int RunSuite(string[] args)
     var options = new SuiteOptions
     {
         Strategies = Ladder(arguments.Value("strategies", WholeLadder())),
-        Seats = arguments.Number("seats", 4),
+        Seats = arguments.Number("seats", SuiteOptions.DefaultSeats),
         GamesPerCell = arguments.Number("games", 2000),
         MasterSeed = arguments.Number("seed", 20260819),
         TurnCap = arguments.Number("turn-cap", 400),
@@ -705,6 +705,22 @@ static int Bench(string[] args)
     var hands = arguments.Number("hands", 2000);
     var random = new Random(arguments.Number("seed", 20260818));
 
+    // ⚠️ The table size is an argument since P32, and it was hard-coded to four until then —
+    // so there was no way to price a five-handed round at all, which is the first thing a
+    // packet that moves the standing set to five seats needs. It is not a free parameter of the
+    // cost either: RULES.md §7.1.1 asks a *different question* of a declared hand at each size,
+    // so HandEvaluator's price moves with it and not only the number of seats does.
+    var seats = arguments.Number("seats", SuiteOptions.DefaultSeats);
+
+    if (seats is < RoundEngine.MinimumPlayers or > RoundEngine.MaximumPlayers)
+    {
+        Console.Error.WriteLine(
+            $"--seats {seats}: a round is for {RoundEngine.MinimumPlayers} to "
+            + $"{RoundEngine.MaximumPlayers} players (RULES.md §2.1).");
+
+        return 1;
+    }
+
     var dealt = new List<Card[]>(hands);
 
     for (var hand = 0; hand < hands; hand++)
@@ -716,10 +732,11 @@ static int Bench(string[] args)
 
     Console.WriteLine($"{hands} random thirteen-card hands");
     Console.WriteLine($"PartialCover.Best          {Time(dealt, hand => PartialCover.Best(hand).CoveredCount != -1)}");
-    // Four-handed, which is what every published measurement is played at — and since P25 a
-    // harder question than the bare exact cover: one of the series has to be joker-free.
-    var fourHanded = TableRules.For(4);
-    Console.WriteLine($"HandEvaluator.TryFindCover {Time(dealt, hand => HandEvaluator.TryFindCover(hand, fourHanded, out _))}");
+    // ⚠️ Since P25 a harder question than the bare exact cover, and how much harder depends on
+    // the table: four-handed owes a joker-free series and five-handed owes nothing at all
+    // (RULES.md §7.1.1), so this line is not the same measurement at two --seats values.
+    var tableRules = TableRules.For(seats);
+    Console.WriteLine($"HandEvaluator.TryFindCover {Time(dealt, hand => HandEvaluator.TryFindCover(hand, tableRules, out _))}");
     // ⚠️ One better than the hand can actually do, which is the question the outs rung asks
     // hundreds of times a turn and the expensive half of it: the answer is "no", so the search
     // cannot stop early and has to be pruned to the end (BUILD-PLAN P21).
@@ -734,7 +751,7 @@ static int Bench(string[] args)
     var rungs = arguments.Value("strategies", string.Join(",", BotCatalog.All.Select(rung => rung.Name)));
 
     Console.WriteLine();
-    Console.WriteLine($"{rounds} rounds, 4 seats, one rung at every seat, serial, seed {arguments.Number("seed", 20260818)}");
+    Console.WriteLine($"{rounds} rounds, {seats} seats, one rung at every seat, serial, seed {arguments.Number("seed", 20260818)}");
 
     var reference = 0.0;
 
@@ -743,9 +760,9 @@ static int Bench(string[] args)
         // ⚠️ Warmed first, and it is not a nicety: without it the rung measured first carries
         // everything's jitting and comes out slower than the rung above it, which is how the
         // first run of this said cautious was faster than greedy.
-        Simulator.Run(Table(name, Math.Max(1, rounds / 20), arguments).Validated());
+        Simulator.Run(Table(name, Math.Max(1, rounds / 20), seats, arguments).Validated());
 
-        var played = Simulator.Run(Table(name, rounds, arguments).Validated());
+        var played = Simulator.Run(Table(name, rounds, seats, arguments).Validated());
 
         // Greedy is the reference because the budget is: the outs rung may not cost more than
         // ten times a greedy round (BUILD-PLAN P21).
@@ -767,11 +784,11 @@ static int Bench(string[] args)
     return 0;
 }
 
-// One rung at all four seats, played serially so that a per-turn figure is a per-turn figure.
-static SimulationOptions Table(string rung, int rounds, Arguments arguments) => new()
+// One rung at every seat, played serially so that a per-turn figure is a per-turn figure.
+static SimulationOptions Table(string rung, int rounds, int seats, Arguments arguments) => new()
 {
     Strategies = [StrategyCatalog.Resolve(rung)],
-    Seats = 4,
+    Seats = seats,
     Games = rounds,
     RoundsPerGame = 1,
     MasterSeed = arguments.Number("seed", 20260818),
@@ -806,7 +823,7 @@ static string Usage() => $"""
     BurmesePoker.Sim — batch play, seeded and parallel.
 
       dotnet run --project BurmesePoker.Sim -- [options]
-      dotnet run --project BurmesePoker.Sim -- bench [--hands N] [--rounds N] [--strategies a,b] [--seed N]
+      dotnet run --project BurmesePoker.Sim -- bench [--hands N] [--rounds N] [--strategies a,b] [--seats N] [--seed N]
       dotnet run --project BurmesePoker.Sim -- replay PATH [--csv PATH]
       dotnet run --project BurmesePoker.Sim -- neighbours [options]
       dotnet run --project BurmesePoker.Sim -- tournament [options]
@@ -822,7 +839,7 @@ static string Usage() => $"""
       --seating S        rotate one pattern, or play every balanced
                          assignment of the strategies across the seats
                          (rotate | balanced)                        (rotate)
-      --seats N          4 to 6                                     (4)
+      --seats N          4 to 6                                     (5)
       --games N          independent games                          (200)
       --rounds N         rounds per game, banks carrying over       (1)
       --seed N           master seed; every game derives from it    (20260818)

@@ -63,7 +63,10 @@ public sealed class Lobby : IAsyncDisposable
         Opening = new TablePlan
         {
             Title = configuration.GetValue<string>("table") ?? "The house table",
-            Seats = configuration.GetValue<int?>("seats") ?? RoundEngine.MinimumPlayers,
+            // ⚠️ RoundEngine.DefaultPlayers and not MinimumPlayers (P32): five is the table this
+            // game is played at, and reading "the smallest legal table" as "the table" is the
+            // accident that made the whole published measurement set four-handed.
+            Seats = configuration.GetValue<int?>("seats") ?? RoundEngine.DefaultPlayers,
             People = configuration.GetValue<int?>("people") ?? 1,
             Seed = seed ?? Random.Shared.Next(),
             Pace = TimeSpan.FromMilliseconds(configuration.GetValue<int?>("pace") ?? 1100),

@@ -315,6 +315,105 @@ public class StandingAnswerTests
         }
     }
 
+    /// <summary>
+    /// ✅ <b>P32 — the document is about the table this game is actually played at.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>This is the drift P32 existed to fix, and it drifted in complete silence for
+    /// twenty packets.</b> <c>SuiteOptions.Seats</c> read <c>RoundEngine.MinimumPlayers</c>,
+    /// so the whole standing set was four-handed because four is the smallest legal table and
+    /// not because anybody chose it — and by <c>RULES.md</c> §7.1.1 and §7.3 the four-handed
+    /// game is a <em>different game</em> from the five-handed one. Nothing was red the whole
+    /// time.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The join is the file's own <c>seats</c> column against the constant</b>, so moving
+    /// the default without re-running <c>sim suite</c> is a red build rather than a document
+    /// quietly about the wrong table.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void EveryPublishedRowWasPlayedAtTheTableTheSuiteIsAbout()
+    {
+        var seats = SuiteOptions.DefaultSeats.ToString(CultureInfo.InvariantCulture);
+
+        Assert.All(
+            Published.Values,
+            row => Assert.Equal(seats, row[Column.Seats]));
+    }
+
+    /// <summary>
+    /// ✅ <b>P32 item 4 — the longest-running measurement in the project keeps its continuity.</b>
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>P12's headline is the one figure this project has already had to correct</b> (P16
+    /// re-measured it under a balanced seating and it moved a point), and it has been
+    /// reproduced by P23, P29 and P33 since. Moving the standing set to five seats would have
+    /// <em>ended</em> that series rather than continued it, so both sizes are published and the
+    /// seat count is part of the id. ⚠️ <b>The pair is also the cheapest statement the file
+    /// makes about which findings belong to the game and which belonged to four seats</b>: a
+    /// four-handed declaration owes a joker-free series and a five-handed one owes nothing.
+    /// </remarks>
+    [Fact]
+    public void TheHeadlineIsPublishedAtFourSeatsAndAtTheDefaultTable()
+    {
+        foreach (var seats in new[] { 4, SuiteOptions.DefaultSeats }.Distinct())
+        {
+            foreach (var plan in new[] { "rotate", "balanced" })
+            {
+                foreach (var rung in new[] { "greedy", "simple" })
+                {
+                    var row = Row($"headline.{plan}.{seats}-handed.{rung}");
+
+                    Assert.Equal("win rate", row[Column.Metric]);
+                    Assert.InRange(
+                        double.Parse(row[Column.Mean], CultureInfo.InvariantCulture), 0, 1);
+
+                    // ⚠️ The command has to name the table it was played at, not the table the
+                    // rest of the file was: these two rows differ in exactly that.
+                    Assert.Contains($"--seats {seats}", row[Column.Command], StringComparison.Ordinal);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// ✅ <b>P32 — the four-handed game is kept beside the five-handed one, not deleted.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Four-handed is a different game and not an old version of this one.</b> By
+    /// <c>RULES.md</c> §7.1.1 a four-handed declaration owes a joker-free series and a
+    /// five-handed one owes no series at all, and by §7.3 a jokerless hand is paid ×2 at four
+    /// and ×3 at five — so P25 through P33's whole published set measures something that is
+    /// still true, of a table this project no longer defaults to. <b>Deleting it would have
+    /// thrown away the only controlled comparison anybody will ever have across that seam.</b>
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>It is frozen and it is not regenerated.</b> <c>sim suite</c> writes
+    /// <c>measurements.csv</c> only; the archive is P33's run, kept as it stood, and this
+    /// asserts what it claims to be — every row of it played at four seats. Re-making it is
+    /// <c>sim suite --seats 4</c>, and that is a decision rather than a chore.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheFourHandedGameIsKeptAsANamedSecondTable()
+    {
+        var archive = Read("measurements-4-handed.csv");
+
+        Assert.NotEmpty(archive);
+        Assert.All(archive.Values, row => Assert.Equal("4", row[Column.Seats]));
+
+        // 🔥 And it is a whole standing set rather than a souvenir: the ladder's ranking, the
+        // dial's reference table and the money sweep's verdict are all in it, so a question
+        // about the four-handed game can be answered from the file instead of from a session
+        // log (§11's own rule, applied to the archive).
+        Assert.Contains(archive.Keys, id => id.StartsWith("ladder.rank.", StringComparison.Ordinal));
+        Assert.Contains(archive.Keys, id => id.StartsWith("difficulty.reference-table.", StringComparison.Ordinal));
+        Assert.Contains(archive.Keys, id => id.StartsWith("money.net-per-round.", StringComparison.Ordinal));
+    }
+
     /// <summary>Which column of a row is which. The header names them; this is the order.</summary>
     private static class Column
     {
@@ -323,6 +422,8 @@ public class StandingAnswerTests
         internal const int Mean = 4;
         internal const int Interval = 6;
         internal const int Verdict = 7;
+        internal const int Seats = 9;
+        internal const int Command = 11;
     }
 
     /// <summary>One published row, or a complaint naming the command that would create it.</summary>
@@ -337,9 +438,10 @@ public class StandingAnswerTests
     private static IReadOnlyList<string> Names(string subject) =>
         [.. subject.Split([' ', ',', '(', ')', '$', '/'], StringSplitOptions.RemoveEmptyEntries)];
 
-    private static IReadOnlyDictionary<string, IReadOnlyList<string>> Read()
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> Read(
+        string file = "measurements.csv")
     {
-        var path = Path.Combine(Sources.Root.FullName, "docs", "strategy", "measurements.csv");
+        var path = Path.Combine(Sources.Root.FullName, "docs", "strategy", file);
         var lines = File.ReadAllLines(path);
 
         return lines.Skip(1)

@@ -78,8 +78,25 @@ public sealed record SuiteOptions
     /// </remarks>
     public string ClaimRung { get; init; } = BotCatalog.Hardest.Name;
 
+    /// <summary>
+    /// The table this project's standing answer is about — <b>five seats</b> (BUILD-PLAN P32).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>A decision, spelled as a number.</b> It was <c>RoundEngine.MinimumPlayers</c> until
+    /// P32, which is how the whole published set came to be four-handed <em>by accident</em>:
+    /// nobody ever chose four, it was simply the smallest legal table and the field inherited
+    /// the constant. ⚠️ <b>The two are not interchangeable</b> — by <c>RULES.md</c> §7.1.1 a
+    /// four-handed declaration owes a joker-free series and a five-handed one owes no series at
+    /// all, and by §7.3 a jokerless hand is paid ×2 at four and ×3 at five, so "the minimum
+    /// table" and "the default table" are two different games. Changing this constant changes
+    /// which game the documentation is about, and nothing else in the suite should have to be
+    /// touched to do it.
+    /// </remarks>
+    public const int DefaultSeats = RoundEngine.DefaultPlayers;
+
     /// <summary>Seats at the table (RULES.md §2.1).</summary>
-    public int Seats { get; init; } = RoundEngine.MinimumPlayers;
+    /// <inheritdoc cref="DefaultSeats" path="/remarks"/>
+    public int Seats { get; init; } = DefaultSeats;
 
     /// <summary>Games wanted in each cell, rounded up to a whole number of passes.</summary>
     public int GamesPerCell { get; init; } = 2000;
@@ -318,26 +335,38 @@ public static class Suite
                 check.Ratio < 1 ? "pairing narrows" : "pairing widens"));
         }
 
-        foreach (var (plan, balanced) in new[] { ("rotate", false), ("balanced", true) })
+        // 🔥 Two table sizes and not one (BUILD-PLAN P32 item 4). This is the longest-running
+        // measurement in the project — P12 published it, P16 corrected it and P23, P29 and P33
+        // each reproduced it — and moving the standing set to five seats would have ended that
+        // series rather than continued it. ⚠️ The two rows are *not* one measurement said twice:
+        // by RULES.md §7.1.1 a four-handed declaration owes a joker-free series and a five-handed
+        // one owes nothing at all, so the pair is the cheapest statement this file makes about
+        // which of its findings belong to the game and which belonged to four seats.
+        foreach (var seats in HeadlineSeats(options))
         {
-            var headline = Headline(options, balanced);
-
-            var command = string.Create(CultureInfo.InvariantCulture,
-                $"BurmesePoker.Sim -- --strategies greedy,simple --seating {plan} --seats {options.Seats} "
-                + $"--games {headline.Games} --seed {options.MasterSeed}");
-
-            foreach (var series in headline.Series)
+            foreach (var (plan, balanced) in new[] { ("rotate", false), ("balanced", true) })
             {
-                measurements.Add(new SuiteMeasurement(
-                    $"headline.{plan}.{series.Name}",
-                    "P12's headline: greedy against simple at four seats. ⚠️ The rotation seats "
-                    + "[g,s,g,s], in which every greedy sits downstream of a simple — the honest "
-                    + "strategy-vs-strategy figure is the balanced one (P16).",
-                    command,
-                    series.Name,
-                    "win rate",
-                    Measurement.Of(series.WinRate),
-                    string.Empty));
+                var headline = Headline(options, seats, balanced);
+
+                var command = string.Create(CultureInfo.InvariantCulture,
+                    $"BurmesePoker.Sim -- --strategies greedy,simple --seating {plan} --seats {seats} "
+                    + $"--games {headline.Games} --seed {options.MasterSeed}");
+
+                foreach (var series in headline.Series)
+                {
+                    measurements.Add(new SuiteMeasurement(
+                        $"headline.{plan}.{seats}-handed.{series.Name}",
+                        $"P12's headline: greedy against simple at {seats} seats. ⚠️ The rotation "
+                        + "seats [g,s,g,s,…], in which every greedy sits downstream of a simple — the "
+                        + "honest strategy-vs-strategy figure is the balanced one (P16). ⚠️ The seat "
+                        + "count is part of the id since P32: four-handed and five-handed are different "
+                        + "games (RULES.md §7.1.1) and both are published.",
+                        command,
+                        series.Name,
+                        "win rate",
+                        Measurement.Of(series.WinRate),
+                        string.Empty));
+                }
             }
         }
 
@@ -592,8 +621,22 @@ public static class Suite
     /// </remarks>
     private static double Rate(string level) => DifficultyLadder.FindOrProbe(level)?.MistakeRate ?? 0;
 
-    /// <summary>P12's headline run, under one seating plan or the other.</summary>
-    private static (int Games, IReadOnlyList<StrategySeries> Series) Headline(SuiteOptions options, bool balanced)
+    /// <summary>
+    /// The table sizes P12's headline is published at: <b>four, and the default</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Four is named rather than derived</b>, and deliberately not
+    /// <c>RoundEngine.MinimumPlayers</c>: what is being kept is the continuity of one published
+    /// series, so the number is the one that series was measured at, and it would survive
+    /// somebody deciding a round may be played three-handed. If the default table ever becomes
+    /// four again this is one row and not two.
+    /// </remarks>
+    private static IReadOnlyList<int> HeadlineSeats(SuiteOptions options) =>
+        options.Seats == 4 ? [4] : [4, options.Seats];
+
+    /// <summary>P12's headline run, at one table size, under one seating plan or the other.</summary>
+    private static (int Games, IReadOnlyList<StrategySeries> Series) Headline(
+        SuiteOptions options, int seats, bool balanced)
     {
         IReadOnlyList<Strategy> pair =
         [
@@ -601,7 +644,7 @@ public static class Suite
             StrategyCatalog.Resolve("simple")
         ];
 
-        var assignments = balanced ? SeatingPlan.Balanced(pair, options.Seats) : null;
+        var assignments = balanced ? SeatingPlan.Balanced(pair, seats) : null;
         var passes = assignments?.Count ?? pair.Count;
         var games = (options.GamesPerCell + passes - 1) / passes * passes;
 
@@ -609,7 +652,7 @@ public static class Suite
         {
             Strategies = pair,
             Assignments = assignments,
-            Seats = options.Seats,
+            Seats = seats,
             Games = games,
             RoundsPerGame = 1,
             MasterSeed = options.MasterSeed,
