@@ -128,4 +128,16 @@ public sealed class FallibleAgent : IPlayerAgent, IRanksDiscards
     /// <see cref="ChooseDiscard"/> and is not part of what this player thinks.
     /// </remarks>
     public IReadOnlyList<Card> RankDiscards(TurnContext context) => _ranks.RankDiscards(context);
+
+    /// <summary>
+    /// The inner player's ordering over the given choice, unchanged.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The slip is not modelled here either, and for the counterfactual that is the point</b>
+    /// (BUILD-PLAN P31 item 3). The question is whether RULES.md §5.1 changed what this seat
+    /// <em>meant</em> to throw; a level that would have slipped off the banned card anyway has
+    /// still had its answer changed by the ban.
+    /// </remarks>
+    public IReadOnlyList<Card> RankDiscards(TurnContext context, IReadOnlyList<Card> candidates) =>
+        _ranks.RankDiscards(context, candidates);
 }

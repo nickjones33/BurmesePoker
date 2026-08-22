@@ -91,6 +91,15 @@ public sealed class GreedyBotAgent : IPlayerAgent, IRanksDiscards
         return CoverScore.Ranking(context, Preference);
     }
 
+    /// <inheritdoc/>
+    public IReadOnlyList<Card> RankDiscards(TurnContext context, IReadOnlyList<Card> candidates)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(candidates);
+
+        return CoverScore.Ranking(context.Hand, candidates, Preference);
+    }
+
     /// <summary>
     /// The tie-break itself, kept as a field so that the ladder's rungs are one function
     /// apart and nothing else (BUILD-PLAN P15).

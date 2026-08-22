@@ -51,20 +51,17 @@ namespace BurmesePoker.Domain.Agents;
 /// </remarks>
 public sealed class CountingBotAgent : IPlayerAgent, IRanksDiscards
 {
-    private const int SuitCount = 4;
-    private const int RankCount = 13;
-
-    /// <summary>The physical cards this seat has been shown, so that one is never counted twice.</summary>
-    private readonly HashSet<CardId> _seen = [];
-
-    /// <summary>How many copies of each value that comes to, indexed by <see cref="Slot"/>.</summary>
-    private readonly int[] _copies = new int[RankCount * SuitCount];
-
-    /// <summary>Which round the memory belongs to. Zero before the first turn of the match.</summary>
-    private int _round;
+    /// <summary>
+    /// The memory itself, which P31 lifted out of this class whole.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Nothing about it changed in the move</b> — <see cref="ShoeMemory"/> is this rung's
+    /// old fields and its old <c>Observe</c>/<c>Forget</c>/<c>Available</c>, verbatim, so a
+    /// difference in this rung's results across P31 would be a defect and not a redesign.
+    /// </remarks>
+    private readonly ShoeMemory _memory = new();
 
     private readonly Func<Card, IReadOnlyList<Card>, long> _preference;
-    private readonly ThreatScore.Supply _supply;
 
     /// <inheritdoc cref="CountingBotAgent" />
     public CountingBotAgent()
@@ -72,39 +69,23 @@ public sealed class CountingBotAgent : IPlayerAgent, IRanksDiscards
         // Allocated once per seat per game rather than once per card judged: this is the one
         // rung whose supply estimate cannot be a static lambda, because it reads instance
         // state (BUILD-PLAN §3.7 item 4 — the work here is allocation-bound).
-        _supply = Available;
+        var supply = _memory.Supply;
+
         _preference = (card, hand) =>
         {
             var potential = CoverScore.Potential(card, hand);
 
             return potential == int.MaxValue
                 ? long.MaxValue
-                : ((long)potential << 8) + ThreatScore.Of(card, _supply);
+                : ((long)potential << 8) + ThreatScore.Of(card, supply);
         };
     }
 
-    /// <summary>
-    /// How many copies of one value this seat believes are still out there: two, less the ones
-    /// it has been shown.
-    /// </summary>
-    /// <remarks>
-    /// ⚠️ <b>Never negative.</b> Two decks hold two copies of everything, so it cannot be — but
-    /// the clamp is what stops a miscount turning a threat into a negative number and inverting
-    /// a tie-break rather than merely getting it wrong.
-    /// </remarks>
-    public int Available(Rank rank, Suit suit) =>
-        Math.Max(0, ThreatScore.CopiesInTheShoe - _copies[Slot(rank, suit)]);
+    /// <inheritdoc cref="ShoeMemory.Available"/>
+    public int Available(Rank rank, Suit suit) => _memory.Available(rank, suit);
 
-    /// <summary>
-    /// The physical cards this seat has been shown this round.
-    /// </summary>
-    /// <remarks>
-    /// ✅ <b>Public because it is the packet's claim</b> (P20 acceptance 2): what a counting seat
-    /// knows beyond its own hand has to be a subset of what a watcher at the table can see, and
-    /// a claim nothing can read is a claim nothing can check. It is a copy, so reading it
-    /// cannot change it.
-    /// </remarks>
-    public IReadOnlySet<CardId> Remembered => new HashSet<CardId>(_seen);
+    /// <inheritdoc cref="ShoeMemory.Remembered"/>
+    public IReadOnlySet<CardId> Remembered => _memory.Remembered;
 
     /// <inheritdoc cref="GreedyBotAgent.ChooseAction"/>
     public TurnAction ChooseAction(TurnContext context)
@@ -134,6 +115,16 @@ public sealed class CountingBotAgent : IPlayerAgent, IRanksDiscards
         Observe(context);
 
         return CoverScore.Ranking(context, _preference);
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<Card> RankDiscards(TurnContext context, IReadOnlyList<Card> candidates)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(candidates);
+        Observe(context);
+
+        return CoverScore.Ranking(context.Hand, candidates, _preference);
     }
 
     /// <inheritdoc cref="GreedyBotAgent.ClaimTurnedUpMoneyCard"/>
@@ -174,57 +165,5 @@ public sealed class CountingBotAgent : IPlayerAgent, IRanksDiscards
     /// <see cref="ObjectToClaim"/>, the fifth, deliberately does not call it: a future counting
     /// rung reading the memory there would meet a stale one.
     /// </remarks>
-    private void Observe(TurnContext context)
-    {
-        Forget(context.Round);
-
-        foreach (var card in context.Hand)
-        {
-            Remember(card);
-        }
-
-        if (context.AvailableDiscard is { } offered)
-        {
-            Remember(offered);
-        }
-
-        // context.TurnedUpMoneyCards is public and is not read here, on purpose. See the
-        // remarks on this class: RULES.md §4.4.
-    }
-
-    /// <summary>Adds one physical card to the memory, if it is not there and is not a joker.</summary>
-    /// <remarks>
-    /// A joker has neither rank nor suit (<see cref="Card.IsJoker"/>), and the supply estimate
-    /// is only ever asked about a ranked value, so counting one would have nowhere to go.
-    /// </remarks>
-    private void Remember(Card card)
-    {
-        if (!card.IsJoker && _seen.Add(card.Id))
-        {
-            _copies[Slot(card.Rank!.Value, card.Suit!.Value)]++;
-        }
-    }
-
-    /// <summary>Drops the whole memory when the deal moves on.</summary>
-    /// <remarks>
-    /// ⚠️ <b>The round-boundary trap, and this rung is the first that can fall into it.</b> The
-    /// shoe is rebuilt at every deal, so a <see cref="CardId"/> from the round before names a
-    /// different physical card — a memory that survived a deal would not be stale, it would be
-    /// wrong. <c>GreedyBotAgent</c>'s remark records the console agent falling into this once
-    /// already.
-    /// </remarks>
-    private void Forget(int round)
-    {
-        if (round == _round)
-        {
-            return;
-        }
-
-        _round = round;
-        _seen.Clear();
-        Array.Clear(_copies);
-    }
-
-    private static int Slot(Rank rank, Suit suit) =>
-        ((int)rank - (int)Rank.Two) * SuitCount + (int)suit;
+    private void Observe(TurnContext context) => _memory.Observe(context);
 }

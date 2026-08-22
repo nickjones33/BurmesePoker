@@ -68,6 +68,15 @@ public sealed class SimpleBotAgent : IPlayerAgent, IRanksDiscards
         return CoverScore.Ranking(context, CoverScore.NoPreference);
     }
 
+    /// <inheritdoc/>
+    public IReadOnlyList<Card> RankDiscards(TurnContext context, IReadOnlyList<Card> candidates)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(candidates);
+
+        return CoverScore.Ranking(context.Hand, candidates, CoverScore.NoPreference);
+    }
+
     /// <inheritdoc cref="GreedyBotAgent.ClaimTurnedUpMoneyCard"/>
     public bool ClaimTurnedUpMoneyCard(TurnContext context)
     {

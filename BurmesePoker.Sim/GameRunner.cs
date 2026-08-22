@@ -40,7 +40,9 @@ public static class GameRunner
         var recorders = players.ToDictionary(
             player => player,
             player => new SeatRecorder(
-                seating[player.Value].Create(SeedSequence.SeatSeed(seed, player.Value)), options.TurnCap));
+                seating[player.Value].Create(SeedSequence.SeatSeed(seed, player.Value)),
+                options.TurnCap,
+                options.CountLockBites));
 
         // The journal wraps the recorder rather than the other way round, so what is written
         // down is the answer the strategy actually gave (BUILD-PLAN P14).
@@ -198,7 +200,10 @@ public static class GameRunner
                 Takes: observer.TakesBy(player),
                 Draws: observer.DrawsBy(player),
                 ClaimOffers: recorders[player].ClaimOffers,
-                Claims: recorders[player].Claims));
+                Claims: recorders[player].Claims,
+                DiscardsChosen: recorders[player].DiscardsChosen,
+                RestrictedTurns: recorders[player].RestrictedTurns,
+                LockBites: recorders[player].LockBites));
         }
 
         return new RoundRow(result.Round, result.Turns, observer.Reshuffles, observer.Refusals, seats);

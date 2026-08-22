@@ -162,10 +162,15 @@ public class StandingAnswerTests
         // — a filter that reordered the field would renumber columns published since P12.
         Assert.Equal([.. BotCatalog.All.Where(BotCatalog.Ladder.Contains)], BotCatalog.Ladder);
 
-        // 🔥 The invariant SuiteOptions.MoneyReference rests on: the ladder is built upwards, so
-        // its last entry is its strongest — which is what a stakes-reading rung is one change
-        // from and what the sweep measures against.
-        Assert.Same(BotCatalog.Hardest, BotCatalog.Ladder[^1]);
+        // 🔥 The invariant SuiteOptions.MoneyReference rests on: the strongest rung there is, is
+        // one the ladder tournament ranks — so the side bet is swept against a rung that has
+        // actually been ranked against a field.
+        // ⚠️ It read `Assert.Same(Hardest, Ladder[^1])` until P31, and warden is what took the
+        // last entry away from it: two rungs now hang off `outs`, so the ladder is a tree and its
+        // tail is whichever branch was written last. That was never a claim about strength — it
+        // was true by coincidence for six rungs running, which is exactly how a coincidence gets
+        // asserted as a law.
+        Assert.Contains(BotCatalog.Hardest, BotCatalog.Ladder);
 
         var options = new SuiteOptions();
 

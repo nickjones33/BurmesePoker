@@ -969,6 +969,7 @@ P15 ─┬─► P17  the tournament ☑ ┬─► P19  difficulty as a dial ☑
      │   (stats + ranking)     ├─► P20  counting rung   (memory)   ☑ ─┐
 P16 ─┘                         ├─► P21  outs rung       (lookahead)  ☑ ─┼─► P23  the standing answer ☑
           P18  one catalog ☑ ──┘   P22  prospector rung (the money)  ☑ ─┘   ← the last *planned* packet
+                          P31  warden rung (the feeding ban) ☑     ← a second branch off `outs`
 
                     the experts, 2026-08-20/21  ←  not from §0, and not from the code
                               │
@@ -5157,7 +5158,7 @@ tags are the other half of that question and stay a human job.**
 
 ---
 
-### P31 — `warden`: the feeding ban as a weapon ☐
+### P31 — `warden`: the feeding ban as a weapon ☑ done 2026-08-22
 
 **Goal.** The first rung that plays `RULES.md` §5.1 **offensively** rather than merely obeying it,
 and a measurement of what that is worth.
@@ -5233,6 +5234,73 @@ advance: a take chosen for denial and a discard chosen for value will fight each
 **Done when.** `docs/STRATEGY.md` says what playing the feeding ban offensively is worth, with an
 interval, and says how often the lock bit.
 
+#### What it came back with — 2026-08-22, Opus 5 (the suite ran overnight from the 21st)
+
+🔥 **Prediction 1 was wrong and it was wrong by nine points.** `warden` is **`−9.3 ± 1.0` against
+`outs`** and about six behind `greedy`, `cautious` and `counting`; it beats only `simple`
+(`+2.5 ± 1.0`) and `random`. **All six margins survive Holm over a family of twenty-one**, at 8,008
+games a cell. It is **the largest separated *loss* this programme has produced**, where the packet
+had predicted a null on the strength of denial having measured nothing twice before.
+
+🔥 **Prediction 2 is why that is a finding rather than a shrug, and building item 3 is what earned
+it.** The packet said in advance that a null would most likely mean *the lock is cheap to escape*
+rather than *denial is worthless*, and named the mechanism variable as the way to tell those apart.
+**It closes the escape hatch.** At the crossed table §5.1 had removed a held card from the choice
+on **30.5%** of all discards, and on **30.8% of those it changed the seat's answer** — so the rule
+takes the card a seat meant to play on **9.4% of every turn**. ⚠️ **The rule is one of the most
+active in the game and the rung still loses.** Without this number, `warden`'s loss would have been
+readable as *"the ban does nothing"*; it is not.
+
+✅ **Prediction 3 held.** An all-`warden` table runs **31.9 turns a round against `outs`' 24.1**
+(`sim bench`) — it is melding worse, exactly as a rung that takes cards for somebody else's reasons
+should.
+
+🔥 **The *why*, which is the deliverable (P20's discipline).** `warden` prices a lock in **melded
+cards** — it declines any lock it cannot absorb by shedding a partner-less card — and then pays for
+every lock it takes with a **draw**, which is the only thing that improves a hand and which nothing
+in its rule prices at all. It converts about a third of its draws into locks. ⚠️ **A successor rung
+has to price the draw**, and `prospector` shows the shape: `MoneyOdds.PerBlindDraw` prices a draw
+in money, and nothing yet prices one in cards. `LiveOuts` is the obvious currency and it is already
+in the file.
+
+🔥 **The reproduction is the strongest this project has recorded: 71 of the 88 shared rows came back
+byte-identical**, including **every head-to-head cell among the six older rungs, every pairing
+ratio, the whole difficulty dial and the whole money sweep**. The 17 that moved are exactly the
+rows a seventh rung must move — the free-for-all column, the mean-margin ranking, and the four
+ladder-scope statistics computed off the free-for-all cell. ⚠️ **P29 reproduced 4 of 91 and was
+right to**; the difference is that P29 ran across a rules change and this did not. **"Does it
+reproduce" is a question with an answer again.**
+
+🔥 **The finding nobody planned: "the ladder's last entry is its strongest" was a coincidence
+asserted as a law, in three places at once.** For six rungs running, *the last rung named* and *the
+strongest rung* were the same rung. `warden` and `prospector` both hang off `outs`, so the ladder
+became a **tree** and the coincidence broke:
+- `SuiteOptions.MoneyReference` read `BotCatalog.Ladder[^1]` and **would have swept the side bet
+  against `warden`** — a rung that had never been ranked above anything. Fixed to
+  `BotCatalog.Hardest`.
+- `StandingAnswerTests` asserted `Assert.Same(Hardest, Ladder[^1])`. Fixed to assert what was
+  meant: the strongest rung is one the ladder tournament ranks.
+- `TournamentOptions.NullTestStrategy` takes the last strategy named, so **the null cell changed
+  hands from `outs` to `warden` without anybody choosing it**. ✅ **Left alone deliberately** — the
+  cell's claim is that *any* strategy against a copy of itself wins 1/n, so a null test that
+  depended on who played it would itself be the finding. It holds at both.
+
+⚠️ **The lesson generalises past ladders**: a coincidence that has held for every case so far reads
+exactly like an invariant, and the way to tell is to ask what the expression is *for* rather than
+whether it is currently true.
+
+⚠️ **Two costs to carry forward.** `sim suite` is **11,020 s (three hours)**, up from 9,981 s — 40%
+more head-to-head cells for 10% more wall clock, because `warden` is *cheaper per turn* than `outs`
+(**5.6× a `greedy` round against 6.1×**, its candidate set being smaller) even though its rounds
+are a third longer. And **`warden` is `Strength: 3`, level with `outs`**, so `BotCatalog.Hardest` is
+unchanged, the difficulty dial did not move, and **no front end gained an option** — the same
+standing `prospector` has.
+
+✅ **No rules question was raised and `RULES.md` did not move.** `warden` deliberately **declines to
+lock jokers**: whether taking a joker closes the other jokers is §9 #27, a `PLAYER` house ruling,
+and the one rung whose whole claim rests on the lock must not be built on the one part of §5.1
+nobody has confirmed. `JournalHeader.CurrentRulesRevision` is unchanged at 24.
+
 ---
 
 ### P32 — Five-handed is the default table ☐
@@ -5278,11 +5346,28 @@ the whole of P29's headline turned on does not apply at the default table size.*
 
 ⚠️ **The wall clock, and there is a blow-up hiding in it.** Head-to-head cells barely move — 30
 assignments at five seats against 14 at four, so ~8,010 games against 8,008. **The ladder
-free-for-all is the problem**: `Balanced(6 strategies, 5 seats)` is `6⁵ = 7,776` assignments
-against `6⁴ = 1,296`, and rounding up to whole passes takes that cell from **9,072 games to
-15,552** — each of them a longer round. ⚠️ **Budget the free-for-all separately from everything
-else, measure it with `sim bench --seats 5` first, and say in the packet what was dropped** if
-anything. **Do not discover this at hour four.**
+free-for-all is the problem**: `Balanced(k strategies, 5 seats)` is `k⁵` assignments against `k⁴`,
+and rounding up to whole passes makes that cell the whole budget on its own. ⚠️ **Budget the
+free-for-all separately from everything else, measure it with `sim bench --seats 5` first, and say
+in the packet what was dropped** if anything. **Do not discover this at hour four.**
+
+🔥 **P31 made this materially worse and the packet must be re-costed before it is started**
+(amended 2026-08-21). `warden` is a seventh rung ranked on win rate, so:
+
+- **The round-robin is 21 head-to-head cells, not 15** — a 40% rise in the part of the suite that
+  was already the largest. P31's own regeneration is the measured price of that at four seats;
+  quote its elapsed time from `STATUS.md` rather than P29's.
+- 🔥 **The free-for-all goes from `6⁵ = 7,776` assignments to `7⁵ = 16,807`** — so that one cell is
+  **16,807 games** rather than 15,552 at six rungs, or 9,072 at four seats today. It is now
+  plausibly *the majority of the run*.
+- ⚠️ **`warden` also makes rounds longer**, which multiplies through everything: `sim bench` at
+  P31 put an all-`warden` table at **31.9 turns a round against `outs`' 24.1**, because a rung
+  that spends draws on locks converges more slowly. A five-handed round is longer again.
+
+⚠️ **So P32 has a decision to take that P31 did not**: whether the five-handed free-for-all is run
+at the full crossing or at a stated subsample. **Either is fine and neither may be silent** — see
+`STRATEGY.md` §11's "no silent caps" standing, and P29's own remark that a number without its
+denominator is not a measurement.
 
 **Acceptance.**
 1. `measurements.csv` regenerates at five seats from one command, and `StandingAnswerTests` is

@@ -105,6 +105,15 @@ public sealed class ProspectorBotAgent : IPlayerAgent, IRanksDiscards
         return CoverScore.Ranking(context, Preference, Outs);
     }
 
+    /// <inheritdoc/>
+    public IReadOnlyList<Card> RankDiscards(TurnContext context, IReadOnlyList<Card> candidates)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(candidates);
+
+        return CoverScore.Ranking(context.Hand, candidates, Preference, Outs);
+    }
+
     /// <summary>
     /// Claim the turned-up money card only when the hand it buys outweighs the draw it costs.
     /// </summary>

@@ -163,7 +163,7 @@ public class SkillLadderRunTests
         // The catalog is the command line's whole vocabulary, so a rung that is named but
         // cannot be built is a crash at the CLI rather than a compile error.
         Assert.Equal(
-            ["random", "simple", "greedy", "cautious", "counting", "outs", "prospector"],
+            ["random", "simple", "greedy", "cautious", "counting", "outs", "warden", "prospector"],
             StrategyCatalog.All.Select(strategy => strategy.Name));
 
         Assert.All(StrategyCatalog.All, strategy => Assert.NotNull(strategy.Create(1)));

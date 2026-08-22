@@ -11,8 +11,48 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **The verify branch is closed: P30.1 (the review), P24.1 (the hosted table's journal) and
-P30.2 (the conformance harness and the front-end tests) all shipped 2026-08-21 on Fable 5.**
+🔥 **`P31` shipped 2026-08-22 on Opus 5: `warden`, the feeding ban played offensively — and it
+lost, by more than any rung has lost before.** `Domain/Agents/WardenBotAgent.cs` is `outs` with the
+**take** changed: it takes a card it does not want when that closes the rank against the seat that
+threw it (`RULES.md` §5.1), and then **holds** that rank rather than releasing it. It measures
+**`−9.3 ± 1.0` against `outs`** and about six points behind `greedy`, `cautious` and `counting`,
+beating only `simple` and `random` — all six surviving Holm over a family of twenty-one.
+⚠️ **The packet predicted a null.**
+
+🔥 **The finding that matters is the one that makes the loss attributable, and it is a new
+instrument.** §5.1 is enforced as an **impossible move**, so it leaves no trace by construction and
+nothing had ever measured whether it does anything. `IRanksDiscards.RankDiscards(context,
+candidates)` — **an instrument the engine may never call** — asks a restricted seat what it *would*
+have thrown over its whole hand. **The ban removed a held card from 30.5% of all discards in the
+crossed field and changed the seat's answer on 30.8% of those: 9.4% of every turn.** ⚠️ **So the
+rule bites hard and the rung is what failed.** `docs/STRATEGY.md` §13.
+
+⚠️ **The why, and it is the constraint on any successor rung.** `warden` prices a lock in **melded
+cards** and then pays for every lock with a **draw**, which nothing in its rule prices — an
+all-`warden` table runs **31.9 turns a round against `outs`' 24.1**. `prospector` prices a draw in
+money (`MoneyOdds.PerBlindDraw`); nothing yet prices one in cards, though `LiveOuts` is the obvious
+currency and is already in the file.
+
+🔥 **Two structural facts a cold session needs.** **(1) The ladder is a tree now** — `warden` and
+`prospector` both hang off `outs`, so `BotCatalog.Ladder[^1]` is **no longer** `BotCatalog.Hardest`,
+and *"the last rung named is the strongest"* turned out to be a coincidence asserted as a law in
+**three** places (`SuiteOptions.MoneyReference` and `StandingAnswerTests`, both fixed; the
+tournament's **null cell**, left alone on purpose — it changed hands to `warden` and holds).
+**(2) `warden` is `Strength: 3`, level with `outs`**, so the difficulty dial did not move, no ε
+changed and **no front end gained an option.**
+
+🔥 **The tree is green at 715 tests, `RULES.md` is still rev 24, and `docs/strategy/measurements.csv`
+holds 116 measurements from an 11,020 s (three-hour) run.** ✅ **71 of the 88 rows both runs share
+came back byte-identical** — every old head-to-head cell, every pairing ratio, the whole dial and
+the whole money sweep — which is the strongest reproduction this project has recorded. ✅ **R3 and
+R13's owed corrections landed**: the claim-money interval is paired at **±0.25** (mean unmoved) and
+`money.side-margin.*` rows exist. ✅ **The next packet is `P32`** (five seats as the default table),
+**re-costed by P31 and worse than it was**: the round-robin is 21 cells, and the five-handed
+free-for-all is `7⁵ = 16,807` seatings. ⚠️ **Set the model with `/model` before the session; the
+packet records which one and cannot choose it.** **P24.2** is still Nick's call.
+
+🔥 **Before P31: the verify branch closed — P30.1 (the review), P24.1 (the hosted table's journal)
+and P30.2 (the conformance harness and the front-end tests) all shipped 2026-08-21 on Fable 5.**
 ✅ **P30.2's headline: the game as played is audited.** `Tests/Conformance/RuleConformance`
 re-derives every Settled rule independently over 180 ordinary rounds at 4/5/6 seats with a
 mutant per rule family proving the audit can go red; `SettledRuleCoverageTests` fails the build
@@ -21,14 +61,8 @@ prompts adaptively** and verifies the settlement panel's arithmetic; and `Browse
 closes the loop board = engine = journal replay. 🔥 **Two behaviour fixes rode along**: a
 discard legal only under §5.1 exception 2 *is* the declaration — the seat is not asked and
 cannot decline (R1) — and a handed-over seat is dead to its previous occupant server-side
-(`SeatChannel`, R8). **Journals stamp rev 24 now, bound to `RULES.md` by a test** — bump
-`JournalHeader.CurrentRulesRevision` with any play-changing rev. ✅ **The next packet is
-`P31`** (`warden`, the feeding ban played offensively), then **`P32`** (five seats as the
-default table), **both back on Opus**. ⚠️ **Set the model with `/model` before the session; the
-packet records which one and cannot choose it.** ⚠️ **P31's suite regeneration will change two
-things in the CSV on purpose** — the claim-money interval comes back paired (~±0.25, review R3)
-and `money.side-margin.*` rows appear (R13); both are P30.2's fixes arriving, not regressions
-(BUILD-PLAN §5 P31). **P24.2** (the reasoning said out loud) is still Nick's call.
+(`SeatChannel`, R8). **Journals stamp rev 24, bound to `RULES.md` by a test** — bump
+`JournalHeader.CurrentRulesRevision` with any play-changing rev.
 
 🔥 **Everything below this line was true when P29 shipped. P25–P29 all shipped 2026-08-21.** Every packet from §0 is done — P0–P12, P13.1–P13.6 and P14–P23 — and **four sessions with
 Mya Lay and Aung Aung on 2026-08-20/21 closed twenty-three questions in `RULES.md` §9 and left
@@ -519,7 +553,8 @@ dotnet run -c Release --project BurmesePoker.Sim -- tournament --games 2000     
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy,medium,hard,expert --pairs adjacent --games 8000   # calibrate the difficulty dial
 dotnet run -c Release --project BurmesePoker.Sim -- money --games 8000               # should you draw blind for the money? a sweep over four stakes ratios
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs/refuse,outs/allow --pairs adjacent --games 8000   # is refusing a claim worth anything? (P29: no)
-dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv (⚠️ ~2h45, measured at P29)
+dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs,warden --pairs adjacent --games 8000              # is playing the feeding ban offensively worth anything? (P31: no, −9.3 ± 1.0)
+dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv (⚠️ ~3h00, measured at P31)
 
 python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0   # capture a scripted match (0 expert, 1 hard, 2 medium, 3 easy)
 python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0 --script human   # …the longer one, with a person in it
@@ -573,7 +608,7 @@ verified bug to show for it.
 | `docs/STATUS.md` | Cross-session progress. Read first, update last. |
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
-| `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration**, **§10 the side bet** and **§12 round length, abandoned rounds and what refusing a claim is worth** (P29). Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10 and §12 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
+| `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration**, **§10 the side bet** and **§12 round length, abandoned rounds and what refusing a claim is worth** (P29) and **§13 how often the feeding ban actually bites** (P31). Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10, §12 and §13 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
 | `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it. Written for a person at the keyboard, not for a build session. |
 | `docs/RULES-TECHNICAL.md` | What the **old** code does and where it diverges. Defect list. Historical reference. |

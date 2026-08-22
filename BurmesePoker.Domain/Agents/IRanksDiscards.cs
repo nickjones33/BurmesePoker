@@ -40,4 +40,34 @@ public interface IRanksDiscards
     /// are the same move; the list is shorter than the hand whenever it holds a pair.
     /// </remarks>
     IReadOnlyList<Card> RankDiscards(TurnContext context);
+
+    /// <summary>
+    /// The same ordering asked of a choice somebody else supplies, rather than of
+    /// <see cref="TurnContext.LegalDiscards"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>An instrument, and never a move</b> (BUILD-PLAN P31 item 3). It exists to ask one
+    /// counterfactual: <em>what would this player have thrown if RULES.md §5.1 were not there?</em>
+    /// — which is the only way to tell a lock that <b>bit</b> from a lock that merely closed a rank
+    /// the seat was never going to throw. Handing it <see cref="TurnContext.Hand"/> and comparing
+    /// the head with <see cref="RankDiscards(TurnContext)"/>'s head is the whole of the mechanism
+    /// variable P31 publishes.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Nothing in the engine may call it and nothing in a front end may draw it.</b> A
+    /// ranking over cards a seat may not throw is not a legal answer to anything, and a difficulty
+    /// level's mistake comes off <see cref="RankDiscards(TurnContext)"/> so that the slip is still a
+    /// legal move (§5.1, Enforcement, point 2). The engine cannot reach either overload — it holds
+    /// an <c>IPlayerAgent</c> and this interface is deliberately not that one.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>A rung's own restraint is not the ban and stays in force here.</b>
+    /// <see cref="WardenBotAgent"/> declines to throw the ranks it has locked whichever choice it is
+    /// handed, so the difference between the two heads is §5.1 and nothing else.
+    /// </para>
+    /// </remarks>
+    /// <param name="context">The turn, for the hand a card is judged against.</param>
+    /// <param name="candidates">The choice to rank. The caller decides what is in it.</param>
+    IReadOnlyList<Card> RankDiscards(TurnContext context, IReadOnlyList<Card> candidates);
 }

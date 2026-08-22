@@ -52,16 +52,20 @@ public sealed record SuiteOptions
     /// </summary>
     /// <remarks>
     /// ⚠️ <b>Read off the catalog rather than typed</b> (BUILD-PLAN P23). Both were literals
-    /// until this packet, which is the same defect one layer up from the one P18 and P20 each
-    /// removed: a second stakes-reading rung would have been added to <see cref="BotCatalog"/>
-    /// and measured by nothing. The challenger is the stakes-sensitive rung; the reference is
-    /// the top of the ladder, which is <see cref="BotCatalog.Ladder"/>'s last entry because the
-    /// ladder is built upwards.
+    /// until P23, which is the same defect one layer up from the one P18 and P20 each removed: a
+    /// second stakes-reading rung would have been added to <see cref="BotCatalog"/> and measured
+    /// by nothing. The challenger is the stakes-sensitive rung; the reference is the strongest
+    /// rung there is.
+    /// ⚠️ <b>It read <c>Ladder[^1]</c> until P31 and now reads <see cref="BotCatalog.Hardest"/></b>
+    /// — the same rung, said properly. Adding <c>warden</c> put a second branch on <c>outs</c>, so
+    /// the ladder's last entry is the branch written last rather than the strongest thing in it,
+    /// and the old expression would have measured the side bet against a rung that had never been
+    /// ranked above anything.
     /// </remarks>
     public string MoneyChallenger { get; init; } = BotCatalog.StakesSensitive[^1].Name;
 
     /// <inheritdoc cref="MoneyChallenger"/>
-    public string MoneyReference { get; init; } = BotCatalog.Ladder[^1].Name;
+    public string MoneyReference { get; init; } = BotCatalog.Hardest.Name;
 
     /// <summary>
     /// The rung the two claim-permission arms are built on (BUILD-PLAN P29).
@@ -185,6 +189,7 @@ public static class Suite
             MasterSeed = options.MasterSeed,
             TurnCap = options.TurnCap,
             Stakes = options.Stakes,
+            CountLockBites = true,
             Parallel = options.Parallel
         });
 
@@ -200,6 +205,7 @@ public static class Suite
             MasterSeed = options.MasterSeed,
             TurnCap = options.TurnCap,
             Stakes = options.Stakes,
+            CountLockBites = true,
             Parallel = options.Parallel
         });
 
@@ -525,6 +531,34 @@ public static class Suite
                 scope,
                 "claim rate",
                 new Measurement(cell.Rounds, cell.ClaimRate, 0),
+                string.Empty));
+
+            // 🔥 P31's mechanism variable, and its denominator. Measured at the crossed table
+            // only, which is the one cell with the whole field sitting down together — see
+            // Tournament.Measure. The claim-permission cell reports zeroes here on purpose: it
+            // is two arms of one rung and was never asked for the counterfactual.
+            measurements.Add(new SuiteMeasurement(
+                $"feeding.lock-live.{scope}",
+                "Share of the discards chosen in which the feeding ban had taken a held card out "
+                + "of the choice (RULES.md §5.1) — how often a lock was live. ⚠️ Not yet the rule "
+                + "doing anything: a rank closed off a card the seat was never going to throw "
+                + "costs it nothing.",
+                command,
+                scope,
+                "restricted rate",
+                new Measurement((int)cell.DiscardsChosen, cell.RestrictedRate, 0),
+                string.Empty));
+
+            measurements.Add(new SuiteMeasurement(
+                $"feeding.lock-bit.{scope}",
+                "Of those restricted discards, the share in which the ban changed the seat's "
+                + "answer — the card it would have thrown over its whole hand is not the card it "
+                + "threw over its legal set. 🔥 This is what separates 'the rule did nothing' "
+                + "from 'the rung did nothing' (BUILD-PLAN P31).",
+                command,
+                scope,
+                "lock bite rate",
+                new Measurement((int)cell.RestrictedTurns, cell.LockBiteRate, 0),
                 string.Empty));
         }
 

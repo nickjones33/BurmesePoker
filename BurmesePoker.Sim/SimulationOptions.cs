@@ -33,6 +33,20 @@ public sealed record SimulationOptions
     /// </summary>
     public int TurnCap { get; init; } = 400;
 
+    /// <summary>
+    /// Whether every seat is asked what it <em>would</em> have thrown if RULES.md §5.1 were not
+    /// there — 🔥 <b>P31's mechanism variable</b>. Off by default.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>It is off by default because it costs, and it changes no result.</b> A bitten turn is
+    /// established by ranking the whole hand as well as the legal set, which on an
+    /// <c>outs</c>-family rung is the expensive thing a turn does — so it is paid only on the turns
+    /// the ban has actually restricted, and only in a cell that asked. <b>Play is identical either
+    /// way</b>: the counterfactual is read and thrown away, and the card discarded is the one the
+    /// seat would have discarded regardless. <c>WardenTests</c> is what says so.
+    /// </remarks>
+    public bool CountLockBites { get; init; }
+
     /// <summary>Whether to play the games concurrently. Results are identical either way.</summary>
     public bool Parallel { get; init; } = true;
 

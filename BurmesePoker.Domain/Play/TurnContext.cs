@@ -142,6 +142,33 @@ public sealed class TurnContext
     public FeedingBan ClosedToYou => _table.SeatFedBy(Player).MayNotBeFed;
 
     /// <summary>
+    /// The ranks this player has closed against the seat that discards to <em>them</em> — the
+    /// other side of the same rule (RULES.md §5.1).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Until P31 the strongest rule in this game about other people's hands reached every
+    /// player the computer offers as a rule about its own.</b> <see cref="ClosedToYou"/> is the
+    /// legality filter — what this seat may not throw — and it was the whole of §5.1's presence in
+    /// a decision. This is the half a player <em>arms</em>: every rank it has taken in the open and
+    /// not thrown back, which the seat above it may not now feed it.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>It discloses nothing, for §5.1's own reason.</b> Every fact in it is a card this seat
+    /// took in view of the table or threw in view of the table, so a player sitting here knows it
+    /// by having watched — and so does everybody else (§5.1, Enforcement, point 1). It is not this
+    /// seat's hand and cannot be read back to one: a rank is in here because it was taken, whether
+    /// or not it is still held.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Two-handed it is the same seat's ban seen from the other end</b>
+    /// (<see cref="TableState.SeatFedBy"/>): each player feeds and is fed by the other, the two
+    /// bans run independently, and the mutual lock is a legal state (§9 #25).
+    /// </para>
+    /// </remarks>
+    public FeedingBan ClosedByYou => _table.SeatOf(Player).MayNotBeFed;
+
+    /// <summary>
     /// Which of the held cards may actually be thrown — <b>the whole of the choice this turn
     /// presents</b> (RULES.md §5.1, §10 #13).
     /// </summary>

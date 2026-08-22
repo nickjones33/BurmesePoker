@@ -10,27 +10,82 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-🔥 **The verify branch is closed: P30.2 — the conformance harness and the front-end tests —
-shipped 2026-08-21, on Fable 5.** The game as played is now audited against every Settled rule:
-**`RuleConformance`** (an `IGameObserver` of independent re-derivations — the ban mirrored from
-public events, the settlement recomputed without `Settlement` or `MoneyCardRegistry`, melds
-validated straight from §6) runs over **180 ordinary rounds at 4, 5 and 6 seats** with the whole
-catalog and dial seated, **a mutant per rule family proves the audit can go red**, and
-**`SettledRuleCoverageTests` parses the Settled sections out of `RULES.md`** and fails the build
-on any section no registry entry checks or exempts. **Both front ends played to a declaration**:
-`drive-console.py` is rewritten to **answer prompts adaptively** (byte-repeatable, verifies the
-settlement panel's arithmetic, exits by the console's own path) and `BrowserRoundTests` closes
-the settlement loop **board = engine = journal replay**. 🔥 **Two real fixes shipped with it**:
-**R1** — a discard legal only under §5.1 exception 2 *is* the declaration, the engine no longer
-lets a human throw it and decline — and **R8** — `SeatChannel` makes a `SeatConnection` one
-*occupancy* of a seat, so a handed-over seat is dead to its previous occupant server-side. **All
-29 P30.2-fix review items are in** (R30 by correcting the false remark rather than re-basing
-every hand-computed payout; the review sanctioned either). ✅ **The next packet is `P31`**
-(`warden`, the feeding ban played offensively), then **`P32`** (five seats as the default
-table), **both back on Opus**. ⚠️ **Set the model with `/model` before starting the session —
-the packet records which one but cannot choose it.** ⚠️ P31's suite regeneration will also land
-two corrections to the CSV (R3's paired claim-money interval, ~±0.25; four new
-`money.side-margin.*` rows) — **expected, not a regression** (BUILD-PLAN §5 P31).
+🔥 **`P31` shipped 2026-08-22 on Opus 5: `warden`, the feeding ban played offensively — and it
+lost.** `Domain/Agents/WardenBotAgent.cs` is `outs` with the **take** changed: it will take a card
+it does not want when that closes the rank against the seat that threw it (`RULES.md` §5.1), and
+then **holds** that rank rather than throwing it back. It measures **`−9.3 ± 1.0` against `outs`**
+and about six points behind `greedy`, `cautious` and `counting`, beating only `simple` and
+`random` — **all six margins surviving Holm over a family of twenty-one.** ⚠️ **The packet
+predicted a null; this is the largest separated *loss* the programme has produced.**
+
+🔥 **The packet's third build item is what makes that a diagnosis instead of a shrug, and it is
+the thing to remember.** `RULES.md` §5.1 is enforced as an **impossible move**, so it leaves no
+trace by construction and nothing had ever measured whether it does anything. P31 built the
+counterfactual — `IRanksDiscards.RankDiscards(context, candidates)`, **an instrument the engine may
+never call** — which asks a restricted seat what it *would* have thrown over its whole hand.
+**The ban removed a held card from 30.5% of all discards in the crossed field and changed the
+seat's answer on 30.8% of those: it takes the card a seat meant to play on 9.4% of every turn.**
+⚠️ **So the escape hatch the packet named in advance is closed** — the locks bite hard and the rung
+still loses. **The rule is not what failed.**
+
+⚠️ **The *why*, and it is the constraint on any successor.** `warden` prices a lock in **melded
+cards** — it declines any lock it cannot absorb by shedding a partner-less card — and then pays for
+every lock it takes with a **draw**, which is the only thing that improves a hand and which nothing
+in its rule prices. An all-`warden` table runs **31.9 turns a round against `outs`' 24.1**: about a
+third of its draws have become locks. **A successor rung must price the draw** — `prospector`
+prices one in money (`MoneyOdds.PerBlindDraw`) and nothing yet prices one in cards, though
+`LiveOuts` is the obvious currency and is already in the file.
+
+🔥 **Reproduction: 71 of the 88 shared CSV rows came back byte-identical**, including every
+head-to-head cell among the six older rungs, every pairing ratio, **the whole difficulty dial and
+the whole money sweep**. The 17 that moved are exactly the rows a seventh rung must move — the
+free-for-all column, the mean-margin ranking (21 comparisons, not 15) and the four ladder-scope
+statistics computed off the free-for-all cell. ⚠️ **P29 reproduced 4 of 91 and was right to**: it
+ran across a rules change and this did not. **"Does it reproduce" is a question with an answer
+again**, and this is the strongest answer the document has carried (P23's best was 59 of 77).
+
+🔥 **The unplanned finding, and a cold session should read it as a general lesson rather than a
+ladder detail: "the last rung named is the strongest rung" was a coincidence asserted as a law, in
+three places at once.** `warden` and `prospector` both hang off `outs`, so the ladder became a
+**tree** and `BotCatalog.Ladder[^1]` stopped being `BotCatalog.Hardest`.
+- ✅ `SuiteOptions.MoneyReference` read `Ladder[^1]` and **would have swept the side bet against
+  `warden`** — a rung never ranked above anything. **Fixed** to `BotCatalog.Hardest`.
+- ✅ `StandingAnswerTests` asserted `Assert.Same(Hardest, Ladder[^1])`. **Fixed** to assert what was
+  meant.
+- ⚠️ `TournamentOptions.NullTestStrategy` takes the last strategy named, so **the null cell changed
+  hands from `outs` to `warden` with nobody choosing it**. **Left alone on purpose**: the cell's
+  claim is that *any* strategy against a copy of itself wins 1/n, so a null test that depended on
+  who played it would itself be the finding. It holds at both (`+0.5` then `+0.9 ± 1.0`).
+
+⚠️ **`sim suite` is a three-hour job now — 11,020 s for 116 measurements**, up from 9,981 s for 91.
+**40% more head-to-head cells for 10% more wall clock**, because `warden` costs **5.6× a `greedy`
+round against `outs`' 6.1×** (its candidate set is smaller) even though its rounds are a third
+longer. ✅ **R3 and R13's owed corrections landed with it**: `claim.permission.money.refuse-over-allow`
+is paired at **±0.25** (mean unmoved to six decimal places, the null intact) and four
+`money.side-margin.*` rows appeared.
+
+⚠️ **`warden` is `Strength: 3`, level with `outs`, so `BotCatalog.Hardest` did not move** — the
+difficulty dial is untouched, every ε is unchanged, and **no front end gained an option.** Same
+standing `prospector` has had since P22.
+
+✅ **No rules question was raised and `RULES.md` stays at rev 24** (`JournalHeader.CurrentRulesRevision`
+unchanged). `warden` **deliberately declines to lock jokers**: whether taking a joker closes the
+other jokers is §9 #27, a `PLAYER` house ruling, and the one rung whose whole claim rests on the
+lock must not be built on the one part of §5.1 nobody has confirmed.
+
+✅ **The next packet is `P32`** — five seats as the default table. ⚠️ **It has been re-costed and
+the amendment is in `BUILD-PLAN.md` §5 P32**: a seventh ranked rung makes the round-robin 21 cells,
+and the five-handed free-for-all goes from `6⁵ = 7,776` seatings to **`7⁵ = 16,807`**, so that one
+cell is plausibly the majority of the run. **Decide before starting whether it runs at the full
+crossing or a stated subsample — and if it is capped, say so in the file.** ⚠️ **Set the model with
+`/model` before the session; the packet records which one and cannot choose it.**
+⚠️ **P24.2** (the computer's reasoning said out loud) is still Nick's call.
+
+---
+
+### The verify branch, which closed before P31
+
+🔥 **P30.2 — the conformance harness and the front-end tests — shipped 2026-08-21, on Fable 5.**
 
 ⚠️ **`P24` was split** into **P24.1** (a journal for the hosted table — plumbing P30.2's browser
 half needs, and `Web`/`Server` contain the string `journal` **zero times**) and **P24.2** (the
@@ -114,12 +169,14 @@ either way, rather than saying the rule never fires.**
 🔥 **`RULES.md` needed no change and `§9` gained no question.** P29 is the first packet since the
 rules sessions began that measured without discovering a rule, which is what it was for.
 
-Nothing is in progress and the tree is green at **697 passed / 0 failed** (677 after P24.1; the
-twenty new ones are P30.2's — the conformance field and mutants in `Tests/Conformance/`, the
-coverage registry, the R6 coverage set, the handover tests and `BrowserRoundTests`, less one
-duplicate folded out of `MatchEngineTests` (R29)). ⚠️ **The test suite takes about eight and a
-half minutes idle** and **half an hour while a `sim suite` is running** (measured at P24.1 under
-exactly that contention; not a regression).
+Nothing is in progress and the tree is green at **715 passed / 0 failed** — 697 after P30.2, and
+the eighteen new ones are P31's: nine in `WardenBotAgentTests` (the take, the two ways a lock is
+worthless, the joker abstention, the restraint, and the restraint's two escapes), three in
+`LockBiteTests` (the instrument changes no card, it is off unless a cell buys it, and the ban
+really does take cards seats meant to throw), and six more that the catalog's theories pick up
+automatically for a seventh rung. ⚠️ **The test suite takes about nine minutes idle** and **half an
+hour while a `sim suite` is running** (measured at P24.1 under exactly that contention; not a
+regression).
 
 ⚠️ **A `drive-console.py` capture from before P30.2 no longer compares** — R5 fixed the money
 narration every round opens with, and the `human` script now declares and exits cleanly instead
@@ -1093,8 +1150,8 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P29** Re-measure, under the rules as they are | P25 ✅, P26 ✅, P27 ✅, P28 ✅ | **done 2026-08-21** — `measurements.csv` regenerated under P25–P28: **91 measurements in 9,981 s**, and **4 of 91 rows byte-identical — the four ε constants, which are the only rows a human chose.** 🔥 **Of three predictions written down in advance, two held and one was wrong**: the dial survives (all three steps separate; no ε moved), `prospector` separates a whole ratio lower ($5/$20 is `+5.32 ± 2.27`, was inside the interval) — and **`outs` did not narrow at all**, `+3.0 ± 1.0` against +3.1. 🔥 **What the win condition actually moved is `simple`**, which gained ~2 points on all three middle rungs: **a requirement no rung optimises for levels a ladder from the bottom.** ✅ **Refusing a claim is a null** (`+0.4 ± 1.0`), published. ✅ **Round length and abandoned counts are published for the first time** — the only non-zero abandoned count is the field containing `random`. |
 | ☑ | **P30.1** A thorough code review · **Fable 5** | — | **done 2026-08-21** — `docs/REVIEW-2026-08.md`: **37 findings, every one triaged, nothing unassigned**; one main read over the whole Domain plus four parallel scoped reviews on the same model, against a green 672/0 baseline. 🔥 **Top of the list**: a human can throw a banned rank that was legal only as a declaring discard and then decline to declare (R1); every journal since 2026-08-21 stamps rules **rev 13** against a document at rev 24 (R2); a published P29 headline interval used the unpaired formula on a within-cell money margin (R3). 🔥 **The systemic hole is the fifth question** — `FallibleAgent.ObjectToClaim` is tested nowhere and no connected fixture ever *allows* a claim (R6). ✅ **No new rules question**; `RULES.md` stays rev 24. |
 | ☑ | **P30.2** Conformance — the rules as *played* · **Fable 5** | **P30.1**, P24.1 | **done 2026-08-21** — `Tests/Conformance/`: `RuleConformance` audits 180 ordinary rounds at 4, 5 and 6 seats by independent re-derivation, one mutant per rule family proves the audit can go red, and `SettledRuleCoverageTests` binds `RULES.md`'s Settled sections to a check-or-exemption registry. Both front ends driven to a declaration: `drive-console.py` answers prompts adaptively and verifies the settlement panel; `BrowserRoundTests` closes board = engine = journal replay. **R1 fixed** (an exception-2 throw *is* the declaration), **R8 fixed** (`SeatChannel` — a connection is one occupancy), and all 29 P30.2-fix items landed. ⚠️ The "no capture has ever contained a win" premise was stale — the grep needle was `went out`; the console says `declares`. |
-| ☐ | **P31** `warden` — the feeding ban as a weapon · **Opus** | P27 ✅, P30.2 | **new 2026-08-21** — the first rung to play §5.1 **offensively**. 🔥 **Today the ban reaches the agents as a legality filter and nothing else**: `LegalDiscards` is read in exactly two places and **no rung reads `MayNotBeFed` to decide anything.** Take the rank your upstream seat just threw and they may never throw it again — and **the release is under the taker's control**, so the rung must hold what it locks. ⚠️ **Three predictions written down in advance; the first is that it is a null.** |
-| ☐ | **P32** Five-handed is the default table · **Opus** | P30.2, P31 | **new 2026-08-21** — the standing set moves to **5 seats**, which is the size the game is actually played at, and **the dial is re-fitted there**. ⚠️ **At five or more, §7.1.1 requires no series at all** — the rule P29's whole headline turned on does not apply at the default size. ⚠️ **A cost blow-up hides in the ladder free-for-all**: `Balanced(6,5)` is 7,776 assignments against 1,296, taking that cell from 9,072 games to **15,552**. |
+| ☑ | **P31** `warden` — the feeding ban as a weapon · **Opus** | P27 ✅, P30.2 ✅ | **done 2026-08-22** — the first rung to play §5.1 **offensively**, and **it lost by more than any rung has lost before**: `−9.3 ± 1.0` against `outs`, ~−6 against `greedy`/`cautious`/`counting`, `+2.5` over `simple`, all surviving Holm over a family of 21. 🔥 **The packet predicted a null; the mechanism variable is what makes the loss attributable** — §5.1 removed a held card from **30.5%** of all discards and **changed the seat's answer on 30.8% of those, 9.4% of every turn**, so the rule bites hard and the rung is what failed. ⚠️ **The why:** it prices a lock in melded cards and pays for it in **draws**, which nothing in its rule prices. 🔥 **71 of 88 shared CSV rows reproduced byte-identically.** 🔥 **Unplanned: 'the last rung named is the strongest' was a coincidence asserted as a law in three places** — two fixed, the null cell left alone on purpose. `sim suite` = **116 measurements in 11,020 s**. |
+| ☐ | **P32** Five-handed is the default table · **Opus** | P30.2 ✅, P31 ✅ | **new 2026-08-21, re-costed by P31** — the standing set moves to **5 seats**, which is the size the game is actually played at, and **the dial is re-fitted there**. ⚠️ **At five or more, §7.1.1 requires no series at all** — the rule P29's whole headline turned on does not apply at the default size. ⚠️ **The cost blow-up got worse with `warden`**: the round-robin is 21 cells not 15, and `Balanced(7,5)` is **16,807** assignments against `6⁵ = 7,776` — that one cell is plausibly the majority of the run. **Decide up front whether it runs at the full crossing or a stated subsample, and if it is capped, say so in the file.** |
 
 **P14, P15 and P16 are all done, and not one of them needed a line of the engine.** P14 cost
 nothing measurable in throughput at either fidelity; P15 and P16 raised no rules question
@@ -2760,6 +2817,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 ## Session log
 
 | Date | Packet | Outcome |
+| 2026-08-22 | P31 | **Done — `warden`, the feeding ban played offensively, on Opus 5. It lost, and the packet's own mechanism variable is what makes that a finding.** `Domain/Agents/WardenBotAgent.cs` is `outs` with the **take** changed: it takes a card it does not want when doing so closes that rank against the seat that threw it (RULES.md §5.1), and then **holds** that rank rather than releasing it — one idea, not two, since the release is the taker's to give. Its restraint is §5.1 turned inward and keeps the rule's own two escapes (the declaring discard, and the floor). `TurnContext.ClosedByYou` is new: the half of the ban a seat **arms**, which nothing had ever read — until this packet the strongest rule in the game about *other people's hands* reached every computer player as a rule about its own. `ShoeMemory` lifts `counting`'s memory out whole so the denial estimate is reused rather than rewritten (a null rung's machinery earning its keep). 🔥 **The result: `−9.3 ± 1.0` against `outs`, ~−6 against `greedy`/`cautious`/`counting`, `+2.5` over `simple`; all six survive Holm over a family of 21. The packet predicted a null and got the largest separated loss in the document.** 🔥 **The mechanism variable is what turns that from a shrug into a diagnosis** — `IRanksDiscards.RankDiscards(context, candidates)` is an instrument (never a move) that asks a restricted seat what it *would* have thrown: §5.1 removed a held card from **30.5%** of all discards and **changed the answer on 30.8% of those — 9.4% of every turn**. The rule is one of the most active in the game; the rung is what failed. ⚠️ **The why:** it prices a lock in **melded cards** and pays for it in **draws**, which nothing in its rule prices — an all-`warden` table runs **31.9 turns a round against `outs`' 24.1**. A successor must price the draw. 🔥 **Reproduction: 71 of 88 shared CSV rows byte-identical** — every old head-to-head cell, every pairing ratio, the whole dial, the whole money sweep; the 17 that moved are exactly the rows a seventh rung must move. 🔥 **Unplanned finding: "the ladder's last entry is its strongest" was a coincidence asserted as a law in three places** — `MoneyReference` (fixed; would have swept the side bet against `warden`), `StandingAnswerTests` (fixed), and the tournament's null cell (**left alone on purpose**; it changed hands to `warden` and holds). R3 and R13's owed corrections landed: the claim-money interval is paired at **±0.25** (mean unmoved to six decimals) and four `money.side-margin.*` rows appeared. `sim suite` 8000/seed 20260819 = **116 measurements in 11,020 s (3 h 04)**. ⚠️ **No rules question raised; `RULES.md` stays at rev 24** — `warden` declines to lock jokers, because §9 #27 is an unconfirmed `PLAYER` ruling and the one rung resting wholly on the lock must not be built on it. 🔥 **Green at 715 / 0**, from 697. |
 | 2026-08-21 | P30.2 | **Done — conformance: the rules as played, on Fable 5, and the verify branch is closed.** `Tests/Conformance/RuleConformance.cs` audits a round as it is played — **independent re-derivations, never calls into the code under audit**: the feeding ban mirrored from public events alone, settlement recomputed without `Settlement` or `MoneyCardRegistry`, melds validated straight from §6, conservation and write-once ownership checked at every event. Run over **180 ordinary rounds at 4/5/6 seats** with all of `BotCatalog` and `DifficultyLadder` seated (~27 s), plus **one mutant per rule family proving each check can go red** (P13.6's vacuity lesson, institutionalised). `SettledRuleCoverageTests` parses the Settled sections out of `RULES.md` into a check-or-exemption registry and fails the build both ways (unregistered Settled section, or stale registry entry). **The console driven to a declaration**: `drive-console.py` rewritten to answer prompts by their text — byte-repeatable (proved by `cmp`), verifies every settlement panel's arithmetic, exits by the console's own path; ⚠️ **the packet's premise was stale** — both fixed-key captures had quietly started reaching round 1's settlement (the grep needle was `went out`; the console says `declares`) — but the rewrite was still owed, since fixed lists answer by position and had drifted twice. **The browser driven to a declaration**: `BrowserRoundTests` plays a round through `SeatBoard`s, asserts the strict concealment form at the boards, and closes the loop **board = engine = journal replay**. 🔥 **R1 fixed in the engine**: a discard legal only under §5.1 exception 2 *is* the declaration — the seat is not asked and cannot decline. 🔥 **R8 fixed in the server**: new `SeatChannel` holds a seat's question state across occupants; each `SitDown` mints a fresh `SeatConnection`, the superseded one is dead server-side, and a standing question moves to the new occupant. **R2**: journals stamp rev 24, bound to `RULES.md`'s header by a test, and the `/poker` skill's Phase 6 names the bump. **R3/R13**: the claim money margin is paired (`CellPlayer.NetPerRoundByGame`) and `money.side-margin.*` is published — both reach the CSV at P31's regeneration, annotated in `STRATEGY.md` until then. **All 29 P30.2-fix items landed** (R30 by fixing the false remark — re-basing `DealBuilder`'s filler would re-derive every hand-computed payout to delete comments that are true). R6's four coverage holes are closed (the fifth question is exercised at the dial, over a connection with an *allowed* objection, in a forced journal round-trip, at the advice watcher's upstream seat, and in the audit field). No rules question; `RULES.md` stays rev 24. Tree green at **697 passed / 0 failed** in ~8m 30s. |
 |---|---|---|
 | 2026-08-21 | P24.1 | **Done — a journal for the hosted table, on Fable 5, and P30.2's browser half has what it is written against.** `--journal table.jsonl` on `BurmesePoker.Web` writes the file the console writes and `sim replay` reads. The split that shaped it: **`TableSession` owns the `GameJournalBuilder`** (the agents are built there; `JournalingAgent.Wrap` runs **outermost**, so what is recorded is the answer that reached the engine — a stand-in's or the clock's included) and **the file stays the host's** — `HostedTable` flushes `TablePlan.Journal`'s path **after every settled round, on the dealer's own thread**, because nothing ends a hosted match but the table closing, and a flush from any other thread — disposal included — could read a round mid-sentence. `TableSeat` gained `Strategy`/`Attribution` (a level's name for a Web bot, `human` for a remote seat — the CSV join key's other half, §3.8 item 4); an abandoned round sets `Header.Abandoned` with `Rounds` stopped at what settled; the lobby form does not offer the flag **on purpose** (two tables, one path, taking turns overwriting each other). ✅ **The core claim is a test**: a round played through the server's own plumbing — remote seats answering, bounded seats, the fan-out — **replays identically** through the ordinary `JournalPlayerAgent`. ⚠️ **Found on the way in: the previous session's "next packet is P30.2" had skipped P30.2's own unbuilt dependency** — the §4 diagram said `P24.1 ☐ ──► P30.2` all along; trust the diagram over the prose. ⚠️ The journal still stamps rules **rev 13** (R2) — left alone on purpose, P30.2 owns that fix and it is one constant for console, Sim and Web alike. No rules question; `RULES.md` stays rev 24. Tree green at **677** (672 + 4 server + 1 web). |

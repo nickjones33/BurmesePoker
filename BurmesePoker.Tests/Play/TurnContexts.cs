@@ -43,6 +43,32 @@ internal static class TurnContexts
         Build(hand, offered: null, Stakes.Standard, FromBottom, FromTop, hand[^1], takenByTheSeatYouFeed);
 
     /// <summary>
+    /// A seat that has itself taken cards in the open, and so has <b>closed</b> their ranks
+    /// against the seat that feeds it (RULES.md §5.1, <see cref="TurnContext.ClosedByYou"/>).
+    /// </summary>
+    /// <param name="hand">The cards held.</param>
+    /// <param name="offered">The previous player's discard, or null when nothing is on offer.</param>
+    /// <param name="takenByYou">What this seat took in view of the table.</param>
+    /// <param name="thrownByYou">
+    /// What this seat has thrown away, which re-opens those ranks for good (§5.1, exception 1).
+    /// Applied after the takes, so a rank in both ends up released.
+    /// </param>
+    internal static TurnContext Locking(
+        IReadOnlyList<Card> hand,
+        Card? offered = null,
+        IReadOnlyList<Card>? takenByYou = null,
+        IReadOnlyList<Card>? thrownByYou = null) =>
+        Build(
+            hand,
+            offered,
+            Stakes.Standard,
+            FromBottom,
+            FromTop,
+            taken: offered is null ? hand[^1] : null,
+            takenByYou: takenByYou,
+            thrownByYou: thrownByYou);
+
+    /// <summary>
     /// A seat holding these cards and being offered that one, at those stakes — the question a
     /// take decision is (BUILD-PLAN P22).
     /// </summary>
@@ -77,7 +103,9 @@ internal static class TurnContexts
         Card turnedUpFromBottom,
         Card turnedUpFromTop,
         Card? taken,
-        IReadOnlyList<Card>? takenByTheSeatYouFeed = null)
+        IReadOnlyList<Card>? takenByTheSeatYouFeed = null,
+        IReadOnlyList<Card>? takenByYou = null,
+        IReadOnlyList<Card>? thrownByYou = null)
     {
         var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, 4).Select(seat => new PlayerId(seat))];
         var shoe = Deck.TwoDecks();
@@ -93,6 +121,16 @@ internal static class TurnContexts
         foreach (var card in takenByTheSeatYouFeed ?? [])
         {
             table.SeatFedBy(seat.Id).TookInTheOpen(card);
+        }
+
+        foreach (var card in takenByYou ?? [])
+        {
+            seat.TookInTheOpen(card);
+        }
+
+        foreach (var card in thrownByYou ?? [])
+        {
+            seat.MayNotBeFed.ThrewAway(card);
         }
 
         return new TurnContext(

@@ -33,6 +33,15 @@ namespace BurmesePoker.Sim;
 /// <c>Claims − ClaimsRefused</c> is what was actually taken off the table.
 /// </para>
 /// </param>
+/// <param name="DiscardsChosen">Discards this seat was asked to choose — the denominator of the two below.</param>
+/// <param name="RestrictedTurns">
+/// Of those, how many the feeding ban had taken a held card out of (RULES.md §5.1) — the lock was
+/// <b>live</b>, which is not yet the lock doing anything.
+/// </param>
+/// <param name="LockBites">
+/// Of those, how many the ban changed the seat's answer on — 🔥 <b>P31's mechanism variable</b>,
+/// and zero in every cell that did not ask for it (it costs a second ranking).
+/// </param>
 public sealed record SeatRow(
     int Seat,
     string Strategy,
@@ -44,7 +53,10 @@ public sealed record SeatRow(
     int Takes,
     int Draws,
     int ClaimOffers,
-    int Claims);
+    int Claims,
+    int DiscardsChosen = 0,
+    int RestrictedTurns = 0,
+    int LockBites = 0);
 
 /// <summary>One played round of one game.</summary>
 /// <param name="Round">Which round of the game, counting from 1.</param>

@@ -396,6 +396,12 @@ public class DifficultyDialTests
             Asked++;
             return [];
         }
+
+        public IReadOnlyList<Card> RankDiscards(TurnContext context, IReadOnlyList<Card> candidates)
+        {
+            Asked++;
+            return [];
+        }
     }
 
     /// <summary>

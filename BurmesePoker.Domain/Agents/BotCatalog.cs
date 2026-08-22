@@ -197,6 +197,11 @@ public static class BotCatalog
             Strength: 3,
             _ => new OutsBotAgent()),
         new(
+            "warden",
+            "Plays like the last one, and will take a card it does not want to stop the player before it throwing another like it.",
+            Strength: 3,
+            _ => new WardenBotAgent()),
+        new(
             "prospector",
             "Plays like the last one, and would sooner dig in the deck than take what you threw — the deck's cards pay it and yours never will.",
             Strength: 3,
@@ -223,9 +228,15 @@ public static class BotCatalog
     /// and what P18 and P20 each had to remove one layer apart.
     /// </para>
     /// <para>
-    /// <b>The ladder is built upwards</b>, so its last entry is its strongest and is what a
-    /// stakes-sensitive rung is measured against. That is an invariant rather than an
-    /// observation, and it is asserted.
+    /// ⚠️ <b>The ladder stopped being a line at P31, and the last entry stopped being the
+    /// strongest with it.</b> Until <c>warden</c> every rung was one change from the rung before
+    /// it, so "built upwards" and "in the order it was built" were the same order. <c>warden</c>
+    /// and <c>prospector</c> are both one change from <c>outs</c> — a <em>branch</em> — so the
+    /// list's tail is now whichever branch was written last, which is not a claim about strength
+    /// at all. <b>What a stakes-sensitive rung is measured against is <see cref="Hardest"/></b>,
+    /// which reads <see cref="BotRung.Strength"/> and so says what it means; <c>Ladder[^1]</c>
+    /// merely used to agree with it. <c>StandingAnswerTests</c> asserts the property that is
+    /// actually load-bearing — the strongest rung is one the ladder tournament ranks.
     /// </para>
     /// </remarks>
     public static IReadOnlyList<BotRung> Ladder { get; } =

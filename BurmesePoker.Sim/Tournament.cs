@@ -73,6 +73,9 @@ public sealed record TournamentOptions
     /// <summary>What the rounds are played for.</summary>
     public Stakes Stakes { get; init; } = Stakes.Standard;
 
+    /// <inheritdoc cref="SimulationOptions.CountLockBites"/>
+    public bool CountLockBites { get; init; }
+
     /// <summary>Whether the games inside a cell run concurrently. Results are identical either way.</summary>
     public bool Parallel { get; init; } = true;
 
@@ -86,9 +89,21 @@ public sealed record TournamentOptions
     public PairFamily Pairs { get; init; } = PairFamily.RoundRobin;
 
     /// <summary>
-    /// Which strategy plays the null cell. Null takes the last one named, which in ladder order
-    /// is the strongest — the rung a reader is most likely to trust.
+    /// Which strategy plays the null cell. Null takes the last one named.
     /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Which one it is has to be arbitrary, and P31 is where that stopped being obvious.</b>
+    /// This used to say <em>"the last one named, which in ladder order is the strongest — the rung
+    /// a reader is most likely to trust"</em>, and that was a coincidence dressed as a reason:
+    /// adding <c>warden</c> put a second branch on <c>outs</c>, so the ladder's last entry became
+    /// the branch written last and <b>the null cell changed hands without anybody choosing it</b>
+    /// (<c>harness.null-test.outs</c> in the published set became <c>harness.null-test.warden</c>).
+    /// 🔥 <b>It is left alone deliberately.</b> The cell's whole claim is that <em>any</em> strategy
+    /// against a copy of itself wins 1/n of the games — a claim about the apparatus and not about
+    /// the rung — so a null test that depended on who played it would be the finding. It holds at
+    /// both (<c>docs/STRATEGY.md</c> §6), which is a small piece of evidence for the harness rather
+    /// than against it.
+    /// </remarks>
     public string? NullTest { get; init; }
 
     /// <summary>The strategy the null cell is played by.</summary>
@@ -229,10 +244,33 @@ public sealed record TournamentCell(
     int Rounds = 0,
     long Turns = 0,
     int ClaimAttempts = 0,
-    int ClaimsRefused = 0)
+    int ClaimsRefused = 0,
+    long DiscardsChosen = 0,
+    long RestrictedTurns = 0,
+    long LockBites = 0)
 {
     /// <summary>Average turns to a declaration in this cell.</summary>
     public double TurnsPerRound => Rounds == 0 ? 0 : (double)Turns / Rounds;
+
+    /// <summary>
+    /// Share of the discards chosen in which the feeding ban had taken a held card out of the
+    /// choice (RULES.md §5.1) — <b>how often the lock was live</b>.
+    /// </summary>
+    public double RestrictedRate => DiscardsChosen == 0 ? 0 : (double)RestrictedTurns / DiscardsChosen;
+
+    /// <summary>
+    /// Share of the <em>restricted</em> discards in which the ban changed the seat's answer —
+    /// 🔥 <b>P31's mechanism variable, and the number that separates "the rule did nothing" from
+    /// "the rung did nothing"</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Out of the restricted turns and not out of all of them</b>, deliberately: a rank
+    /// closed off a card the seat was never going to throw costs it nothing, and lumping those in
+    /// would report the ban as toothless whenever it was merely irrelevant. Multiply by
+    /// <see cref="RestrictedRate"/> for the share of <em>every</em> turn.
+    /// ⚠️ Zero in a cell that did not ask for it — see <c>SimulationOptions.CountLockBites</c>.
+    /// </remarks>
+    public double LockBiteRate => RestrictedTurns == 0 ? 0 : (double)LockBites / RestrictedTurns;
 
     /// <summary>Share of the games this cell gave up at the turn cap.</summary>
     public double AbandonedRate => Games == 0 ? 0 : (double)Abandoned / Games;
@@ -390,6 +428,7 @@ public static class Tournament
             MasterSeed = options.MasterSeed,
             Stakes = options.Stakes,
             TurnCap = options.TurnCap,
+            CountLockBites = options.CountLockBites,
             Parallel = options.Parallel
         }.Validated();
 
@@ -465,7 +504,17 @@ public static class Tournament
         IReadOnlyList<IReadOnlyList<Strategy>> assignments,
         IReadOnlyList<Strategy> players)
     {
-        var run = RunOf(options, players, assignments);
+        // 🔥 The mechanism variable is bought once, at the crossed table (BUILD-PLAN P31 item 3).
+        // It costs a second ranking on every restricted turn, which on an `outs`-family rung is
+        // the expensive thing a turn does — and the free-for-all is where the question actually
+        // lives, because it is the one cell with the whole field sitting down together. Paying
+        // for it in all k(k−1)/2 head-to-head cells would multiply the bill by fifteen to answer
+        // the same question fifteen times.
+        var run = RunOf(
+            options with { CountLockBites = options.CountLockBites && kind is CellKind.FreeForAll },
+            players,
+            assignments);
+
         var report = Simulator.Run(run);
         var series = StrategySeries.Of(report);
 
@@ -477,6 +526,9 @@ public static class Tournament
         var turns = 0L;
         var attempts = 0;
         var refused = 0;
+        var discards = 0L;
+        var restricted = 0L;
+        var bites = 0L;
 
         foreach (var game in report.Games)
         {
@@ -486,6 +538,9 @@ public static class Tournament
                 turns += round.Turns;
                 attempts += round.Seats.Sum(seat => seat.Claims);
                 refused += round.ClaimsRefused;
+                discards += round.Seats.Sum(seat => seat.DiscardsChosen);
+                restricted += round.Seats.Sum(seat => seat.RestrictedTurns);
+                bites += round.Seats.Sum(seat => seat.LockBites);
             }
         }
 
@@ -505,7 +560,7 @@ public static class Tournament
             return new TournamentCell(
                 kind, row, column, assignments.Count, report.Games.Count, settled,
                 report.Games.Count - settled, cellPlayers, default, default,
-                rounds, turns, attempts, refused);
+                rounds, turns, attempts, refused, discards, restricted, bites);
         }
 
         var rowSeries = series.Single(one => one.Name == row);
@@ -525,7 +580,10 @@ public static class Tournament
             rounds,
             turns,
             attempts,
-            refused);
+            refused,
+            discards,
+            restricted,
+            bites);
     }
 
     private static IReadOnlyList<Standing> Standings(

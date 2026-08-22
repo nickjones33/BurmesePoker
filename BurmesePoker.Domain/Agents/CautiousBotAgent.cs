@@ -80,6 +80,15 @@ public sealed class CautiousBotAgent : IPlayerAgent, IRanksDiscards
         return CoverScore.Ranking(context, Preference);
     }
 
+    /// <inheritdoc/>
+    public IReadOnlyList<Card> RankDiscards(TurnContext context, IReadOnlyList<Card> candidates)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(candidates);
+
+        return CoverScore.Ranking(context.Hand, candidates, Preference);
+    }
+
     /// <inheritdoc cref="GreedyBotAgent.ClaimTurnedUpMoneyCard"/>
     public bool ClaimTurnedUpMoneyCard(TurnContext context)
     {

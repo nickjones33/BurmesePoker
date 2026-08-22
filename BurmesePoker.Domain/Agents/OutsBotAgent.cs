@@ -92,6 +92,15 @@ public sealed class OutsBotAgent : IPlayerAgent, IRanksDiscards
         return CoverScore.Ranking(context, Preference, Outs);
     }
 
+    /// <inheritdoc/>
+    public IReadOnlyList<Card> RankDiscards(TurnContext context, IReadOnlyList<Card> candidates)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(candidates);
+
+        return CoverScore.Ranking(context.Hand, candidates, Preference, Outs);
+    }
+
     /// <inheritdoc cref="GreedyBotAgent.ClaimTurnedUpMoneyCard"/>
     public bool ClaimTurnedUpMoneyCard(TurnContext context)
     {
