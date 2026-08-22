@@ -129,17 +129,6 @@ public class MatchEngineTests
     }
 
     [Fact]
-    public void TheSameSeatingIsPlayedEveryRound()
-    {
-        // RULES.md §3 step 2 randomises seating at setup and says nothing about changing it
-        // between rounds, so the match keeps the order it was given (RULES.md §9 #14).
-        var match = Match(WinsImmediately());
-
-        Assert.Equal(FourPlayers, match.PlayRound(Deal()).Table.Players);
-        Assert.Equal(FourPlayers, match.PlayRound(Deal()).Table.Players);
-    }
-
-    [Fact]
     public void AMatchNeedsNoObserverAtAll()
     {
         // P12 runs matches with nothing watching (BUILD-PLAN §3.8), so an observer is optional

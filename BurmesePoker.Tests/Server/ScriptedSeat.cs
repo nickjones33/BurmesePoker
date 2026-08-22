@@ -49,6 +49,13 @@ public sealed class ScriptedSeat
     public bool Silent { get; set; }
 
     /// <summary>
+    /// Whether it refuses a claim it is asked to permit. True by default, which is what every
+    /// rung does — <b>an allowed objection is the answer no shipped player ever gives</b>, so a
+    /// test that wants one must say so (review R6).
+    /// </summary>
+    public bool Objects { get; set; } = true;
+
+    /// <summary>
     /// Which prompts it is away for, if it comes and goes. Asked before every answer, so a
     /// player can miss one turn and be back for the next.
     /// </summary>
@@ -68,7 +75,11 @@ public sealed class ScriptedSeat
             return;
         }
 
-        if (connection.Answer(Reply(prompt)))
+        var reply = prompt.Question == SeatQuestion.ObjectToClaim
+            ? new SeatAnswer.Objection(Objects)
+            : Reply(prompt);
+
+        if (connection.Answer(reply))
         {
             Answered++;
         }

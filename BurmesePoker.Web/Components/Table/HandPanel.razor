@@ -18,6 +18,8 @@
     the better sentence.
 *@
 
+@using BurmesePoker.Domain.Money
+
 @if (Hand is null)
 {
     <p class="none">Your hand is dealt at the start of the round.</p>
@@ -258,7 +260,9 @@ else
         // nobody — and either way it does not pay you.
         if (held.Card.Multiplier >= 1)
         {
-            var pays = held.Card.Multiplier >= 2 ? "a money card that pays three times" : "a money card";
+            var pays = held.Card.Multiplier >= MoneyCardRegistry.Tripled
+                ? "a money card that pays three times"
+                : "a money card";
 
             said.Add(held.Card.IsOwned
                 ? $"{pays}, and it is yours — it pays you even if you throw it away"

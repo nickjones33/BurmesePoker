@@ -39,6 +39,13 @@ public sealed class Lobby : IAsyncDisposable
     private readonly ConcurrentDictionary<string, HostedTable> _tables = [];
     private readonly ILoggerFactory _logs;
     private readonly Random _seeds;
+
+    /// <summary>
+    /// Serialises opening. ⚠️ The dictionary is safe on its own, but the ceiling is not: the
+    /// count check and the add must be one step, or two forms pressed together both clear
+    /// <see cref="MostTables"/> minus one and the site holds one table too many.
+    /// </summary>
+    private readonly Lock _gate = new();
     private int _opened;
 
     public Lobby(IConfiguration configuration, ILoggerFactory logs)
@@ -98,8 +105,12 @@ public sealed class Lobby : IAsyncDisposable
     public string You { get; }
 
     /// <summary>Every table open, oldest first.</summary>
+    /// <remarks>
+    /// ⚠️ Ids are the numbers <see cref="Open"/> mints, as strings — so "oldest first" is a
+    /// numeric order, and sorting the strings would put table 10 before table 2.
+    /// </remarks>
     public IReadOnlyList<HostedTable> Tables =>
-        [.. _tables.Values.OrderBy(table => table.Id, StringComparer.OrdinalIgnoreCase)];
+        [.. _tables.Values.OrderBy(table => int.Parse(table.Id, System.Globalization.CultureInfo.InvariantCulture))];
 
     /// <summary>The table that URL names, or null if it has gone.</summary>
     public HostedTable? Find(string? id) =>
@@ -116,17 +127,22 @@ public sealed class Lobby : IAsyncDisposable
     {
         ArgumentNullException.ThrowIfNull(plan);
 
-        if (_tables.Count >= MostTables)
+        // ⚠️ The check and the add are one step (see _gate): checked-then-added without it, two
+        // opens racing past a count of eleven would both succeed.
+        lock (_gate)
         {
-            throw new InvalidOperationException(
-                $"This site holds {MostTables} tables, and they are all open. Close one first.");
+            if (_tables.Count >= MostTables)
+            {
+                throw new InvalidOperationException(
+                    $"This site holds {MostTables} tables, and they are all open. Close one first.");
+            }
+
+            var id = Interlocked.Increment(ref _opened).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var table = new HostedTable(id, plan, _logs.CreateLogger<HostedTable>());
+
+            _tables[id] = table;
+            return table;
         }
-
-        var id = Interlocked.Increment(ref _opened).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var table = new HostedTable(id, plan, _logs.CreateLogger<HostedTable>());
-
-        _tables[id] = table;
-        return table;
     }
 
     /// <summary>A seed for a table somebody opened from the page, drawn from the site's own.</summary>

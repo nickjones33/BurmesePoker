@@ -63,6 +63,11 @@ public sealed class FeedingBan
     public bool Closes(Card card) => _closed.Contains(card.Rank);
 
     /// <summary>Whether this seat has thrown that rank back, which re-opens it for good.</summary>
+    /// <remarks>
+    /// ⚠️ A deliberate observable with no production caller, kept so a test or a tool can ask
+    /// about a release directly. It is <b>not</b> the enforcement path — the ban is enforced
+    /// wholly through <see cref="LegalDiscards"/>, which never offers a closed rank.
+    /// </remarks>
     public bool HasReleased(Card card) => _released.Contains(card.Rank);
 
     /// <summary>

@@ -130,7 +130,14 @@ public sealed record JournalHeader(
     /// The revision of <c>RULES.md</c> this build plays. ⚠️ Bump it when the rules document
     /// changes in a way that changes play.
     /// </summary>
-    public const int CurrentRulesRevision = 13;
+    /// <remarks>
+    /// ⚠️ <b>It is bound to the document, not merely aspirationally beside it.</b> This constant
+    /// sat at 13 through four play-changing revisions (P25–P28) because nothing compared the two
+    /// (review R2). <c>GameJournalTests.TheRevisionStampedIsTheRevisionRulesMdIsAt</c> now parses
+    /// the rev out of <c>docs/RULES.md</c>'s header and fails the build when they disagree — the
+    /// P23 idiom — and the <c>/poker</c> skill's Phase 6 names the bump.
+    /// </remarks>
+    public const int CurrentRulesRevision = 24;
 
     /// <summary>How many seats were at the table.</summary>
     public int TableSize => Seats.Count;
@@ -150,7 +157,7 @@ public sealed record JournalHeader(
 /// <param name="Round">Which round of the match, counting from 1.</param>
 /// <param name="Turn">Which turn of that round, counting from 1.</param>
 /// <param name="Player">Who was asked.</param>
-/// <param name="Question">Which of the four.</param>
+/// <param name="Question">Which of the five.</param>
 /// <param name="Answer">
 /// The answer, as its canonical token — <c>take</c>/<c>draw</c>, a card id, or <c>yes</c>/<c>no</c>.
 /// Read it with <see cref="AsAction"/>, <see cref="AsCardId"/> or <see cref="AsBoolean"/>

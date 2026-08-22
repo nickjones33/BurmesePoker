@@ -10,18 +10,27 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-🔥 **A new branch was opened by the owner on 2026-08-21, after P29: verify, then arm, then move
-the table.** ✅ **P30.1 — the thorough code review — shipped 2026-08-21, on Fable 5:
-`docs/REVIEW-2026-08.md`, 37 findings, every one triaged and none unassigned.** ✅ **P24.1 — the
-journal for the hosted table — shipped 2026-08-21, also Fable 5**: `--journal` on
-`BurmesePoker.Web` writes the same file the console writes and `sim replay` reads, flushed after
-every settled round. ⚠️ **It was P30.2's own unbuilt dependency, and the previous session's
-"next packet is P30.2" prose had skipped it** — the §4 diagram had it right. ✅ **The next packet
-is `P30.2`** — the conformance harness and the front-end tests, **also Fable 5**, now genuinely
-unblocked, and **its checklist exists: the review's P30.2-checklist and P30.2-fix buckets are
-the packet's work list.** Then **`P31`** (`warden`, the feeding ban played offensively) and
-**`P32`** (five seats as the default table), **both back on Opus**. ⚠️ **Set the model with
-`/model` before starting the session — the packet records which one but cannot choose it.**
+🔥 **The verify branch is closed: P30.2 — the conformance harness and the front-end tests —
+shipped 2026-08-21, on Fable 5.** The game as played is now audited against every Settled rule:
+**`RuleConformance`** (an `IGameObserver` of independent re-derivations — the ban mirrored from
+public events, the settlement recomputed without `Settlement` or `MoneyCardRegistry`, melds
+validated straight from §6) runs over **180 ordinary rounds at 4, 5 and 6 seats** with the whole
+catalog and dial seated, **a mutant per rule family proves the audit can go red**, and
+**`SettledRuleCoverageTests` parses the Settled sections out of `RULES.md`** and fails the build
+on any section no registry entry checks or exempts. **Both front ends played to a declaration**:
+`drive-console.py` is rewritten to **answer prompts adaptively** (byte-repeatable, verifies the
+settlement panel's arithmetic, exits by the console's own path) and `BrowserRoundTests` closes
+the settlement loop **board = engine = journal replay**. 🔥 **Two real fixes shipped with it**:
+**R1** — a discard legal only under §5.1 exception 2 *is* the declaration, the engine no longer
+lets a human throw it and decline — and **R8** — `SeatChannel` makes a `SeatConnection` one
+*occupancy* of a seat, so a handed-over seat is dead to its previous occupant server-side. **All
+29 P30.2-fix review items are in** (R30 by correcting the false remark rather than re-basing
+every hand-computed payout; the review sanctioned either). ✅ **The next packet is `P31`**
+(`warden`, the feeding ban played offensively), then **`P32`** (five seats as the default
+table), **both back on Opus**. ⚠️ **Set the model with `/model` before starting the session —
+the packet records which one but cannot choose it.** ⚠️ P31's suite regeneration will also land
+two corrections to the CSV (R3's paired claim-money interval, ~±0.25; four new
+`money.side-margin.*` rows) — **expected, not a regression** (BUILD-PLAN §5 P31).
 
 ⚠️ **`P24` was split** into **P24.1** (a journal for the hosted table — plumbing P30.2's browser
 half needs, and `Web`/`Server` contain the string `journal` **zero times**) and **P24.2** (the
@@ -105,15 +114,19 @@ either way, rather than saying the rule never fires.**
 🔥 **`RULES.md` needed no change and `§9` gained no question.** P29 is the first packet since the
 rules sessions began that measured without discovering a rule, which is what it was for.
 
-Nothing is in progress and the tree is green at **677 passed / 0 failed** (672 after P29/P30.1;
-the five new ones are P24.1's — four in `TableJournalTests`, one in `HostedTableJournalTests`). ⚠️ **The test suite
-now takes about eight minutes idle** and **half an hour while a `sim suite` is running** — 31 m
-34 s was measured in this session under exactly that contention, which is not a regression.
+Nothing is in progress and the tree is green at **697 passed / 0 failed** (677 after P24.1; the
+twenty new ones are P30.2's — the conformance field and mutants in `Tests/Conformance/`, the
+coverage registry, the R6 coverage set, the handover tests and `BrowserRoundTests`, less one
+duplicate folded out of `MatchEngineTests` (R29)). ⚠️ **The test suite takes about eight and a
+half minutes idle** and **half an hour while a `sim suite` is running** (measured at P24.1 under
+exactly that contention; not a regression).
 
-⚠️ **A seed from before P28 still does not play the same match and a `drive-console.py` capture
-still does not compare**, for the third packet running. P29 changed no play at all — it is
-measurement and reporting only — so a capture taken from this tree compares with one taken from
-`HEAD` before it.
+⚠️ **A `drive-console.py` capture from before P30.2 no longer compares** — R5 fixed the money
+narration every round opens with, and the `human` script now declares and exits cleanly instead
+of dying mid-round-2 — so **capture fresh baselines before any front-end refactor**. The `bots`
+capture at seed 20260819 was proved byte-identical across the driver rewrite itself, so the
+engine's play did not move except where R1 binds an exception-2 throw to its declaration (bots
+unaffected — every rung's `Declare` was already `=> true`).
 
 ✅ **The feeding ban is built — P27, 2026-08-21, `RULES.md` rev 23.** The block below is the
 record of what it was built *from*; what it became is in **Notes for the next session**.
@@ -1079,7 +1092,7 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P28** The claim, the permission, and the seat you sit in | **P27** ✅ | **done 2026-08-21** — `MatchEngine` draws the seats before every deal after the first (§3), and `IPlayerAgent.ObjectToClaim` is the game's fifth question and **the only one asked of a seat that is not on turn** (§4.5). 🔥 **The objection predicate was read, not written twice**: `ClaimRequest.MayBeRefusedBy` asks `Card.SameRankAs`. 🔥 **A refused claim arms nothing** — the opener falls through to a blind draw — which is the one line where this touches P27. 🔥 **The finding that cost the most is older than the packet**: `JournalFormat.Name` ended `_ => "declare"`, so the fifth question was written to file as a *declaration* and only the file round-trip test could see it. ⚠️ Re-seating lives in `PlayRound()` and not in the scripted overload; ⚠️ `BoundedAgent` must not announce a turn for the seat it asks. |
 | ☑ | **P29** Re-measure, under the rules as they are | P25 ✅, P26 ✅, P27 ✅, P28 ✅ | **done 2026-08-21** — `measurements.csv` regenerated under P25–P28: **91 measurements in 9,981 s**, and **4 of 91 rows byte-identical — the four ε constants, which are the only rows a human chose.** 🔥 **Of three predictions written down in advance, two held and one was wrong**: the dial survives (all three steps separate; no ε moved), `prospector` separates a whole ratio lower ($5/$20 is `+5.32 ± 2.27`, was inside the interval) — and **`outs` did not narrow at all**, `+3.0 ± 1.0` against +3.1. 🔥 **What the win condition actually moved is `simple`**, which gained ~2 points on all three middle rungs: **a requirement no rung optimises for levels a ladder from the bottom.** ✅ **Refusing a claim is a null** (`+0.4 ± 1.0`), published. ✅ **Round length and abandoned counts are published for the first time** — the only non-zero abandoned count is the field containing `random`. |
 | ☑ | **P30.1** A thorough code review · **Fable 5** | — | **done 2026-08-21** — `docs/REVIEW-2026-08.md`: **37 findings, every one triaged, nothing unassigned**; one main read over the whole Domain plus four parallel scoped reviews on the same model, against a green 672/0 baseline. 🔥 **Top of the list**: a human can throw a banned rank that was legal only as a declaring discard and then decline to declare (R1); every journal since 2026-08-21 stamps rules **rev 13** against a document at rev 24 (R2); a published P29 headline interval used the unpaired formula on a within-cell money margin (R3). 🔥 **The systemic hole is the fifth question** — `FallibleAgent.ObjectToClaim` is tested nowhere and no connected fixture ever *allows* a claim (R6). ✅ **No new rules question**; `RULES.md` stays rev 24. |
-| ☐ | **P30.2** Conformance — the rules as *played* · **Fable 5** | **P30.1**, P24.1 | **new 2026-08-21** — every Settled rule checked against **ordinary played rounds** at 4, 5 and 6 seats, plus **both front ends driven to a declaration for the first time**. 🔥 **Everything in the tree today proves a rule *can* hold; nothing proves it *does*.** ⚠️ A coverage test in the P23 idiom makes "every single rule" re-checkable rather than a claim. ⚠️ **The real work is `drive-console.py`** — its two scripts are fixed key lists that quit in round 2, so **no capture has ever contained a win**. |
+| ☑ | **P30.2** Conformance — the rules as *played* · **Fable 5** | **P30.1**, P24.1 | **done 2026-08-21** — `Tests/Conformance/`: `RuleConformance` audits 180 ordinary rounds at 4, 5 and 6 seats by independent re-derivation, one mutant per rule family proves the audit can go red, and `SettledRuleCoverageTests` binds `RULES.md`'s Settled sections to a check-or-exemption registry. Both front ends driven to a declaration: `drive-console.py` answers prompts adaptively and verifies the settlement panel; `BrowserRoundTests` closes board = engine = journal replay. **R1 fixed** (an exception-2 throw *is* the declaration), **R8 fixed** (`SeatChannel` — a connection is one occupancy), and all 29 P30.2-fix items landed. ⚠️ The "no capture has ever contained a win" premise was stale — the grep needle was `went out`; the console says `declares`. |
 | ☐ | **P31** `warden` — the feeding ban as a weapon · **Opus** | P27 ✅, P30.2 | **new 2026-08-21** — the first rung to play §5.1 **offensively**. 🔥 **Today the ban reaches the agents as a legality filter and nothing else**: `LegalDiscards` is read in exactly two places and **no rung reads `MayNotBeFed` to decide anything.** Take the rank your upstream seat just threw and they may never throw it again — and **the release is under the taker's control**, so the rung must hold what it locks. ⚠️ **Three predictions written down in advance; the first is that it is a null.** |
 | ☐ | **P32** Five-handed is the default table · **Opus** | P30.2, P31 | **new 2026-08-21** — the standing set moves to **5 seats**, which is the size the game is actually played at, and **the dial is re-fitted there**. ⚠️ **At five or more, §7.1.1 requires no series at all** — the rule P29's whole headline turned on does not apply at the default size. ⚠️ **A cost blow-up hides in the ladder free-for-all**: `Balanced(6,5)` is 7,776 assignments against 1,296, taking that cell from 9,072 games to **15,552**. |
 
@@ -1128,6 +1141,56 @@ harness prints today would be a guess wearing a number.
 ---
 
 ## Notes for the next session
+
+### What P30.2 built, for the session that opens P31 (2026-08-21)
+
+1. 🔥 **The conformance harness lives in `Tests/Conformance/` and P31's rung will be audited by
+   it for free.** `RuleConformanceTests.OrdinaryRoundsBreakNoSettledRule` seats **every entry in
+   `BotCatalog.All` and `DifficultyLadder.All`** in rotation — so `warden` joins the audited
+   field the moment it joins the catalog, with no test change. If `warden` breaks a Settled rule
+   (the likely one: holding a lock by discarding differently is fine, but a bug in its take
+   logic could trip the one-take-one-discard or ban mirror), the audit says which rule and on
+   which event.
+2. ⚠️ **Adding or renumbering a Settled section in `RULES.md` now fails the build on purpose** —
+   `SettledRuleCoverageTests.Registry` must gain a matching entry (a check, or a written
+   exemption). That is the acceptance working, not a flaky test. Same for
+   `GameJournalTests.TheRevisionStampedIsTheRevisionRulesMdIsAt`: **bump
+   `JournalHeader.CurrentRulesRevision` with any play-changing rev** — the `/poker` skill's
+   Phase 6 says so now.
+3. 🔥 **R1's fix changes engine behaviour in one narrow case**: a discard that was legal only
+   under §5.1 exception 2 commits the seat — the engine declares on its behalf and
+   `agent.Declare` is not asked. Bots are unaffected (`Declare` was `=> true` everywhere). A
+   journal recorded before the fix that contains such a turn replays with a **loud divergence**
+   (an unconsumed `declare` line), which is the designed failure. The journal rev bump (13 → 24)
+   makes such artifacts distrustable by header.
+4. 🔥 **R8's fix restructured the server's seat plumbing**: `SeatChannel` (new) holds the
+   question/answer state per seat, stable across occupants; `SeatConnection` is one *occupancy*
+   — `SitDown` mints a fresh one, the superseded one is dead server-side (no events, no prompt,
+   answers refused), and a standing question **moves** to the new occupant, which is what the
+   Web ghost-reclaim test always demanded. ⚠️ **Consequence**: a seat re-taken mid-round starts
+   its event history at the handover, like a watcher who joined late — `SeatBoard` copes (its
+   fold is per-connection), but anything new that replays a connection's events from the deal
+   must use the watcher's, not a re-taken seat's.
+5. ⚠️ **`drive-console.py` no longer replays key lists — it answers prompts by their text**, and
+   verifies every settlement panel (zero-sum columns, `net = round + money`, one winner at
+   `(n−1)·round-value`) before exiting zero. `--script bots|human` now means the people count;
+   `--rounds N` plays N settlements. **The old captures' premise was stale**: both fixed lists
+   had quietly started reaching round 1's settlement (the BUILD-PLAN grep used `went out`; the
+   console prints `declares`). The adaptive bots capture is byte-identical to the old script's
+   at the same seed; the human capture now ends whole instead of dying mid-round-2 prompt.
+6. ⚠️ **Two review items were left as recorded decisions rather than code**: R30 — `DealBuilder`
+   still deals jokers as filler; the remark now says so truthfully, because re-basing filler
+   would re-derive every hand-computed payout in the suite (the review sanctioned the remark
+   fix) — and R20/R33 stay with their named later packets. **R18/R34/R35 stay won't-fix** (R34
+   got its "deliberate observable" remarks).
+7. ⚠️ **P31's suite regeneration lands two CSV changes that are fixes arriving, not
+   regressions**: `claim.permission.money.refuse-over-allow` becomes paired (±0.18 → ~±0.25,
+   review R3 — the null survives) and four `money.side-margin.*` rows appear (review R13).
+   `STRATEGY.md` §11/§12 carry annotations to update when the corrected rows exist.
+8. ⚠️ **A capture from before this session does not compare for the `human` script** (different
+   play: the adaptive driver declares and quits cleanly) but **does for `bots`** — proved by
+   `cmp` this session. R5's console narration fix changes bytes for *both* against pre-P30.2
+   trees; capture fresh baselines before any front-end refactor.
 
 ### What P24.1 built, for the session that opens P30.2 (2026-08-21)
 
@@ -2697,6 +2760,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 ## Session log
 
 | Date | Packet | Outcome |
+| 2026-08-21 | P30.2 | **Done — conformance: the rules as played, on Fable 5, and the verify branch is closed.** `Tests/Conformance/RuleConformance.cs` audits a round as it is played — **independent re-derivations, never calls into the code under audit**: the feeding ban mirrored from public events alone, settlement recomputed without `Settlement` or `MoneyCardRegistry`, melds validated straight from §6, conservation and write-once ownership checked at every event. Run over **180 ordinary rounds at 4/5/6 seats** with all of `BotCatalog` and `DifficultyLadder` seated (~27 s), plus **one mutant per rule family proving each check can go red** (P13.6's vacuity lesson, institutionalised). `SettledRuleCoverageTests` parses the Settled sections out of `RULES.md` into a check-or-exemption registry and fails the build both ways (unregistered Settled section, or stale registry entry). **The console driven to a declaration**: `drive-console.py` rewritten to answer prompts by their text — byte-repeatable (proved by `cmp`), verifies every settlement panel's arithmetic, exits by the console's own path; ⚠️ **the packet's premise was stale** — both fixed-key captures had quietly started reaching round 1's settlement (the grep needle was `went out`; the console says `declares`) — but the rewrite was still owed, since fixed lists answer by position and had drifted twice. **The browser driven to a declaration**: `BrowserRoundTests` plays a round through `SeatBoard`s, asserts the strict concealment form at the boards, and closes the loop **board = engine = journal replay**. 🔥 **R1 fixed in the engine**: a discard legal only under §5.1 exception 2 *is* the declaration — the seat is not asked and cannot decline. 🔥 **R8 fixed in the server**: new `SeatChannel` holds a seat's question state across occupants; each `SitDown` mints a fresh `SeatConnection`, the superseded one is dead server-side, and a standing question moves to the new occupant. **R2**: journals stamp rev 24, bound to `RULES.md`'s header by a test, and the `/poker` skill's Phase 6 names the bump. **R3/R13**: the claim money margin is paired (`CellPlayer.NetPerRoundByGame`) and `money.side-margin.*` is published — both reach the CSV at P31's regeneration, annotated in `STRATEGY.md` until then. **All 29 P30.2-fix items landed** (R30 by fixing the false remark — re-basing `DealBuilder`'s filler would re-derive every hand-computed payout to delete comments that are true). R6's four coverage holes are closed (the fifth question is exercised at the dial, over a connection with an *allowed* objection, in a forced journal round-trip, at the advice watcher's upstream seat, and in the audit field). No rules question; `RULES.md` stays rev 24. Tree green at **697 passed / 0 failed** in ~8m 30s. |
 |---|---|---|
 | 2026-08-21 | P24.1 | **Done — a journal for the hosted table, on Fable 5, and P30.2's browser half has what it is written against.** `--journal table.jsonl` on `BurmesePoker.Web` writes the file the console writes and `sim replay` reads. The split that shaped it: **`TableSession` owns the `GameJournalBuilder`** (the agents are built there; `JournalingAgent.Wrap` runs **outermost**, so what is recorded is the answer that reached the engine — a stand-in's or the clock's included) and **the file stays the host's** — `HostedTable` flushes `TablePlan.Journal`'s path **after every settled round, on the dealer's own thread**, because nothing ends a hosted match but the table closing, and a flush from any other thread — disposal included — could read a round mid-sentence. `TableSeat` gained `Strategy`/`Attribution` (a level's name for a Web bot, `human` for a remote seat — the CSV join key's other half, §3.8 item 4); an abandoned round sets `Header.Abandoned` with `Rounds` stopped at what settled; the lobby form does not offer the flag **on purpose** (two tables, one path, taking turns overwriting each other). ✅ **The core claim is a test**: a round played through the server's own plumbing — remote seats answering, bounded seats, the fan-out — **replays identically** through the ordinary `JournalPlayerAgent`. ⚠️ **Found on the way in: the previous session's "next packet is P30.2" had skipped P30.2's own unbuilt dependency** — the §4 diagram said `P24.1 ☐ ──► P30.2` all along; trust the diagram over the prose. ⚠️ The journal still stamps rules **rev 13** (R2) — left alone on purpose, P30.2 owns that fix and it is one constant for console, Sim and Web alike. No rules question; `RULES.md` stays rev 24. Tree green at **677** (672 + 4 server + 1 web). |
 | 2026-08-21 | P30.1 | **Done — a thorough code review of the whole tree, on Fable 5, and the harness's list now exists.** `docs/REVIEW-2026-08.md`: **37 findings, every one carrying file, line, severity, class and triage; nothing unassigned.** Method: baseline verified green first (672/0 in 8m34s), then one deep read of all of `BurmesePoker.Domain` + `drive-console.py` with `RULES.md` rev 24 open, plus **four parallel scoped sub-reviews on the same model** (Server+Presentation, Web, Console+Sim, Tests), each briefed with the packet's nine defect classes. 🔥 **CRITICAL: §5.1 exception 2 is offered but never bound (R1)** — a banned rank legal only as a declaring discard can be thrown by a human who then declines to declare, in both front ends; bots always declare so no figure moves. 🔥 **HIGH: every journal written since 2026-08-21 stamps rules rev 13 (R2)** — four play-changing revisions passed and nothing bumped or guards the constant. 🔥 **HIGH: `STRATEGY.md` §12's claim-permission money margin `+0.02 ± 0.18` used the unpaired formula on a within-cell comparison (R3)** — the codebase's own `Measurement.Paired` remarks name this exact case anti-conservative; the null survives, the interval is understated. 🔥 **The systemic hole is the fifth question (R6)**: `FallibleAgent.ObjectToClaim` is exercised by no test, no connected fixture ever *allows* a claim, the journal's `"objection"` line is covered by seed-luck, and two more translators carry default arms in the `JournalFormat.Name` shape (a sixth `SeatQuestion` would render as the declaration prompt and softlock the seat). ✅ **The clean bills are recorded so P30.2 does not re-check them**: the §7.1.1 table exists once, every identity-notion call site is right, settlement/ban/concealment/determinism all verified. ✅ **No new rules question — `RULES.md` stays at rev 24.** No code changed; the tree is green at 672/0. |

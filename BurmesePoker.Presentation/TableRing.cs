@@ -62,7 +62,7 @@ public readonly record struct RingPlace(PlayerId Player, RingSeat Place, bool Is
 /// <see cref="Around"/>'s order the right one to put in the markup.
 /// </para>
 /// <para>
-/// <b>A watcher has no seat</b> (<c>--seat 0</c>): the table is not turned at all and the
+/// <b>A watcher has no seat</b> (<c>--people 0</c>): the table is not turned at all and the
 /// seating order is shown as dealt, with the first seat at the front. A client must say so
 /// rather than let a watcher read the front seat as theirs — <see cref="RingPlace.IsYours"/>
 /// is false for every seat in that case, which is the flag to say it by.
@@ -85,7 +85,10 @@ public static class TableRing
         [6] = [RingSeat.Left, RingSeat.TopLeft, RingSeat.Top, RingSeat.TopRight, RingSeat.Right]
     };
 
-    /// <summary>Every table size this can lay out — four to six seats (RULES.md §2.1).</summary>
+    /// <summary>
+    /// Every table size this can lay out — four seats (the engine's floor today, RULES.md
+    /// §10 #7) to six (the practical ceiling, §2.1).
+    /// </summary>
     public static IReadOnlyCollection<int> Sizes => Ring.Keys;
 
     /// <summary>
@@ -111,8 +114,8 @@ public static class TableRing
         if (!Ring.TryGetValue(seating.Count, out var others))
         {
             throw new ArgumentException(
-                $"A table of {seating.Count} is not one this lays out; four to six is the game "
-                + "(RULES.md §2.1).",
+                $"A table of {seating.Count} is not one this lays out; the layouts cover four "
+                + "to six seats — the sizes the engine can deal today (RULES.md §10 #7, §2.1).",
                 nameof(seating));
         }
 

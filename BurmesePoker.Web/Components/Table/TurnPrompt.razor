@@ -20,6 +20,8 @@
     Which card to throw is asked of the hand itself, because the cards are the controls.
 *@
 
+@using BurmesePoker.Domain.Money
+
 @if (Asking is not { } asking)
 {
     <p class="idle">
@@ -102,7 +104,10 @@ else if (asking.Question == SeatQuestion.ObjectToClaim)
         <p class="detail">
             @if (asking.PermissionAsked is { } permission)
             {
-                <span class="verb" aria-hidden="true">@Who(permission.Claimant) wants</span>
+                @* ⚠️ Spoken, not hidden: the heading asks "May they take it?", and this line is
+                   the only place "they" is resolved — a screen reader that never hears the
+                   claimant's name is being asked to rule on somebody it cannot identify. *@
+                <span class="verb">@Who(permission.Claimant) wants</span>
                 <CardChip Card="permission.Card"
                           Token="@DisplayTokens.For(CardDisplayState.PaysOnce)"
                           TokenWords="a money card" />
@@ -154,7 +159,7 @@ else if (asking.Question == SeatQuestion.Discard)
         </details>
     </section>
 }
-else
+else if (asking.Question == SeatQuestion.Declare)
 {
     <section class="bar" aria-labelledby="ask-heading">
         <h3 id="ask-heading">All thirteen meld</h3>
@@ -190,6 +195,16 @@ else
             </p>
         </details>
     </section>
+}
+else
+{
+    @*
+        ⚠️ A question this markup does not know, drawn as nothing on purpose. Every known
+        SeatQuestion is named above, so this arm is only ever a question added later — and the
+        nearest-looking prompt would be worse than none: its answer would not fit what was asked
+        (SeatAnswer.Fits), the refusal leaves the prompt standing, and the seat is softlocked
+        until the patience runs out. An inert bar hands the turn to the stand-in honestly.
+    *@
 }
 
 @code {
@@ -285,14 +300,14 @@ else
     /// <summary>The money marker on the card you just took, if it is one (§3.11 A2).</summary>
     private static string? Mark(SeatPrompt asking, Card card) => asking.MoneyCards.Multiplier(card) switch
     {
-        >= 2 => DisplayTokens.For(CardDisplayState.PaysTriple),
+        >= MoneyCardRegistry.Tripled => DisplayTokens.For(CardDisplayState.PaysTriple),
         1 => DisplayTokens.For(CardDisplayState.PaysOnce),
         _ => null
     };
 
     private static string? Words(SeatPrompt asking, Card card) => asking.MoneyCards.Multiplier(card) switch
     {
-        >= 2 => "you took it, and it is a money card that pays three times",
+        >= MoneyCardRegistry.Tripled => "you took it, and it is a money card that pays three times",
         1 => "you took it, and it is a money card",
         _ => "you took it"
     };

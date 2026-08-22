@@ -7,8 +7,8 @@ using BurmesePoker.Server;
 namespace BurmesePoker.Tests.Server;
 
 /// <summary>
-/// A hosted table where the opener always wants the turned-up card, played until the seat above
-/// it is holding that rank and has to answer for it (packet P28).
+/// A hosted table where the opener always wants the turned-up card, playing the one round at
+/// which the seat above it is holding that rank and has to answer for it (packet P28).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -19,9 +19,9 @@ namespace BurmesePoker.Tests.Server;
 /// assumptions were load-bearing.
 /// </para>
 /// <para>
-/// ⚠️ <b>Rounds are played until one produces a permission question rather than one round being
-/// assumed to.</b> The upstream seat has to be holding the rank, which is a fact about the deal;
-/// the seed is fixed, so the round it happens on is fixed too.
+/// ⚠️ <b>Exactly one round is played, at a seed chosen because that round produces a permission
+/// question.</b> The upstream seat has to be holding the rank, which is a fact about the deal;
+/// the seed is fixed, so the deal — and the question — are too.
 /// </para>
 /// </remarks>
 public sealed class ClaimedTable
@@ -34,14 +34,7 @@ public sealed class ClaimedTable
 
     public ClaimedTable()
     {
-        Table = TableSession.Open(
-            [
-                TableSeat.Computer(Opener, "Grabby", new AlwaysClaims()),
-                TableSeat.Computer(new PlayerId(2), "Mya Lay", new GreedyBotAgent()),
-                TableSeat.Computer(new PlayerId(3), "Cobra", new GreedyBotAgent()),
-                TableSeat.Person(Objector, "Nick")
-            ],
-            TableSessionTests.Options(20260821));
+        Table = TableSession.Open(Seats(), TableSessionTests.Options(20260821));
 
         Watcher = Table.Watch();
         Nick = new ScriptedSeat(Table.ConnectionFor(Objector));
@@ -63,6 +56,15 @@ public sealed class ClaimedTable
     /// <summary>Every question this seat was asked about somebody else's claim.</summary>
     public IReadOnlyList<SeatPrompt> Permissions =>
         [.. Nick.Prompts.Where(prompt => prompt.Question == SeatQuestion.ObjectToClaim)];
+
+    /// <summary>The table this fixture plays: a grabby opener, and Nick upstream of it.</summary>
+    internal static TableSeat[] Seats() =>
+    [
+        TableSeat.Computer(Opener, "Grabby", new AlwaysClaims()),
+        TableSeat.Computer(new PlayerId(2), "Mya Lay", new GreedyBotAgent()),
+        TableSeat.Computer(new PlayerId(3), "Cobra", new GreedyBotAgent()),
+        TableSeat.Person(Objector, "Nick")
+    ];
 
     /// <summary>A seat that takes the turned-up card whenever the table offers it (RULES.md §4.5).</summary>
     private sealed class AlwaysClaims : IPlayerAgent
@@ -179,5 +181,35 @@ public class ClaimPermissionOverAConnectionTests(ClaimedTable table) : IClassFix
         Assert.True(new SeatAnswer.Objection(false).Fits(permission));
         Assert.False(new SeatAnswer.Objection(true).Fits(somethingElse));
         Assert.False(new SeatAnswer.Claim(true).Fits(permission));
+    }
+}
+
+/// <summary>
+/// ✅ <b>R6(b) — the answer no shipped player ever gives, played through the connection: an
+/// <em>allowed</em> objection.</b> Every rung refuses whenever it may (P28), so before this
+/// test a <c>RemotePlayerAgent</c> that ignored the person's answer and fell back to the
+/// stand-in — which always refuses — survived the whole suite.
+/// </summary>
+[Collection(WallClockBudgets.Collection)]
+public class AllowedObjectionOverAConnectionTests
+{
+    [Fact]
+    public void AnAllowedObjectionLetsTheClaimThroughTheConnection()
+    {
+        var table = TableSession.Open(ClaimedTable.Seats(), TableSessionTests.Options(20260821));
+        var watcher = table.Watch();
+        var nick = new ScriptedSeat(table.ConnectionFor(ClaimedTable.Objector)) { Objects = false };
+
+        table.PlayRound();
+
+        // The same deal as the fixture's, so the permission question is asked — and answered
+        // the other way: the claim happens, and nothing is refused.
+        Assert.Single(nick.Prompts, prompt => prompt.Question == SeatQuestion.ObjectToClaim);
+        Assert.True(nick.Answered > 0);
+
+        var claimed = Assert.Single(watcher.Events.OfType<TableEvent.MoneyCardClaimed>());
+
+        Assert.Equal(ClaimedTable.Opener, claimed.Player);
+        Assert.Empty(watcher.Events.OfType<TableEvent.ClaimRefused>());
     }
 }

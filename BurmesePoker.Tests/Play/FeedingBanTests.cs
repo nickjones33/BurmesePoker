@@ -195,6 +195,30 @@ public class FeedingBanTests
     }
 
     /// <remarks>
+    /// ✅ <b>R7 — exception 2 asks the table's own win condition, not a win condition</b>
+    /// (RULES.md §5.1, §7.1.1). The two tests above use a hand that wins at four seats and at
+    /// five alike, so a <c>LegalDiscards</c> that hard-coded <c>TableRules.For(5)</c> would have
+    /// passed them both — while at a real four-handed table it would offer a banned card whose
+    /// throw leaves thirteen that cover but hold no clean series, which is not a declaring
+    /// discard there and so is not legal at all.
+    /// </remarks>
+    [Fact]
+    public void TheDeclaringDiscardExceptionAsksTheTablesOwnWinCondition()
+    {
+        var ban = new FeedingBan();
+        ban.TookInTheOpen(Hands.Value("JD"));
+
+        // Throwing the banned J♣ leaves thirteen that partition into sets alone: a winning
+        // hand at five seats, where §7.1.1 requires no series, and a losing one at four,
+        // where the one required series must exist and be clean.
+        var hand = Hands.Of(
+            "KC", "KH", "KS", "QC", "QH", "QS", "5C", "5H", "5S", "9C", "9H", "9S", "9D", "JC");
+
+        Assert.DoesNotContain(ban.LegalDiscards(hand, FourHanded), card => card.Rank == Rank.Jack);
+        Assert.Contains(ban.LegalDiscards(hand, TableRules.For(5)), card => card.Rank == Rank.Jack);
+    }
+
+    /// <remarks>
     /// ✅ RULES.md §9 #13: a player may throw back the card they just took *"as long as you aren't
     /// violating any other discard rules"* — and §5.1 is the only other discard rule there is. So
     /// the just-taken card is filtered like any other and <b>needs no case of its own anywhere</b>.

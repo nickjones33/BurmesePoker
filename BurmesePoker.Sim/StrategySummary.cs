@@ -40,7 +40,7 @@ public sealed record StrategySummary(
     /// <summary>Share of its cards taken from a discard pile rather than drawn blind.</summary>
     public double TakeRate => Takes + Draws == 0 ? 0 : (double)Takes / (Takes + Draws);
 
-    /// <summary>Share of the offered turned-up money cards it took (RULES.md §4.5).</summary>
+    /// <summary>Share of the offered turned-up money cards it asked to take — asked, not got (RULES.md §4.5).</summary>
     public double ClaimRate => ClaimOffers == 0 ? 0 : (double)Claims / ClaimOffers;
 }
 

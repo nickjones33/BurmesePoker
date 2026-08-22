@@ -101,6 +101,10 @@ public sealed class TurnContext
     /// always answer either way; this is here so that a front end can say <em>why</em> it may
     /// object rather than presenting a veto with no reason attached. It reads this seat's own hand
     /// and nothing else, so it discloses nothing.
+    /// ⚠️ A deliberate API affordance with no production caller, and <b>not</b> the enforcement
+    /// path: the engine decides who is asked, and production prompts read
+    /// <c>SeatPrompt.MayObject</c> — the same shape over the same shared predicate,
+    /// <c>ClaimRequest.MayBeRefusedBy</c>.
     /// </remarks>
     public bool MayObject => PermissionAsked is { } claim && claim.MayBeRefusedBy(Hand);
 

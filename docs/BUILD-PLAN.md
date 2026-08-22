@@ -990,7 +990,7 @@ P16 ─┘                         ├─► P21  outs rung       (lookahead)  �
    P30.1  a thorough code ☑ ──┐        ← Fable 5
           review               │
                               ▼
-   P24.1  a journal for the ☑ ──► P30.2  conformance: the rules ☐   ← Fable 5
+   P24.1  a journal for the ☑ ──► P30.2  conformance: the rules ☑   ← Fable 5
           hosted table                     as *played*
                                            │
                                            ├─► P31  warden — the feeding ☐   ← Opus
@@ -1172,7 +1172,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P28** | **The claim, the permission, and the seat you sit in** | **P27** ✅ | M — ☑ **done 2026-08-21** — a fifth `IPlayerAgent` question, the only one asked off turn; the seats re-draw every deal |
 | **P29** | **Re-measure, under the rules as they are** | P25 ✅, P26 ✅, P27 ✅, P28 ✅ | L — ☑ **done 2026-08-21**: 91 measurements in 9,981 s, **4 rows reproduced**, two of three predictions held ⚠️ the suite is **2h45**, not five hours |
 | **P30.1** | **A thorough code review** | — | M — ☑ **done 2026-08-21** · **Fable 5** — `docs/REVIEW-2026-08.md`: 37 triaged findings; its P30.2 buckets are P30.2's checklist |
-| **P30.2** | **Conformance — the rules as *played*** | **P30.1**, P24.1 (browser half only) | L — ☐ **new 2026-08-21** · **Fable 5** — every Settled rule checked against ordinary played rounds, and both front ends driven to a declaration for the first time |
+| **P30.2** | **Conformance — the rules as *played*** | **P30.1**, P24.1 (browser half only) | L — ☑ **done 2026-08-21** · **Fable 5** — `RuleConformance` + coverage registry + both front ends driven to a declaration; R1 and R8 fixed; 29 review fixes landed |
 | **P31** | **`warden` — the feeding ban as a weapon** | P27 ✅, P30.2 | L — ☐ **new 2026-08-21** · **Opus** — the first rung that plays §5.1 *offensively*; ⚠️ regenerates the suite at 4 seats to stay comparable |
 | **P32** | **Five-handed is the default table** | P30.2, P31 | L — ☐ **new 2026-08-21** · **Opus** — the whole standing set moves to 5 seats, and **the difficulty dial is re-fitted there** |
 
@@ -5040,7 +5040,22 @@ substitute: it reviews a *diff* well and *nine packets of accumulated design* le
 
 ---
 
-### P30.2 — Conformance: the rules as *played* ☐ — **Fable 5**
+### P30.2 — Conformance: the rules as *played* ☑ — **Fable 5**
+
+> ✅ **Done 2026-08-21, on Fable 5.** Everything below was built as specified, with three
+> findings a cold session should have: **(1) the premise about the console driver was stale** —
+> both fixed-key captures had quietly started reaching round 1's settlement (the "no capture
+> has ever contained a win" grep used `went out`; the console says `declares`), and the rewrite
+> was still right, because the fixed lists were answering prompts by *position* and had already
+> drifted twice; **(2) R1's fix is engine-declares** — a discard legal only under §5.1
+> exception 2 *is* the declaration, so the agent is not asked again (a journal from before the
+> fix that contains such a turn will replay with a loud divergence); **(3) R8's fix is a
+> `SeatChannel`** — the seat's question state is stable across occupants, each `SitDown` mints
+> a fresh `SeatConnection`, and a superseded connection is dead server-side, which also means a
+> seat re-taken mid-round starts its event history at the handover (like a watcher who joined
+> late). R30 (jokers as `DealBuilder` filler) was fixed by correcting the remark, not the
+> filler — re-basing it would re-derive every hand-computed payout in the suite to delete
+> comments that are currently true.
 
 **Goal.** An executable answer to *"does the game we ship actually obey every rule `RULES.md`
 records as Settled?"* — checked against **ordinary played rounds** rather than against fixtures,
@@ -5190,6 +5205,11 @@ advance: a take chosen for denial and a discard chosen for value will fight each
    computes it today.
 4. **Regenerate the standing suite at 4 seats.** `StandingAnswerTests` requires every rung in
    `BotCatalog` to be the subject of a published row, so the packet is not green until it runs.
+   ⚠️ **This run also lands two corrections P30.2 made to the suite's output** (2026-08-21):
+   `claim.permission.money.refuse-over-allow` comes back **paired** — expect the interval to
+   widen from the published ±0.18 to ~±0.25 (review R3; the null survives) — and four new
+   `money.side-margin.*` rows appear (review R13). **Neither is a regression; both are the
+   fixes arriving.** Update `STRATEGY.md` §12's R3 annotation to quote the corrected row.
 
 **Three predictions, written down before the run so the packet can be wrong.**
 1. ⚠️ **It is a null or close to one.** Denial has been measured twice and returned nothing both

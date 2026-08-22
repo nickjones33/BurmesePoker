@@ -58,12 +58,22 @@ public class MoneySweepTests
         // on (Measurement.Paired refuses a join across master seeds outright).
         var report = Once.Value;
 
-        var seeds = report.Cells
-            .Select(cell => cell.Player("prospector").SeatRounds.Count)
-            .Distinct()
+        // The join key itself: game i's seed, at every ratio. MoneySweep.Run plays exactly the
+        // run RunOf describes ("ready to be played or inspected"), and a game's seed is a pure
+        // function of that run's master seed and the game's index (SeedSequence.GameSeed) — so
+        // deriving the lists here asserts the actual per-game seeds match across cells, where
+        // matching round *counts* would hold even if each cell had derived its own. ⚠️ The
+        // stronger form — reading the seeds off the report — is unavailable: a MoneyCell keeps
+        // its aggregates and drops the per-game results they were summed from.
+        var seeds = Small.Ratios
+            .Select(stakes => MoneySweep.RunOf(Small, stakes))
+            .Select(run => Enumerable.Range(0, run.Games)
+                .Select(game => SeedSequence.GameSeed(run.MasterSeed, game))
+                .ToList())
             .ToList();
 
-        Assert.Single(seeds);
+        Assert.NotEmpty(seeds[0]);
+        Assert.All(seeds, cell => Assert.Equal(seeds[0], cell));
         Assert.Equal(3, report.Cells.Count);
         Assert.All(report.Cells, cell => Assert.Equal(report.Cells[0].Games, cell.Games));
         Assert.All(report.Cells, cell => Assert.True(cell.Player("prospector").IsSeatBalanced));

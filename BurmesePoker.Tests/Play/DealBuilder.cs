@@ -15,11 +15,14 @@ namespace BurmesePoker.Tests.Play;
 /// draw pile, in draw order.
 /// </para>
 /// <para>
-/// <b>Filler is never a money card.</b> Anything not named by the test is chosen so that its
-/// value pays nothing — neither permanent designator (7♦, A♠) nor either turned-up value —
-/// and the copies that would have paid are pushed to the bottom of the draw pile. So a deal
-/// owns exactly the money the test asked for, and a settlement expectation can be worked out
-/// by hand.
+/// ⚠️ <b>Filler avoids the 7♦, the A♠ and both turned-up values — and nothing else. Jokers
+/// are dealt as filler, and jokers have been permanent money cards since RULES.md rev 21</b>
+/// (review R30). The remark here used to claim filler is never a money card, which rev 21
+/// quietly falsified: the early filler positions are jokers, so most scripted deals put four
+/// paying cards in the first hands. The tests that work a settlement out by hand say so at
+/// the site and add the joker dollars in — kept that way deliberately, because re-basing the
+/// filler would re-derive every hand-computed payout in the suite to remove comments that
+/// are currently telling the truth.
 /// </para>
 /// </remarks>
 internal sealed class DealBuilder

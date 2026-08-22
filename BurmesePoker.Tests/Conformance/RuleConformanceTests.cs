@@ -1,0 +1,476 @@
+using BurmesePoker.Domain.Abstractions;
+using BurmesePoker.Domain.Agents;
+using BurmesePoker.Domain.Cards;
+using BurmesePoker.Domain.Melds;
+using BurmesePoker.Domain.Money;
+using BurmesePoker.Domain.Play;
+using BurmesePoker.Tests.Play;
+
+namespace BurmesePoker.Tests.Conformance;
+
+/// <summary>
+/// ✅ <b>P30.2 acceptance 1: hundreds of ordinary rounds, dealt at random and played by the
+/// rungs a person actually meets, break no Settled rule — and the audit is shown to be
+/// non-vacuous.</b>
+/// </summary>
+/// <remarks>
+/// <para>
+/// The field is every rung in <see cref="BotCatalog"/> and every level of
+/// <see cref="DifficultyLadder"/>, seated in rotation so that neighbours differ every game and
+/// no table is ever homogeneous — <c>random</c> plays here too, because a 196-turn round with
+/// reshuffles in it is exactly the round the scripted fixtures never deal.
+/// </para>
+/// <para>
+/// ⚠️ <b>The mutant half is what makes the first half evidence</b> (P13.6: a test that a
+/// stood-up seat refuses an answer was vacuous until a question stood in front of it). One
+/// mutant per rule family: each shows the corresponding family of checks going red against a
+/// deliberately broken narration, table or settlement.
+/// </para>
+/// </remarks>
+[Collection(WallClockBudgets.Collection)]
+public class RuleConformanceTests
+{
+    /// <summary>
+    /// One agent-maker per catalog rung and per difficulty level — the players people meet.
+    /// </summary>
+    private static readonly IReadOnlyList<Func<int, IPlayerAgent>> Field =
+    [
+        .. BotCatalog.All.Select(rung => rung.Create),
+        .. DifficultyLadder.All.Select(level => (Func<int, IPlayerAgent>)level.Create)
+    ];
+
+    [Theory]
+    [InlineData(4, 60)]
+    [InlineData(5, 60)]
+    [InlineData(6, 60)]
+    public void OrdinaryRoundsBreakNoSettledRule(int seats, int games)
+    {
+        var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, seats).Select(id => new PlayerId(id))];
+
+        for (var game = 0; game < games; game++)
+        {
+            // Consecutive field entries differ, so every table mixes rungs; the seed is plain
+            // arithmetic so the run is the same on every machine (BUILD-PLAN §3.7).
+            var seed = seats * 100_000 + game;
+            var agents = players.ToDictionary(
+                player => player,
+                player => Field[(game + player.Value) % Field.Count](seed + player.Value));
+
+            var audit = new RuleConformance();
+            var engine = RoundEngine.Shuffled(
+                players, agents, Stakes.Standard, new Random(seed), observer: audit);
+
+            audit.Watch(engine.Table);
+            engine.Play();
+            audit.RoundIsSettled();
+        }
+    }
+
+    /// <summary>
+    /// §3 step 2: under <see cref="MatchEngine.PlayRound()"/> the seats are re-drawn for every
+    /// round after the first — the first keeps the order the table was opened with.
+    /// </summary>
+    [Fact]
+    public void TheSeatingIsRedrawnEveryRoundAfterTheFirst()
+    {
+        var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, 4).Select(id => new PlayerId(id))];
+        var observer = new RecordingObserver();
+
+        var match = new MatchEngine(
+            players,
+            players.ToDictionary(player => player, IPlayerAgent (_) => new GreedyBotAgent()),
+            Stakes.Standard,
+            new Random(20260821),
+            observer);
+
+        for (var round = 0; round < 8; round++)
+        {
+            match.PlayRound();
+        }
+
+        Assert.Equal(8, observer.Seatings.Count);
+        Assert.Equal(players, observer.Seatings[0]);
+
+        // Every deal seats exactly the members, and the draw is real: eight rounds of four
+        // seats all landing in one order happens once in 24^7 — a fixed seating, not luck.
+        Assert.All(observer.Seatings, seating => Assert.Equal(
+            players.OrderBy(player => player.Value), seating.OrderBy(player => player.Value)));
+        Assert.True(
+            observer.Seatings.Select(seating => string.Join(",", seating)).Distinct().Count() > 1,
+            "Eight rounds were dealt to one unchanging seating (RULES.md §3 step 2).");
+    }
+
+    // ---- The mutants: one per rule family, each proving its checks can go red. ----
+
+    /// <summary>Turn structure (§5): an engine that let a seat take twice would be caught.</summary>
+    [Fact]
+    public void MutantASecondTakeInOneTurnIsCaught()
+    {
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => PlayMutated(
+            forward => new DoubleTake(forward)));
+    }
+
+    /// <summary>The claim (§4.5): a claim narrated after the opening turn is caught.</summary>
+    [Fact]
+    public void MutantALateClaimIsCaught()
+    {
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => PlayMutated(
+            forward => new LateClaim(forward)));
+    }
+
+    /// <summary>
+    /// The feeding ban (§5.1): an engine that let a seat feed a rank its neighbour had taken in
+    /// the open — no floor, no declaration — is caught by the audit's own mirror of the ban.
+    /// </summary>
+    [Fact]
+    public void MutantAFedClosedRankIsCaught()
+    {
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => PlayMutated(
+            forward => new FeedsAClosedRank(forward)));
+    }
+
+    /// <summary>Conservation (§2): a card leaving the round entirely is caught.</summary>
+    [Fact]
+    public void MutantAVanishedCardIsCaught()
+    {
+        var audit = new RuleConformance();
+        var engine = Dealt(audit);
+        audit.Watch(engine.Table);
+
+        engine.Table.DrawPile.DrawFromTop();
+
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(audit.AuditNow);
+    }
+
+    /// <summary>Ownership (§4.4): ownership appearing outside a deal or a blind draw is caught.</summary>
+    [Fact]
+    public void MutantAConjuredOwnershipIsCaught()
+    {
+        var audit = new RuleConformance();
+        var engine = Dealt(audit);
+        audit.Watch(engine.Table);
+
+        var unowned = engine.Table.DrawPile.Cards[0];
+        engine.Table.Ownership.RecordFromDeck(unowned.Id, engine.Table.Players[0]);
+
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(audit.AuditNow);
+    }
+
+    /// <summary>
+    /// The declaration (§6, §7.1.1): each way a laid-down hand can be illegal goes red — a
+    /// duplicate suit in a set, an ace wrapped in a run, a card used twice, a cover short of
+    /// thirteen, and a partition without the clean series the table size requires.
+    /// </summary>
+    [Fact]
+    public void MutantAnIllegalDeclarationIsCaughtEachWayItCanBeIllegal()
+    {
+        var fourHanded = TableRules.For(4);
+        var fiveHanded = TableRules.For(5);
+
+        // 9♥ 9♥ 9♠ — the §6.2 example itself.
+        var duplicateSuit = Declared(
+            Set("9H", "9H", "9S"), Run("2H", "3H", "4H", "5H", "6H", "7H", "8H"), Set("KC", "KH", "KS"));
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.ADeclaredHandSatisfiesTheTable(duplicateSuit.Melds, duplicateSuit.Held, fiveHanded));
+
+        // K-A-2 — the wrap §6.1 forbids.
+        var wrapped = Declared(
+            Run("KD", "AD", "2D"), Run("4H", "5H", "6H", "7H", "8H", "9H", "10H"), Set("QC", "QH", "QS"));
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.ADeclaredHandSatisfiesTheTable(wrapped.Melds, wrapped.Held, fiveHanded));
+
+        // Q-K-A and A-2-3 are both legal, which is what makes the wrap above the defect.
+        var aces = Declared(
+            Run("QD", "KD", "AD"), Run("AH", "2H", "3H"), Run("5S", "6S", "7S", "8S", "9S", "10S", "JS"));
+        RuleConformance.ADeclaredHandSatisfiesTheTable(aces.Melds, aces.Held, fiveHanded);
+
+        // Sets alone cover thirteen at five seats and are caught at four, where §7.1.1
+        // requires a clean series.
+        var setsOnly = Declared(
+            Set("KC", "KH", "KS"), Set("QC", "QH", "QS"), Set("5C", "5H", "5S"), Set("9C", "9H", "9S", "9D"));
+        RuleConformance.ADeclaredHandSatisfiesTheTable(setsOnly.Melds, setsOnly.Held, fiveHanded);
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.ADeclaredHandSatisfiesTheTable(setsOnly.Melds, setsOnly.Held, fourHanded));
+
+        // Twelve cards are not a declaration however legal each meld is.
+        var twelve = Declared(
+            Set("KC", "KH", "KS"), Set("QC", "QH", "QS"), Set("5C", "5H", "5S"), Set("9C", "9H", "9S"));
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.ADeclaredHandSatisfiesTheTable(twelve.Melds, twelve.Held, fiveHanded));
+
+        // One card in two melds — the overlap §6.3's exact-cover forbids.
+        var honest = Declared(
+            Run("2H", "3H", "4H", "5H", "6H", "7H", "8H"), Set("KC", "KH", "KS"), Set("QC", "QH", "QS"));
+        var overlapping = new List<Meld>(honest.Melds)
+        {
+            [2] = new Meld(
+                MeldKind.Set,
+                honest.Melds[2].Slots.Take(2).Append(honest.Melds[1].Slots[0]))
+        };
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.ADeclaredHandSatisfiesTheTable(overlapping, honest.Held, fiveHanded));
+    }
+
+    /// <summary>
+    /// The settlement (§4.3, §7.2): a deadwood-style penalty — one loser paying more than the
+    /// flat round value — is caught even though it still sums to zero.
+    /// </summary>
+    [Fact]
+    public void MutantADeadwoodPenaltyIsCaught()
+    {
+        var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, 4).Select(id => new PlayerId(id))];
+        var honest = new Dictionary<PlayerId, int>
+        {
+            [players[0]] = 15, [players[1]] = -5, [players[2]] = -5, [players[3]] = -5
+        };
+        var deadwood = new Dictionary<PlayerId, int>
+        {
+            [players[0]] = 17, [players[1]] = -5, [players[2]] = -5, [players[3]] = -7
+        };
+
+        RuleConformance.TheSettlementIsTheRules(
+            honest, players[0], players, Stakes.Standard, TurnUp(), Owned(), Shoe());
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.TheSettlementIsTheRules(
+                deadwood, players[0], players, Stakes.Standard, TurnUp(), Owned(), Shoe()));
+    }
+
+    // ---- Plumbing. ----
+
+    /// <summary>A dealt table that has played nothing, for the state-mutation mutants.</summary>
+    private static RoundEngine Dealt(RuleConformance audit)
+    {
+        var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, 4).Select(id => new PlayerId(id))];
+
+        return RoundEngine.Shuffled(
+            players,
+            players.ToDictionary(player => player, IPlayerAgent (_) => new GreedyBotAgent()),
+            Stakes.Standard,
+            new Random(4242),
+            observer: audit);
+    }
+
+    /// <summary>
+    /// Plays one ordinary greedy round with a lying narrator between the engine and the audit.
+    /// The table is the real one; the narration is the mutant — an engine that did the
+    /// forbidden thing would narrate exactly this.
+    /// </summary>
+    private static void PlayMutated(Func<IGameObserver, IGameObserver> mutate)
+    {
+        var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, 4).Select(id => new PlayerId(id))];
+        var audit = new RuleConformance();
+
+        var engine = RoundEngine.Shuffled(
+            players,
+            players.ToDictionary(player => player, IPlayerAgent (_) => new GreedyBotAgent()),
+            Stakes.Standard,
+            new Random(4242),
+            observer: mutate(audit));
+
+        audit.Watch(engine.Table);
+        engine.Play();
+        audit.RoundIsSettled();
+    }
+
+    private static (MeldKind Kind, string[] Codes) Run(params string[] codes) => (MeldKind.Run, codes);
+
+    private static (MeldKind Kind, string[] Codes) Set(params string[] codes) => (MeldKind.Set, codes);
+
+    /// <summary>
+    /// A hand laid down as the given melds, every card with its own <see cref="CardId"/> across
+    /// the whole hand — two copies of one value stay two cards, as in a real shoe.
+    /// </summary>
+    private static (IReadOnlyList<Meld> Melds, IReadOnlyList<Card> Held) Declared(
+        params (MeldKind Kind, string[] Codes)[] specs)
+    {
+        var held = Hands.Of([.. specs.SelectMany(spec => spec.Codes)]);
+        var melds = new List<Meld>();
+        var at = 0;
+
+        foreach (var (kind, codes) in specs)
+        {
+            var cards = held.Skip(at).Take(codes.Length).ToList();
+            at += codes.Length;
+            melds.Add(new Meld(
+                kind, cards.Select(card => new MeldSlot(card, card.Rank!.Value, card.Suit!.Value))));
+        }
+
+        return (melds, held);
+    }
+
+    private static IReadOnlyList<Card> TurnUp() => [Hands.Value("3C"), Hands.Value("4C")];
+
+    private static Dictionary<CardId, PlayerId> Owned() => [];
+
+    private static IReadOnlyList<Card> Shoe() => DeckBuilder.BuildTwoDecks();
+
+    /// <summary>Forwards everything, and narrates the first blind draw twice.</summary>
+    private sealed class DoubleTake(IGameObserver audit) : IGameObserver
+    {
+        private bool _lied;
+
+        public void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp) =>
+            audit.RoundStarted(round, seating, turnedUp);
+
+        public void PlayerDrew(PlayerId player, Card card)
+        {
+            audit.PlayerDrew(player, card);
+
+            if (!_lied)
+            {
+                _lied = true;
+                audit.PlayerDrew(player, card);
+            }
+        }
+
+        public void PlayerTookDiscard(PlayerId player, Card card) => audit.PlayerTookDiscard(player, card);
+        public void MoneyCardClaimed(PlayerId player, Card card) => audit.MoneyCardClaimed(player, card);
+        public void ClaimRefused(PlayerId objector, PlayerId claimant, Card card) => audit.ClaimRefused(objector, claimant, card);
+        public void PlayerDiscarded(PlayerId player, Card card) => audit.PlayerDiscarded(player, card);
+        public void DiscardsReshuffled(int cards) => audit.DiscardsReshuffled(cards);
+        public void PlayerDeclared(PlayerId player, IReadOnlyList<Meld> melds) => audit.PlayerDeclared(player, melds);
+        public void RoundSettled(RoundResult result) => audit.RoundSettled(result);
+    }
+
+    /// <summary>Forwards everything, and narrates a claim on the second turn's take.</summary>
+    private sealed class LateClaim(IGameObserver audit) : IGameObserver
+    {
+        private int _discards;
+        private bool _lied;
+        private IReadOnlyList<Card> _turnedUp = [];
+
+        public void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp)
+        {
+            _turnedUp = turnedUp;
+            audit.RoundStarted(round, seating, turnedUp);
+        }
+
+        public void PlayerDrew(PlayerId player, Card card)
+        {
+            if (Lying())
+            {
+                // The second turn's take arrives as a claim: an engine offering the
+                // turned-up card after the opening turn.
+                audit.MoneyCardClaimed(player, _turnedUp[^1]);
+                return;
+            }
+
+            audit.PlayerDrew(player, card);
+        }
+
+        public void PlayerTookDiscard(PlayerId player, Card card)
+        {
+            if (Lying())
+            {
+                audit.MoneyCardClaimed(player, _turnedUp[^1]);
+                return;
+            }
+
+            audit.PlayerTookDiscard(player, card);
+        }
+
+        private bool Lying()
+        {
+            if (_lied || _discards == 0)
+            {
+                return false;
+            }
+
+            _lied = true;
+            return true;
+        }
+
+        public void MoneyCardClaimed(PlayerId player, Card card) => audit.MoneyCardClaimed(player, card);
+        public void ClaimRefused(PlayerId objector, PlayerId claimant, Card card) => audit.ClaimRefused(objector, claimant, card);
+
+        public void PlayerDiscarded(PlayerId player, Card card)
+        {
+            _discards++;
+            audit.PlayerDiscarded(player, card);
+        }
+
+        public void DiscardsReshuffled(int cards) => audit.DiscardsReshuffled(cards);
+        public void PlayerDeclared(PlayerId player, IReadOnlyList<Meld> melds) => audit.PlayerDeclared(player, melds);
+        public void RoundSettled(RoundResult result) => audit.RoundSettled(result);
+    }
+
+    /// <summary>
+    /// Forwards everything faithfully until a real public take has closed a rank, then narrates
+    /// the protected seat's feeder throwing exactly that rank — the gift §5.1 forbids, with no
+    /// floor and no declaration behind it.
+    /// </summary>
+    private sealed class FeedsAClosedRank(IGameObserver audit) : IGameObserver
+    {
+        private IReadOnlyList<PlayerId> _seating = [];
+        private readonly HashSet<(PlayerId, Rank?)> _released = [];
+        private PlayerId _taker;
+        private Card? _closed;
+        private bool _fed;
+
+        public void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp)
+        {
+            _seating = seating;
+            audit.RoundStarted(round, seating, turnedUp);
+        }
+
+        public void PlayerDrew(PlayerId player, Card card) => audit.PlayerDrew(player, card);
+
+        public void PlayerTookDiscard(PlayerId player, Card card)
+        {
+            // A real take, kept: it closes this rank against the seat that feeds the taker —
+            // in the audit's mirror as at a table — unless the taker had already released it.
+            if (_closed is null && !_released.Contains((player, card.Rank)))
+            {
+                _taker = player;
+                _closed = card;
+            }
+
+            audit.PlayerTookDiscard(player, card);
+        }
+
+        public void MoneyCardClaimed(PlayerId player, Card card) => audit.MoneyCardClaimed(player, card);
+
+        public void ClaimRefused(PlayerId objector, PlayerId claimant, Card card) =>
+            audit.ClaimRefused(objector, claimant, card);
+
+        public void PlayerDiscarded(PlayerId player, Card card)
+        {
+            _released.Add((player, card.Rank));
+
+            if (!_fed && _closed is { } closed)
+            {
+                if (player == _taker && card.Rank == closed.Rank)
+                {
+                    // The taker threw the rank back before the lie could land; re-arm later.
+                    _closed = null;
+                }
+                else if (FeederOf(_taker) == player)
+                {
+                    // The lie: this discard arrives as a card of the closed rank.
+                    _fed = true;
+                    audit.PlayerDiscarded(player, closed);
+                    return;
+                }
+            }
+
+            audit.PlayerDiscarded(player, card);
+        }
+
+        public void DiscardsReshuffled(int cards) => audit.DiscardsReshuffled(cards);
+        public void PlayerDeclared(PlayerId player, IReadOnlyList<Meld> melds) => audit.PlayerDeclared(player, melds);
+        public void RoundSettled(RoundResult result) => audit.RoundSettled(result);
+
+        private PlayerId FeederOf(PlayerId taker)
+        {
+            for (var seat = 0; seat < _seating.Count; seat++)
+            {
+                if (_seating[seat] == taker)
+                {
+                    return _seating[(seat + _seating.Count - 1) % _seating.Count];
+                }
+            }
+
+            throw new InvalidOperationException($"{taker} is not seated.");
+        }
+    }
+}

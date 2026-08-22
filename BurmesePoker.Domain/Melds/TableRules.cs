@@ -86,6 +86,11 @@ public readonly record struct TableRules
     /// Whether these rules ask anything of the partition beyond covering the hand — false
     /// only at five or more, where the win condition is the bare exact cover.
     /// </summary>
+    /// <remarks>
+    /// ⚠️ A deliberate observable with no production caller, kept so a test or a tool can ask
+    /// the question directly. It is <b>not</b> the enforcement path: <c>HandEvaluator</c>
+    /// enforces the requirements by carrying this table's counts along the cover search.
+    /// </remarks>
     public bool ConstrainsThePartition =>
         !SetsAllowed || RequiredSeries > 0 || RequiredCleanSeries > 0;
 

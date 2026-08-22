@@ -743,6 +743,12 @@ from, the seed, the mean, the standard error and the 95% half-width. **Every tab
 generated from it**, including §10's — the money sweep is part of the standing set, so a single
 `sim suite` regenerates the whole document's data.
 
+⚠️ **One caveat until P31's regeneration run (review R13, 2026-08-21).** The side-bet margin —
+§10's mechanism variable — was computed on every run and published nowhere `sim suite` writes: it
+reached bytes only through `money.csv`, which the suite does not regenerate. The suite now emits
+`money.side-margin.*` rows; **they appear in `measurements.csv` at the next full run**, which P31
+already owes, and until then the sentence above is true of everything except that one margin.
+
 ### The rule that keeps this file honest
 
 🔥 **A rung cannot be added without being measured, and that is a test rather than a default.**
@@ -829,7 +835,15 @@ holder may refuse. So P29 measured it.
 | rounds in which the opener asks for the card | **24.8–28.5%** |
 | of those, how often the upstream seat vetoes | **50.4%** at the ladder, **53.7%** at the dial |
 | `outs/refuse` over `outs/allow`, win rate | **+0.4 ± 1.0** — inside the interval |
-| `outs/refuse` over `outs/allow`, money a round | **+0.02 ± 0.18** — inside the interval |
+| `outs/refuse` over `outs/allow`, money a round | **+0.02 ± 0.18** — inside the interval ⚠️ *unpaired; see below* |
+
+⚠️ **The money row's ±0.18 was computed with the independent formula on a within-cell margin**
+(review R3, 2026-08-21): the two arms share one table and money is zero-sum across it, which is
+exactly the case `Measurement.Paired`'s own remarks call anti-conservative — the true paired
+interval is wider, of the order of ±0.25. **The null survives — widening keeps a null a null** —
+but the interval as printed is understated. The code now pairs this margin
+(`CellPlayer.NetPerRoundByGame`), and the corrected row regenerates with the next full
+`sim suite` run, which P31 already owes.
 
 🔥 **A null, published** (the discipline P20 set). Two arms of one rung differing in exactly that
 one answer, 8,008 games, and neither the win rate nor the money can tell them apart. ⚠️ **This is

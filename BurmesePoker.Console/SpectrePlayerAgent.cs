@@ -111,9 +111,17 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
                     TurnAction.TakeDiscard =>
                         $"Take the discard {CardFormatting.Of(discard, context.MoneyCards)} "
                         + $"[{Palette.Quiet}](you will not own it)[/]",
-                    _ =>
-                        $"Draw blind [{Palette.Quiet}]({context.DrawPileCount} left — a drawn money card pays you)[/]"
+                    TurnAction.DrawFromDeck =>
+                        $"Draw blind [{Palette.Quiet}]({context.DrawPileCount} left — a drawn money card pays you)[/]",
+                    // ⚠️ Named cases only, never a default label: a residual arm here would put
+                    // "Draw blind" on any TurnAction added later, and a mislabelled menu is
+                    // worse than a crash a test can see.
+                    _ => throw new InvalidOperationException($"No menu label for taking a card by '{action}'.")
                 })
+                // ⚠️ TakeDiscard stays listed first. Spectre opens a SelectionPrompt<T> on
+                // default(T) whenever that value is among the choices, and default(TurnAction)
+                // is TakeDiscard — the exact trap P18 found in the difficulty menu, benign here
+                // only while the default value is also the first choice.
                 .AddChoices(TurnAction.TakeDiscard, TurnAction.DrawFromDeck));
     }
 

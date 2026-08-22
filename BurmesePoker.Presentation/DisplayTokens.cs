@@ -10,7 +10,7 @@ namespace BurmesePoker.Presentation;
 /// <para>
 /// <b>WCAG 1.4.1, taken as a standard before there is a second front end to retrofit</b>
 /// (BUILD-PLAN §3.11 A2). The rule is that colour never carries meaning on its own. The
-/// console already obeys it — <c>($)</c>, <c>($$)</c>, <c>★</c>, <c>←</c> and the
+/// console already obeys it — <c>($)</c>, <c>($$$)</c>, <c>★</c>, <c>←</c> and the
 /// <c>run</c>/<c>set</c>/<c>loose</c> row labels are all glyphs that survive a greyscale
 /// screen — so this is where those markers move to, not where they are invented.
 /// </para>

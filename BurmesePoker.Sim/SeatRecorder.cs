@@ -20,7 +20,7 @@ public sealed class SeatRecorder(IPlayerAgent inner, int turnCap) : IPlayerAgent
     /// <summary>How many times this seat was offered the turned-up money card, this round.</summary>
     public int ClaimOffers { get; private set; }
 
-    /// <summary>How many of those it took (RULES.md §4.5).</summary>
+    /// <summary>How many of those it asked to take — asked, not got: a claim may be refused (RULES.md §4.5).</summary>
     public int Claims { get; private set; }
 
     /// <summary>Starts a fresh round's tallies.</summary>

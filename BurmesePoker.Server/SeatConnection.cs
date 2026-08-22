@@ -19,6 +19,15 @@ namespace BurmesePoker.Server;
 /// there is no hand it may legitimately see (BUILD-PLAN P13.3).
 /// </para>
 /// <para>
+/// 🔥 <b>A connection is one occupancy of a seat, not the seat</b> (review R8). The seat's
+/// question-and-answer state lives in a <see cref="SeatChannel"/> that survives handovers;
+/// each person who sits down gets a fresh connection over the same channel, and a superseded
+/// connection is dead server-side — its <see cref="Pending"/> reads null, its
+/// <see cref="Answer"/> is refused, and the fan-out no longer writes to it. Concealment on a
+/// handover is therefore the server's property, not a courtesy the client extends by
+/// disposing its board.
+/// </para>
+/// <para>
 /// ⚠️ <b><see cref="Updated"/> is raised on the round's own thread</b>, before the seat's agent
 /// begins waiting. A handler that answers immediately therefore answers before the wait starts,
 /// which is well defined: the answer is latched and the wait returns at once. A handler that
@@ -29,14 +38,13 @@ public sealed class SeatConnection
 {
     private readonly Lock _gate = new();
     private readonly List<TableEvent> _events = [];
-    private readonly ManualResetEventSlim _answered = new(initialState: false);
-    private SeatPrompt? _pending;
-    private SeatAnswer? _answer;
+    private readonly SeatChannel? _channel;
 
-    internal SeatConnection(PlayerId? player, string name)
+    internal SeatConnection(PlayerId? player, string name, SeatChannel? channel = null)
     {
         Player = player;
         Name = name;
+        _channel = channel;
     }
 
     /// <summary>The seat this connection plays, or null for a watcher.</summary>
@@ -46,9 +54,9 @@ public sealed class SeatConnection
     /// What to call this connection. Presentation only; the engine never sees it.
     /// </summary>
     /// <remarks>
-    /// ⚠️ <b>It changes when somebody sits down</b> (<see cref="TableSession.SitDown"/>, P13.6).
-    /// A lobby opens a table before it knows who is coming, so a seat waiting for a player is
-    /// called whatever the lobby called it until somebody takes it.
+    /// ⚠️ <b>It is fixed for the connection's life</b>: a connection is one occupancy, and the
+    /// person who sits down next gets a fresh one carrying their own name
+    /// (<see cref="TableSession.SitDown"/>, P13.6).
     /// </remarks>
     public string Name { get; internal set; }
 
@@ -62,6 +70,11 @@ public sealed class SeatConnection
     public event Action<SeatConnection>? Updated;
 
     /// <summary>Everything this connection has been told, oldest first. A snapshot.</summary>
+    /// <remarks>
+    /// ⚠️ A connection hears everything from the moment it is attached and nothing from before
+    /// — so a seat re-taken mid-round starts from that moment, exactly as a watcher who joins
+    /// late has missed the deal.
+    /// </remarks>
     public IReadOnlyList<TableEvent> Events
     {
         get
@@ -73,42 +86,26 @@ public sealed class SeatConnection
         }
     }
 
-    /// <summary>The question this seat is being asked, or null when it is not its turn.</summary>
-    public SeatPrompt? Pending
-    {
-        get
-        {
-            lock (_gate)
-            {
-                return _pending;
-            }
-        }
-    }
+    /// <summary>
+    /// The question this seat is being asked, or null when it is not its turn — and always
+    /// null once another connection has taken the seat over.
+    /// </summary>
+    public SeatPrompt? Pending => _channel?.PendingFor(this);
 
     /// <summary>
     /// Answers the pending question.
     /// </summary>
     /// <returns>
     /// False if there is nothing pending, or the answer does not fit what was asked, or it
-    /// names a card this seat is not holding. <b>A refusal leaves the prompt standing</b>, so a
-    /// client may correct itself; nothing about the round changes.
+    /// names a card this seat is not holding, or this connection no longer occupies the seat.
+    /// <b>A refusal leaves the prompt standing</b>, so a client may correct itself; nothing
+    /// about the round changes.
     /// </returns>
     public bool Answer(SeatAnswer answer)
     {
         ArgumentNullException.ThrowIfNull(answer);
 
-        lock (_gate)
-        {
-            if (_pending is not { } prompt || !answer.Fits(prompt))
-            {
-                return false;
-            }
-
-            _answer = answer;
-        }
-
-        _answered.Set();
-        return true;
+        return _channel is not null && _channel.Answer(this, answer);
     }
 
     /// <summary>
@@ -116,33 +113,25 @@ public sealed class SeatConnection
     /// </summary>
     /// <returns>The answer, or null if nobody answered in time.</returns>
     /// <remarks>
+    /// <para>
     /// <b>Blocking is the design, not a shortcut</b> (BUILD-PLAN §3.6): an agent is synchronous,
     /// a remote player waits inside one, and one table is one task. The cost is a parked thread
     /// per table, which P13's own load note dismisses beside the ~20 ms of search a round costs.
+    /// </para>
+    /// <para>
+    /// The block is against the seat's <see cref="SeatChannel"/>, so the agent may go on
+    /// holding the connection it was built with: a question outlives a handover, and the
+    /// answer is taken from whoever occupies the seat when it arrives.
+    /// </para>
     /// </remarks>
     internal SeatAnswer? Ask(SeatPrompt prompt, TimeSpan patience)
     {
         ArgumentNullException.ThrowIfNull(prompt);
         ArgumentOutOfRangeException.ThrowIfLessThan(patience, TimeSpan.Zero);
 
-        lock (_gate)
-        {
-            _answered.Reset();
-            _answer = null;
-            _pending = prompt;
-        }
-
-        Updated?.Invoke(this);
-
-        var answered = _answered.Wait(patience);
-
-        lock (_gate)
-        {
-            var answer = answered ? _answer : null;
-            _pending = null;
-            _answer = null;
-            return answer;
-        }
+        return _channel is null
+            ? throw new InvalidOperationException("A watcher holds no seat and is never asked anything.")
+            : _channel.Ask(prompt, patience);
     }
 
     internal void Post(TableEvent moment)
@@ -154,4 +143,7 @@ public sealed class SeatConnection
 
         Updated?.Invoke(this);
     }
+
+    /// <summary>Raised by the channel when a question arrives or moves here on a handover.</summary>
+    internal void NotifyUpdated() => Updated?.Invoke(this);
 }

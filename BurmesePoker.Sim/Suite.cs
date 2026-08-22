@@ -430,6 +430,19 @@ public static class Suite
                 "take rate",
                 cell.Player(money.Options.Challenger.Name).TakeRate,
                 string.Empty));
+
+            measurements.Add(new SuiteMeasurement(
+                $"money.side-margin.{cell.Id}",
+                "The money-card half of the net margin alone — where the mechanism has to show "
+                + "up if the rule is doing anything. ⚠️ Computed on every run since P22 and "
+                + "never published (review R13): it reached bytes only through money.csv, which "
+                + "sim suite does not regenerate, so §10's mechanism argument leaned on a file "
+                + "one command behind the others.",
+                moneyCommand,
+                $"{money.Options.Challenger.Name} over {money.Options.Reference.Name} at {cell.Label}",
+                "side bet margin",
+                cell.SideMargin,
+                string.Empty));
         }
 
         var claimCommand = string.Create(CultureInfo.InvariantCulture,
@@ -451,12 +464,15 @@ public static class Suite
         measurements.Add(new SuiteMeasurement(
             "claim.permission.money.refuse-over-allow",
             "The same margin in money a round, reported beside the win rate because a claim is "
-            + "a money-card decision and the two can come apart (BUILD-PLAN P22).",
+            + "a money-card decision and the two can come apart (BUILD-PLAN P22). ⚠️ Paired, "
+            + "since review R3: the two arms share one table and money is zero-sum across it, "
+            + "which is exactly the case Measurement.Paired's remarks call anti-conservative "
+            + "for the independent formula. The ±0.18 P29 published was the unpaired interval.",
             claimCommand,
             $"{arms[0].Name} over {arms[1].Name}",
             "net per round margin",
-            Measurement.Difference(
-                claim.Player(arms[0].Name).NetPerRound, claim.Player(arms[1].Name).NetPerRound),
+            Measurement.Paired(
+                claim.Player(arms[0].Name).NetPerRoundByGame, claim.Player(arms[1].Name).NetPerRoundByGame),
             string.Empty));
 
         // 🔥 The two numbers nothing reported before this packet: how big the branch P28 decided

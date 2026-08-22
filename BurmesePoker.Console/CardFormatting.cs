@@ -142,7 +142,7 @@ public static class CardFormatting
     {
         var marker = multiplier switch
         {
-            >= 2 => $" [{Palette.Money}]{DisplayTokens.For(CardDisplayState.PaysTriple)}[/]",
+            >= MoneyCardRegistry.Tripled => $" [{Palette.Money}]{DisplayTokens.For(CardDisplayState.PaysTriple)}[/]",
             1 => $" [{Palette.Money}]{DisplayTokens.For(CardDisplayState.PaysOnce)}[/]",
             _ => string.Empty
         };

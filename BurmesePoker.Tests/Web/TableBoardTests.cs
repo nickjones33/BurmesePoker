@@ -110,7 +110,7 @@ public class TableBoardTests
         Assert.Equal(0, board.Banks.Values.Sum());
 
         // The second deal cleared the first round's table and its discard piles.
-        Assert.Equal([SevenOfSpades], board.TurnedUp.Count == 0 ? board.TurnedUp : [SevenOfSpades]);
+        Assert.Equal([SevenOfSpades], board.TurnedUp);
         Assert.Equal(2, board.RoundsPlayed);
     }
 

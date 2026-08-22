@@ -254,9 +254,14 @@ public sealed record TableBoard
     /// The board after one more thing happened.
     /// </summary>
     /// <remarks>
-    /// Exhaustive over <see cref="TableEvent"/>, which is a closed hierarchy — so an event
-    /// added later stops compiling here rather than being silently ignored by the one thing
-    /// that draws the table.
+    /// ⚠️ <b>Not exhaustive by the compiler, whatever the closed hierarchy suggests</b> — C#
+    /// checks no exhaustiveness over a class hierarchy, so the <c>_ =&gt; this</c> arm at the
+    /// bottom means an event added to <see cref="TableEvent"/> later is <b>deliberately
+    /// ignored</b> here until somebody adds its arm by hand. That is the chosen posture, not an
+    /// accident: this is a view fold, and a view that threw on an event it does not yet draw
+    /// would take the page down over something it was free to not mention. The cost is that a
+    /// new event changes nothing on screen until its arm is written, so <b>adding a
+    /// <see cref="TableEvent"/> means coming here</b>.
     /// </remarks>
     public TableBoard After(TableEvent moment)
     {

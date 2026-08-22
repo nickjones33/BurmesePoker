@@ -203,14 +203,29 @@ public sealed class RoundEngine
         // 2. Discard (RULES.md §5), from the legal cards only — a rank the next seat has taken in
         //    the open is not a move this turn offers (§5.1). Ownership is untouched by it (§4.4).
         context = new TurnContext(Table, seat, _round, turn, available, canClaim, taken);
-        var discarded = seat.Discard(RequireALegalDiscard(context, agent.ChooseDiscard(context)));
+        var chosen = RequireALegalDiscard(context, agent.ChooseDiscard(context));
+
+        // §5.1 exception 2 licenses a closed rank *as the declaring discard* and as nothing else,
+        // so throwing one is the declaration itself and the seat is not asked again — a throw
+        // followed by a declined declaration was never a legal move (RULES.md §5.1). Decided
+        // before the discard lands, because a closed rank the floor let through is told apart
+        // from an exception-2 throw by whether a winning thirteen is left behind — and the floor
+        // never leaves one, or exception 2 would have offered the card and kept the floor shut.
+        var throwIsTheDeclaration = context.ClosedToYou.Closes(chosen);
+
+        var discarded = seat.Discard(chosen);
         _observer.PlayerDiscarded(seat.Id, discarded);
 
         // 3. Only then may the hand be laid down — the discard comes first and the reveal
         //    follows it (RULES.md §7.1).
         context = new TurnContext(Table, seat, _round, turn, available, canClaim, taken);
 
-        if (!HandEvaluator.TryFindCover(seat.Hand, Table.Rules, out var melds) || !agent.Declare(context))
+        if (!HandEvaluator.TryFindCover(seat.Hand, Table.Rules, out var melds))
+        {
+            return null;
+        }
+
+        if (!throwIsTheDeclaration && !agent.Declare(context))
         {
             return null;
         }

@@ -470,6 +470,45 @@ public class TableSessionTests
         Assert.Equal([One], table.WaitingFor);
     }
 
+    /// <summary>
+    /// 🔥 <b>R8 — a handed-over seat is dead to its previous occupant, server-side.</b> The old
+    /// connection used to keep receiving the new occupant's private draws and could still answer
+    /// their prompts, held up only by the Web client disposing its board — exactly the
+    /// client-hides-it posture the fan-out's own standard rejects.
+    /// </summary>
+    [Fact]
+    public void AHandedOverSeatIsDeadToItsPreviousOccupant()
+    {
+        var table = TableSession.Open(TwoPeopleAndTwoBots(), Options(20260819));
+
+        var first = table.SitDown(One, "Nick");
+        Assert.True(table.StandUp(One));
+        var second = table.SitDown(One, "Somebody else");
+
+        Assert.NotNull(first);
+        Assert.NotNull(second);
+        Assert.NotSame(first, second);
+        Assert.Same(second, table.ConnectionFor(One));
+
+        // The new occupant plays the round; the other person's seat is scripted too.
+        var succeeded = new ScriptedSeat(second!);
+        _ = new ScriptedSeat(table.ConnectionFor(Three));
+        var sizeBefore = first!.Events.Count;
+
+        table.PlayRound();
+
+        // The superseded connection heard nothing of the round — not one event, private or
+        // public — and cannot answer; the new occupant was asked, answered, and was told its
+        // own blind draws.
+        Assert.Equal(sizeBefore, first.Events.Count);
+        Assert.Null(first.Pending);
+        Assert.False(first.Answer(new SeatAnswer.Take(TurnAction.DrawFromDeck)));
+        Assert.True(succeeded.Answered > 0);
+        Assert.Contains(
+            second!.Events.OfType<TableEvent.Drew>(),
+            drew => drew.Player == One && drew.Card is not null);
+    }
+
     /// <remarks>
     /// A watcher is not a seat and never becomes one — the strictest concealment case there is
     /// (P13.2), and nothing P13.6 added may soften it.

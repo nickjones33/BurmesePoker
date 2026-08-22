@@ -39,8 +39,9 @@ namespace BurmesePoker.Domain.Agents;
 /// hazard.</b> A <see cref="CardId"/> names a card in a <em>round's</em> shoe, which is rebuilt
 /// at every deal (P13.4), so memory carried across a deal would be memory of cards that no
 /// longer exist. <see cref="Forget"/> is driven by <see cref="TurnContext.Round"/> and runs
-/// before anything reads the memory, at every one of the four places this rung can be asked
-/// something.
+/// before anything reads the memory, at four of the five places this rung can be asked
+/// something — <see cref="ObjectToClaim"/> deliberately does not <c>Observe</c>, so a future
+/// counting rung that reads the memory there would meet a stale one.
 /// </para>
 /// <para>
 /// It is still deterministic: the same hand at the same point of the same round decides the
@@ -166,10 +167,12 @@ public sealed class CountingBotAgent : IPlayerAgent, IRanksDiscards
     /// Takes in everything this seat is being shown right now — and nothing else.
     /// </summary>
     /// <remarks>
-    /// <b>Every decision, not only the discard.</b> The engine builds a fresh context for each
-    /// question in a turn (<c>RoundEngine.TakeTurn</c>), and the round reset has to have
-    /// happened before whichever of them comes first — so this is called at all four rather
-    /// than at the one that reads the memory.
+    /// <b>Every on-turn decision, not only the discard.</b> The engine builds a fresh context
+    /// for each question in a turn (<c>RoundEngine.TakeTurn</c>), and the round reset has to
+    /// have happened before whichever of them comes first — so this is called at all four
+    /// on-turn questions rather than at the one that reads the memory.
+    /// <see cref="ObjectToClaim"/>, the fifth, deliberately does not call it: a future counting
+    /// rung reading the memory there would meet a stale one.
     /// </remarks>
     private void Observe(TurnContext context)
     {

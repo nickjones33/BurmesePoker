@@ -35,9 +35,14 @@ public class SkillLadderTests
     private static readonly PlayerId Alice = new(0);
     private static readonly PlayerId[] FourPlayers = [.. Enumerable.Range(0, 4).Select(seat => new PlayerId(seat))];
 
-    /// <summary>Every rung, by the name the command line knows it as.</summary>
+    /// <summary>
+    /// Every rung, by the name the command line knows it as — derived from
+    /// <see cref="BotCatalog.All"/> rather than typed out, so an eighth rung is under these
+    /// theories on the day it is added (P18's defect, one layer up: a hand-kept list is how a
+    /// rung ships unmeasured). Nothing is excluded: every rung owes every property here.
+    /// </summary>
     public static TheoryData<string> Rungs =>
-        ["random", "simple", "greedy", "cautious", "counting", "outs", "prospector"];
+        [.. BotCatalog.All.Select(rung => rung.Name)];
 
     /// <summary>Twelve that partition, and the Q♣, which joins nothing — the P10 fixture.</summary>
     private static readonly string[] TwelveAndADeadQueen =

@@ -11,19 +11,24 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **The plan has a third branch, opened by the owner on 2026-08-21 after P29: verify, then arm,
-then move the table.** ✅ **P30.1 — the review — shipped 2026-08-21 on Fable 5:
-`docs/REVIEW-2026-08.md`, 37 triaged findings, and its triage table is the next packet's work
-list.** ✅ **The next packet is `P30.2` — the conformance harness and the front-end tests
-(**Fable 5**)**, then
-**`P31`** (`warden`, the feeding ban played offensively) and **`P32`** (five seats as the default
-table), **both back on Opus**. ⚠️ **Set the model with `/model` before the session; the packet
-records which one and cannot choose it.** ⚠️ **`P24` was split**: ✅ **P24.1 — a journal for the
-hosted table — shipped 2026-08-21 on Fable 5** (`--journal` on `BurmesePoker.Web`, same file the
-console writes and `sim replay` reads, flushed after every settled round; it was P30.2's own
-unbuilt dependency), and **P24.2** is the reasoning said out loud, still Nick's call.
-**`BUILD-PLAN.md` §4 carries the ordering argument, and it is about wall clock and attribution
-rather than taste.**
+🔥 **The verify branch is closed: P30.1 (the review), P24.1 (the hosted table's journal) and
+P30.2 (the conformance harness and the front-end tests) all shipped 2026-08-21 on Fable 5.**
+✅ **P30.2's headline: the game as played is audited.** `Tests/Conformance/RuleConformance`
+re-derives every Settled rule independently over 180 ordinary rounds at 4/5/6 seats with a
+mutant per rule family proving the audit can go red; `SettledRuleCoverageTests` fails the build
+on a Settled `RULES.md` section nothing checks or exempts; `drive-console.py` now **answers
+prompts adaptively** and verifies the settlement panel's arithmetic; and `BrowserRoundTests`
+closes the loop board = engine = journal replay. 🔥 **Two behaviour fixes rode along**: a
+discard legal only under §5.1 exception 2 *is* the declaration — the seat is not asked and
+cannot decline (R1) — and a handed-over seat is dead to its previous occupant server-side
+(`SeatChannel`, R8). **Journals stamp rev 24 now, bound to `RULES.md` by a test** — bump
+`JournalHeader.CurrentRulesRevision` with any play-changing rev. ✅ **The next packet is
+`P31`** (`warden`, the feeding ban played offensively), then **`P32`** (five seats as the
+default table), **both back on Opus**. ⚠️ **Set the model with `/model` before the session; the
+packet records which one and cannot choose it.** ⚠️ **P31's suite regeneration will change two
+things in the CSV on purpose** — the claim-money interval comes back paired (~±0.25, review R3)
+and `money.side-margin.*` rows appear (R13); both are P30.2's fixes arriving, not regressions
+(BUILD-PLAN §5 P31). **P24.2** (the reasoning said out loud) is still Nick's call.
 
 🔥 **Everything below this line was true when P29 shipped. P25–P29 all shipped 2026-08-21.** Every packet from §0 is done — P0–P12, P13.1–P13.6 and P14–P23 — and **four sessions with
 Mya Lay and Aung Aung on 2026-08-20/21 closed twenty-three questions in `RULES.md` §9 and left

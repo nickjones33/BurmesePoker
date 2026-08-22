@@ -93,6 +93,9 @@ a red tree marked done is not.
 **When warranted:**
 
 - **`docs/RULES.md`** — any rules finding. Bump the rev number and the "Last revised" line.
+  ⚠️ If the change alters play, bump `JournalHeader.CurrentRulesRevision` to match —
+  `GameJournalTests.TheRevisionStampedIsTheRevisionRulesMdIsAt` binds the two, so a forgotten
+  bump is a red build, not a stale journal.
 - **`docs/spec/`** — any specification detail worked out in enough depth to be worth keeping.
 - **`docs/BUILD-PLAN.md`** — ⚠️ **re-plan the following packets.** This step matters. If what
   you learned changes a later packet's design, acceptance criteria, or ordering, **amend it

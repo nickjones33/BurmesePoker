@@ -162,13 +162,20 @@ public sealed record TournamentOptions
 /// from. <b>Kept because a summary cannot be paired</b> — a comparison across two cells of the
 /// same master seed needs the games themselves (<see cref="Measurement.Paired"/>).
 /// </param>
+/// <param name="NetPerRoundByGame">
+/// The money before it was summarised, kept for the same reason (review R3): the one published
+/// money margin computed within a cell used the add-the-variances formula because this series
+/// was not here to pair — the exact case <see cref="Measurement.Paired"/>'s own remarks call
+/// anti-conservative, money being zero-sum across a table.
+/// </param>
 public sealed record CellPlayer(
     string Name,
     Measurement WinRate,
     Measurement NetPerRound,
     Measurement TakeRate,
     IReadOnlyList<int> SeatRounds,
-    IReadOnlyList<GameValue> WinRateByGame)
+    IReadOnlyList<GameValue> WinRateByGame,
+    IReadOnlyList<GameValue> NetPerRoundByGame)
 {
     /// <summary>Whether it sat in every seat the same number of times, to within one.</summary>
     public bool IsSeatBalanced => SeatRounds.Count == 0 || SeatRounds.Max() - SeatRounds.Min() <= 1;
@@ -237,11 +244,17 @@ public sealed record TournamentCell(
     public double ClaimRate => Rounds == 0 ? 0 : (double)ClaimAttempts / Rounds;
 
     /// <summary>How the cell reads in a report.</summary>
+    /// <remarks>
+    /// ⚠️ Named cases only, never a residual label: <c>_ =&gt; "free-for-all"</c> would put the
+    /// wrong name on any <see cref="CellKind"/> added later, and the label is what a CSV row and
+    /// a verdict are joined on.
+    /// </remarks>
     public string Label => Kind switch
     {
         CellKind.Pair => $"{Row} vs {Column}",
         CellKind.Null => $"{Row} vs itself",
-        _ => "free-for-all"
+        CellKind.FreeForAll => "free-for-all",
+        _ => throw new InvalidOperationException($"No label for a {Kind} cell.")
     };
 
     /// <summary>One player by name.</summary>
@@ -483,7 +496,8 @@ public static class Tournament
                 Measurement.Of(one.NetPerRound),
                 Measurement.Of(one.TakeRate),
                 one.SeatRounds,
-                one.WinRate))
+                one.WinRate,
+                one.NetPerRound))
             .ToList();
 
         if (kind == CellKind.FreeForAll)

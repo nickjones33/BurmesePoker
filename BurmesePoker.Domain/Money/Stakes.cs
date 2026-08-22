@@ -12,7 +12,7 @@ namespace BurmesePoker.Domain.Money;
 /// </para>
 /// <para>
 /// The 5:1 ratio of the standard stakes is load-bearing rather than incidental: under the
-/// exact-match designation rule it makes the side-bet worth roughly 40% of the round prize —
+/// money rules as they are it makes the side-bet worth a measured 58% of the round prize —
 /// significant without dominating (RULES.md §4.3).
 /// </para>
 /// </remarks>

@@ -65,7 +65,7 @@ public sealed class ConsoleObserver : IGameObserver
             + $"  [{Palette.Quiet}]— {Who(seating[0])} opens; the seats are re-drawn every round[/]");
         Say(
             "Turned up: " + string.Join("  ", turnedUp.Select(CardFormatting.Of))
-            + $"  [{Palette.Quiet}]— both copies of each pay their owner; 7♦ and A♠ always do[/]");
+            + $"  [{Palette.Quiet}]— the partner copy of each pays its owner; 7♦, A♠ and the jokers always do[/]");
         _console.WriteLine();
     }
 

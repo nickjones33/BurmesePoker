@@ -100,6 +100,44 @@ public class ComputerAdviceTests
         Assert.True(queen.State.HasFlag(CardDisplayState.PaysOnce));
     }
 
+    /// <summary>
+    /// ✅ <b>R6(d) — the fifth question, put to the watcher for real.</b> The watcher used to sit
+    /// at the opener's seat, the one seat the objection is never asked of, so its
+    /// <c>Objections</c> list was asserted over while empty by construction. Here it sits
+    /// upstream of a claiming opener, holding the rank, and the pair really is collected.
+    /// </summary>
+    [Fact]
+    public void TheObjectionAdviceIsTheBotsOwnAndIsActuallyAsked()
+    {
+        var watcher = new AdviceWatcher();
+
+        var engine = new RoundEngine(
+            FourPlayers,
+            FourPlayers.ToDictionary(
+                player => player,
+                IPlayerAgent (player) =>
+                    player == FourPlayers[3] ? watcher
+                    : player == FourPlayers[0] ? new ScriptedPlayerAgent(new ScriptedTurn { Claim = true })
+                    : player == FourPlayers[1] ? new ScriptedPlayerAgent(new ScriptedTurn(), new ScriptedTurn { Declare = true })
+                    : ScriptedPlayerAgent.Passive()),
+            Stakes.Standard,
+            DealBuilder.ForPlayers(4)
+                .Give(1, "2H", "3H", "4H", "5H", "6H", "7H", "8D", "9D", "10D", "KC", "KH", "KS", "KD")
+                .Give(3, "3D")
+                .TurnUpFromTop("3C")
+                .TurnUpFromBottom("4C")
+                .Build(),
+            new Random(1));
+
+        engine.Play();
+
+        var pair = Assert.Single(watcher.Objections);
+
+        // Every rung refuses whenever it may (P28), and the advice is the bot's own answer.
+        Assert.True(pair.Bot);
+        Assert.Equal(pair.Bot, pair.Advice);
+    }
+
     private static AdviceWatcher Play(string[] hand, string turnedUpFromTop = "3C")
     {
         var watcher = new AdviceWatcher();

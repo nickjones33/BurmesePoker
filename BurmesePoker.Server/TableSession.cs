@@ -33,6 +33,7 @@ namespace BurmesePoker.Server;
 public sealed class TableSession
 {
     private readonly Dictionary<PlayerId, SeatConnection> _seats = [];
+    private readonly Dictionary<PlayerId, SeatChannel> _channels = [];
     private readonly Dictionary<PlayerId, string> _names;
     private readonly Dictionary<PlayerId, string> _strategies;
     private readonly HashSet<PlayerId> _taken = [];
@@ -68,7 +69,13 @@ public sealed class TableSession
             }
             else
             {
-                var connection = new SeatConnection(seat.Player, seat.Name);
+                // The channel is the seat; the connection is its first occupancy (review R8).
+                // The agent holds this first connection for ever and asks through it, which
+                // reaches the channel whoever occupies the seat by then.
+                var channel = new SeatChannel();
+                var connection = new SeatConnection(seat.Player, seat.Name, channel);
+                channel.Occupy(connection);
+                _channels[seat.Player] = channel;
                 _seats[seat.Player] = connection;
                 _fanOut.Add(connection);
                 agent = new RemotePlayerAgent(
@@ -114,7 +121,16 @@ public sealed class TableSession
     /// <summary>How this table is run.</summary>
     public TableOptions Options { get; }
 
-    /// <summary>The seating order, which is also the turn order every round.</summary>
+    /// <summary>
+    /// Who is at this table, in the order they were first seated.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Not the turn order, from the second round on</b> (review R12): seats are
+    /// re-randomised every deal (RULES.md §3 step 2), and each round narrates its own order in
+    /// <see cref="TableEvent.RoundStarted"/> — which is where a client must read it. This list
+    /// is the table's membership, stable so that names, banks and connections do not shuffle
+    /// under their holders.
+    /// </remarks>
     public IReadOnlyList<PlayerId> Players => _match.Players;
 
     /// <summary>
@@ -136,7 +152,7 @@ public sealed class TableSession
         }
     }
 
-    /// <summary>The seats waiting for somebody to connect and play them, in seating order.</summary>
+    /// <summary>The seats waiting for somebody to connect and play them, in membership order.</summary>
     public IReadOnlyList<PlayerId> RemoteSeats => [.. Players.Where(_seats.ContainsKey)];
 
     /// <summary>The remote seats nobody is sitting in, in seating order.</summary>
@@ -171,7 +187,21 @@ public sealed class TableSession
     }
 
     /// <summary>Each seat's running total, carried over from round to round (RULES.md §7.2).</summary>
-    public IReadOnlyDictionary<PlayerId, int> Banks => _match.Banks;
+    /// <remarks>
+    /// ⚠️ <b>A snapshot, exactly as <see cref="Names"/> is</b>: the engine's own dictionary is
+    /// live and settlement mutates it, and this property is read from UI threads while a round
+    /// is being played.
+    /// </remarks>
+    public IReadOnlyDictionary<PlayerId, int> Banks
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return new Dictionary<PlayerId, int>(_match.Banks);
+            }
+        }
+    }
 
     /// <summary>How many rounds have been played and banked.</summary>
     public int RoundsPlayed => _match.RoundsPlayed;
@@ -179,12 +209,17 @@ public sealed class TableSession
     /// <summary>Every connection attached, seated or watching.</summary>
     public IReadOnlyList<SeatConnection> Connections => _fanOut.Connections;
 
-    /// <summary>The connection playing a seat.</summary>
+    /// <summary>The connection currently occupying a seat — a handover replaces it (review R8).</summary>
     /// <exception cref="ArgumentException">That seat is played by the computer, or is not at this table.</exception>
-    public SeatConnection ConnectionFor(PlayerId player) =>
-        _seats.TryGetValue(player, out var connection)
-            ? connection
-            : throw new ArgumentException($"{player} is not a seat anybody connects to.", nameof(player));
+    public SeatConnection ConnectionFor(PlayerId player)
+    {
+        lock (_gate)
+        {
+            return _seats.TryGetValue(player, out var connection)
+                ? connection
+                : throw new ArgumentException($"{player} is not a seat anybody connects to.", nameof(player));
+        }
+    }
 
     /// <summary>
     /// Sits somebody down in a seat that was waiting for a player, and gives them the
@@ -213,6 +248,7 @@ public sealed class TableSession
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
         SeatConnection connection;
+        SeatConnection superseded;
 
         lock (_gate)
         {
@@ -221,9 +257,22 @@ public sealed class TableSession
                 return null;
             }
 
+            // Each occupancy is a fresh connection over the seat's one channel (review R8):
+            // the superseded connection is dead server-side from this moment — no more
+            // events, prompt gone, answers refused — so a previous occupant's reference
+            // cannot see or play the new occupant's game. A question already standing moves
+            // to the new connection rather than away (P13.6).
             _names[player] = name;
-            seat.Name = name;
-            connection = seat;
+            superseded = seat;
+            connection = new SeatConnection(player, name, _channels[player]);
+            _channels[player].Occupy(connection);
+            _seats[player] = connection;
+
+            // Swapped under the gate so not even one private draw can land on the superseded
+            // connection between the handover and the fan-out noticing. Neither call runs
+            // handlers — the new connection has no subscribers yet.
+            _fanOut.Remove(superseded);
+            _fanOut.Add(connection);
         }
 
         // ⚠️ Outside the lock: a broadcast runs every connection's handlers, and a handler that

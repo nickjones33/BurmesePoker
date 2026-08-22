@@ -41,7 +41,7 @@
                         <CardChip Card="card"
                                   Big="true"
                                   Token="@DisplayTokens.For(CardDisplayState.PaysOnce)"
-                                  TokenWords="turned up, so both copies pay their owner this round" />
+                                  TokenWords="turned up, so its partner copy pays its owner this round" />
                     </li>
                 }
             </ul>
@@ -75,13 +75,11 @@
     public TableBoard Board { get; set; } = default!;
 
     /// <summary>
-    /// Why there is nothing turned up. The opening player may take the top one off the table
-    /// (RULES.md §4.5), which is the ordinary reason and worth telling somebody who was not
-    /// watching when it happened.
+    /// Why there is nothing turned up: the deal has not happened yet. Once it has, only the top
+    /// turned-up card may be claimed (RULES.md §4.5), once, so the count goes two to one and
+    /// never reaches zero again.
     /// </summary>
-    private string Nothing => Board.Round == 0
-        ? "Nothing turned up yet — the first hand is being dealt."
-        : "Nothing left on the table: the opening player claimed it.";
+    private string Nothing => "Nothing turned up yet — the first hand is being dealt.";
 
     /// <summary>Whose discard is on offer, which is the seat before the one being waited on.</summary>
     private string Whose => Board.Turn is { } waiting

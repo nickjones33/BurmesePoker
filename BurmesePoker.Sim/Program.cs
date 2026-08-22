@@ -83,7 +83,9 @@ static int Run(string[] args)
         TurnCap = arguments.Number("turn-cap", 400),
         Journal = arguments.Has("journal") ? Fidelity(arguments.Value("fidelity", "thin")) : null,
         Parallel = !arguments.Flag("serial"),
-        MaxDegreeOfParallelism = arguments.Has("threads") ? arguments.Number("threads", 0) : null
+        // ⚠️ The value-demanding overload: a bare `--threads` used to fall back to 0, which
+        // crashed later with an error naming MaxDegreeOfParallelism rather than the flag.
+        MaxDegreeOfParallelism = arguments.Has("threads") ? arguments.Number("threads") : null
     }.Validated();
 
     Console.WriteLine(
@@ -916,7 +918,21 @@ file sealed class Arguments(Dictionary<string, string?> values)
 
     internal bool Has(string name) => values.ContainsKey(name);
 
-    internal bool Flag(string name) => values.TryGetValue(name, out var value) && value is null;
+    /// <summary>
+    /// A bare flag. ⚠️ <b>A value on it is an error, not a quiet false</b>: <c>--serial true</c>
+    /// used to swallow the word as the flag's value and run parallel.
+    /// </summary>
+    internal bool Flag(string name)
+    {
+        if (!values.TryGetValue(name, out var value))
+        {
+            return false;
+        }
+
+        return value is null
+            ? true
+            : throw new ArgumentException($"--{name} takes no value, so it cannot take '{value}'.");
+    }
 
     internal string Value(string name, string fallback) =>
         values.TryGetValue(name, out var value) && value is not null ? value : fallback;
@@ -927,4 +943,16 @@ file sealed class Arguments(Dictionary<string, string?> values)
                 ? number
                 : throw new ArgumentException($"--{name} wants a number, not '{value}'.")
             : fallback;
+
+    /// <summary>
+    /// A number the flag must carry. ⚠️ For a flag whose <em>absence</em> already has a meaning:
+    /// falling back on a bare <c>--threads</c> would silently hand a placeholder to whatever the
+    /// fallback feeds, and the crash that follows names a property rather than the flag.
+    /// </summary>
+    internal int Number(string name) =>
+        values.TryGetValue(name, out var value) && value is not null
+            ? int.TryParse(value, CultureInfo.InvariantCulture, out var number)
+                ? number
+                : throw new ArgumentException($"--{name} wants a number, not '{value}'.")
+            : throw new ArgumentException($"--{name} wants a number, and none was given.");
 }

@@ -215,6 +215,92 @@ public class GameJournalTests
     }
 
     /// <summary>
+    /// ✅ <b>R2 — the revision a journal stamps is the revision <c>docs/RULES.md</c> is at</b>,
+    /// bound in the P23 idiom: the document and the constant fail the build when they disagree.
+    /// </summary>
+    /// <remarks>
+    /// The constant sat at 13 through four play-changing revisions because its only test
+    /// round-tripped it against itself. The header field exists so an old artifact can be
+    /// distrusted correctly, which it cannot be if every new artifact is stamped stale.
+    /// </remarks>
+    [Fact]
+    public void TheRevisionStampedIsTheRevisionRulesMdIsAt()
+    {
+        var rules = File.ReadAllText(Path.Combine(BurmesePoker.Tests.Web.Sources.Root.FullName, "docs", "RULES.md"));
+        var revised = System.Text.RegularExpressions.Regex.Match(rules, @"Last revised:.*?\(rev (\d+)");
+
+        Assert.True(revised.Success, "docs/RULES.md no longer says 'Last revised: … (rev N' — update this parser.");
+        Assert.Equal(
+            JournalHeader.CurrentRulesRevision,
+            int.Parse(revised.Groups[1].Value));
+    }
+
+    /// <summary>
+    /// ✅ <b>R6(c) — a journal that contains an objection, on purpose rather than by seed-luck.</b>
+    /// The <c>"objection"</c> line is the exact shape P28's <c>JournalFormat.Name</c> defect lived
+    /// in, and before this test no journal was ever <em>asserted</em> to contain one — the
+    /// dedicated round-trip seed happened to produce none, so a play change could silently drop
+    /// coverage of the line whose mistranslation this project already shipped.
+    /// </summary>
+    [Fact]
+    public void AJournalRecordsAForcedObjectionAndReplaysIt()
+    {
+        // The opener claims the turned-up 3♣; the seat upstream of her holds a three and
+        // refuses; the second seat is dealt a winning thirteen so the round ends either way.
+        var drawOrder = DealBuilder.ForPlayers(4)
+            .Give(0, "2C")
+            .Give(1, "2H", "3H", "4H", "5H", "6H", "7H", "8D", "9D", "10D", "KC", "KH", "KS", "KD")
+            .Give(3, "3D")
+            .TurnUpFromTop("3C")
+            .TurnUpFromBottom("4C")
+            .Build();
+
+        var builder = new GameJournalBuilder();
+        var played = new RecordingObserver();
+
+        var match = new MatchEngine(
+            Table,
+            JournalingAgent.Wrap(
+                new Dictionary<PlayerId, IPlayerAgent>
+                {
+                    [Table[0]] = new ScriptedPlayerAgent(new ScriptedTurn { Claim = true }),
+                    [Table[1]] = new ScriptedPlayerAgent(new ScriptedTurn(), new ScriptedTurn { Declare = true }),
+                    [Table[2]] = ScriptedPlayerAgent.Passive(),
+                    [Table[3]] = new ScriptedPlayerAgent { Objects = true }
+                },
+                builder),
+            Stakes.Standard,
+            new Random(1),
+            played);
+
+        var result = match.PlayRound(drawOrder).Result;
+        Assert.Single(played.Refusals);
+
+        var journal = builder.Build(new JournalHeader(
+            Seed: 1,
+            Seats: [.. Table.Select(player => new JournalSeat(player, "scripted"))],
+            Stakes: Stakes.Standard,
+            Rounds: 1));
+
+        // The decision is in the record, it survives the file format, and it is the refusal.
+        var objection = Assert.Single(
+            journal.Decisions, decision => decision.Question == JournalQuestion.Objection);
+        Assert.Equal(Table[3], objection.Player);
+        Assert.True(objection.AsBoolean());
+
+        var read = JournalFormat.Read(JournalFormat.Lines(journal));
+        Assert.Contains(read.Decisions, decision => decision.Question == JournalQuestion.Objection);
+
+        // And a replay re-refuses: the claim is stopped in the replayed round too.
+        var replayed = new RecordingObserver();
+        var again = new MatchEngine(
+            read.Header.Players, JournalPlayerAgent.SeatsOf(read), read.Header.Stakes, new Random(1), replayed);
+
+        Assert.Equal(Summarise([result]), Summarise([again.PlayRound(drawOrder).Result]));
+        Assert.Single(replayed.Refusals);
+    }
+
+    /// <summary>
     /// Plays a two-round match, optionally writing it down. Two rounds rather than one so that
     /// a journal has to keep the rounds apart.
     /// </summary>

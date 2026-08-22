@@ -272,13 +272,17 @@ public class DifficultyDialTests
     }
 
     /// <summary>
-    /// ⚠️ <b>It never fumbles a declaration, and never slips on taking or claiming.</b>
+    /// ⚠️ <b>It never fumbles a declaration, and never slips on taking, claiming or
+    /// objecting.</b>
     /// </summary>
     /// <remarks>
     /// Refusing a won hand is not a worse player but a different game — <c>RandomBotAgent</c>
     /// settles that and the reasoning carries. Taking or leaving the discard is a
     /// strict-improvement question with no second-best answer, so <b>the mistake has exactly
-    /// one site</b>, which is what keeps ε one dial rather than three.
+    /// one site</b>, which is what keeps ε one dial rather than three. ⚠️ The objection is the
+    /// pass-through that matters most: every difficulty level is a <c>FallibleAgent</c>, so a
+    /// wrapper that swallowed it would silently stop every level a front end seats from ever
+    /// refusing a claim — and until review R6 nothing called it at all.
     /// </remarks>
     [Fact]
     public void TheOnlyThingItGetsWrongIsWhichCardToThrow()
@@ -288,8 +292,9 @@ public class DifficultyDialTests
 
         Assert.True(always.Declare(null!));
         Assert.True(always.ClaimTurnedUpMoneyCard(null!));
+        Assert.True(always.ObjectToClaim(null!));
         Assert.Equal(TurnAction.TakeDiscard, always.ChooseAction(null!));
-        Assert.Equal(3, inner.Asked);
+        Assert.Equal(4, inner.Asked);
     }
 
     /// <summary>

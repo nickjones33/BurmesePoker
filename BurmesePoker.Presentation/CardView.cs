@@ -13,7 +13,8 @@ namespace BurmesePoker.Presentation;
 /// </para>
 /// <para>
 /// <b>The multiplier is carried, not the fact that it is a money card</b>, because a front end
-/// wants to say <em>which</em>: one designation pays once, two pay double (RULES.md §4.3).
+/// wants to say <em>which</em>: an ordinary designation pays once, and one landing on a
+/// permanent value pays three times (RULES.md §4.1).
 /// <see cref="State"/> says the same thing as a flag, and the two cannot disagree — both are
 /// built in one place from one registry lookup.
 /// </para>
