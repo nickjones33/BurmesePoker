@@ -94,6 +94,17 @@ public class SettledRuleCoverageTests
             + "penalty, zero sum: RuleConformance.TheSettlementIsTheRules and its deadwood "
             + "mutant. 'Nothing ends the session' is a property of MatchEngine having no end "
             + "condition — asserted by its own tests, not observable in one round."),
+        ["7.3"] = Exempt(
+            "⚠️ The clean bonus is Settled and UNBUILT — the one entry in this registry that is "
+            + "exempt because the code is missing rather than because no check could exist. "
+            + "RULES.md §10 #19 is the standing ruling; packet P33 builds it. A jokerless "
+            + "declaration pays ×2 at 2–4 seats and ×3 at 5+, and Settlement pays §7.2 step 1 "
+            + "flat at every table size, so a conformance check written today would re-derive "
+            + "the rule and fail every round somebody declares jokerless. 🔥 This exemption is "
+            + "the fire alarm P33 must silence: convert it to Checked(...) naming a "
+            + "RuleConformance re-derivation, do not delete it. ⚠️ Two details of the rule are "
+            + "still open (§9 #36 the money settlement, #37 six-plus seats) and neither blocks "
+            + "the build; both have recorded defaults."),
     };
 
     // §9 (the question ledger) and §10 (the divergence ledger) are deliberately absent: they

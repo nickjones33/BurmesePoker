@@ -4,7 +4,22 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-22 (rev 25 — 🔥 **three answers, two confirmations and a scoring rule
+Last revised: 2026-08-22 (rev 26 — 🔥 **the expert corrected her own rule the same day, and the
+correction is two rules.** §7.3's bonus is **×2 at two, three or four seats and ×3 at five or
+more** — not the flat ×3 rev 25 recorded — and its condition is **jokerless over the whole declared
+thirteen**, not *"all series clean"*. Verbatim: *"if you play two players, three players, or four
+players, you will only get two times of the winning prize … you got three times of the winning
+prize if we are playing five players. Not just series, if you want to win with jokerless …"*
+🔥 **It is the second rule in this document whose content changes with the player count, and it
+splits at exactly §7.1.1's seam.** ✅ **That closes §9 #34 and #35** — #35 being **the row with no
+safe default**, and the one that blocked **P32**, closed the expensive way: **cleanliness is now
+relevant at every table size.** ❌ **#34's recommendation was wrong and it was the narrow one** — see
+§9 for what that costs the "narrow readings are safer" heuristic. ⚠️ **Opens #37** (six-plus).
+✅ **The predicate got simpler, not harder**: jokerless is a property of the *hand*, so §10 #19's
+worst problem — which partition the winner is paid on — **does not exist**. **Nothing here changes
+play**; the bonus is settlement and is still unbuilt.
+
+Rev 25 — 🔥 **three answers, two confirmations and a scoring rule
 nobody had ever recorded.** Asked flat: **#19** *does a release survive the reshuffle?* — **yes**;
 **#32** *does the ×5 need the 7♦ and the A♠ specifically?* — **"specifically"**; **#27** *what does
 taking a joker close?* — **"yeah"**, the other jokers. All three confirm the standing default, all
@@ -819,6 +834,9 @@ Three terms carry the whole rule:
 > 🔥 **The answer arrived with a rule attached that nobody asked about**, and it is why a joker
 > would ever be thrown at all: *"Unless you want all series clean that got a 3-time winning game
 > prize, you have a joker, so you discard the joker for the winning clean series."* **See §7.3.**
+> ⚠️ **And the same expert corrected that sentence hours later** (rev 26): the condition is
+> **jokerless**, not *all series clean*, and the prize is **×2 at two, three or four seats, ×3 at
+> five or more.** The reason to throw a joker is unchanged; **what it is worth is not.**
 > ⚠️ **Whether that is an exception to this ban or merely an explanation of exception 2 is §9 #33**,
 > and it is not decided here.
 
@@ -1194,6 +1212,9 @@ Rummy."*
 **Recorded 2026-08-20 from Mya Lay and Aung Aung.** 🔥 **This is the first rule in this document
 whose *content* changes with the number of players**, and it is why §2's "four minimum" was
 wrong: two- and three-handed are real games, played to a stricter hand.
+⚠️ **It is no longer the only one — §7.3's clean bonus is the second, and the two split at exactly
+the same seam** (2/3/4 against 5+). See §7.3's `DERIVED` note, which argues the seam off this
+section's own compensation argument.
 
 A **series** is a run (§6.1). A **set** is §6.2.
 
@@ -1274,52 +1295,124 @@ value, whether you were one card short or holding all thirteen.
 
 | Detail | Provenance | Confidence |
 |---|---|---|
-| Flat round value to the winner from each other player — ⚠️ **except on an all-clean declaration, which pays ×3 (§7.3)**. | `PLAYER` | Settled, amended rev 25 |
+| Flat round value to the winner from each other player — ⚠️ **except on a *jokerless* declaration, which pays ×2 at two, three or four seats and ×3 at five or more (§7.3)**. | `PLAYER` | Settled, amended rev 25, corrected rev 26 |
 | Money cards settle separately and pairwise, by owner. | `PLAYER` | Settled |
 | **No** penalty for unmelded cards. | `PLAYER` | Settled |
 | **Nothing ends the session automatically.** Rounds repeat and banks carry over; players stop when they choose. | `PLAYER` | Settled |
 
 ⚠️ **"Flat" survived twenty-four revisions and is no longer the whole story.** Step 1 is flat in
 *what the loser held* — there is still no deadwood count — but it is **not** flat in *how the
-winner won*. See §7.3.
+winner won*, ⚠️ **and since rev 26 it is not flat in *how many are playing* either.** See §7.3.
 
 ---
 
-### 7.3 The clean bonus — an all-clean declaration pays ×3 — `EXPERT`, the rule; the details are open
+### 7.3 The clean bonus — a **jokerless** declaration pays ×2 or ×3, **by player count** — `EXPERT`, Settled
 
 🔥 **The first thing in this game that pays the winner for *how* they won rather than *that* they
-won**, and the first amendment to §7.2's flat round payment since rev 1.
+won**, and the first amendment to §7.2's flat round payment since rev 1. 🔥 **And it is the second
+rule in this document whose content changes with the number of players** — the first is §7.1.1, and
+⚠️ **the two split at exactly the same seam.**
 
-**Volunteered by Mya Lay on 2026-08-22**, while answering a question about jokers and the feeding
-ban (§9 #27). Verbatim:
+**Volunteered by Mya Lay on 2026-08-22** while answering a question about jokers and the feeding ban
+(§9 #27) — and then **corrected and completed by her the same day, again unprompted.** Verbatim, in
+the order said:
 
 > *"Yeah. Unless you want all series clean that got a 3-time winning game prize, you have a joker,
 > so you discard the joker for the winning clean series."*
 
-**What is settled by that sentence:**
+> *"But one thing, if you play two players, three players, or four players, you will only get two
+> times of the winning prize if you done with the game with clean series, you got three times of the
+> winning prize if we are playing five players. Not just series, if you want to win with jokerless
+> — which is three times to five players and two times to two, three, and four players — you can
+> discard the joker."*
+
+⚠️ **The second sentence supersedes the first on two points.** Rev 25 recorded the bonus as a flat
+**×3** and recorded its condition as *"all series clean"*. **Both were the narrow half of a wider
+rule**: the multiplier is a function of the table size, and the condition is the **whole hand**.
+
+#### The rule
+
+| Players | A **jokerless** declaration pays the winner | §7.1.1 requires (for comparison) |
+|---:|:---:|---|
+| **2** | **×2** the round value | series only, **none** required clean |
+| **3** | **×2** the round value | ≥ 2 series, **both** clean |
+| **4** | **×2** the round value | ≥ 1 series, **the one** clean |
+| **5 or more** | **×3** the round value | **nothing** — ⚠️ **but see §9 #37 for six-plus** |
+
+**The condition is *jokerless*, over the whole declared thirteen** — `EXPERT`, Settled, closing
+§9 #34. *"Not just series … if you want to win with jokerless."* A joker anywhere in the declared
+**thirteen** forfeits the bonus, **in a set exactly as in a run**. This is the broad reading, and it
+is the reading rev 25 recommended against.
+
+🔥 **It is therefore a property of the *cards*, not of the partition — and that matters more to the
+implementation than to the play.** Rev 25 read the condition as being about series and flagged that
+a hand can partition more than one way, so a winner might be paid on the best partition available or
+on the one the engine happened to find. **A jokerless hand is jokerless under every partition of
+it**, so the question does not arise. ⚠️ **`Meld.IsClean` is not this predicate** — it implements
+§7.1.1's *required clean series*, a different rule that shares a word.
+
+> ✅ **A consistency check that comes free.** At **two** players every meld is a series (§7.1.1), so
+> *"all series clean"* and *"jokerless"* are the same condition there — which is why the first
+> sentence was not wrong so much as stated from one end of the table. The two readings separate the
+> moment a set is legal, and the second sentence is what separates them.
+
+> ✅ **And it is the only reading that is even well-formed at five seats** — where §7.1.1 requires no
+> series at all, so a declared hand may legitimately contain none and *"all series clean"* would be
+> vacuous. **The expert states the bonus exists at five and pays most there**, so the condition
+> cannot be about series. **Two facts from one sentence, each corroborating the other**, and
+> together they close §9 **#34 and #35** — the row that had no safe default.
+
+#### What it is worth — corrected
+
+At the standard $5 round value (§4.3):
+
+| Players | Base to the winner | Jokerless | The winner's gain | **Per opponent** |
+|---:|---:|---:|---:|:---:|
+| **2** | $5 | **$10** | +$5 | **+$5** |
+| **3** | $10 | **$20** | +$10 | **+$5** |
+| **4** | $15 | **$30** | +$15 | **+$5** |
+| **5** | $20 | **$60** | +$40 | **+$10** |
+| **6** | $25 | **$75** (if §9 #37) | +$50 | **+$10** |
+
+⚠️ **Rev 25's claim that this is *"the largest single swing in the game, ahead of the ×5 jackpot"*
+is withdrawn.** It was computed from a flat ×3 at four seats ($45) and the correct figure there is
+**$30**. Measured the way §4.1 measures the jackpot — **per opponent** — the ×5 pays **$10 a head**,
+and the jokerless bonus pays **+$5 a head at two, three and four seats and +$10 a head at five or
+more**. **It is half the jackpot at small tables and exactly level with it at five.** ✅ **It is
+nonetheless the more consequential of the two by a wide margin**: the 7♦/A♠ turn-up arrives about
+**one round in 1,444** (§4.3) and a jokerless declaration does not.
+
+> **`DERIVED` — the two tables split at the same seam, and the reason reads straight off §7.1.1's
+> own note.** §7.1.1 records the game holding its *difficulty* roughly constant across table sizes
+> by tightening the win condition as the deck opens up. §7.3 splits **2/3/4 from 5+** — which is
+> precisely the line between *the table requires at least one series* and *the table requires
+> nothing*. **The bonus is largest exactly where the win condition asks least**, because that is
+> where going jokerless is the furthest above the baseline: at four seats one series must already be
+> clean, so jokerless is an increment; at five nothing must be, so jokerless is the whole distance.
+> **The game prices the achievement above the requirement, not the achievement.** This is reasoning
+> *about* the rule; the rule is the table above. ⚠️ It is also the argument for **six-plus paying
+> ×3** (§9 #37) — six-plus asks nothing either.
+
+#### What is still open
 
 | | |
 |---|---|
-| **There is a bonus** on the winning game prize for declaring with the series clean. | `EXPERT` |
-| **It is ×3.** | `EXPERT` |
-| **It is worth throwing a joker away for** — which is the only reason this document has ever recorded for parting with one. | `EXPERT` |
+| **§9 #33** — may the joker be thrown **before** the declaring discard, or only as it? | Unchanged. *"You can discard the joker"* is a second bare permission with no timing in it. If it is only the declaring discard, §5.1 exception 2 already covers it and nothing is added. |
+| **§9 #36** — does the multiplier reach the **money-card settlement** (§7.2 step 2)? | ⚠️ **Strengthened, not closed.** The new sentence names *"the winning prize"* twice more and never names the money. The recommendation — **round payment only** — now rests on three sayings rather than one. |
+| **§9 #37** — is **six or more** also ×3? | 🔥 **New.** The sentence names *"five players"*, and §7.1.1 groups **five or more**. Recommend **five-or-more → ×3**, which matches the grouping this document already has and the `DERIVED` argument above. ✅ **Safe default** — unlike #35, no reading of it pays for nothing. |
 
-🔥 **The size of it, and this is why it is not a footnote.** At standard stakes a round pays the
-winner $5 from each of the others — $15 at four seats, $20 at five. **A clean declaration makes
-that $45 and $60**, against a measured side bet of about $11.58 a round (§4.3). ⚠️ **It is
-therefore the largest single swing in the game, ahead of the ×5 jackpot**, and every strategy
-figure in `docs/STRATEGY.md` was measured with it absent.
+⚠️ **Nothing here is built.** `Settlement` pays §7.2 step 1 flat; no rung knows the bonus exists;
+and **the one behaviour the expert named as the reason jokers are ever discarded cannot arise** —
+`CoverScore.Potential` returns `int.MaxValue` for a joker, so every rung in this project holds one
+over everything. **Every figure in `docs/STRATEGY.md` is measured in a world where the reason to
+part with a joker does not exist.** **See §10 #19, and packet P33.**
 
-⚠️ **Nothing here is built.** `Settlement` pays §7.2 step 1 flat, and no rung knows the bonus
-exists — which means a rung would currently throw a joker only when forced, and the one behaviour
-the expert named as the *reason* jokers get discarded cannot arise. **See §10.**
-
-⚠️ **Four things it does not say, and none of them may be guessed** — §9 **#33–#36**. The most
-consequential is what *"all series clean"* means, because §7.1.1 has an established and
-deliberately narrow vocabulary here: cleanliness attaches to the series a table size **requires**
-and a surplus series need not be clean (§9 #28). **A hand-wide reading would be the third time this
-document recorded a purity rule as flat over the whole hand and had to narrow it** (§7.1.1's own
-history, and §9 #7).
+🔥 **And this is where the win condition and the scoring stop being separable.** Before rev 26,
+cleanliness was irrelevant at five or more seats (§7.1.1) and irrelevant to what a win was worth
+anywhere. **It is now relevant at every table size**, and it is worth *most* at the size where the
+win condition itself asks least. ✅ **That unblocks P32** — a five-handed re-measurement now has a
+scoring rule to be measured under — ⚠️ **but it makes P33 and P32 one measurement rather than two**,
+because the bonus is the only thing cleanliness is ever worth at five seats.
 
 ---
 
@@ -1396,12 +1489,27 @@ the **7♦** — one of your two permanent money cards. Almost certainly chance.
 (§6.2), and the melding model (§6.3) — are resolved. What is left is unrecorded rather than
 disputed.
 
-🔥 **Rev 25 emptied this section and refilled it from one sentence.** #19, #27 and #32 all closed
-on 2026-08-22, all confirming their standing defaults — and #27's answer volunteered **§7.3, a ×3
-prize for an all-clean declaration**, which nothing in this document or this codebase knew about.
-**Four new rows (#33–#36) are what that one sentence leaves unspecified.** ⚠️ **This is the fifth
-consecutive revision to answer past the question asked**, and the fourth to change a rule nobody
-was asking about.
+🔥 **Rev 25 emptied this section and refilled it from one sentence; rev 26 answered two of the four
+rows from a *second* sentence, volunteered the same day.** #19, #27 and #32 closed on 2026-08-22,
+all confirming their standing defaults — and #27's answer volunteered **§7.3, a bonus on the
+winning prize for declaring clean**, which nothing in this document or this codebase knew about.
+Hours later the same expert **corrected her own rule unprompted**: the multiplier is **×2 at two,
+three and four seats and ×3 at five or more**, and the condition is **jokerless — the whole hand,
+not only its series**. ✅ **That closes #34 and #35** (#35 being the row with no safe default) and
+⚠️ **opens #37** (six-plus).
+
+🔥 **The lesson rev 25 drew from three confirmations was half wrong, and rev 26 is the correction.**
+Rev 25 observed that every rule this document has actually got wrong was *flat and later narrowed*,
+and recommended the **narrow** reading of #34 on that basis. **The answer was the broad one.**
+⚠️ **The heuristic is about how a rule was first *recorded*, not about which reading to guess**: the
+two purity rules this document got wrong were **broad rules written down from narrow sentences**,
+and §7.3 was a **narrow rule written down from a narrow sentence** about a genuinely broad one.
+✅ **The move that worked was not the recommendation — it was asking**, and the answer arrived
+before anybody asked.
+
+⚠️ **And the pattern named at rev 21 has now held six revisions running: this game's rules are
+recalled as wholes, not as answers.** Rev 26 is its strongest instance yet — the expert returned to
+a rule she had already given, of her own accord, to say it was two rules.
 
 ✅ **One question, and it exists because an answer made a combination the rule was never stated
 about.** Rev 21 closed #30 (**an objection turns on the rank alone**) and #31 (**a turned-up
@@ -1417,8 +1525,8 @@ answering how much one pays. ⚠️ **The pattern is worth naming: this game's r
 wholes, not as answers.** Asking a narrow question and recording only the narrow answer has lost
 material three times.
 
-⚠️ **What is left is four rows, none of which blocks play — but §7.3 is unbuilt, so settlement is
-wrong by a factor of three on any round somebody declares clean.**
+⚠️ **What is left is three rows, none of which blocks play — but §7.3 is unbuilt, so settlement is
+wrong by a factor of two or three on any round somebody declares jokerless.**
 
 ✅ **Nothing open blocks anything, and nothing settled is unbuilt.** §5.1's specification —
 #16–#20, #25 and #27 — was written on 2026-08-20; rev 18 closed the win condition's last two, #22
@@ -1436,14 +1544,18 @@ what it is.
 | # | Question | § | Status | Blocks |
 |---:|---|---|---|---|
 | 33 | **Is the joker throw an exception to §5.1, or is it exception 2 restated?** Jokers are closed against you and you are going out clean, so you must shed your joker. If that throw is your **declaring discard**, exception 2 already permits it and nothing new is needed. But if you must shed the joker **a turn or more before** you can declare, §5.1 forbids it and the bonus is unreachable. *"Can you throw the joker at me the turn before you go out, or only as the very last card?"* | 5.1, 7.3 | Unknown — recommend **exception 2 only** (change nothing), because it is the reading that adds no rule | Whether the bonus is reachable at all |
-| 34 | **What does "all series clean" mean?** Every series in the declared hand joker-free — or the whole hand joker-free, jokers in *sets* included? §7.1.1's vocabulary is narrow: purity attaches to the series a table size **requires**, and a surplus series need not be clean (§9 #28). | 7.3 | Unknown — recommend **every series in the hand**, the literal words, ⚠️ **but see the warning in §7.3** | Settlement |
-| 35 | **Does it exist at five or more seats?** §7.1.1 requires **no series at all** there, so a declared hand may legitimately contain none. Is a hand with no series vacuously all-clean and paid ×3, is the bonus simply unavailable, or does it require at least one clean series to exist? | 7.3, 7.1.1 | Unknown — **no safe default**; the three readings pay different amounts and one of them pays ×3 for nothing | Settlement, and **P32** |
-| 36 | **Does the ×3 reach the money cards?** *"3-time winning game prize"* names the round payment (§7.2 step 1). Does the money-card settlement (step 2) triple with it, or is it untouched? | 7.3, 4.3 | Unknown — recommend **the round payment only**, which is what the words say | Settlement |
+| 36 | **Does the multiplier reach the money cards?** *"Two/three times of the winning prize"* names the round payment (§7.2 step 1). Does the money-card settlement (step 2) scale with it, or is it untouched? | 7.3, 4.3 | Unknown — recommend **the round payment only**. ✅ **Strengthened in rev 26**: the correcting sentence names *the winning prize* twice more and never names the money | Settlement |
+| 37 | **Is six or more also ×3?** The sentence names *"five players"* against *"two players, three players, or four players"*; §7.1.1 groups **five or more** and asks nothing of any of them. *"Six of us are playing and I go out with no joker anywhere in my hand. Is that three times, the same as five?"* | 7.3, 7.1.1 | Unknown — recommend **five-or-more → ×3**, matching §7.1.1's own grouping and §7.3's `DERIVED` note. ✅ **Safe default** — no reading of it pays for nothing | Settlement, at six seats only |
 
-⚠️ **#35 is the one with no safe default, and it is the one that blocks a packet.** P32 moves the
-standing set to five seats, where cleanliness is currently irrelevant (§7.1.1). If the bonus exists
-there, **cleanliness becomes relevant at every table size for the first time** and the win condition
-and the scoring stop being separable questions.
+✅ **#35 — the row that had no safe default — closed on the day it was written, and closed the
+expensive way: the bonus *does* exist at five or more, and pays **most** there.** So
+**cleanliness is relevant at every table size for the first time**, and the win condition and the
+scoring have stopped being separable questions. ⚠️ **That unblocks P32 and merges it with P33**:
+at five seats the bonus is the only thing cleanliness is ever worth, so measuring the five-handed
+game and measuring the bonus are one job.
+
+⚠️ **Neither row left blocks anything.** #36 has a recommendation now backed three times over, and
+#37 reaches one table size the standing set does not use.
 
 ✅ **Closed in rev 25, all three confirming the standing default and all three now `EXPERT`:**
 
@@ -1459,6 +1571,21 @@ the next one.** The three confirmed were all *narrow* readings — the reading t
 and the two this document has actually got wrong (§6.2, §7.1) were both cases where a *flat, broad*
 rule was recorded and later had to be narrowed. **#34 is exactly that shape**, which is why it is
 open rather than defaulted.
+
+✅ **Closed in rev 26, both from one volunteered correction, both `EXPERT`, both Settled:**
+
+| # | Question | Answer |
+|---:|---|---|
+| 34 | What does *"all series clean"* mean? | 🔥 **Neither offered reading — it is not about series at all.** *"Not just series … if you want to win with jokerless."* **The whole declared thirteen must be joker-free**, in a set as readily as in a run. ❌ **The recommendation was wrong**, and it was the narrow one. |
+| 35 | Does the bonus exist at five or more seats? | ✅ **Yes, and it pays *most* there** — ×3, against ×2 at two, three and four. **The row that had no safe default**, closed the expensive way: cleanliness is now relevant at every table size (§7.3). |
+
+⚠️ **Rev 25's caution against trusting the confirmations was right, and rev 25's own recommendation
+was the casualty.** #34 was recorded narrow *because* the two rules this document got wrong were
+broad — and the correct answer was broad. 🔥 **The paragraph above states the heuristic backwards
+and is kept as written**: what those two failures share is not their breadth, it is that **a broad
+rule was inferred from a narrow sentence**. §7.3 inferred a *narrow* rule from a narrow sentence and
+was wrong in the other direction. **The reading is not the thing to guess; the sentence's silence
+is the thing to ask about**, which is what Q10 did and what got the answer back inside a day.
 
 
 > ✅ **#8 — closed in rev 18 by §9 #29, and the recommendation held.** The note below stands as
@@ -1988,17 +2115,26 @@ records as Settled is implemented"*, true from P28 to rev 24, is false again.
     may, on §4.5's own reasoning — the claim would close that rank in its hand — and **no rung
     prices the disclosure**. Whether refusing is right is unmeasured (P29).
 
-19. 🔥 **An all-clean declaration pays ×3** (§7.3) — **the only Settled rule in this document
-    that nothing implements, and the first one that is about what a win is *worth*.**
+19. 🔥 **A jokerless declaration pays ×2 at two, three or four seats and ×3 at five or more**
+    (§7.3) — **the only Settled rule in this document that nothing implements, the first one that
+    is about what a win is *worth*, and the second whose content is a function of the table size.**
     `Settlement.ForRound` pays §7.2 step 1 flat from every loser to the winner, and nothing
-    anywhere asks whether the declared hand's series were clean. **`Meld.IsClean` already exists**
-    (§7.1.1 needs it to count the required clean series), so the predicate is not the work; the
-    work is that the round payment stops being a constant.
-    ⚠️ **It cannot be built from the sentence that produced it.** §9 **#34** decides *which* melds
-    have to be clean, **#35** decides whether the bonus exists at five or more seats where §7.1.1
-    requires no series at all, and **#36** decides whether the ×3 reaches the money settlement.
-    **#35 has no safe default** — the three readings pay different amounts and one of them pays ×3
-    for a hand with no series in it.
+    anywhere asks whether the declared hand held a joker. **The round payment stops being a
+    constant, and it stops being seat-count-independent at the same time.**
+    ✅ **Rev 26 made this buildable.** §9 **#34** and **#35** are closed: the condition is
+    **jokerless over the whole declared thirteen** (not a property of its series), and the bonus
+    **exists at five-plus and pays most there**.
+    🔥 **The predicate got *simpler* than rev 25 planned for.** Rev 25 read the condition as being
+    about series and pointed at `Meld.IsClean`; the answer is about the **hand**, so the test is
+    *"no joker in the declared thirteen"* — ⚠️ **which is a property of the cards, not of the
+    partition.** **That dissolves the hardest thing in P33's plan**: rev 25 flagged that a hand can
+    partition more than one way and that the winner might be paid on the best partition or on the
+    one the engine found. **A jokerless hand is jokerless under every partition of it**, so the
+    question does not arise and `HandEvaluator` needs nothing.
+    ⚠️ **The multiplier needs the seat count**, which `Settlement` does not take today.
+    `TableRules.For(n)` is where §7.1.1's table lives and is the obvious home for §7.3's.
+    ⚠️ **Two rows are still open and neither blocks it**: **#36** (whether the multiplier reaches
+    the money settlement — recommend not) and **#37** (whether six-plus is ×3 — recommend yes).
     ⚠️ **And it reaches further than settlement.** No rung knows the bonus exists, so none of them
     will shed a joker to earn it — the one behaviour the expert named as *the* reason a joker gets
     discarded cannot currently arise. **Every figure in `docs/STRATEGY.md` is measured without it**,

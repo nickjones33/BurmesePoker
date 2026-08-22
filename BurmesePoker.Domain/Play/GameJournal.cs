@@ -140,8 +140,10 @@ public sealed record JournalHeader(
     /// with the play-changing ones.</b> Rev 25 is the first that did not change play — three
     /// expert confirmations and one new settlement rule (§7.3) that nothing implements yet — and
     /// the stamp still moves, because a journal is a record of which document a build was reading.
+    /// Rev 26 is the second: it corrected §7.3 (the bonus is <b>jokerless</b>, and it is ×2 at two,
+    /// three or four seats and ×3 at five or more) and §7.3 is still unbuilt.
     /// </remarks>
-    public const int CurrentRulesRevision = 25;
+    public const int CurrentRulesRevision = 26;
 
     /// <summary>How many seats were at the table.</summary>
     public int TableSize => Seats.Count;

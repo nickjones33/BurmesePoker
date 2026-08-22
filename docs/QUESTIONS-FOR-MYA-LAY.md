@@ -651,3 +651,67 @@ that exact shape**, which is why it is being asked rather than defaulted.
 The pattern named at Q9 holds: **this game's rules are recalled as wholes, not as answers.** A
 question about jokers and feeding produced a scoring rule, because to the person answering, *why
 you would throw a joker* and *what throwing a joker costs you* are one thought.
+
+---
+
+## Q11 — The expert corrected her own rule, unprompted, hours later **(2026-08-22)**
+
+🔥 **Nobody asked.** Q10's four follow-ups were drafted and had not been put. Mya Lay returned to
+the rule she had volunteered that morning and rewrote two of its four unknowns. Verbatim:
+
+> *"But one thing, if you play two players, three players, or four players, you will only get two
+> times of the winning prize if you done with the game with clean series, you got three times of
+> the winning prize if we are playing five players"*
+>
+> *"Not just series, if you want to win with jokerless which is three times to five players and two
+> times to two, three, and four players, you can discard the joker."*
+
+Promoted as `RULES.md` **rev 26**.
+
+| # | Was asked as | Answer | Promoted to |
+|---:|---|---|---|
+| 34 | What does *"all series clean"* reach? | 🔥 **Neither offered reading.** *"Not just series … win with jokerless."* **The whole declared thirteen must be joker-free** — a joker in a set forfeits it exactly as a joker in a run does. | §7.3, closing §9 #34 |
+| 35 | Does it exist at five or more seats? | ✅ **Yes — and it pays *most* there**: ×3 at five-plus against ×2 at two, three and four. | §7.3, closing §9 #35 |
+| 33 | When may the joker be thrown? | ⚠️ **Untouched.** *"You can discard the joker"* is a second bare permission with no timing in it. **Still to ask.** | — |
+| 36 | Does the multiplier reach the money cards? | ⚠️ **Strengthened, not closed.** *"The winning prize"* is named twice more and the money never is. **Still to ask.** | — |
+| — | *not previously asked* | 🔥 **The multiplier is a function of the table size**, and §9 **#37** is what that leaves open at six seats. | **§7.3** (rewritten), §9 #37 |
+
+### What it costs the "narrow readings are safer" heuristic
+
+⚠️ **Q10 closed by observing that all three of its confirmed answers were narrow readings, that the
+two rules this document has actually got wrong (§6.2, §7.1) were flat rules later narrowed, and
+that #34 *"is that exact shape, which is why it is being asked rather than defaulted."*** **#34's
+recommendation was the narrow one and it was wrong.**
+
+🔥 **The heuristic was stated backwards.** What §6.2 and §7.1 share is not that the wrong rule was
+*broad* — it is that **a broad rule was inferred from a narrow sentence**. §7.3 inferred a *narrow*
+rule from a narrow sentence and was wrong in the other direction. **Breadth is not the variable;
+inference from silence is.** ✅ **The move that worked was the one Q10 actually took — ask** — and
+it is worth recording that the answer arrived without the question being put, because the expert
+was still thinking about it.
+
+### What is left to ask
+
+**Three, and none of them blocks a packet.**
+
+1. **When the joker may be thrown.** *"You've got a joker in your hand and you're going for the
+   jokerless prize, so you need to get rid of it — but I've taken a joker, so jokers are shut
+   against you. Can you throw it at me the turn before you go out, or only as the very last card
+   when you put everything down?"* (§9 #33.)
+
+2. **What the multiplier multiplies.** *"When somebody wins jokerless and everyone pays them double
+   or triple — does the money-card money go up too, or is it just the $5 for the round?"* (§9 #36.)
+
+3. **Six or more.** *"Six of us are playing and I go out with no joker anywhere in my hand. Is that
+   three times, the same as five, or is three times only for five?"* (§9 #37 — ⚠️ **do not offer
+   *"the same as five"* first**; that is the recommendation and this file has now had one
+   recommendation overturned.)
+
+### What was learned about asking
+
+🔥 **Six consecutive sessions have answered past the question asked, and this one answered a
+question that had not been asked at all.** The pattern named at Q9 is stronger than it was stated:
+it is not only that **this game's rules are recalled as wholes rather than as answers** — it is that
+a rule recalled in one piece will come back **in pieces over time**, and a piece may arrive hours
+after the session that produced the first one. ⚠️ **Do not treat a session as closed on the day it
+ends.** The morning's *"3-time winning game prize"* was true of one table size out of four.

@@ -2,7 +2,7 @@
 
 Cross-session progress tracker. **`/poker` reads this first and updates it last.**
 
-Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 25) · Skill: `.claude/skills/poker/SKILL.md`
+Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 26) · Skill: `.claude/skills/poker/SKILL.md`
 
 State markers: `☐` not started · `◐` in progress · `☑` done
 
@@ -73,7 +73,75 @@ unchanged). `warden` **deliberately declines to lock jokers**: whether taking a 
 other jokers is §9 #27, a `PLAYER` house ruling, and the one rung whose whole claim rests on the
 lock must not be built on the one part of §5.1 nobody has confirmed.
 
-🔥 **STOP — the plan changed on 2026-08-22, after P31 shipped. `RULES.md` is rev 25 and `P32` is
+🔥 **STOP — read this first. `RULES.md` is rev 26 as of 2026-08-22, and `P33` is the next packet.**
+
+**The expert corrected her own rule, unprompted, hours after giving it.** Rev 25 recorded §7.3 as a
+flat **×3** for declaring with *"all series clean"*. Mya Lay came back the same day:
+
+> *"But one thing, if you play two players, three players, or four players, you will only get two
+> times of the winning prize … you got three times of the winning prize if we are playing five
+> players. Not just series, if you want to win with **jokerless** … you can discard the joker."*
+
+**Two corrections, and both widen the rule:**
+
+| | Rev 25 recorded | Rev 26 |
+|---|---|---|
+| **The multiplier** | flat **×3** | 🔥 **×2 at two, three or four seats; ×3 at five or more** — a function of the table size |
+| **The condition** | *"all series clean"* | 🔥 **jokerless — the whole declared thirteen**, a joker in a **set** forfeits it too |
+
+✅ **That closes §9 #34 and #35, and #35 is the row that had no safe default and blocked `P32`.**
+It closed the expensive way: the bonus exists at five-plus and pays **most** there, so
+**cleanliness is relevant at every table size for the first time** and the win condition and the
+scoring have stopped being separable. **Both P32 and P33 are unblocked.**
+
+🔥 **Three things a cold session needs from this.**
+
+**(1) The packet got *smaller*, and the reason is the deliverable.** Rev 25's P33 flagged its
+hardest problem as *"a hand can partition more than one way — is the winner paid on the best
+partition or on the one the engine found?"*. **Jokerless is a property of the hand, not of the
+partition**, so the question does not arise: `HandEvaluator` needs nothing and the predicate is
+*no joker in the thirteen*. ⚠️ **Do not reach for `Meld.IsClean`** — it implements §7.1.1's
+*required clean series*, a different rule sharing a word. **The multiplier does need the seat
+count**, which `Settlement` has never taken; `TableRules.For(n)` is where §7.1.1's table already
+lives and is the home for §7.3's.
+
+**(2) The arithmetic in rev 25 was wrong and is corrected.** Four-handed clean is **$30**, not $45.
+Per opponent the bonus pays **+$5 a head at 2/3/4 and +$10 at 5+**, against the ×5 jackpot's $10 a
+head — so rev 25's *"largest single swing in the game, ahead of the ×5 jackpot"* is **withdrawn**:
+it is half the jackpot at small tables and level with it at five. ✅ **It is still far more
+consequential**, because a 7♦/A♠ turn-up is one round in 1,444 and a jokerless declaration is not.
+
+**(3) P33 and P32 have become one measurement.** At five seats §7.1.1 requires nothing clean, so
+**the bonus is the only thing cleanliness is ever worth there**. Running them as two packets buys a
+second three-hour suite for a figure the first invalidates. **Fold P32's seat-count change into
+P33's regeneration.**
+
+⚠️ **Two rows stay open and neither blocks the build** — **#36** (does the multiplier reach the
+money settlement? recommend **not**; the new sentence names *the winning prize* twice more and never
+the money) and **#37**, new (is six-plus also ×3? recommend **yes**, matching §7.1.1's five-or-more
+grouping). **#33** is also still open — whether the joker may be shed before the declaring discard —
+with a default that changes nothing. ⚠️ **But note what that default costs the measurement**: if
+§5.1 only yields on the declaring discard, a hand needing to shed a joker a turn early cannot reach
+the bonus at all, so **any measured bonus rate is a floor.**
+
+⚠️ **`JournalHeader.CurrentRulesRevision` is 26** — the binding test is unconditional, so it moves
+with every revision and not only the play-changing ones. **Rev 26 changes no play**; §7.3 is
+settlement and is still unbuilt.
+
+🔥 **The methodological finding, and it overturns rev 25's own lesson.** Rev 25 closed by observing
+that every rule this document has got wrong was *flat and later narrowed*, and recommended the
+**narrow** reading of #34 on that basis. **The answer was the broad one.** ⚠️ **The heuristic was
+stated backwards**: what §6.2 and §7.1 share is not breadth, it is that **a broad rule was inferred
+from a narrow sentence**. §7.3 inferred a narrow rule from a narrow sentence and was wrong in the
+other direction. **Inference from silence is the variable, not breadth** — and six sessions running
+have now answered past the question asked, this one without the question being put at all.
+⚠️ **Do not treat a rules session as closed on the day it ends.**
+
+---
+
+*What follows was written when rev 25 landed, before the correction.*
+
+🔥 **The plan changed on 2026-08-22, after P31 shipped. `RULES.md` reached rev 25 and `P32` was
 blocked.** Three questions went to the experts and all three confirmed their standing default
 (§9 **#19** a release survives the reshuffle — *yes*; **#32** the ×5 needs the 7♦/A♠ pair —
 *"specifically"*; **#27** taking a joker closes the other jokers — *"yeah"*). **No code changed and
@@ -106,6 +174,7 @@ twice**); **whether the bonus exists at five or more seats, where §7.1.1 requir
 settlement packet, with a suite regeneration behind it), **or** get #35 answered at minimum, since a
 five-handed re-measurement taken now would be invalidated by the bonus the moment it lands.
 **Nothing is in progress and the tree is green, so there is no cost to waiting.**
+✅ **Overtaken by rev 26 — #34 and #35 came back unasked, and `P33` can start.**
 
 ✅ **And there is a packet that needs no answer at all: `P34`, the front door.** There is **no
 `README.md`** in this repository — a visitor's first sight of it is `CLAUDE.md`, which is written
@@ -118,6 +187,14 @@ packet on the plan. 🔥 **It is the one to run while P33 waits.**
 check-or-exemption registry, because its heading does not claim to be Settled — the rule is
 settled, the details are not. **When #34–#36 close and the heading becomes Settled, that test
 fires**, which is the mechanism working rather than a gap.
+🔥 **Rev 26 made §7.3's heading Settled and the test fired the same hour** —
+`EverySettledRuleIsCheckedOrNamesWhyItCannotBe` went red with *"RULES.md records Settled rules in
+section(s) §7.3 that no conformance registry entry checks or exempts."* ✅ **Registered as an
+`Exempt(...)` entry**, and it is the **only** exemption in that registry whose reason is *the code
+is missing* rather than *no ordinary-play check could exist*. ⚠️ **P33 must convert it to
+`Checked(...)`, not delete it** — the entry says so in the file. **A conformance check written
+today would re-derive the bonus and fail every round somebody declares jokerless**, which is why it
+is exempt rather than checked.
 
 ✅ **The packet after §7.3 is `P32`** — five seats as the default table. ⚠️ **It has been re-costed and
 the amendment is in `BUILD-PLAN.md` §5 P32**: a seventh ranked rung makes the round-robin 21 cells,
@@ -2865,6 +2942,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 ## Session log
 
 | Date | Packet | Outcome |
+| 2026-08-22 | — | **Rules session: the expert corrected her own rule, unprompted, hours after giving it — and the correction is two rules.** Rev 25 had recorded §7.3 as a flat **×3** for declaring with *"all series clean"*. Mya Lay came back the same day: *"if you play two players, three players, or four players, you will only get two times of the winning prize … you got three times of the winning prize if we are playing five players. **Not just series, if you want to win with jokerless** … you can discard the joker."* 🔥 **(1) The multiplier is a function of the table size** — ×2 at 2/3/4 seats, ×3 at 5+ — making §7.3 **the second rule in the document whose content changes with the player count, splitting at exactly §7.1.1's seam** (2/3/4 require a series; 5+ require nothing). 🔥 **(2) The condition is *jokerless* over the whole declared thirteen**, not a property of its series — a joker in a **set** forfeits it too. ✅ **Closes §9 #34 and #35.** **#35 was the row with no safe default and the one blocking `P32`**, and it closed the expensive way: the bonus exists at five-plus and pays **most** there, so **cleanliness is relevant at every table size for the first time** and the win condition and the scoring stop being separable. **Both P32 and P33 are unblocked.** ⚠️ **Opens #37** (is six-plus also ×3? recommend yes, matching §7.1.1's grouping — safe). **#33 and #36 stay open, neither blocking**; #36's recommendation is *strengthened* — the new sentence names *the winning prize* twice more and never the money. 🔥 **P33 got smaller, and the reason is the finding**: rev 25 flagged its hardest problem as *which partition the winner is paid on* — **jokerless is a property of the hand, so the question does not arise**; `HandEvaluator` needs nothing and `Meld.IsClean` is **not** the predicate (it implements §7.1.1's *required clean series*, a different rule sharing a word). ⚠️ **The multiplier does need the seat count**, which `Settlement` has never taken; `TableRules.For(n)` is its home. ⚠️ **Rev 25's arithmetic corrected**: four-handed clean is **$30**, not $45, and the *"largest single swing, ahead of the ×5 jackpot"* claim is **withdrawn** — per opponent the bonus is +$5 a head at 2/3/4 and +$10 at 5+ against the jackpot's $10, so it is half the jackpot at small tables and level with it at five (still far more consequential: 1-in-1,444 against routine). ⚠️ **P33 and P32 are now one measurement** — at five seats the bonus is the only thing cleanliness is worth — **so fold P32's seat-count change into P33's regeneration**. 🔥 **Methodological finding: rev 25's own lesson was backwards.** It recommended the **narrow** reading of #34 because the two rules this document got wrong were *flat and later narrowed*; the answer was the **broad** one. What §6.2 and §7.1 share is not breadth — it is that **a broad rule was inferred from a narrow sentence**; §7.3 inferred a narrow rule from a narrow sentence and erred the other way. **Inference from silence is the variable.** ⚠️ **Six sessions running have answered past the question asked, and this one answered a question that was never put — do not treat a rules session as closed on the day it ends.** **rev 26**, `JournalHeader.CurrentRulesRevision` bumped to match. 🔥 **One test went red on the rev alone, and it is the mechanism working**: §7.3's heading claims Settled now, so `SettledRuleCoverageTests.EverySettledRuleIsCheckedOrNamesWhyItCannotBe` failed — registered as an `Exempt(...)` entry, **the only one in that registry excused because *the code is missing* rather than because no ordinary-play check could exist**; ⚠️ **P33 converts it to `Checked(...)` and must not delete it.** 🔥 **Green at 715 / 0, unchanged — this revision is documentation.** |
 | 2026-08-22 | — | **Rules session: three answers, and the third one moved the plan.** Asked flat and all three confirmed their standing default — **#19** *does a release survive the reshuffle?* **yes**; **#32** *does the ×5 need the 7♦ and A♠ specifically?* **"specifically"**; **#27** *what does taking a joker close?* **"yeah"**, the other jokers. All three move `PLAYER`/Unknown → `EXPERT`, **no code changed and no play changed**, and §9 was momentarily empty. 🔥 **Then #27's answer carried a rule nobody had ever recorded**: *"Unless you want all series clean that got a 3-time winning game prize, you have a joker, so you discard the joker for the winning clean series."* **`RULES.md` §7.3 is new — an all-clean declaration pays ×3 the winning prize** — against §7.2's *flat*, `PLAYER`, Settled since rev 1. At standard stakes a four-handed win goes $15 → **$45**: **the largest single swing in the game**, and **nothing implements it** (§10 #19, a list P28 had emptied). ⚠️ **It also supplies the only reason this project has ever had for throwing a joker away**, which no rung can currently produce — so every figure in `STRATEGY.md` is measured in a world where that reason does not exist. **Four things unspecified (§9 #33–#36); #35 has no safe default** and decides whether the bonus exists at five-plus seats, **which blocks P32**. All four drafted flat in `QUESTIONS-FOR-MYA-LAY.md` Q10. **rev 25**, `JournalHeader.CurrentRulesRevision` bumped to match (the binding is unconditional; rev 25 is the first non-play-changing rev to move it). New packets: **P33** the clean bonus (blocked on the answers) and **P34** a front door plus anti-staleness tests (blocked on nothing). 🔥 **Green at 715 / 0, unchanged — this revision is documentation.** |
 | 2026-08-22 | P31 | **Done — `warden`, the feeding ban played offensively, on Opus 5. It lost, and the packet's own mechanism variable is what makes that a finding.** `Domain/Agents/WardenBotAgent.cs` is `outs` with the **take** changed: it takes a card it does not want when doing so closes that rank against the seat that threw it (RULES.md §5.1), and then **holds** that rank rather than releasing it — one idea, not two, since the release is the taker's to give. Its restraint is §5.1 turned inward and keeps the rule's own two escapes (the declaring discard, and the floor). `TurnContext.ClosedByYou` is new: the half of the ban a seat **arms**, which nothing had ever read — until this packet the strongest rule in the game about *other people's hands* reached every computer player as a rule about its own. `ShoeMemory` lifts `counting`'s memory out whole so the denial estimate is reused rather than rewritten (a null rung's machinery earning its keep). 🔥 **The result: `−9.3 ± 1.0` against `outs`, ~−6 against `greedy`/`cautious`/`counting`, `+2.5` over `simple`; all six survive Holm over a family of 21. The packet predicted a null and got the largest separated loss in the document.** 🔥 **The mechanism variable is what turns that from a shrug into a diagnosis** — `IRanksDiscards.RankDiscards(context, candidates)` is an instrument (never a move) that asks a restricted seat what it *would* have thrown: §5.1 removed a held card from **30.5%** of all discards and **changed the answer on 30.8% of those — 9.4% of every turn**. The rule is one of the most active in the game; the rung is what failed. ⚠️ **The why:** it prices a lock in **melded cards** and pays for it in **draws**, which nothing in its rule prices — an all-`warden` table runs **31.9 turns a round against `outs`' 24.1**. A successor must price the draw. 🔥 **Reproduction: 71 of 88 shared CSV rows byte-identical** — every old head-to-head cell, every pairing ratio, the whole dial, the whole money sweep; the 17 that moved are exactly the rows a seventh rung must move. 🔥 **Unplanned finding: "the ladder's last entry is its strongest" was a coincidence asserted as a law in three places** — `MoneyReference` (fixed; would have swept the side bet against `warden`), `StandingAnswerTests` (fixed), and the tournament's null cell (**left alone on purpose**; it changed hands to `warden` and holds). R3 and R13's owed corrections landed: the claim-money interval is paired at **±0.25** (mean unmoved to six decimals) and four `money.side-margin.*` rows appeared. `sim suite` 8000/seed 20260819 = **116 measurements in 11,020 s (3 h 04)**. ⚠️ **No rules question raised; `RULES.md` stays at rev 24** — `warden` declines to lock jokers, because §9 #27 is an unconfirmed `PLAYER` ruling and the one rung resting wholly on the lock must not be built on it. 🔥 **Green at 715 / 0**, from 697. |
 | 2026-08-21 | P30.2 | **Done — conformance: the rules as played, on Fable 5, and the verify branch is closed.** `Tests/Conformance/RuleConformance.cs` audits a round as it is played — **independent re-derivations, never calls into the code under audit**: the feeding ban mirrored from public events alone, settlement recomputed without `Settlement` or `MoneyCardRegistry`, melds validated straight from §6, conservation and write-once ownership checked at every event. Run over **180 ordinary rounds at 4/5/6 seats** with all of `BotCatalog` and `DifficultyLadder` seated (~27 s), plus **one mutant per rule family proving each check can go red** (P13.6's vacuity lesson, institutionalised). `SettledRuleCoverageTests` parses the Settled sections out of `RULES.md` into a check-or-exemption registry and fails the build both ways (unregistered Settled section, or stale registry entry). **The console driven to a declaration**: `drive-console.py` rewritten to answer prompts by their text — byte-repeatable (proved by `cmp`), verifies every settlement panel's arithmetic, exits by the console's own path; ⚠️ **the packet's premise was stale** — both fixed-key captures had quietly started reaching round 1's settlement (the grep needle was `went out`; the console says `declares`) — but the rewrite was still owed, since fixed lists answer by position and had drifted twice. **The browser driven to a declaration**: `BrowserRoundTests` plays a round through `SeatBoard`s, asserts the strict concealment form at the boards, and closes the loop **board = engine = journal replay**. 🔥 **R1 fixed in the engine**: a discard legal only under §5.1 exception 2 *is* the declaration — the seat is not asked and cannot decline. 🔥 **R8 fixed in the server**: new `SeatChannel` holds a seat's question state across occupants; each `SitDown` mints a fresh `SeatConnection`, the superseded one is dead server-side, and a standing question moves to the new occupant. **R2**: journals stamp rev 24, bound to `RULES.md`'s header by a test, and the `/poker` skill's Phase 6 names the bump. **R3/R13**: the claim money margin is paired (`CellPlayer.NetPerRoundByGame`) and `money.side-margin.*` is published — both reach the CSV at P31's regeneration, annotated in `STRATEGY.md` until then. **All 29 P30.2-fix items landed** (R30 by fixing the false remark — re-basing `DealBuilder`'s filler would re-derive every hand-computed payout to delete comments that are true). R6's four coverage holes are closed (the fifth question is exercised at the dial, over a connection with an *allowed* objection, in a forced journal round-trip, at the advice watcher's upstream seat, and in the audit field). No rules question; `RULES.md` stays rev 24. Tree green at **697 passed / 0 failed** in ~8m 30s. |

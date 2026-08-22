@@ -1174,8 +1174,10 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P29** | **Re-measure, under the rules as they are** | P25 ✅, P26 ✅, P27 ✅, P28 ✅ | L — ☑ **done 2026-08-21**: 91 measurements in 9,981 s, **4 rows reproduced**, two of three predictions held ⚠️ the suite is **2h45**, not five hours |
 | **P30.1** | **A thorough code review** | — | M — ☑ **done 2026-08-21** · **Fable 5** — `docs/REVIEW-2026-08.md`: 37 triaged findings; its P30.2 buckets are P30.2's checklist |
 | **P30.2** | **Conformance — the rules as *played*** | **P30.1**, P24.1 (browser half only) | L — ☑ **done 2026-08-21** · **Fable 5** — `RuleConformance` + coverage registry + both front ends driven to a declaration; R1 and R8 fixed; 29 review fixes landed |
-| **P31** | **`warden` — the feeding ban as a weapon** | P27 ✅, P30.2 | L — ☐ **new 2026-08-21** · **Opus** — the first rung that plays §5.1 *offensively*; ⚠️ regenerates the suite at 4 seats to stay comparable |
-| **P32** | **Five-handed is the default table** | P30.2, P31 | L — ☐ **new 2026-08-21** · **Opus** — the whole standing set moves to 5 seats, and **the difficulty dial is re-fitted there** |
+| **P31** | **`warden` — the feeding ban as a weapon** | P27 ✅, P30.2 | L — ☑ **done 2026-08-22** · **Opus** — it **lost**, `−9.3 ± 1.0` against `outs`; the ban bites on 9.4% of turns and the rung is what failed |
+| **P33** | **The clean bonus (§7.3)** | P31 ✅ | M — ☐ **new 2026-08-22, rewritten same day** · ✅ **unblocked by rev 26** — jokerless pays ×2 at 2/3/4 seats and ×3 at 5+; the predicate turned out to be a property of the *hand*, so the packet shrank |
+| **P32** | **Five-handed is the default table** | P30.2, P31 ✅, **P33** | L — ☐ **new 2026-08-21** · **Opus** — ✅ unblocked by rev 26; ⚠️ **fold its seat-count change into P33's regeneration** — at 5 seats the bonus is the only thing cleanliness is worth |
+| **P34** | **A front door, and docs that cannot go stale quietly** | — | S — ☐ **new 2026-08-22** — `README.md`, staleness banners, and the anti-staleness habit as tests. **Needs no expert answer.** |
 
 ⚠️ **P25–P29 are the only packets in this table that do not descend from §0.** They come from
 `RULES.md` — four sessions with Mya Lay and Aung Aung on 2026-08-20/21 that closed twenty-three
@@ -5303,13 +5305,18 @@ nobody has confirmed. `JournalHeader.CurrentRulesRevision` is unchanged at 24.
 
 ---
 
-### P33 — The clean bonus (§7.3) ☐ — **added 2026-08-22, and it goes before P32**
+### P33 — The clean bonus (§7.3) ☐ — **added 2026-08-22; unblocked and rewritten the same day**
 
-**Goal.** Build `RULES.md` §7.3 — **an all-clean declaration pays ×3 the winning prize** — and
-re-measure under it.
+✅ **UNBLOCKED 2026-08-22 by `RULES.md` rev 26.** The expert corrected her own rule unprompted and
+closed §9 **#34 and #35** — #35 being the row with no safe default that stopped this packet.
+⚠️ **The goal below changed with it, in three ways, and the packet got *smaller*.**
 
-**Read first.** `docs/RULES.md` §7.3, §7.2, §7.1.1 and §9 #33–#36; `docs/QUESTIONS-FOR-MYA-LAY.md`
-Q10; `Domain/Money/Settlement.cs`; `Domain/Melds/Meld.cs` (`IsClean`).
+**Goal.** Build `RULES.md` §7.3 — **a jokerless declaration pays ×2 at two, three or four seats and
+×3 at five or more** — and re-measure under it.
+
+**Read first.** `docs/RULES.md` §7.3, §7.2, §7.1.1, §10 #19 and §9 #33, #36, #37;
+`docs/QUESTIONS-FOR-MYA-LAY.md` Q10 **and Q11**; `Domain/Money/Settlement.cs`;
+`Domain/Melds/TableRules.cs`.
 
 🔥 **Why it goes before P32.** §9 **#35** asks whether the bonus exists at five or more seats, where
 §7.1.1 requires **no series at all** — so a five-handed re-measurement taken before it is answered
@@ -5318,41 +5325,70 @@ is a measurement of a game whose scoring is unknown. **It also invalidates every
 changes what winning is *worth*, and it hands every rung a reason to throw a joker away that none
 of them currently has.
 
-⚠️ **THE PACKET CANNOT START UNTIL §9 #33–#36 ARE ANSWERED.** The rule comes from one volunteered
-sentence and four things about it are unspecified; **#35 has no safe default** — the three readings
-pay different amounts and one of them pays triple for a hand containing no series at all. The four
-questions are drafted flat and ready to put (Q10). **This is a stop-and-ask, not a proceed-on-a-
-default.**
+✅ **Two rows are still open and neither blocks the build**: **#36** (does the multiplier reach the
+money settlement — recommend **not**, now backed by three separate sayings that name *the winning
+prize* and never the money) and **#37** (is six-plus also ×3 — recommend **yes**, matching
+§7.1.1's own five-or-more grouping). **Proceed on both defaults and say so in the report.**
+⚠️ **#33 stays open too** — whether the joker may be shed before the declaring discard — and
+**it has a safe default that changes nothing**: §5.1 exception 2 as it stands. ⚠️ **Note what that
+default means for the measurement**: if the ban only yields on the declaring discard, a hand
+needing to shed a joker a turn early cannot reach the bonus at all, so **any measured bonus rate is
+a floor, not an estimate.** Say that in `STRATEGY.md` rather than leaving it to be rediscovered.
 
-**Build, once the answers are in.**
+**Build.**
 
-1. **`Settlement` stops paying a constant.** §7.2 step 1 is the round value from every loser; it
-   becomes the round value **×3** when the declared hand qualifies. ⚠️ **#36 decides whether step 2
-   (the money cards) triples with it** — recommend not, which is what the words say.
-2. **The qualifying test reads the *declared partition*, not the hand.** `Meld.IsClean` already
-   exists because §7.1.1 counts required clean series with it, so the predicate is not the work —
-   ⚠️ **but a hand can partition more than one way**, and a partition with a clean run may exist
-   beside one without. **Whether the winner is paid on the best partition available or on the one
-   the engine happened to find is a question the packet must answer explicitly**, and `HandEvaluator`
-   returns one partition today.
+1. **`Settlement` stops paying a constant, and stops being seat-count-independent.** §7.2 step 1 is
+   the round value from every loser; it becomes the round value **×2 or ×3** when the declared hand
+   is jokerless. 🔥 **The multiplier is a function of the table size**, so it belongs beside
+   §7.1.1's table in **`Domain/Melds/TableRules.cs`** — the one place a per-seat-count rule is
+   written down — rather than as a constant in `Settlement`. ⚠️ **`Settlement` does not take a seat
+   count today.**
+2. 🔥 **The qualifying test is a property of the *hand*, not of the partition — and that dissolves
+   the hardest thing this packet used to contain.** Rev 25 read the condition as being about series
+   and flagged that a hand can partition more than one way, so the winner might be paid on the best
+   partition or on the one the engine found. **Jokerless is jokerless under every partition**, so
+   the question does not arise, `HandEvaluator` needs nothing, and `Meld.IsClean` is not the
+   predicate. **The test is *no joker in the declared thirteen*.**
+   ⚠️ **Do not reach for `Meld.IsClean` out of habit** — it implements §7.1.1's *required clean
+   series*, which is a different rule that happens to share a word.
 3. **The rungs get a reason to shed a joker**, which is the behaviour the expert named and which no
-   rung can currently produce. ⚠️ **Keep it out of the ladder unless it is measured**: a rung that
-   plays for the bonus is a new rung under P15's discipline, not a change to `outs`.
+   rung can currently produce — `CoverScore.Potential` returns `int.MaxValue` for a joker.
+   ⚠️ **Keep it out of the ladder unless it is measured**: a rung that plays for the bonus is a new
+   rung under P15's discipline, not a change to `outs`.
 4. **Regenerate the standing suite.** Three hours at four seats (P31's measured price).
+   🔥 **Consider doing it once, at five seats, and folding P32 in** — see the note under P32.
 
 **Acceptance.**
-1. A round won with all series clean pays ×3, and one won with a joker in a required series does
-   not — both asserted against `Settlement` directly and through a played round.
-2. `RuleConformance` re-derives the bonus independently, and §7.3 is registered in
-   `SettledRuleCoverageTests`' registry rather than exempted.
-3. `docs/STRATEGY.md` says what the bonus did to the ladder.
+1. A jokerless declaration pays **×2** at four seats and **×3** at five, and a declaration holding
+   a joker **anywhere — including in a set** — pays flat at both. Asserted against `Settlement`
+   directly and through a played round.
+2. **A hand whose jokers sit only in sets is the discriminating case** and gets its own test: it
+   would qualify under rev 25's withdrawn reading and does not qualify under rev 26.
+3. **A five-handed hand of four sets and no series at all, jokerless, pays ×3** — §9 #35's answer,
+   which is what a hand-wide predicate buys and a series-wide one cannot express.
+4. `RuleConformance` re-derives the bonus independently, and §7.3's registry entry in
+   `SettledRuleCoverageTests` **turns from `Exempt(...)` into `Checked(...)`**. 🔥 **That entry
+   already exists**: §7.3's heading claimed Settled at rev 26, the coverage test went red the same
+   hour, and the exemption written to silence it is **the only one in the registry excused because
+   *the code is missing*** rather than because no ordinary-play check could exist. ⚠️ **Convert it,
+   do not delete it** — deleting it makes the alarm silent instead of answered.
+5. `docs/STRATEGY.md` says what the bonus did to the ladder, **and states the #33 floor** (point
+   above).
 
 **Done when.** §10 #19 is discharged and `RULES.md` again records nothing Settled that nothing
 implements.
 
 ---
 
-### P32 — Five-handed is the default table ☐ — ⚠️ **blocked by P33 (§9 #35)**
+### P32 — Five-handed is the default table ☐ — ✅ **unblocked 2026-08-22 (rev 26 closed §9 #35)**
+
+🔥 **Rev 26 changed this packet's relationship to P33 rather than merely unblocking it.** The bonus
+exists at five seats and pays **×3** there, where §7.1.1 requires nothing clean — so **the bonus is
+the only thing cleanliness is ever worth at five seats.** ⚠️ **Measuring the five-handed game and
+measuring the bonus are therefore one measurement, not two**, and running them as two costs a
+second three-hour suite for a figure the first one invalidates. **Strongly consider folding this
+packet's seat-count change into P33's single regeneration.** P33 still goes first: the scoring rule
+has to exist before a table can be measured under it.
 
 **Goal.** Move the whole standing set to **five seats**, which is the size this game is actually
 played at, and re-fit the difficulty dial there.

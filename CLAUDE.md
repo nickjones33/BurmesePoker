@@ -11,30 +11,70 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **READ THIS FIRST — the plan changed on 2026-08-22, after P31 shipped, and `P32` is blocked.**
-`RULES.md` is **rev 25**. Three questions went to the experts and **all three confirmed the
-standing default** (§9 #19 a release survives the reshuffle — *yes*; #32 the ×5 needs the 7♦/A♠
-pair — *"specifically"*; #27 taking a joker closes the other jokers — *"yeah"*). **No code changed
-and no play changed.** ⚠️ **But #27's answer carried a rule nobody had ever recorded**: *"Unless you
-want all series clean that got a 3-time winning game prize, you have a joker, so you discard the
-joker for the winning clean series."*
+🔥 **READ THIS FIRST — `RULES.md` is rev 26 (2026-08-22) and `P33` is the next packet.**
+**The expert corrected her own rule, unprompted, hours after giving it.** Rev 25 recorded §7.3 as a
+flat **×3** for declaring with *"all series clean"*. Mya Lay came back the same day: *"if you play
+two players, three players, or four players, you will only get two times of the winning prize … you
+got three times of the winning prize if we are playing five players. **Not just series, if you want
+to win with jokerless** … you can discard the joker."*
 
-🔥 **`RULES.md` §7.3 is new — an all-clean declaration pays ×3 the winning prize** — where §7.2 has
-called the round payment **flat** since rev 1. It takes a four-handed win from $15 to **$45**, which
-is **the largest single swing in the game**, and **nothing implements it** (§10 #19, the only
-Settled ruling that is unbuilt). ⚠️ **It also supplies the only reason this project has ever had for
-throwing a joker away** — no rung will part with one — so **every figure in `docs/STRATEGY.md` is
-measured in a world where that reason does not exist.** ⚠️ **Four things are unspecified and §9 #35
-has no safe default** (does the bonus exist at five-plus seats, where §7.1.1 requires no series at
-all?) — **that is what blocks P32.** All four are drafted flat in `docs/QUESTIONS-FOR-MYA-LAY.md`
-Q10. **The next packet is §7.3 (`P33`), not P32.**
+🔥 **`RULES.md` §7.3 is now: a *jokerless* declaration pays ×2 at two, three or four seats and ×3 at
+five or more** — where §7.2 has called the round payment **flat** since rev 1. **Two widenings:
+the multiplier is a function of the table size** (making §7.3 the second rule here whose content
+changes with the player count, splitting at **exactly §7.1.1's seam** — 2/3/4 require a series, 5+
+require nothing) **and the condition is the whole declared thirteen**, so a joker in a **set**
+forfeits it too. ✅ **That closes §9 #34 and #35.** **#35 had no safe default and blocked `P32`**;
+it closed the expensive way — the bonus is worth **most** at five seats, so **cleanliness is
+relevant at every table size for the first time** and the win condition and the scoring stop being
+separable. **P32 and P33 are both unblocked.**
+
+⚠️ **Nothing implements it** (§10 #19, the only Settled ruling that is unbuilt), and **it supplies
+the only reason this project has ever had for throwing a joker away** — `CoverScore.Potential`
+returns `int.MaxValue` for a joker — so **every figure in `docs/STRATEGY.md` is measured in a world
+where that reason does not exist.**
+
+🔥 **Three things a cold session needs.** **(1) P33 got *smaller*, and the reason is the finding.**
+Rev 25 flagged its hardest problem as *which partition the winner is paid on*; **jokerless is a
+property of the hand, not of the partition**, so the question does not arise, `HandEvaluator` needs
+nothing, and ⚠️ **`Meld.IsClean` is NOT the predicate** — it implements §7.1.1's *required clean
+series*, a different rule sharing a word. **The multiplier does need the seat count**, which
+`Settlement` has never taken; `TableRules.For(n)` is its home. **(2) Rev 25's arithmetic was wrong
+and is corrected** — four-handed clean is **$30**, not $45 — and its *"largest single swing, ahead
+of the ×5 jackpot"* claim is **withdrawn**: per opponent the bonus pays **+$5 a head at 2/3/4 and
++$10 at 5+** against the jackpot's $10, half of it at small tables and level at five (still far more
+consequential — 1-in-1,444 against routine). **(3) P33 and P32 are one measurement**: at five seats
+the bonus is the only thing cleanliness is ever worth, so **fold P32's seat-count change into P33's
+single three-hour regeneration.**
+
+⚠️ **Two rows stay open and neither blocks the build** — **#36** (does the multiplier reach the
+money settlement? recommend **not**; *the winning prize* is named twice more and the money never is)
+and **#37**, new (six-plus also ×3? recommend **yes**, matching §7.1.1's five-or-more grouping).
+**#33** — may the joker be shed before the declaring discard — is open with a no-change default,
+⚠️ **but note what it costs the measurement**: if §5.1 only yields on the declaring discard, a hand
+needing to shed a joker a turn early cannot reach the bonus at all, so **any measured bonus rate is
+a floor.**
+
+🔥 **A methodological finding that overturns rev 25's own lesson.** Rev 25 recommended the **narrow**
+reading of #34 because every rule this document has got wrong was *flat and later narrowed*. **The
+answer was the broad one.** ⚠️ **The heuristic was stated backwards**: what §6.2 and §7.1 share is
+not breadth, it is that **a broad rule was inferred from a narrow sentence** — §7.3 inferred a
+narrow rule from a narrow sentence and erred the other way. **Inference from silence is the
+variable.** ⚠️ **And six sessions running have answered past the question asked, this one without
+the question being put** — *do not treat a rules session as closed on the day it ends.*
+
+🔥 **One test went red on the rev alone, which is the mechanism working.** §7.3's heading now says
+Settled, so `SettledRuleCoverageTests.EverySettledRuleIsCheckedOrNamesWhyItCannotBe` failed.
+✅ **It is registered as an `Exempt(...)` entry** — the **only** one in that registry excused because
+*the code is missing* rather than because no ordinary-play check could exist. ⚠️ **P33 converts it
+to `Checked(...)`; it must not delete it.**
 
 ✅ **And one packet needs no answer at all: `P34`, the front door.** **There is no `README.md`** —
 a visitor's first sight of this project is *this file*, which is written for a cold session rather
 than for a person, and three of the ten documents in `docs/` are wholly historical without saying
 so above the fold. P34 builds the front door (current-only) and **turns the anti-staleness habit
 into tests**, in the idiom P23 and P30.2 established. It needs no expert answer and regenerates
-nothing, so **it is the packet to run while `P33` waits.**
+nothing. ⚠️ **It is no longer the packet to run *instead* of P33** — rev 26 unblocked P33 — but it
+is still the cheapest thing on the plan and it does not collide with anything.
 
 🔥 **`P31` shipped 2026-08-22 on Opus 5: `warden`, the feeding ban played offensively — and it
 lost, by more than any rung has lost before.** `Domain/Agents/WardenBotAgent.cs` is `outs` with the
