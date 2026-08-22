@@ -1,4 +1,5 @@
 using BurmesePoker.Domain.Agents;
+using BurmesePoker.Domain.Play;
 
 namespace BurmesePoker.Web;
 
@@ -94,4 +95,21 @@ public sealed record TablePlan
     /// <see cref="People"/>, and this only says who is in the seats that are left.
     /// </remarks>
     public IReadOnlyList<string>? Difficulties { get; init; }
+
+    /// <summary>
+    /// How long this table's seating holds — the name of a <c>SeatingPolicy</c> (P36).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠️ <b>A name and not a policy</b>, for the reason <see cref="Difficulty"/> is a name and
+    /// not a level (P18): a plan is what a table is opened with, and it comes off a command line
+    /// and out of a form field, both of which carry text. It is resolved once, where the table is
+    /// built, and an unknown name opens on the default rather than throwing a site over.
+    /// </para>
+    /// <para>
+    /// ✅ <b>The default is <c>held</c>, which is the rule</b> (RULES.md §3 step 2, rev 28) — and
+    /// it is what stops the ring rearranging itself around a fixed viewer every deal (P13.5).
+    /// </para>
+    /// </remarks>
+    public string Seating { get; init; } = SeatingPolicy.Default.Name;
 }

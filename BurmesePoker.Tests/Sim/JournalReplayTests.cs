@@ -1,3 +1,6 @@
+using BurmesePoker.Domain.Abstractions;
+using BurmesePoker.Domain.Agents;
+using BurmesePoker.Domain.Money;
 using BurmesePoker.Domain.Play;
 using BurmesePoker.Sim;
 
@@ -54,6 +57,62 @@ public class JournalReplayTests
     {
         // §3.9's throughput constraint as a test: the default run holds nothing at all.
         Assert.All(Simulator.Run(Run).Games, game => Assert.Null(game.Journal));
+    }
+
+    /// <summary>
+    /// ✅ <b>P36 — a journal from a table that re-seated replays under the policy it recorded</b>
+    /// (RULES.md §3 step 2).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠️ <b>The harness cannot produce one of these</b> — every experiment runs one round a game
+    /// and none offers the setting — so the journal is built the way a hosted table and the
+    /// console build theirs: a <c>MatchEngine</c> under a policy, wrapped in the journalling
+    /// agent, and a header that says which. That is the path <c>sim replay</c> is pointed at from
+    /// a front end, and it is the path this field exists for.
+    /// </para>
+    /// <para>
+    /// 🔥 <b>Without the field the replay deals different seats from round two on</b>, because the
+    /// default is held and the recording was not: a replay would ask the right questions of the
+    /// wrong player.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void AJournalFromATableThatReseatedReplaysUnderThePolicyItRecorded()
+    {
+        var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, 4).Select(seat => new PlayerId(seat))];
+        var builder = new GameJournalBuilder(JournalFidelity.Thin);
+
+        var match = new MatchEngine(
+            players,
+            JournalingAgent.Wrap(
+                players.ToDictionary(player => player, IPlayerAgent (_) => new GreedyBotAgent()), builder),
+            Stakes.Standard,
+            new Random(20260822),
+            observer: null,
+            SeatingPolicy.EveryRound);
+
+        var played = Enumerable.Range(0, 3).Select(_ => match.PlayRound().Result).ToList();
+
+        var journal = builder.Build(new JournalHeader(
+            Seed: 20260822,
+            Seats: [.. players.Select(player => new JournalSeat(player, "greedy", $"Seat {player.Value}"))],
+            Stakes: Stakes.Standard,
+            Rounds: played.Count,
+            Game: 0,
+            RoundsBetweenSeatings: SeatingPolicy.EveryRound.RoundsBetweenSeatings));
+
+        // Through the file, because that is where a front end's journal comes from.
+        var read = JournalFormat.Read(JournalFormat.Lines(journal).ToList());
+
+        Assert.Equal(SeatingPolicy.EveryRound, read.Header.Seating);
+
+        var replayed = GameRunner.Replay(read, game: 0);
+
+        Assert.Equal(
+            played.Select(result => $"{result.Round}:{result.Winner.Value}:{result.Turns}"),
+            replayed.Rounds.Select(round =>
+                $"{round.Round}:{round.Seats.Single(seat => seat.Won).Seat}:{round.Turns}"));
     }
 
     [Fact]

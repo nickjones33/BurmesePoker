@@ -11,13 +11,24 @@ namespace BurmesePoker.Tests.Web;
 /// A match played from a seat, exactly as the browser plays one (packet P13.4).
 /// </summary>
 /// <remarks>
+/// <para>
 /// Four seats, all of them people, all of them driven by <see cref="ClickingPlayer"/> — which
-/// presses only what a page can press and sees only what a page can see. Three rounds, so the
+/// presses only what a page can press and sees only what a page can see. Several rounds, so the
 /// banks have to carry over and the hands have to be dealt again.
+/// </para>
+/// <para>
+/// ⚠️ <b>Three rounds until P36, and it was three because a match is a fixture rather than
+/// because three is the number.</b> Holding the seating (RULES.md §3 step 2) makes the same seed
+/// deal a different match — the draw the seating took is not taken any more — and the fifth
+/// question, the claim's permission, needs a claim <em>and</em> the seat above holding the rank.
+/// It stopped turning up in three rounds and turns up in five.
+/// <c>EverySeatIsAskedEveryQuestionOverAMatch</c> is what notices, which is the assertion doing
+/// its job rather than a fixture being tuned to pass.
+/// </para>
 /// </remarks>
 public sealed class PlayedMatch : IDisposable
 {
-    public const int Rounds = 3;
+    public const int Rounds = 5;
 
     public PlayedMatch()
     {

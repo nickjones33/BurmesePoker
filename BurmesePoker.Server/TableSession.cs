@@ -108,11 +108,13 @@ public sealed class TableSession
             _journal is null ? agents : JournalingAgent.Wrap(agents, _journal, opinions),
             options.Stakes,
             new Random(options.Seed),
-            _fanOut);
+            _fanOut,
+            options.Seating);
     }
 
     /// <summary>
-    /// Opens a table. The seating order is the order given (RULES.md §3 step 2), and every seat
+    /// Opens a table. The seating order is the order given and is <em>held</em> unless
+    /// <see cref="TableOptions.Seating"/> says otherwise (RULES.md §3 step 2), and every seat
     /// without an agent gets a connection waiting for somebody to play it.
     /// </summary>
     public static TableSession Open(IReadOnlyList<TableSeat> seats, TableOptions options)
@@ -419,7 +421,10 @@ public sealed class TableSession
                 Rounds: _match.RoundsPlayed,
                 Fidelity: _journal.Fidelity,
                 Game: 0,
-                Abandoned: _abandoned));
+                Abandoned: _abandoned,
+                // The policy this table played under, so `sim replay` deals the same seats it
+                // dealt (P36). Held writes nothing at all — see JournalFormat.
+                RoundsBetweenSeatings: Options.Seating.RoundsBetweenSeatings));
         }
     }
 

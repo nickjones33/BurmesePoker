@@ -16,14 +16,20 @@ namespace BurmesePoker.Domain.Play;
 /// <see cref="IPlayerAgent"/> question either.
 /// </para>
 /// <para>
-/// 🔥 <b>The seating is re-drawn before every deal</b> (RULES.md §3 step 2, §9 #14). A
-/// <em>game</em> means from the turn-up to somebody going out — a game is a round — and the
-/// seats are randomised between games, so a player's neighbours change every deal and nothing
-/// carries over but the banks. ⚠️ <b>The first round's seating is the one this engine was
-/// given</b>: whoever sets a table up has already drawn it (a lobby, a console, a harness that
-/// assigns strategies to seats on purpose), and drawing over the top of that would take the
-/// caller's arrangement away without asking. So the draw happens between rounds, which is the
-/// only place the engine is the one that knows.
+/// 🔥 <b>The seating is drawn once and held</b> (RULES.md §3 step 2, rev 28). A <em>game</em>
+/// means from the turn-up to somebody going out — a game is a round — and the seats do
+/// <em>not</em> change between games: <em>"in real games you don't shuffle seats every round,
+/// only when people ask for it."</em> ⚠️ <b>This engine held a seating before P28, re-drew it
+/// before every deal between P28 and P36, and now does neither by default</b> — it re-draws when
+/// its <see cref="SeatingPolicy"/> says to, and the default policy never says to. The asking
+/// itself is packet P37 (§10 #23); this is the mechanism it will answer into.
+/// </para>
+/// <para>
+/// ⚠️ <b>The first round's seating is the one this engine was given</b>: whoever sets a table up
+/// has already drawn it (a lobby, a console, a harness that assigns strategies to seats on
+/// purpose), and drawing over the top of that would take the caller's arrangement away without
+/// asking. So a re-draw only ever happens <em>between</em> rounds, which is the only place the
+/// engine is the one that knows.
 /// </para>
 /// <para>
 /// <b>A round is a fresh <see cref="RoundEngine"/>, and that is what re-designates the money
@@ -49,8 +55,9 @@ public sealed class MatchEngine
     private readonly Random _random;
 
     /// <param name="players">
-    /// Who is at the table, in the order the <em>first</em> round is dealt. Re-drawn for every
-    /// round after it (RULES.md §3 step 2).
+    /// Who is at the table, in the order it is seated — and, unless
+    /// <paramref name="seating"/> says otherwise, the order every round is dealt in
+    /// (RULES.md §3 step 2).
     /// </param>
     /// <param name="agents">One agent per player.</param>
     /// <param name="stakes">What every round of this match is played for.</param>
@@ -59,12 +66,17 @@ public sealed class MatchEngine
     /// A match is reproducible from its seed alone (BUILD-PLAN §3.7).
     /// </param>
     /// <param name="observer">Narration sink, passed to every round. Optional.</param>
+    /// <param name="seating">
+    /// How long a seating holds (RULES.md §3 step 2). Null is
+    /// <see cref="SeatingPolicy.Default"/>, which is <em>held</em> — the rule.
+    /// </param>
     public MatchEngine(
         IReadOnlyList<PlayerId> players,
         IReadOnlyDictionary<PlayerId, IPlayerAgent> agents,
         Stakes stakes,
         Random random,
-        IGameObserver? observer = null)
+        IGameObserver? observer = null,
+        SeatingPolicy? seating = null)
     {
         ArgumentNullException.ThrowIfNull(stakes);
         ArgumentNullException.ThrowIfNull(random);
@@ -75,6 +87,7 @@ public sealed class MatchEngine
 
         Players = [.. players];
         Seating = Players;
+        SeatingPolicy = seating ?? SeatingPolicy.Default;
         Stakes = stakes;
         _banks = Players.ToDictionary(player => player, _ => 0);
     }
@@ -83,11 +96,11 @@ public sealed class MatchEngine
     /// Who is at this table, in the order they were first seated.
     /// </summary>
     /// <remarks>
-    /// ⚠️ <b>Not the turn order, from the second round on.</b> Seats are re-randomised every deal
-    /// (RULES.md §3 step 2), so this is the <em>membership</em> of the table and
-    /// <see cref="Seating"/> is where anybody drawing neighbours, a turn order or a feeding ban
-    /// must read. It stays fixed so that a caller's own list of seats — banks, names, agents —
-    /// does not shuffle under it every round.
+    /// ⚠️ <b>Not necessarily the turn order.</b> A seating can be re-drawn — never by default, but
+    /// <see cref="SeatingPolicy"/> may say so — and this is the <em>membership</em> of the table
+    /// either way: <see cref="Seating"/> is where anybody drawing neighbours, a turn order or a
+    /// feeding ban must read. It stays fixed so that a caller's own list of seats — banks, names,
+    /// agents — does not shuffle under it.
     /// </remarks>
     public IReadOnlyList<PlayerId> Players { get; }
 
@@ -97,10 +110,20 @@ public sealed class MatchEngine
     /// </summary>
     /// <remarks>
     /// Before the first deal it is <see cref="Players"/>, because that is the seating this engine
-    /// was handed. ✅ Every round narrates its own to <c>IGameObserver.RoundStarted</c>, so a front
-    /// end never has to ask.
+    /// was handed — and under the default policy it stays that for ever. ✅ Every round narrates
+    /// its own to <c>IGameObserver.RoundStarted</c>, so a front end never has to ask.
     /// </remarks>
     public IReadOnlyList<PlayerId> Seating { get; private set; }
+
+    /// <summary>
+    /// How long this table's seating holds (RULES.md §3 step 2).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The one place the question is answered.</b> Nothing else in the solution decides
+    /// when the seats are drawn again — not a front end, not the harness — which is what keeps
+    /// P37's <em>agreeing</em> a change in one file rather than in four.
+    /// </remarks>
+    public SeatingPolicy SeatingPolicy { get; }
 
     /// <summary>What every round of this match is played for.</summary>
     public Stakes Stakes { get; }
@@ -119,14 +142,14 @@ public sealed class MatchEngine
     public int RoundsPlayed { get; private set; }
 
     /// <summary>
-    /// Plays the next round from a freshly shuffled shoe, and a freshly drawn seating
+    /// Plays the next round from a freshly shuffled shoe, and the seating this table is holding
     /// (RULES.md §3 steps 1 and 2).
     /// </summary>
     /// <remarks>
     /// 🔥 <b>Shuffle, then seat, then deal</b> — §3's own order, and this is the only entry point
-    /// that does the first two. The seating is re-drawn for every round after the first (§9 #14);
-    /// the first keeps the order this engine was given, because whoever opened the table has
-    /// already drawn it.
+    /// that does the first two. ⚠️ <b>"Seat" is almost always a no-op</b>: a seating is drawn once
+    /// and held (rev 28), so <see cref="SeatingPolicy"/> has to say otherwise before anything
+    /// moves, and the first round keeps the order this engine was given whatever it says.
     /// </remarks>
     public RoundRecord PlayRound()
     {
@@ -168,19 +191,32 @@ public sealed class MatchEngine
     }
 
     /// <summary>
-    /// The seats for the round about to be dealt: the order this engine was given for the first,
-    /// and a fresh draw for every one after it (RULES.md §3 step 2, §9 #14).
+    /// The seats for the round about to be dealt: the seating being held, unless
+    /// <see cref="SeatingPolicy"/> says this is a round to draw again before (RULES.md §3 step 2).
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// 🔥 <b>The condition is the policy's and is asked here and nowhere else.</b> A held seating
+    /// is returned as it stands rather than reset to <see cref="Players"/> — the members are the
+    /// membership, and the order is whatever the last draw left.
+    /// </para>
+    /// <para>
     /// ⚠️ <b>A draw may come out the same, and that is not a bug.</b> The rule is that the seats
     /// are randomised, not that they must move; forcing a derangement would make the seating less
     /// random rather than more.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>A held seating draws no numbers at all</b>, which is a seed story (BUILD-PLAN §3.9
+    /// point 2): a seed or a journal from between P28 and P36 no longer plays the same match,
+    /// because the draw it used to take out of this generator is not taken any more. The journal
+    /// header records the policy for exactly that reason.
+    /// </para>
     /// </remarks>
     private IReadOnlyList<PlayerId> NextSeating()
     {
-        if (RoundsPlayed == 0)
+        if (!SeatingPolicy.ReseatsBefore(RoundsPlayed))
         {
-            return Players;
+            return Seating;
         }
 
         var drawn = Players.ToArray();

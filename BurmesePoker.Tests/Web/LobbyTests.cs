@@ -1,4 +1,5 @@
 using BurmesePoker.Domain.Agents;
+using BurmesePoker.Domain.Play;
 using BurmesePoker.Web;
 
 using Microsoft.Extensions.Configuration;
@@ -59,6 +60,60 @@ public class LobbyTests
         Assert.Equal(DifficultyLadder.Default.Name, strange.Opening.Difficulty);
         Assert.Equal(DifficultyLadder.Default.Name, rung.Opening.Difficulty);
         Assert.Equal(DifficultyLadder.Default.Name, silent.Opening.Difficulty);
+    }
+
+    /// <summary>
+    /// ✅ <b>P36 — the lobby form offers the setting, out of the domain's own list</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>A source scan, in the P18/P19 idiom</b>: the difficulty menu is a <c>foreach</c> over
+    /// <c>DifficultyLadder</c> rather than a hand-typed list, and this is the same. A form that
+    /// spelled the policies itself would be a second place a policy is named, and the third one
+    /// added would reach the browser only when somebody remembered this file.
+    /// </remarks>
+    [Fact]
+    public void TheLobbyFormOffersTheSeatingOutOfTheDomainsOwnList()
+    {
+        var form = Sources.Read("Components/Pages/Tables.razor");
+
+        Assert.Contains("SeatingPolicy.Offered", form, StringComparison.Ordinal);
+        Assert.Contains("@bind-Value=\"Wanted!.Seating\"", form, StringComparison.Ordinal);
+        Assert.Contains("<label for=\"new-seating\"", form, StringComparison.Ordinal);
+        Assert.Contains("SeatingPolicy.Resolve(wanted.Seating)", form, StringComparison.Ordinal);
+
+        // Not a hand-typed menu: no policy is spelled out in the markup.
+        foreach (var policy in SeatingPolicy.Offered)
+        {
+            Assert.DoesNotContain($"value=\"{policy.Name}\"", form, StringComparison.Ordinal);
+        }
+    }
+
+    /// <summary>
+    /// ✅ <b>P36 — <c>--seating</c> names how long the seats hold, and the default is the rule</b>
+    /// (RULES.md §3 step 2, rev 28).
+    /// </summary>
+    /// <remarks>
+    /// The difficulty's rule, applied to the setting beside it (P18): a name off a command line is
+    /// resolved through the domain and never trusted, so <c>--seating rubbish</c> opens the house
+    /// table on <c>held</c> rather than failing to boot. ⚠️ <b>A number chosen here is a house
+    /// arrangement and not the players agreeing</b> (§9 #45) — that is packet P37.
+    /// </remarks>
+    [Fact]
+    public async Task TheCommandLineNamesHowLongTheSeatsHold()
+    {
+        await using var shuffled = Open(("seating", "every-round"));
+        await using var occasional = Open(("seating", "every-5-rounds"));
+        await using var strange = Open(("seating", "musical-chairs"));
+        await using var silent = Open();
+
+        Assert.Equal("every-round", shuffled.Opening.Seating);
+        Assert.Equal("every-5-rounds", occasional.Opening.Seating);
+        Assert.Equal(SeatingPolicy.Default.Name, strange.Opening.Seating);
+        Assert.Equal(SeatingPolicy.Default.Name, silent.Opening.Seating);
+
+        // …and the name is resolved once, where the table is built.
+        Assert.Equal(SeatingPolicy.EveryRound, shuffled.OpenTheHouseTable().Seating);
+        Assert.Equal(SeatingPolicy.Held, silent.OpenTheHouseTable().Seating);
     }
 
     /// <summary>

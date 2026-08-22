@@ -106,13 +106,14 @@ internal static class Program
 
         var (names, bots) = AskWhoIsPlaying(console);
         var difficulty = bots.Count > 0 ? AskDifficulty(console) : DifficultyLadder.Default;
+        var policy = AskSeating(console);
         var stakes = AskStakes(console);
         var seating = Seat(names, setup);
 
         console.WriteLine();
         console.MarkupLine(
             "Seating: " + string.Join(" → ", seating.Select(player => CardFormatting.Name(names, player))));
-        console.MarkupLine($"[{Palette.Quiet}]{CardFormatting.Name(names, seating[0])} opens.[/]");
+        console.MarkupLine($"[{Palette.Quiet}]{CardFormatting.Name(names, seating[0])} opens, and the seats are {policy.Description}.[/]");
         console.MarkupLine(
             $"[{Palette.Quiet}]Seed {options.Seed} — [/][bold]--seed {options.Seed}[/]"
             + $"[{Palette.Quiet}] plays this exact match again.[/]");
@@ -141,7 +142,8 @@ internal static class Program
             journal is null ? seats : JournalingAgent.Wrap(seats, journal),
             stakes,
             new Random(matchSeed),
-            new ConsoleObserver(console, names, log));
+            new ConsoleObserver(console, names, log),
+            policy);
 
         var history = new List<RoundResult>();
 
@@ -162,7 +164,7 @@ internal static class Program
                 $"[{Palette.Quiet}]{match.RoundsPlayed} round{(match.RoundsPlayed == 1 ? string.Empty : "s")} played, "
                 + $"seed {options.Seed}. Nothing ends a game but the players (RULES.md §7.2).[/]");
 
-            WriteJournal(console, options, journal, matchSeed, seating, names, bots, difficulty, stakes, match.RoundsPlayed);
+            WriteJournal(console, options, journal, matchSeed, seating, names, bots, difficulty, stakes, policy, match.RoundsPlayed);
             return 0;
         }
         catch (DeckExhaustedException)
@@ -175,7 +177,7 @@ internal static class Program
                 + "a discard pile — so the round cannot go on. The standings stand as they were.");
 
             ReportStandings(console, match, history, names);
-            WriteJournal(console, options, journal, matchSeed, seating, names, bots, difficulty, stakes, match.RoundsPlayed);
+            WriteJournal(console, options, journal, matchSeed, seating, names, bots, difficulty, stakes, policy, match.RoundsPlayed);
             return 1;
         }
     }
@@ -200,6 +202,7 @@ internal static class Program
         IReadOnlySet<PlayerId> bots,
         DifficultyLevel difficulty,
         Stakes stakes,
+        SeatingPolicy policy,
         int rounds)
     {
         if (options.Journal is not { } path || journal is null)
@@ -216,7 +219,10 @@ internal static class Program
             Stakes: stakes,
             Rounds: rounds,
             Fidelity: options.Fidelity,
-            Game: 0);
+            Game: 0,
+            // What the seats did, so a replay does the same (P36). Held — the rule, and the
+            // default — writes no field at all.
+            RoundsBetweenSeatings: policy.RoundsBetweenSeatings);
 
         try
         {
@@ -391,6 +397,22 @@ internal static class Program
                 .Title("How hard should the computer be?")
                 .UseConverter(level => $"{level.Name} [{Palette.Quiet}]({level.Description})[/]")
                 .AddChoices(DifficultyLadder.ByStrength));
+
+    /// <summary>
+    /// How long the seating holds (RULES.md §3 step 2, packet P36).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The list is the domain's</b>, exactly as the difficulty list is (P18): a policy is
+    /// named once, in <c>SeatingPolicy</c>, and this file only offers what is there. ⚠️ <b>And a
+    /// setting chosen before the deal is not <em>the players agreeing</em></b> (§9 #45) — that is
+    /// packet P37, and this prompt is what it will replace.
+    /// </remarks>
+    private static SeatingPolicy AskSeating(IAnsiConsole console) =>
+        console.Prompt(
+            new SelectionPrompt<SeatingPolicy>()
+                .Title("How long do the seats hold?")
+                .UseConverter(policy => $"{policy.Name} [{Palette.Quiet}]({policy.Description})[/]")
+                .AddChoices(SeatingPolicy.Offered));
 
     private static Stakes AskStakes(IAnsiConsole console)
     {

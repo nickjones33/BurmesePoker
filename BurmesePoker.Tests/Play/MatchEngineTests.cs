@@ -233,28 +233,56 @@ public class MatchEngineTests
     }
 
     /// <summary>
-    /// ✅ <b>RULES.md §3 step 2 — the seats are drawn again before every deal</b> (§9 #14,
-    /// packet P28).
+    /// ✅ <b>RULES.md §3 step 2 as rev 28 corrects it — a seating is drawn once and held</b>
+    /// (§10 #22, packet P36).
     /// </summary>
     /// <remarks>
     /// <para>
-    /// 🔥 <b>A game <em>is</em> a round</b> (§3), so "between games" means between deals: a
-    /// player's neighbours change every round, and with them the whole of §5.1's ordered pairs.
-    /// The engine held one seating for a match until this packet, which is the only rule this
-    /// document has recorded that the code actively contradicted (§10 #16).
+    /// 🔥 <b>This test used to assert the opposite, and that is the packet.</b> Rev 19 read §3
+    /// step 2 as a step of the deal — the seats re-drawn every round — and P28 built it. §7.5
+    /// then blamed <em>the player before you</em> for a three-round streak, which cannot mean
+    /// anything if that player changes every deal; asked directly (§9 #43), <b>Aung Aung: in real
+    /// games you don't shuffle seats every round, only when people ask for it.</b>
     /// </para>
     /// <para>
-    /// ⚠️ <b>The first round keeps the seating it was given</b>, because whoever opened the table
-    /// has already drawn it — a lobby, a console, or a harness that assigns strategies to seats
-    /// on purpose.
+    /// ⚠️ <b>It is not a revert either.</b> Before P28 the seating was held and could never
+    /// change; the rule is that it holds <em>until the players agree</em>, so what the engine
+    /// consults is a <see cref="SeatingPolicy"/> — and P37 is what puts the table's agreement
+    /// where the policy is.
     /// </para>
     /// </remarks>
     [Fact]
-    public void TheSeatsAreDrawnAgainForEveryRoundAfterTheFirst()
+    public void TheSeatsAreDrawnOnceAndHeld()
     {
         var observer = new RecordingObserver();
         var match = new MatchEngine(
             FourPlayers, Bots(), Stakes.Standard, new Random(20260821), observer);
+
+        Assert.Equal(SeatingPolicy.Held, match.SeatingPolicy);
+
+        for (var round = 0; round < 6; round++)
+        {
+            match.PlayRound();
+        }
+
+        Assert.Equal(6, observer.Seatings.Count);
+
+        // ⚠️ The same order six times over, on the seed that used to prove the opposite: every
+        // deal is the seating this engine was opened with, and who opens never moves.
+        Assert.All(observer.Seatings, seating => Assert.Equal(FourPlayers, seating));
+        Assert.Equal(FourPlayers, match.Seating);
+    }
+
+    /// <summary>
+    /// ✅ <b>A policy that says so draws the seats again</b> — the mechanism P37's agreeing will
+    /// answer into, and the shape this engine had between P28 and P36.
+    /// </summary>
+    [Fact]
+    public void APolicyThatSaysSoDrawsTheSeatsAgain()
+    {
+        var observer = new RecordingObserver();
+        var match = new MatchEngine(
+            FourPlayers, Bots(), Stakes.Standard, new Random(20260821), observer, SeatingPolicy.EveryRound);
 
         for (var round = 0; round < 6; round++)
         {
@@ -274,9 +302,68 @@ public class MatchEngineTests
             observer.Seatings.Distinct(SeatingOrder).Count() > 1,
             "The seating never changed over six rounds.");
 
-        // ⚠️ Who opens moves with it. It used to be the same player every round for a whole
-        // match, which is what made the fixed seating visible at all.
+        // ⚠️ Who opens moves with it, which is what made the fixed seating visible at all.
         Assert.True(observer.Seatings.Select(seating => seating[0]).Distinct().Count() > 1);
+    }
+
+    /// <summary>
+    /// ✅ <b>A seating held between re-draws is the one last drawn</b>, not the one the table
+    /// opened with — the members are the membership, and the order is whatever the draw left.
+    /// </summary>
+    [Fact]
+    public void BetweenDrawsTheSeatingIsWhateverTheLastDrawLeft()
+    {
+        var observer = new RecordingObserver();
+        var match = new MatchEngine(
+            FourPlayers, Bots(), Stakes.Standard, new Random(11), observer, SeatingPolicy.Every(3));
+
+        for (var round = 0; round < 9; round++)
+        {
+            match.PlayRound();
+        }
+
+        // Rounds 1–3 are the opening seating; 4–6 are one draw; 7–9 are the next.
+        Assert.Equal(observer.Seatings[0], FourPlayers);
+        Assert.Equal(observer.Seatings[0], observer.Seatings[1]);
+        Assert.Equal(observer.Seatings[1], observer.Seatings[2]);
+        Assert.Equal(observer.Seatings[3], observer.Seatings[4]);
+        Assert.Equal(observer.Seatings[4], observer.Seatings[5]);
+        Assert.Equal(observer.Seatings[6], observer.Seatings[7]);
+        Assert.Equal(observer.Seatings[7], observer.Seatings[8]);
+        // ⚠️ Two draws, not three orders: a draw may come out the same and that is not a bug
+        // (MatchEngine.NextSeating). What is asserted is that the seats moved at a boundary and
+        // nowhere else, which the block equalities above already say.
+        Assert.True(observer.Seatings.Distinct(SeatingOrder).Count() > 1);
+    }
+
+    /// <summary>
+    /// ✅ <b>P36 acceptance 4: a one-round game is the same game under every policy</b>, which is
+    /// why nothing in <c>docs/strategy/measurements.csv</c> can move.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Asserted rather than argued.</b> Every experiment in <c>BurmesePoker.Sim</c> runs
+    /// <c>RoundsPerGame = 1</c>, so there is never a second round for a re-draw to precede — and
+    /// a policy that leaked into the first deal would show up here as a different narration.
+    /// </remarks>
+    [Fact]
+    public void AOneRoundGameIsTheSameGameUnderEveryPolicy()
+    {
+        static List<string> Played(SeatingPolicy policy)
+        {
+            var observer = new RecordingObserver();
+            var match = new MatchEngine(
+                FourPlayers, Bots(), Stakes.Standard, new Random(20260822), observer, policy);
+
+            match.PlayRound();
+            return observer.Events;
+        }
+
+        var held = Played(SeatingPolicy.Held);
+
+        foreach (var policy in SeatingPolicy.Offered)
+        {
+            Assert.Equal(held, Played(policy));
+        }
     }
 
     /// <summary>
@@ -284,9 +371,10 @@ public class MatchEngineTests
     /// match</b> (BUILD-PLAN §3.7, §3.9).
     /// </summary>
     /// <remarks>
-    /// ⚠️ <b>A seed from before this packet no longer plays the same match</b> — the seating draw
-    /// takes numbers the deal used to take, which is §3.9 point 2 happening again. Round 1 is
-    /// unaffected, because it draws no seats.
+    /// ⚠️ <b>A seed from between P28 and P36 no longer plays the same match</b> — a held seating
+    /// takes no numbers out of this generator at all, where the every-round draw took some the
+    /// deal now takes back. That is §3.9 point 2 happening for the second time to the same line,
+    /// and the journal header records the policy so that a replay is not left guessing.
     /// </remarks>
     [Fact]
     public void TheSameSeedDrawsTheSameSeatsInTheSameOrder()
@@ -316,7 +404,8 @@ public class MatchEngineTests
     private static List<string> SeatingsOf(int seed)
     {
         var observer = new RecordingObserver();
-        var match = new MatchEngine(FourPlayers, Bots(), Stakes.Standard, new Random(seed), observer);
+        var match = new MatchEngine(
+            FourPlayers, Bots(), Stakes.Standard, new Random(seed), observer, SeatingPolicy.EveryRound);
 
         for (var round = 0; round < 4; round++)
         {

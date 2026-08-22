@@ -113,7 +113,10 @@ public sealed class HostedTable : IAsyncDisposable
                 // (P18). Somebody whose connection dropped mid-round should not also find their
                 // seat playing badly; the setting is about the opponents you chose to sit down
                 // against. Left as a `new` here would be four lists again.
-                StandIn = () => PacedAgent.Wrap(BotCatalog.Hardest.Create(plan.Seed), plan.Pace)
+                StandIn = () => PacedAgent.Wrap(BotCatalog.Hardest.Create(plan.Seed), plan.Pace),
+                // A name off a plan is resolved here and nowhere else (P18's rule, P36's
+                // setting). Held is the rule and is what an unknown name gets.
+                Seating = SeatingPolicy.Resolve(plan.Seating)
             });
 
         Board = TableBoard.Of(_table.Players, _table.Names);
@@ -155,6 +158,13 @@ public sealed class HostedTable : IAsyncDisposable
 
     /// <summary>Whether the computer's seats are not all at the same level.</summary>
     public bool IsMixed => _levels.Distinct().Count() > 1;
+
+    /// <summary>How long this table's seating holds (RULES.md §3 step 2, P36).</summary>
+    /// <remarks>
+    /// The plan carries the <em>name</em> and this is the resolved policy — the difficulty's own
+    /// split (P18), and the reason a name off a form cannot reach the engine unread.
+    /// </remarks>
+    public SeatingPolicy Seating => _table.Options.Seating;
 
     /// <summary>The seats still waiting for somebody, in seating order.</summary>
     public IReadOnlyList<PlayerId> WaitingFor => _table.WaitingFor;

@@ -124,7 +124,8 @@ public sealed record JournalHeader(
     int? MasterSeed = null,
     int? Game = null,
     bool Abandoned = false,
-    int RulesRevision = JournalHeader.CurrentRulesRevision)
+    int RulesRevision = JournalHeader.CurrentRulesRevision,
+    int RoundsBetweenSeatings = 0)
 {
     /// <summary>
     /// The revision of <c>RULES.md</c> this build plays. ⚠️ Bump it when the rules document
@@ -154,6 +155,20 @@ public sealed record JournalHeader(
     /// agreeing).
     /// </remarks>
     public const int CurrentRulesRevision = 29;
+
+    /// <summary>
+    /// How long the seating held (RULES.md §3 step 2), as the policy this match played under.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A journal has to record this or a replay deals different seats</b> (P36). The field
+    /// is the number rather than the policy because a header is a line of JSON and
+    /// <b>0 — absent — is <c>held</c></b>, which is both the default and the rule; a journal
+    /// written before P36 therefore reads back as the policy the engine will now play it under.
+    /// ⚠️ <b>A journal written between P28 and P36 is the one exception and cannot say so</b>: it
+    /// was written by an engine that re-drew every round and carries no field to prove it, which
+    /// is what <c>CurrentRulesRevision</c> 28 is for.
+    /// </remarks>
+    public SeatingPolicy Seating => SeatingPolicy.Of(RoundsBetweenSeatings);
 
     /// <summary>How many seats were at the table.</summary>
     public int TableSize => Seats.Count;

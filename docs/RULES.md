@@ -327,10 +327,13 @@ copy of a card that is about to become a money card. That appears to be the poin
 > once and held**, and re-drawing is an **event somebody asks for** rather than a step of the deal.
 > **§9 #14's answer was about what *may* happen between games, not about what happens every time.**
 >
-> ⚠️ **The engine now contradicts this document again, and in the opposite direction to before.**
-> P28 built the every-round reading — `MatchEngine` draws the seats again before every deal — so
-> what was §10 #16's fix is now §10 #22's defect. **This is the second time §3 step 2 has been the
-> thing the code got wrong**, and the two errors point opposite ways. **Packet P36 owns it.**
+> ✅ **Built by P36 on 2026-08-22, and §10 #22 is discharged.** Between P28 and P36 the engine
+> contradicted this document again and in the opposite direction to before: P28 built the
+> every-round reading, so what was §10 #16's fix became §10 #22's defect. **This is the second
+> time §3 step 2 has been the thing the code got wrong**, and the two errors pointed opposite
+> ways. ⚠️ **The fix was not a revert**: `MatchEngine` consults a `SeatingPolicy` whose default is
+> *held*, because pre-P28 held a seating that could never change and the rule is that it can.
+> **The changing is still owed — §10 #23, packet P37.**
 >
 > ✅ **Nothing published moves.** Every experiment in `BurmesePoker.Sim` runs `RoundsPerGame = 1`,
 > so there is never a second round for a re-draw to happen before — **the same argument that made
@@ -1762,8 +1765,8 @@ of a whole that included the seating. 🔥 **The general lesson, now earned twic
 
 | # | Question | § | Status | Blocks |
 |---:|---|---|---|---|
-| 45 | 🔥 **What does "when people ask for it" mean — a request, or an agreement?** Does **one** player asking move the seats, or must the others want it too? *"Somebody says let's change seats. Does that just happen, or do the rest of you have to want it too?"* | 3 | ✅ **Ruled by Nick, 2026-08-22: *"when people agree to do it."*** `PLAYER`, so it stands until the expert says otherwise (`EXPERT` outranks it) — **the question stays in this table for that reason and is not struck through.** ⚠️ **It reverses this row's own recommendation**, which was *one player asking is enough* on the grounds that it invents no machinery: **agreement is the more expensive reading and it is the one taken.** ⚠️ **What "agree" means is #47** | **P37's whole user interaction.** ✅ **P36's seam is unaffected** — *when* a re-draw happens is a policy either way |
-| 47 | **Does agreement mean everybody, or most of them?** §9 #45 is ruled as *when people agree*; a table of five with one objector either re-seats or does not. *"Three of us want to change seats and two don't. Do we change?"* | 3 | Unknown — recommend **unanimous among the people at the table**, because *agree* reads as consent rather than as a count, and because the losing side of a majority vote is made to move seats against their will in a game with money on it | **P37 only.** ✅ **Safe default** — unanimity is the reading that never moves somebody who objected, so no player is worse off under it than under the alternative |
+| 45 | 🔥 **What does "when people ask for it" mean — a request, or an agreement?** Does **one** player asking move the seats, or must the others want it too? *"Somebody says let's change seats. Does that just happen, or do the rest of you have to want it too?"* | 3 | ✅ **Ruled by Nick, 2026-08-22: *"when people agree to do it."*** `PLAYER`, so it stands until the expert says otherwise (`EXPERT` outranks it) — **the question stays in this table for that reason and is not struck through.** ⚠️ **It reverses this row's own recommendation**, which was *one player asking is enough* on the grounds that it invents no machinery: **agreement is the more expensive reading and it is the one taken.** ⚠️ **What "agree" means is #47** | **P37's whole user interaction.** ✅ **P36's seam held** — *when* a re-draw happens is a policy either way, and P36 shipped it with `SeatingPolicyTests.NobodyIsAskedWhetherToChangeSeats` fencing this row so a round-counting policy cannot quietly answer it |
+| 47 | **Does agreement mean everybody, or most of them?** §9 #45 is ruled as *when people agree*; a table of five with one objector either re-seats or does not. *"Three of us want to change seats and two don't. Do we change?"* | 3 | Unknown — recommend **unanimous among the people at the table**, because *agree* reads as consent rather than as a count, and because the losing side of a majority vote is made to move seats against their will in a game with money on it | **P37 only.** ✅ **Safe default** — unanimity is the reading that never moves somebody who objected, so no player is worse off under it than under the alternative. ✅ **P36 fenced it**: `SeatingPolicyTests.WhatAgreementMeansIsNotDecidedByCountingRounds` asserts the shipped policy counts rounds and nothing else |
 | 46 | **What if the seats change mid-streak?** Somebody has won two in a row, the table re-seats, and they win a third. Is the seat above them at that moment blamed, even though they were somewhere else for the first two? *"I've won two, we re-shuffle, I win a third. Who pays?"* | 7.5, 3 | Unknown — recommend **the third round's seating** (the round being settled), which is old #42's recommendation surviving into the one case that can still produce it. ✅ **Safe default** — it is what settling a round from its own state already means | Nothing, until a re-seating exists to happen mid-streak |
 
 ⚠️ **#36 and #37 still block nothing**, and #40 and #44 both inherit #36's recommendation, so the
@@ -2394,21 +2397,27 @@ See `RULES-TECHNICAL.md` §7 for defects not driven by rules decisions, and
     re-seating.
 
 23. **A held seating can be re-drawn when the players agree to it** (§3 step 2, §9 #45).
-    `EXPERT` for the holding, `PLAYER` for *agree*, and **wholly unimplemented** — there is no way
-    to change a seating at all once #22 is fixed, which would leave the table more rigid than the
-    game is. ⚠️ **It needs a kind of question this project has never asked**: `SeatPrompt` is
+    `EXPERT` for the holding, `PLAYER` for *agree*, and **the agreeing is unimplemented**. ⚠️ P36
+    built the *mechanism* — a policy the engine consults, which a table may set to re-seat every
+    *N* rounds — but **a number chosen when the table opens is not people agreeing**, and P36's
+    own tests fence that: `SeatingPolicyTests.NobodyIsAskedWhetherToChangeSeats` (#45) and
+    `WhatAgreementMeansIsNotDecidedByCountingRounds` (#47). ⚠️ **It needs a kind of question this project has never asked**: `SeatPrompt` is
     seat-private by construction (P13.2), and this one is **public and put to everybody at once**.
     ⚠️ **Blocked in part on §9 #47** (everybody, or most of them). See packet **P37**.
 
-22. **Stop re-drawing the seats before every deal** (§3 step 2). `EXPERT` (Aung Aung, 2026-08-22,
-    rev 28) and **actively contradicted by the code**: `MatchEngine` draws a fresh seating before
-    every round, which P28 built on rev 19's reading. 🔥 **This is the second time §3 step 2 has
-    been the thing the implementation got wrong, and the two errors point in opposite directions**
-    — before P28 the seating was drawn once and held for a whole match, which is very nearly the
-    behaviour that is now correct. ⚠️ **The fix is not a revert**: what is wanted is a *held*
-    seating that can be **re-drawn on request** (§9 #45), which neither the old code nor the new
-    code does. ✅ **No published measurement moves** — `Sim` plays `RoundsPerGame = 1`, so there is
-    never a second round for a re-draw to precede. See packet **P36**.
+22. ~~**Stop re-drawing the seats before every deal**~~ (§3 step 2). ✅ **Discharged by P36 on
+    2026-08-22.** `EXPERT` (Aung Aung, 2026-08-22, rev 28), and until that packet **actively
+    contradicted by the code**: `MatchEngine` drew a fresh seating before every round, which P28
+    built on rev 19's reading. 🔥 **This is the second time §3 step 2 has been the thing the
+    implementation got wrong, and the two errors point in opposite directions** — before P28 the
+    seating was drawn once and held for a whole match, which is very nearly the behaviour that is
+    now correct. ⚠️ **The fix was not a revert**: `Domain/Play/SeatingPolicy.cs` is *when a
+    re-draw happens*, its default is **held**, and the engine asks it in one place — because
+    pre-P28 held a seating that could never change, and the rule is that it can. ✅ **No published
+    measurement moved** — `Sim` plays `RoundsPerGame = 1`, so there is never a second round for a
+    re-draw to precede, which `MatchEngineTests.AOneRoundGameIsTheSameGameUnderEveryPolicy`
+    asserts rather than argues. ⚠️ **A seed or a journal from between P28 and P36 no longer plays
+    the same match**: a held seating takes no numbers out of the match's generator at all.
 
 ## Sources
 

@@ -18,17 +18,19 @@ dotnet run --project BurmesePoker.Console
 
 It needs a real terminal — it reads keys, so it refuses a pipe rather than crashing on one.
 
-Then it asks four things:
+Then it asks five things:
 
 | Question | What to say |
 |---|---|
 | **How many at the table?** | 4 to 6. A round is not played with fewer or more (`RULES.md` §2.1). |
 | **How many of you are people?** | **1**, for solo play. The rest of the seats are filled by named bots — *Ruby (bot)*, *Sable (bot)*, … **0 is allowed**, and leaves the computer playing itself, which is worth watching once. |
 | **How hard should the computer be?** | Four settings, **hardest first**: *expert*, *hard*, *medium*, *easy*. They are the same player throughout — the best one there is — differing only in how often it slips and throws the wrong one of two good cards. At a table of all four, *expert* wins about **36%** of rounds and *easy* about **14%**, with *hard* and *medium* spread between them five to nine points apart (`STRATEGY.md` §9). Pressing return takes the top of the list, which is *expert*. |
+| **How long do the seats hold?** | **held** (the default), *every-round*, or *every-5-rounds*. Held is the rule: the seats are drawn once, at the start, and kept — so the player before you and the player after you are the same people all evening, which is what the feeding ban (§5.1) and the money-card permission (§4.5) are about. The other two are house arrangements; in a real game the seats change **when everybody agrees to change them**, which the computer cannot yet be asked. |
 | **What do the stakes pay?** | A **round value** and a **money card value**, defaulting to $5 and $1. Both matter; the second is the whole side bet. |
 
-Seating is shuffled, so you will not always open. The seat that opens is announced, and so is
-the **seed**.
+Seating is shuffled once, so you will not always open — but once it is drawn it stays, round
+after round, unless you asked for one of the other two settings. The seat that opens is
+announced, and so is the **seed**.
 
 ### Flags
 
@@ -393,6 +395,7 @@ Useful options — all of them plain configuration, so `--` then the flag:
 | `--seats 5` | Four to six players (RULES.md §2.1). |
 | `--difficulty medium` | How hard the computer is at the table the site opens: `expert`, `hard`, `medium` or `easy`. A name nobody knows opens the table on `expert` rather than refusing to start. ⚠️ These are difficulty settings and not the *rungs* the simulator ranks — `--difficulty greedy` is a name this does not know. |
 | `--mixed true` | Give each computer seat a different setting instead of all of them the same. ⚠️ It takes a value, like `--hints`: a bare `--mixed` is silently ignored. |
+| `--seating held` | How long the seats hold: `held` (the default and the rule — drawn once and kept), `every-round`, or `every-5-rounds`. A name nobody knows opens the table on `held`. The lobby's *Open another table* form offers the same list. |
 
 ⚠️ **If you walk away, the computer plays your seat** — the log says so and so does your seat, with
 a **⟳**. Come back and the next question is yours again.

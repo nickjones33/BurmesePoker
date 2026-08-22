@@ -125,6 +125,26 @@
                 <label for="new-mixed">A mixed table — a different level in each computer seat</label>
             </p>
 
+            @*
+                🔥 How long the seating holds (RULES.md §3 step 2, P36). Held is the rule and the
+                default: the seats are drawn when the table opens and kept, so the ring stops
+                rearranging itself around you every deal.
+
+                ⚠️ This is a house arrangement and NOT the rule about changing seats. §3 says the
+                seats change when the players AGREE, and a number chosen before anybody sits down
+                is not people agreeing — that is packet P37, and this control is the thing it
+                replaces rather than a first version of it.
+            *@
+            <p>
+                <label for="new-seating">The seats are</label>
+                <InputSelect id="new-seating" @bind-Value="Wanted!.Seating">
+                    @foreach (var policy in SeatingPolicy.Offered)
+                    {
+                        <option @key="policy.Name" value="@policy.Name">@policy.Name — @policy.Description</option>
+                    }
+                </InputSelect>
+            </p>
+
             <p class="note">
                 The rest are played by the computer, and each is named for how it plays. A table
                 with no people at it still deals, and is worth watching. A seat the computer
@@ -162,7 +182,8 @@
             Seats = Lobby.Opening.Seats,
             People = Lobby.Opening.People,
             Difficulty = Lobby.Opening.Difficulty,
-            Mixed = Lobby.Opening.Difficulties is { Count: > 0 }
+            Mixed = Lobby.Opening.Difficulties is { Count: > 0 },
+            Seating = Lobby.Opening.Seating
         };
 
         _tables = Lobby.Tables;
@@ -189,6 +210,8 @@
                 Difficulties = wanted.Mixed
                     ? [.. DifficultyLadder.Spread(seats).Select(level => level.Name)]
                     : null,
+                // A name off a form is a name off a wire: resolved, never trusted (P18).
+                Seating = SeatingPolicy.Resolve(wanted.Seating).Name,
                 Seed = Lobby.NextSeed()
             });
 
@@ -249,5 +272,8 @@
 
         /// <summary>Whether to spread the dial across the computer's seats instead (P19).</summary>
         public bool Mixed { get; set; }
+
+        /// <summary>Which <c>SeatingPolicy</c> this table holds its seats under (P36).</summary>
+        public string Seating { get; set; } = SeatingPolicy.Default.Name;
     }
 }

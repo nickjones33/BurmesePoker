@@ -273,6 +273,63 @@ public class LayeringTests
         Assert.Equal(1, found);
     }
 
+    /// <summary>
+    /// ✅ <b>P36 acceptance 2 — <em>when</em> a re-draw happens is one decision, in one place.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The same source scan, one rule further on</b> (P18's bot, P19's mistake rate, P36's
+    /// seating). A front end and the harness may both <em>carry</em> a policy and hand it to the
+    /// engine; what neither may do is work out from it whether this is a round to draw seats
+    /// before. <c>SeatingPolicy.ReseatsBefore</c> is the whole of the condition and
+    /// <c>MatchEngine</c> is the only caller.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>It matters because the second copy is what P37 would have to find.</b> Putting the
+    /// table's agreement behind the policy is a change in one file only for as long as the
+    /// question is answered in one file — and a lobby that decided for itself that
+    /// <em>every-round means every round</em> would be a rule written down twice.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void NothingOutsideTheSeatingPolicyDecidesWhenTheSeatsAreDrawnAgain()
+    {
+        var policy = Path.Combine("BurmesePoker.Domain", "Play", "SeatingPolicy.cs");
+        var engine = Path.Combine("BurmesePoker.Domain", "Play", "MatchEngine.cs");
+        var asked = 0;
+        var compared = 0;
+
+        foreach (var (path, text) in Sources.Production)
+        {
+            foreach (Match call in Regex.Matches(text, @"\bReseatsBefore\s*\("))
+            {
+                asked++;
+
+                Assert.True(
+                    path == policy || path == engine,
+                    $"{path}: asks whether the seats are drawn again. MatchEngine is the only "
+                    + "thing entitled to ask, because it is the only thing that knows how many "
+                    + $"rounds have been played (RULES.md §3 step 2, P36). Found: {call.Value}");
+            }
+
+            // A policy carried is fine; a policy reasoned about is a second copy of the rule.
+            foreach (Match comparison in Regex.Matches(text, @"RoundsBetweenSeatings\s*(==|!=|>|<|%)"))
+            {
+                compared++;
+
+                Assert.True(
+                    path == policy,
+                    $"{path}: works out what a number of rounds between seatings means. That is "
+                    + "SeatingPolicy's one job, and a second copy is the thing P37 would have to "
+                    + $"find (P36 acceptance 2). Found: {comparison.Value}");
+            }
+        }
+
+        // A guard on the guard: both scans match something, in the two files entitled to them.
+        Assert.Equal(2, asked);
+        Assert.True(compared > 0);
+    }
+
     /// <remarks>
     /// A guard on the guards above: <see cref="Assembly.GetReferencedAssemblies"/> lists only
     /// what the compiler kept, so a test that passed because the list was empty would be

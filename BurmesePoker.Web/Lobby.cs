@@ -93,6 +93,9 @@ public sealed class Lobby : IAsyncDisposable
             // ignored — the command-line configuration provider records a switch only when it
             // carries one. Found by starting the site with the bare flag and reading the seat
             // names, which all said `expert`.
+            // ⚠️ Resolved through the domain rather than trusted, exactly as the difficulty is
+            // (P18): `--seating rubbish` opens the house table on `held`, which is the rule.
+            Seating = SeatingPolicy.Resolve(configuration.GetValue<string>("seating")).Name,
             Difficulties = configuration.GetValue<bool?>("mixed") is true
                 ? [.. DifficultyLadder.Spread(RoundEngine.MaximumPlayers).Select(level => level.Name)]
                 : null

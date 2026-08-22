@@ -136,6 +136,15 @@ public static class JournalFormat
         Append(line, "seed", header.Seed);
         Append(line, "rounds", header.Rounds);
         Append(line, "abandoned", header.Abandoned);
+
+        // ⚠️ Written only when the seating was not held (P36). Held is the rule, the default and
+        // what every journal before this packet was written under, so absence has to mean it —
+        // and a field that appeared on every line would rewrite every capture to say so twice.
+        if (header.Seating != SeatingPolicy.Default)
+        {
+            Append(line, "seating_rounds", header.RoundsBetweenSeatings);
+        }
+
         Append(line, "round_value", header.Stakes.RoundValue);
         Append(line, "money_card_value", header.Stakes.MoneyCardValue);
 
@@ -230,7 +239,8 @@ public static class JournalFormat
             MasterSeed: OptionalNumber(root, "master_seed"),
             Game: OptionalNumber(root, "game"),
             Abandoned: root.TryGetProperty("abandoned", out var abandoned) && abandoned.ValueKind == JsonValueKind.True,
-            RulesRevision: Number(root, "rules", number));
+            RulesRevision: Number(root, "rules", number),
+            RoundsBetweenSeatings: OptionalNumber(root, "seating_rounds") ?? 0);
     }
 
     private static JournalDecision ReadDecision(JsonElement root, int number)

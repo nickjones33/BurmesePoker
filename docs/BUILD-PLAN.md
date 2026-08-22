@@ -1190,9 +1190,9 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P33** | **The clean bonus (§7.3)** | P31 ✅ | M — ☑ **done 2026-08-22 (Opus 5)** · jokerless pays ×2 at 2/3/4 and ×3 at 5+; **§10 #19 discharged** and the suite regenerated at four seats — **111 of 116 shared rows byte-identical, the 5 that moved are exactly the rows denominated in dollars a round** |
 | **P32** | **Five-handed is the default table** | P30.2, P31 ✅, **P33 ✅** | L — ☑ **done 2026-08-22** · **Opus 5** — the standing set is five-handed; **123 measurements in 12,445 s**. 🔥 **P29's explanation is falsified**: the five-handed ladder is the four-handed ladder divided by 1.25 (median margin ratio **0.801** against a base-rate scale of 0.800), so removing §7.1.1's series requirement did **nothing** to `simple`'s gaps. ✅ Full crossing, **no ε moved**, four-handed set kept frozen |
 | **P34** | **A front door, and docs that cannot go stale quietly** | — | S — ☐ **new 2026-08-22** — `README.md`, staleness banners, and the anti-staleness habit as tests. **Needs no expert answer.** ⚠️ **P24.2 added one thing for it to watch**: `AdviceRationale.ForObjection` ships P29's §12 null as prose in the product. It carries **no number on purpose** so it cannot rot into a wrong figure — but if that measurement ever separates, the sentence is wrong |
-| **P35** | **The two scoring rules that reach outside a round** | P33 ✅, P32, **P36** | L — ☐ **new 2026-08-22** — `RULES.md` **§7.4** (a win on the initial deal pays ×2) and **§7.5** (a third consecutive win is paid **entirely by the seat above you**), both `EXPERT` from Aung Aung. 🔥 **§7.5 is the first rule that cannot be settled from one round**, and **no measurement in this project can see it** (`Sim` plays `RoundsPerGame = 1`). ✅ **Unblocked 2026-08-22**: §9 #43 was asked and closed — the seats do **not** re-draw every round — ⚠️ **but that makes it depend on P36**, since the blame needs a seating that survives three rounds |
-| **P36** | **How long a seating holds** | — | S–M — ☐ **new 2026-08-22** — `RULES.md` **§3 step 2, corrected in rev 28**: a seating is drawn **once and held**. 🔥 **The engine contradicts the document again** (§10 #22), in the **opposite** direction to the error P28 fixed. ⚠️ **Revert-shaped and must not be a revert** — pre-P28 held a seating and could never change it. ✅ **No measurement moves** (`RoundsPerGame = 1`) |
-| **P37** | **Asking the table to change seats** | **P36** | M — ☐ **new 2026-08-22** — §10 **#23**, and §9 #45 as Nick ruled it: a re-seating happens **when the players agree**. 🔥 **The first *public* question this project has ever asked** — `SeatPrompt` is seat-private by construction and this one is put to everybody at once — and the first asked **between** rounds. ✅ **A computer seat consents** (a design decision, recorded in §3, not a rule); ⚠️ **§9 #47 open — everybody or most?** |
+| **P35** | **The two scoring rules that reach outside a round** | P33 ✅, P32 ✅, **P36 ✅** | L — ☐ **new 2026-08-22** — `RULES.md` **§7.4** (a win on the initial deal pays ×2) and **§7.5** (a third consecutive win is paid **entirely by the seat above you**), both `EXPERT` from Aung Aung. 🔥 **§7.5 is the first rule that cannot be settled from one round**, and **no measurement in this project can see it** (`Sim` plays `RoundsPerGame = 1`). ✅ **Unblocked 2026-08-22**: §9 #43 was asked and closed — the seats do **not** re-draw every round — ⚠️ **but that makes it depend on P36**, since the blame needs a seating that survives three rounds |
+| **P36** | **How long a seating holds** | — | S–M — ☑ **done 2026-08-22 (Opus 5)** — `Domain/Play/SeatingPolicy.cs`: **held by default**, `RoundsBetweenSeatings` of *N* re-draws every *N* rounds, and **0 is never**. §10 **#22 discharged**; `RuleConformance`'s seating check inverted; two fences named for §9 #45 and #47. ✅ **No measurement moved** and it is asserted (`AOneRoundGameIsTheSameGameUnderEveryPolicy`). ⚠️ **A seed or journal from between P28 and P36 replays differently**; the journal header records the policy so a front end's does not |
+| **P37** | **Asking the table to change seats** | **P36 ✅** | M — ☐ **new 2026-08-22** — §10 **#23**, and §9 #45 as Nick ruled it: a re-seating happens **when the players agree**. 🔥 **The first *public* question this project has ever asked** — `SeatPrompt` is seat-private by construction and this one is put to everybody at once — and the first asked **between** rounds. ✅ **A computer seat consents** (a design decision, recorded in §3, not a rule); ⚠️ **§9 #47 open — everybody or most?** |
 
 ⚠️ **P25–P29 are the only packets in this table that do not descend from §0.** They come from
 `RULES.md` — four sessions with Mya Lay and Aung Aung on 2026-08-20/21 that closed twenty-three
@@ -5791,7 +5791,30 @@ In the tree: `Server/SeatPrompt.cs`, `Server/TableSession.cs`, `Server/HostedTab
 `Domain/Abstractions/IPlayerAgent.cs`, `Domain/Play/JournalFormat.cs`,
 `Web/Components/Table/TurnPrompt.razor`, `Tests/Server/ConcealmentTests.cs`.
 
-**Depends on.** **P36** — there is nothing to change until a seating is held.
+**Depends on.** ✅ **P36, shipped 2026-08-22** — there was nothing to change until a seating was
+held.
+
+🔥 **Amended 2026-08-22 by P36, and it names the one design question P36's shape forces.**
+`MatchEngine.SeatingPolicy` is a **get-only** property and `SeatingPolicy.ReseatsBefore(int)` is a
+**pure function of the round count** — deliberately, because a policy that could be talked to would
+have answered §9 #45 by accident. ⚠️ **So a table agreeing to move is not expressible as a policy**,
+and P37 has three shapes to choose between:
+
+1. **A settable policy.** Cheapest and worst: *agreed once* is not *every N rounds*, and the type
+   would then mean two things.
+2. 🔥 **An explicit `MatchEngine.Reseat()`, called between rounds by whatever ran the asking.**
+   ✅ **Recommended.** An agreement is an **event**, not a rule about round counts; this leaves
+   `ReseatsBefore` a pure function, leaves the default *held*, and keeps
+   `LayeringTests.NothingOutsideTheSeatingPolicyDecidesWhenTheSeatsAreDrawnAgain` true —
+   `Reseat()` is the engine doing the drawing, not a second place deciding *when*.
+3. **A policy that takes a callback.** Puts the question inside the engine's own loop, which is
+   §3.5's line (the engine asks for a move; who is asked is the host's business).
+
+⚠️ **The journal cannot record it as a number.** P36's header field is `seating_rounds`, and an
+agreed re-draw is not a rounds-between value — so P37 needs a **decision kind**, which is exactly
+where P28's mistranslation lived (`JournalFormat.Name`'s default arm wrote a fifth question to file
+as a *declaration*, and only the round-trip test could see it). ⚠️ **And a replay must re-seat at
+the same round**, which a policy alone will not say: the decision line is what carries it.
 
 ⚠️ **Amended 2026-08-22 by P24.2, and it tightens the constraint below rather than adding one.**
 `SeatPrompt` now carries an `AdviceRationale`, and
@@ -5874,7 +5897,7 @@ is something they do together.
 
 ---
 
-### P36 — How long a seating holds ☐ — **added 2026-08-22**
+### P36 — How long a seating holds ☑ — **added and built 2026-08-22 (Opus 5)**
 
 **Goal.** `RULES.md` §3 step 2, as rev 28 corrects it: a seating is **drawn once and held** rather
 than re-drawn as a step of the deal. ⚠️ **Changing it is P37's** — this packet stops the engine
@@ -5983,6 +6006,46 @@ rather than something that happens to you.
 
 ---
 
+#### ✅ What it built (2026-08-22, Opus 5)
+
+**`Domain/Play/SeatingPolicy.cs` is *when a re-draw happens*, and it is one condition in one
+place.** `ReseatsBefore(roundsPlayed)` is the whole of the decision; `MatchEngine` is its only
+caller; `SeatingPolicy.Held` is the default and the rule. ⚠️ **Zero rounds between seatings *is*
+"never"** — the flag-beside-a-number the packet warned about was not built, and
+`ZeroOrAbsentRoundsBetweenSeatingsMeansNever` says so.
+
+🔥 **Acceptance 2 is a source scan in the P18/P19 idiom**, and it is the part worth keeping:
+`LayeringTests.NothingOutsideTheSeatingPolicyDecidesWhenTheSeatsAreDrawnAgain` bans *asking* the
+question outside the engine **and** bans doing arithmetic on `RoundsBetweenSeatings` outside the
+policy. ✅ **A front end may carry a policy and hand it over; it may not reason about one** — which
+is what keeps P37's agreeing a change in one file rather than in four. ⚠️ **It caught a real
+second copy while it was being written**: `JournalFormat` was deciding what 0 meant in order to
+omit the field, and now asks `header.Seating != SeatingPolicy.Default` instead.
+
+✅ **The journal's field is written only when the seating was not held**, so **every journal in
+existence is byte-identical** and *absence means the rule*. ⚠️ **The one journal that cannot say
+what it did is one written between P28 and P36**: it carries no field, reads back as held, and
+replays differently — `CurrentRulesRevision` 28 is what makes that detectable rather than
+mysterious. `GameRunner.Replay` reads `header.Seating` rather than this build's default.
+
+⚠️ **Build item 4 was right and it cost a test.** `SeatBoardTests`'s fixture played **three**
+rounds and `EverySeatIsAskedEveryQuestionOverAMatch` went red: holding the seating makes the same
+seed deal a different match (the draw the seating took is not taken any more), and the fifth
+question — the claim's permission — needs a claim *and* the seat above holding the rank. It turns
+up again at **five** rounds. 🔥 **That is the assertion doing its job**, and it is the second time
+this project has watched a seed stop meaning what it meant (§3.9 point 2).
+
+✅ **The browser really does stop rearranging itself**, checked rather than assumed:
+`TableJournalTests.AHostedTableHoldsItsSeatingAndWritesTheDownPolicyDown` compares the deal order
+of two rounds, and the sibling test asks a table to re-seat and watches it move.
+
+⚠️ **The console's capture changed by exactly the new prompt and one sentence** — a `<details>`-free
+16-line diff against `HEAD` at `--seed 20260819 --pick 0`, everything from the deal on identical.
+The prompt is a `SelectionPrompt<SeatingPolicy>` over `SeatingPolicy.Offered`, which
+`drive-console.py`'s generic ENTER arm answers without a script change.
+
+---
+
 ### P35 — The two scoring rules that reach outside a round ☐ — **added 2026-08-22**
 
 **Goal.** Build `RULES.md` **§7.4** (a win from the initial deal pays ×2) and **§7.5** (a third
@@ -6001,11 +6064,18 @@ baseline to re-measure against).
 the same person for the whole streak and is coherent. `RULES.md` is at **rev 28** and §3 step 2 is
 corrected.
 
-⚠️ **But the answer moved the dependency rather than removing it: P35 now depends on P36.** A
-three-round streak blamed on *the seat above you* needs a seating that survives three rounds, and
-the engine still re-draws before every deal (§10 #22). **Build P36 first**; §9 #46 (a re-seating
-*mid*-streak) is this packet's, and its recommendation — settle from the round being settled — is
-old #42's, surviving into the one case that can still produce it.
+⚠️ **But the answer moved the dependency rather than removing it: P35 depends on P36.** A
+three-round streak blamed on *the seat above you* needs a seating that survives three rounds.
+✅ **P36 shipped on 2026-08-22, so that dependency is discharged**: `MatchEngine`'s default is
+`SeatingPolicy.Held`, and *the seat above you* is now the same person for a whole match.
+
+🔥 **P36 also made §9 #46 reachable, which it was not when this entry was written.** A re-seating
+*mid*-streak requires a re-seating to exist at all, and one does: a table set to
+`SeatingPolicy.Every(n)` will move the seats under a two-round winner. **So #46 is no longer
+hypothetical and its safe default — settle from the round being settled, old #42's recommendation
+— needs a test rather than a note.** ⚠️ **Read the streak off `Seating` and never off `Players`**:
+the membership is fixed and the order is not, and a streak rule that read the membership would
+blame the wrong seat at exactly the tables where the question can arise.
 
 ---
 

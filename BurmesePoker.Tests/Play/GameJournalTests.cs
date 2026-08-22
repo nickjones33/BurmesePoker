@@ -215,6 +215,51 @@ public class GameJournalTests
     }
 
     /// <summary>
+    /// ✅ <b>P36 — a journal records how long the seating held, and a held one records it by
+    /// saying nothing</b> (RULES.md §3 step 2).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Absence has to mean <em>held</em>, and this is why.</b> Held is the rule, the default
+    /// and what every journal written before P36 was written under, so a field on every header
+    /// line would rewrite every capture in the repository to say what the absence already says.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The one journal that cannot say what it did is one written between P28 and P36</b>,
+    /// by the engine that re-drew every round: it carries no field, so it reads back as held and
+    /// replays differently. <c>RulesRevision</c> 28 is what makes that detectable rather than
+    /// mysterious.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void AHeaderSaysHowLongTheSeatingHeldAndSaysNothingWhenItWasHeld()
+    {
+        var seats = Table.Select(player => new JournalSeat(player, "greedy", $"Seat {player.Value}")).ToArray();
+
+        var held = new JournalHeader(Seed: 1, Seats: seats, Stakes: Stakes.Standard, Rounds: 2);
+        var heldLines = JournalFormat.Lines(new GameJournal(held, [])).ToList();
+
+        Assert.Equal(SeatingPolicy.Held, held.Seating);
+        Assert.DoesNotContain("seating_rounds", heldLines[0], StringComparison.Ordinal);
+        Assert.Equal(SeatingPolicy.Held, JournalFormat.Read(heldLines).Header.Seating);
+
+        foreach (var policy in (SeatingPolicy[])[SeatingPolicy.EveryRound, SeatingPolicy.Every(5)])
+        {
+            var written = new JournalHeader(
+                Seed: 1,
+                Seats: seats,
+                Stakes: Stakes.Standard,
+                Rounds: 2,
+                RoundsBetweenSeatings: policy.RoundsBetweenSeatings);
+
+            var lines = JournalFormat.Lines(new GameJournal(written, [])).ToList();
+
+            Assert.Contains("seating_rounds", lines[0], StringComparison.Ordinal);
+            Assert.Equal(policy, JournalFormat.Read(lines).Header.Seating);
+        }
+    }
+
+    /// <summary>
     /// ✅ <b>R2 — the revision a journal stamps is the revision <c>docs/RULES.md</c> is at</b>,
     /// bound in the P23 idiom: the document and the constant fail the build when they disagree.
     /// </summary>

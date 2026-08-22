@@ -1,6 +1,7 @@
 using BurmesePoker.Domain.Abstractions;
 using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Money;
+using BurmesePoker.Domain.Play;
 
 namespace BurmesePoker.Server;
 
@@ -74,4 +75,15 @@ public sealed record TableOptions
     /// </para>
     /// </remarks>
     public Func<IPlayerAgent> StandIn { get; init; } = () => BotCatalog.Hardest.Create(0);
+
+    /// <summary>
+    /// How long this table's seating holds (RULES.md §3 step 2, packet P36).
+    /// </summary>
+    /// <remarks>
+    /// <b>Held is the rule and the default</b>: the seats are drawn when the table opens and kept,
+    /// so the ring a person is looking at stops rearranging itself around them every deal. ⚠️ <b>A
+    /// number here is a house arrangement and is not <em>the players agreeing</em></b> (§9 #45),
+    /// which is packet P37's and is the thing this setting is shaped to be replaced by.
+    /// </remarks>
+    public SeatingPolicy Seating { get; init; } = SeatingPolicy.Default;
 }

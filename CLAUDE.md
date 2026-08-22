@@ -11,9 +11,34 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **READ THIS FIRST — `P24.2` shipped 2026-08-22 on Opus 5: the hint arrow grows a sentence, and
-the journal records where a person disagreed with the computer.** `RULES.md` is **rev 29**, the
-tree is green at **757**, and **`P36` is the next packet** (then `P37`, `P35`, `P34`).
+🔥 **READ THIS FIRST — `P36` shipped 2026-08-22 on Opus 5: a seating is drawn once and held, and
+`RULES.md` §10 #22 is discharged.** `RULES.md` is **rev 29** (unmoved — no rule changed), the tree
+is green at **778**, and **`P37` is the next packet** (then `P35`, `P34`).
+
+**What P36 built, and the four things a cold session needs from it.**
+🔥 **(1) `Domain/Play/SeatingPolicy.cs` is *when a re-draw happens*, and it is one condition in one
+place.** `Held` is the default and the rule; `RoundsBetweenSeatings` of *N* re-draws every *N*
+rounds; **0 is never**, and there is no flag beside the number. ⚠️ **The engine had contradicted
+§3 step 2 in *both* directions** — pre-P28 it held a seating that could never change, P28–P36 it
+re-drew before every deal — **so the fix was not a revert.**
+🔥 **(2) `MatchEngine.SeatingPolicy` is get-only and `ReseatsBefore(int)` is pure**, deliberately:
+a policy that could be talked to would have answered §9 #45 by accident. ⚠️ **So P37 cannot express
+*the table agreed* as a policy** — recommended shape is an explicit `MatchEngine.Reseat()` called
+between rounds, and the journal needs a **decision kind** rather than the header's number.
+🔥 **(3) `LayeringTests.NothingOutsideTheSeatingPolicyDecidesWhenTheSeatsAreDrawnAgain`** is P18's
+scan applied to a third rule — only the engine may ask, only the policy may do arithmetic on the
+number — and **it caught a real second copy in `JournalFormat`.**
+⚠️ **(4) A seed stopped meaning what it meant, for the second time** (§3.9 point 2): a held seating
+takes **no** numbers out of the match's generator. `SeatBoardTests`' fixture went 3 → **5** rounds
+because the claim's permission stopped turning up — **the assertion working, not a fixture tuned to
+pass.** ✅ **No published measurement moved and it is asserted rather than argued**; the journal
+writes `seating_rounds` only when the seating moved, so **every journal ever written is
+byte-identical**.
+
+---
+
+**Before that, `P24.2` shipped the same day: the hint arrow grows a sentence, and the journal
+records where a person disagreed with the computer.**
 
 **What P24.2 built, and the three things a cold session needs from it.**
 🔥 **(1) `CoverScore.Ranking` is now a projection of `CoverScore.Scored`** — the keys the sort
@@ -106,10 +131,13 @@ a bare number never caught that.
 ✅ **`P24.2` is done (2026-08-22)** — both of its re-plan's bets were right: P31 had already built
 half of build item 1 (**the keys were missing, not the ranking**), and P32's trap was real, so the
 sentence reads the same `TableRules` the evaluator does and is asserted at four seats and at five.
-**`P36` is next, then `P37`, `P35`, `P34`.**
+**`P36` is done too; `P37` is next, then `P35`, `P34`.**
 
-⚠️ **One leftover P32 did not take: `BurmesePoker.Console` still deals four** — its seat prompt
+⚠️ **Two leftovers. (1) P32's: `BurmesePoker.Console` still deals four** — its seat prompt
 defaults to `MinimumPlayers`. **One line plus a `drive-console.py` re-capture.**
+⚠️ **(2) P36's: no view says what the seats are doing** — `AboutTable` does not carry the setting,
+so a person at a browser table cannot find out whether the seats hold. **One line, and P37's
+natural neighbour.**
 
 ---
 
@@ -646,6 +674,7 @@ dotnet run --project BurmesePoker.Web -- --people 0                   # …just 
 dotnet run --project BurmesePoker.Web -- --seed 20260819 --pace 400   # …the same table, faster
 dotnet run --project BurmesePoker.Web -- --difficulty medium          # …how hard the computer is: easy, medium, hard, expert; the lobby form offers the same list
 dotnet run --project BurmesePoker.Web -- --mixed true                # …a different level in each computer seat (it takes a value, like --hints)
+dotnet run --project BurmesePoker.Web -- --seating every-round       # …how long the seats hold: held (the default and the rule, P36), every-round, every-5-rounds
 dotnet run --project BurmesePoker.Web -- --journal table.jsonl       # …write the house table down as it plays (P24.1); same format as the console's, sim replay reads it
 dotnet run -c Release --project BurmesePoker.Sim -- --games 2000   # compare strategies
 dotnet run -c Release --project BurmesePoker.Sim -- bench          # time the cover searches, and every rung's decision

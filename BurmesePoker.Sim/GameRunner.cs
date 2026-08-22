@@ -92,7 +92,11 @@ public static class GameRunner
             journal: null,
             game: header.Game ?? game,
             masterSeed: header.MasterSeed,
-            abandoned: header.Abandoned);
+            abandoned: header.Abandoned,
+            // ⚠️ The policy the match was written under, not this build's default (P36): a
+            // journal from a table that re-seated deals different seats from round two on, and
+            // a replay that held them would play a different game from the one recorded.
+            seating: header.Seating);
     }
 
     private static GameResult Run(
@@ -105,7 +109,8 @@ public static class GameRunner
         GameJournalBuilder? journal,
         int game,
         int? masterSeed = null,
-        bool abandoned = false)
+        bool abandoned = false,
+        SeatingPolicy? seating = null)
     {
         var observer = new SimObserver(players);
 
@@ -116,7 +121,11 @@ public static class GameRunner
             journal is null ? seats : JournalingAgent.Wrap(seats, journal),
             stakes,
             new Random(seed),
-            observer);
+            observer,
+            // ⚠️ Held unless a replay says otherwise, which is the rule and is also invisible to
+            // every published measurement: the harness plays RoundsPerGame = 1, so there is
+            // never a second round for a re-draw to precede (P36 acceptance 4).
+            seating);
 
         var played = new List<RoundRow>(rounds);
 
@@ -139,13 +148,13 @@ public static class GameRunner
             {
                 // The game stops where it stands: the banks are untouched by a round that
                 // never settled, and playing on would mean re-using its round number.
-                return Result(game, seed, names, played, abandoned: true, journal, players, stakes, masterSeed);
+                return Result(game, seed, names, played, abandoned: true, journal, players, stakes, masterSeed, seating);
             }
 
             played.Add(Row(stakes, players, names, record, observer, recorders));
         }
 
-        return Result(game, seed, names, played, abandoned, journal, players, stakes, masterSeed);
+        return Result(game, seed, names, played, abandoned, journal, players, stakes, masterSeed, seating);
     }
 
     private static GameResult Result(
@@ -157,7 +166,8 @@ public static class GameRunner
         GameJournalBuilder? journal,
         IReadOnlyList<PlayerId> players,
         Stakes stakes,
-        int? masterSeed) =>
+        int? masterSeed,
+        SeatingPolicy? seating) =>
         new(game, seed, names, rounds, abandoned, journal?.Build(new JournalHeader(
             Seed: seed,
             Seats: [.. players.Select((player, seat) => new JournalSeat(player, names[seat]))],
@@ -166,7 +176,8 @@ public static class GameRunner
             Fidelity: journal.Fidelity,
             MasterSeed: masterSeed,
             Game: game,
-            Abandoned: abandoned)));
+            Abandoned: abandoned,
+            RoundsBetweenSeatings: (seating ?? SeatingPolicy.Default).RoundsBetweenSeatings)));
 
     private static RoundRow Row(
         Stakes stakes,

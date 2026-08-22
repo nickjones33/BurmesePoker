@@ -61,7 +61,7 @@ internal sealed class RecordingObserver : IGameObserver
     }
 
     /// <summary>
-    /// The seating each round was dealt with, in order — re-drawn every deal (RULES.md §3
+    /// The seating each round was dealt with, in order — drawn once and held (RULES.md §3
     /// step 2).
     /// </summary>
     public List<IReadOnlyList<PlayerId>> Seatings { get; } = [];

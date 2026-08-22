@@ -67,13 +67,47 @@ public class RuleConformanceTests
     }
 
     /// <summary>
-    /// §3 step 2: under <see cref="MatchEngine.PlayRound()"/> the seats are re-drawn for every
-    /// round after the first — the first keeps the order the table was opened with.
+    /// ✅ <b>§3 step 2, as rev 28 corrects it: a seating is drawn once and held</b> (§10 #22,
+    /// packet P36) — and it can still be changed, which is the half that keeps it from being a
+    /// revert to the pre-P28 engine.
     /// </summary>
-    [Fact]
-    public void TheSeatingIsRedrawnEveryRoundAfterTheFirst()
+    /// <remarks>
+    /// 🔥 <b>This check asserted the opposite until P36, and said so out loud while it did.</b>
+    /// It is here rather than in <see cref="RuleConformance"/> because a seating is a property of
+    /// a match and the audit watches a round: what an ordinary round can be asked is that it was
+    /// dealt in the order it was given, which every check in the audit already assumes.
+    /// </remarks>
+    [Theory]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    public void TheSeatingIsDrawnOnceAndHeldUnlessThePolicySaysOtherwise(int seats)
     {
-        var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, 4).Select(id => new PlayerId(id))];
+        var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, seats).Select(id => new PlayerId(id))];
+
+        Assert.All(Dealt(players, SeatingPolicy.Default), seating => Assert.Equal(players, seating));
+
+        // …and the mechanism is not merely absent: asked to, the same match re-draws, so the
+        // check above is a statement about the rule rather than about a missing feature.
+        var moved = Dealt(players, SeatingPolicy.EveryRound);
+
+        Assert.Equal(players, moved[0]);
+        Assert.True(
+            moved.Select(seating => string.Join(",", seating)).Distinct().Count() > 1,
+            "A table asked to re-seat every round dealt eight rounds to one order (RULES.md §3 step 2).");
+
+        // Every deal seats exactly the members, whichever policy is in force: a draw is a
+        // permutation and nothing else.
+        Assert.All(
+            (IEnumerable<IReadOnlyList<PlayerId>>)[.. Dealt(players, SeatingPolicy.Default), .. moved],
+            seating => Assert.Equal(
+                players.OrderBy(player => player.Value), seating.OrderBy(player => player.Value)));
+    }
+
+    /// <summary>Eight rounds' seatings, in order, under one policy.</summary>
+    private static IReadOnlyList<IReadOnlyList<PlayerId>> Dealt(
+        IReadOnlyList<PlayerId> players, SeatingPolicy policy)
+    {
         var observer = new RecordingObserver();
 
         var match = new MatchEngine(
@@ -81,7 +115,8 @@ public class RuleConformanceTests
             players.ToDictionary(player => player, IPlayerAgent (_) => new GreedyBotAgent()),
             Stakes.Standard,
             new Random(20260821),
-            observer);
+            observer,
+            policy);
 
         for (var round = 0; round < 8; round++)
         {
@@ -89,15 +124,8 @@ public class RuleConformanceTests
         }
 
         Assert.Equal(8, observer.Seatings.Count);
-        Assert.Equal(players, observer.Seatings[0]);
 
-        // Every deal seats exactly the members, and the draw is real: eight rounds of four
-        // seats all landing in one order happens once in 24^7 — a fixed seating, not luck.
-        Assert.All(observer.Seatings, seating => Assert.Equal(
-            players.OrderBy(player => player.Value), seating.OrderBy(player => player.Value)));
-        Assert.True(
-            observer.Seatings.Select(seating => string.Join(",", seating)).Distinct().Count() > 1,
-            "Eight rounds were dealt to one unchanging seating (RULES.md §3 step 2).");
+        return observer.Seatings;
     }
 
     // ---- The mutants: one per rule family, each proving its checks can go red. ----

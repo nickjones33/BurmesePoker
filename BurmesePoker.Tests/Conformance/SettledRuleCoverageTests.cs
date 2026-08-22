@@ -39,16 +39,20 @@ public class SettledRuleCoverageTests
             + "divergence (§10 #7), so 2–3-handed conformance waits on the packet that discharges it."),
         ["3"] = Checked(
             "Deal order and the two turn-ups: RuleConformance.RoundStarted/Watch (ownership at "
-            + "the deal, turned-up cards owned by nobody). ⚠️ STEP 2 IS NOT CHECKED AGAINST THE "
-            + "DOCUMENT AS IT NOW STANDS. RuleConformanceTests.TheSeatingIsRedrawnEveryRound"
-            + "AfterTheFirst asserts what the engine does, and RULES.md rev 28 withdrew the "
-            + "reading it was built from: a seating is drawn once and HELD, and re-drawing is "
-            + "something the players agree to (§9 #45). 🔥 So that test currently pins a "
-            + "behaviour the rules authority contradicts — §10 #22 — and it is left standing "
-            + "rather than deleted because deleting it would leave the seating unasserted "
-            + "altogether. Packet P36 inverts it; P37 adds the agreeing (§10 #23). ✅ No "
-            + "published measurement is affected: every experiment runs one round a game, so "
-            + "there is never a second round for a re-draw to precede."),
+            + "the deal, turned-up cards owned by nobody). ✅ STEP 2 AS REV 28 CORRECTS IT — a "
+            + "seating is drawn once and HELD: RuleConformanceTests.TheSeatingIsDrawnOnceAndHeld"
+            + "UnlessThePolicySaysOtherwise at 4, 5 and 6 seats, with the same match asked to "
+            + "re-seat so the check is about the rule rather than about a missing feature; the "
+            + "policy itself: SeatingPolicyTests; the engine: MatchEngineTests.TheSeatsAreDrawn"
+            + "OnceAndHeld. 🔥 This entry read 'NOT CHECKED' between rev 28 and P36 — the "
+            + "conformance test asserted the every-round reading P28 built and the document had "
+            + "withdrawn (§10 #22), and it was left standing rather than deleted so the seating "
+            + "was not unasserted altogether. P36 inverted it. ⚠️ Re-drawing WHEN THE PLAYERS "
+            + "AGREE (§9 #45) is still unbuilt — §10 #23, packet P37 — and the two fences that "
+            + "stop a round-counting policy quietly answering it are SeatingPolicyTests."
+            + "NobodyIsAskedWhetherToChangeSeats (#45) and WhatAgreementMeansIsNotDecidedBy"
+            + "CountingRounds (#47). ✅ No published measurement is affected: every experiment "
+            + "runs one round a game, so there is never a second round for a re-draw to precede."),
         ["4.1"] = Checked(
             "Multipliers re-derived independently — permanent values, ×3 on a designated "
             + "permanent value, ×5 only on the 7♦/A♠ pair: RuleConformance.TheSettlementIsTheRules "

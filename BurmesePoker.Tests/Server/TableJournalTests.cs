@@ -85,6 +85,65 @@ public class TableJournalTests
         Assert.Equal([One, Two, Three, Four], header.Players);
     }
 
+    /// <summary>
+    /// ✅ <b>P36 — a hosted table holds its seating, and its journal says which policy it held it
+    /// under</b> (RULES.md §3 step 2).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>This is where holding the seating is <em>visible</em>, and it is an improvement.</b>
+    /// P13.5 puts you at the front of the ring whichever seat you were dealt, so a table that
+    /// re-drew every deal visibly rearranged itself around a fixed viewer every round — something
+    /// <c>TableRing</c> was never asked to do, and which P28's own entry flagged as a UX question
+    /// it had not answered. Checked here rather than assumed: the deal order narrated to the room
+    /// is the same order both rounds.
+    /// </remarks>
+    [Fact]
+    public void AHostedTableHoldsItsSeatingAndWritesTheDownPolicyDown()
+    {
+        var table = TableSession.Open(Seats(), Options(20260819));
+
+        _ = new ScriptedSeat(table.ConnectionFor(One));
+        _ = new ScriptedSeat(table.ConnectionFor(Three));
+
+        var first = table.PlayRound();
+        var second = table.PlayRound();
+
+        Assert.Equal(SeatingPolicy.Held, table.Options.Seating);
+        Assert.Equal(
+            first.Table.Seats.Select(seat => seat.Id),
+            second.Table.Seats.Select(seat => seat.Id));
+
+        // Held writes no field at all, so the header reads back as the rule (JournalFormat).
+        var header = table.Journal()!.Header;
+
+        Assert.Equal(SeatingPolicy.Held, header.Seating);
+        Assert.DoesNotContain(
+            "seating_rounds", JournalFormat.Lines(table.Journal()!).First(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// ✅ <b>…and a table asked for a house arrangement gets one, and records it</b> — the
+    /// mechanism P37's <em>agreeing</em> will answer into (§9 #45).
+    /// </summary>
+    [Fact]
+    public void ATableAskedToReseatDoesAndSaysSoInItsHeader()
+    {
+        var table = TableSession.Open(
+            Seats(), Options(20260819) with { Seating = SeatingPolicy.EveryRound });
+
+        _ = new ScriptedSeat(table.ConnectionFor(One));
+        _ = new ScriptedSeat(table.ConnectionFor(Three));
+
+        var first = table.PlayRound();
+        var second = table.PlayRound();
+
+        Assert.NotEqual(
+            first.Table.Seats.Select(seat => seat.Id),
+            second.Table.Seats.Select(seat => seat.Id));
+
+        Assert.Equal(SeatingPolicy.EveryRound, table.Journal()!.Header.Seating);
+    }
+
     /// <summary>A table not asked to keep a journal keeps none, and says so with a null.</summary>
     [Fact]
     public void ATableNotAskedToKeepAJournalHasNone()
@@ -261,7 +320,10 @@ public class TableJournalTests
             journal.Header.Players,
             JournalPlayerAgent.SeatsOf(journal),
             journal.Header.Stakes,
-            new Random(journal.Header.Seed));
+            new Random(journal.Header.Seed),
+            // ⚠️ The policy the table played under, not this build's default (P36): a replay that
+            // held a seating the table re-drew would ask the right questions of the wrong player.
+            seating: journal.Header.Seating);
 
         return [.. Enumerable.Range(0, journal.Header.Rounds).Select(_ => match.PlayRound().Result)];
     }
