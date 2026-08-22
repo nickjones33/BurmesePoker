@@ -213,7 +213,7 @@ public class RuleConformanceTests
 
     /// <summary>
     /// The settlement (§4.3, §7.2): a deadwood-style penalty — one loser paying more than the
-    /// flat round value — is caught even though it still sums to zero.
+    /// round value — is caught even though it still sums to zero.
     /// </summary>
     [Fact]
     public void MutantADeadwoodPenaltyIsCaught()
@@ -228,11 +228,59 @@ public class RuleConformanceTests
             [players[0]] = 17, [players[1]] = -5, [players[2]] = -5, [players[3]] = -7
         };
 
+        // The declaration is jokered, so §7.3 pays nothing and the round payment is the flat
+        // $5 these numbers were computed from.
+        var jokered = WithAJoker();
+
         RuleConformance.TheSettlementIsTheRules(
-            honest, players[0], players, Stakes.Standard, TurnUp(), Owned(), Shoe());
+            honest, players[0], players, Stakes.Standard, TurnUp(), Owned(), Shoe(), jokered);
         Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
             RuleConformance.TheSettlementIsTheRules(
-                deadwood, players[0], players, Stakes.Standard, TurnUp(), Owned(), Shoe()));
+                deadwood, players[0], players, Stakes.Standard, TurnUp(), Owned(), Shoe(), jokered));
+    }
+
+    /// <summary>
+    /// The clean bonus (§7.3): a settlement that pays a jokerless winner flat, or pays a
+    /// jokered one the bonus, is caught — and the multiplier is checked against the seat count,
+    /// not assumed.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>This is what converts §7.3's registry entry from <c>Exempt</c> to
+    /// <c>Checked</c>.</b> The exemption said a check written before the code existed would
+    /// fail every round somebody declared jokerless; the code exists now, so the check is the
+    /// answer rather than the alarm.
+    /// </remarks>
+    [Fact]
+    public void MutantTheCleanBonusIsCaughtBothWaysRoundAndBothWaysWrong()
+    {
+        var four = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, 4).Select(id => new PlayerId(id))];
+        var five = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, 5).Select(id => new PlayerId(id))];
+
+        var clean = Declared(
+            Run("2H", "3H", "4H", "5H"), Run("7D", "8D", "9D"),
+            Run("4C", "5C", "6C"), Set("QS", "QD", "QC")).Melds;
+        var jokered = WithAJoker();
+
+        // Four-handed: ×2, so $10 a loser. Five-handed: ×3, so $15 a loser.
+        RuleConformance.TheSettlementIsTheRules(
+            Nets(four, 30), four[0], four, Stakes.Standard, TurnUp(), Owned(), Shoe(), clean);
+        RuleConformance.TheSettlementIsTheRules(
+            Nets(five, 60), five[0], five, Stakes.Standard, TurnUp(), Owned(), Shoe(), clean);
+
+        // Paid flat although the hand was jokerless — the bug this rule was unbuilt as.
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.TheSettlementIsTheRules(
+                Nets(four, 15), four[0], four, Stakes.Standard, TurnUp(), Owned(), Shoe(), clean));
+
+        // Paid the bonus although a joker is in the thirteen.
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.TheSettlementIsTheRules(
+                Nets(four, 30), four[0], four, Stakes.Standard, TurnUp(), Owned(), Shoe(), jokered));
+
+        // ⚠️ And the seam is checked, not assumed: five seats paid at the four-seat multiplier.
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.TheSettlementIsTheRules(
+                Nets(five, 40), five[0], five, Stakes.Standard, TurnUp(), Owned(), Shoe(), clean));
     }
 
     // ---- Plumbing. ----
@@ -299,6 +347,39 @@ public class RuleConformanceTests
     }
 
     private static IReadOnlyList<Card> TurnUp() => [Hands.Value("3C"), Hands.Value("4C")];
+
+    /// <summary>Seat 0 collects <paramref name="take"/>; everybody else pays an equal share.</summary>
+    private static Dictionary<PlayerId, int> Nets(IReadOnlyList<PlayerId> players, int take) =>
+        players.ToDictionary(
+            player => player,
+            player => player == players[0] ? take : -take / (players.Count - 1));
+
+    /// <summary>
+    /// A declared thirteen with a joker in one of its <b>sets</b> — the case rev 25's withdrawn
+    /// "all series clean" reading would have paid and rev 26 does not. Built by hand because
+    /// <see cref="Declared"/> reads a rank off every card and a joker has none.
+    /// </summary>
+    private static IReadOnlyList<Meld> WithAJoker()
+    {
+        var held = Hands.Of(
+            "2H", "3H", "4H", "5H", "7D", "8D", "9D", "4C", "5C", "6C", "QS", "QD", "RJ");
+
+        Meld Ranked(MeldKind kind, IEnumerable<Card> cards) => new(
+            kind, cards.Select(card => new MeldSlot(card, card.Rank!.Value, card.Suit!.Value)));
+
+        return
+        [
+            Ranked(MeldKind.Run, held.Take(4)),
+            Ranked(MeldKind.Run, held.Skip(4).Take(3)),
+            Ranked(MeldKind.Run, held.Skip(7).Take(3)),
+            new Meld(MeldKind.Set,
+            [
+                new MeldSlot(held[10], Rank.Queen, Suit.Spades),
+                new MeldSlot(held[11], Rank.Queen, Suit.Diamonds),
+                new MeldSlot(held[12], Rank.Queen, Suit.Clubs)
+            ])
+        ];
+    }
 
     private static Dictionary<CardId, PlayerId> Owned() => [];
 

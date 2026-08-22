@@ -1,4 +1,5 @@
 using BurmesePoker.Domain.Melds;
+using BurmesePoker.Domain.Money;
 
 namespace BurmesePoker.Domain.Play;
 
@@ -29,4 +30,18 @@ public sealed record RoundResult(
     PlayerId Winner,
     IReadOnlyList<Meld> Melds,
     IReadOnlyDictionary<PlayerId, int> Payouts,
-    int Turns);
+    int Turns)
+{
+    /// <summary>
+    /// Whether the winner declared without a joker anywhere in the thirteen, which is what
+    /// RULES.md §7.3 pays ×2 or ×3 for.
+    /// </summary>
+    /// <remarks>
+    /// Read off <see cref="Melds"/> because the melds partition exactly the declared thirteen
+    /// (§6.3), so a consumer holding a result needs nothing else to know what the round was
+    /// worth. ⚠️ <b>It is a property of the cards and not of this particular cover</b> — every
+    /// cover of the same thirteen answers the same — so "a cover, not the tidiest one" above
+    /// costs this nothing.
+    /// </remarks>
+    public bool Jokerless => Settlement.IsJokerless(Melds.SelectMany(meld => meld.Cards));
+}

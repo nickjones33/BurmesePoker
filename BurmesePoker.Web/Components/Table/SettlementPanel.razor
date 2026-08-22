@@ -19,6 +19,15 @@
         <span class="glyph" aria-hidden="true">♛</span>
         <span>Round @Result.Round — @Winner went out</span>
         <span class="turns">@Result.Turns turns</span>
+        @*
+            §7.3: the one thing in this game paid for *how* the winner won. The nets below
+            already carry it; without this the table would show a tripled round payment and
+            nothing on the page would say why.
+        *@
+        @if (Result.Jokerless)
+        {
+            <span class="jokerless">jokerless — round pays ×@Multiplier</span>
+        }
     </h2>
 
     <ol class="melds">
@@ -70,6 +79,9 @@
         ?? $"Seat {Result.Winner.Value}";
 
     private int Net(SeatLine seat) => Result.Payouts.TryGetValue(seat.Player, out var money) ? money : 0;
+
+    /// <summary>What a jokerless declaration is worth at this table size (RULES.md §7.3).</summary>
+    private int Multiplier => TableRules.For(Seats.Count).JokerlessMultiplier;
 
     /// <summary>
     /// What a joker is standing in for, written after its face exactly as the console writes

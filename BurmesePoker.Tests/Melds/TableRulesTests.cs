@@ -4,7 +4,8 @@ using BurmesePoker.Domain.Melds;
 namespace BurmesePoker.Tests.Melds;
 
 /// <summary>
-/// The §7.1.1 table as data, and the one property of a meld it reads (packet P25).
+/// The §7.1.1 table as data, §7.3's multiplier beside it, and the one property of a meld it
+/// reads (packets P25, P33).
 /// </summary>
 /// <remarks>
 /// These are assertions about the rules document rather than about a search. If a line here
@@ -13,14 +14,14 @@ namespace BurmesePoker.Tests.Melds;
 public class TableRulesTests
 {
     [Theory]
-    [InlineData(2, 0, 0, false)]
-    [InlineData(3, 2, 2, true)]
-    [InlineData(4, 1, 1, true)]
-    [InlineData(5, 0, 0, true)]
-    [InlineData(6, 0, 0, true)]
-    [InlineData(12, 0, 0, true)]
+    [InlineData(2, 0, 0, false, 2)]
+    [InlineData(3, 2, 2, true, 2)]
+    [InlineData(4, 1, 1, true, 2)]
+    [InlineData(5, 0, 0, true, 3)]
+    [InlineData(6, 0, 0, true, 3)]
+    [InlineData(12, 0, 0, true, 3)]
     public void TheTableIsTheOneInTheRules(
-        int players, int series, int clean, bool setsAllowed)
+        int players, int series, int clean, bool setsAllowed, int jokerless)
     {
         var rules = TableRules.For(players);
 
@@ -28,6 +29,22 @@ public class TableRulesTests
         Assert.Equal(series, rules.RequiredSeries);
         Assert.Equal(clean, rules.RequiredCleanSeries);
         Assert.Equal(setsAllowed, rules.SetsAllowed);
+        Assert.Equal(jokerless, rules.JokerlessMultiplier);
+    }
+
+    [Fact]
+    public void TheTwoRulesThatMoveWithTheTableSizeSplitAtTheSameSeam()
+    {
+        // 🔥 RULES.md §7.3's `DERIVED` note, as an assertion: the bonus is ×3 exactly where the
+        // win condition asks nothing of the partition, and ×2 exactly where it asks for a
+        // series. Two independent rules, one seam — and §9 #37's default (six-plus is ×3) is
+        // the same statement carried upwards.
+        foreach (var players in Enumerable.Range(2, 11))
+        {
+            var rules = TableRules.For(players);
+
+            Assert.Equal(rules.RequiredSeries == 0 && rules.SetsAllowed ? 3 : 2, rules.JokerlessMultiplier);
+        }
     }
 
     [Theory]

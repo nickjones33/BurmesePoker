@@ -73,8 +73,25 @@ public sealed record SeatRow(
 /// </para>
 /// </param>
 /// <param name="Seats">Every seat's row, in seating order.</param>
+/// <param name="Jokerless">
+/// Whether the winner declared with no joker anywhere in the thirteen, which RULES.md §7.3 pays
+/// ×2 at two, three or four seats and ×3 at five or more.
+/// <para>
+/// ⚠️ <b>A round-level fact and not a seat's</b>, for the same reason
+/// <paramref name="ClaimsRefused"/> is: it is a property of the round's settlement, and only one
+/// seat could ever carry it. ⚠️ <b>Any rate measured off it is a floor rather than an
+/// estimate</b> — RULES.md §9 #33 is open on whether a joker may be shed before the declaring
+/// discard, and the safe default taken by P33 says it may not, so a hand that needed to throw
+/// one a turn early cannot reach the bonus at all.
+/// </para>
+/// </param>
 public sealed record RoundRow(
-    int Round, int Turns, int Reshuffles, int ClaimsRefused, IReadOnlyList<SeatRow> Seats);
+    int Round,
+    int Turns,
+    int Reshuffles,
+    int ClaimsRefused,
+    IReadOnlyList<SeatRow> Seats,
+    bool Jokerless = false);
 
 /// <summary>One game: a table, a seed, and the rounds it got through.</summary>
 /// <param name="Game">The game's index in the run.</param>

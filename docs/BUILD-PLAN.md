@@ -1175,8 +1175,8 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P30.1** | **A thorough code review** | — | M — ☑ **done 2026-08-21** · **Fable 5** — `docs/REVIEW-2026-08.md`: 37 triaged findings; its P30.2 buckets are P30.2's checklist |
 | **P30.2** | **Conformance — the rules as *played*** | **P30.1**, P24.1 (browser half only) | L — ☑ **done 2026-08-21** · **Fable 5** — `RuleConformance` + coverage registry + both front ends driven to a declaration; R1 and R8 fixed; 29 review fixes landed |
 | **P31** | **`warden` — the feeding ban as a weapon** | P27 ✅, P30.2 | L — ☑ **done 2026-08-22** · **Opus** — it **lost**, `−9.3 ± 1.0` against `outs`; the ban bites on 9.4% of turns and the rung is what failed |
-| **P33** | **The clean bonus (§7.3)** | P31 ✅ | M — ☐ **new 2026-08-22, rewritten same day** · ✅ **unblocked by rev 26** — jokerless pays ×2 at 2/3/4 seats and ×3 at 5+; the predicate turned out to be a property of the *hand*, so the packet shrank |
-| **P32** | **Five-handed is the default table** | P30.2, P31 ✅, **P33** | L — ☐ **new 2026-08-21** · **Opus** — ✅ unblocked by rev 26; ⚠️ **fold its seat-count change into P33's regeneration** — at 5 seats the bonus is the only thing cleanliness is worth |
+| **P33** | **The clean bonus (§7.3)** | P31 ✅ | M — ☑ **done 2026-08-22 (Opus 5)** · jokerless pays ×2 at 2/3/4 and ×3 at 5+; **§10 #19 discharged** and the suite regenerated at four seats — **111 of 116 shared rows byte-identical, the 5 that moved are exactly the rows denominated in dollars a round** |
+| **P32** | **Five-handed is the default table** | P30.2, P31 ✅, **P33 ✅** | L — ☐ **next** · **Opus** — ⚠️ **P33 did not fold it in, deliberately** (attribution; see §5 P32) and left it a clean four-handed baseline to move from. **Decide the free-for-all subsample before starting** |
 | **P34** | **A front door, and docs that cannot go stale quietly** | — | S — ☐ **new 2026-08-22** — `README.md`, staleness banners, and the anti-staleness habit as tests. **Needs no expert answer.** |
 
 ⚠️ **P25–P29 are the only packets in this table that do not descend from §0.** They come from
@@ -5305,7 +5305,75 @@ nobody has confirmed. `JournalHeader.CurrentRulesRevision` is unchanged at 24.
 
 ---
 
-### P33 — The clean bonus (§7.3) ☐ — **added 2026-08-22; unblocked and rewritten the same day**
+### P33 — The clean bonus (§7.3) ☑ — **added, unblocked, rewritten and built 2026-08-22 (Opus 5)**
+
+✅ **DONE.** `RULES.md` §7.3 is built, **§10 #19 is discharged**, and the standing set was
+regenerated under it. **The whole packet is below as it was written; what it became follows here.**
+
+🔥 **The result is a reproduction that separates two kinds of change, and it is the cleanest this
+document has recorded: 111 of the 116 shared CSV rows came back byte-identical, and the five that
+moved are exactly — and only — the five rows denominated in dollars a round.** The prediction was
+written down before the run: no rung reads the bonus, so play cannot move and only the money can.
+**The file shows precisely that with nothing left over.** ⚠️ **Contrast P29's 4 of 91**: P25–P28
+changed what a winning hand *is* and nothing could survive; this changed what winning *pays*.
+🔥 **"Does it reproduce" has a third answer now — *it reproduces everywhere the change could not
+reach* — which is a sharper instrument than either of the first two.**
+
+🔥 **The five rows are a finding rather than bookkeeping: the clean bonus is a tax on trading wins
+for money.** Every one is a `net per round margin` for `prospector`, the one rung that sells rounds
+to buy money cards, and every one **fell** — `+5.32 → +4.13` at $5/$20 and `+14.63 → +13.43` at
+$5/$40, about **$1.20 a round** at both separated cells, because `outs` wins 20 points more rounds
+and so collects the multiplier far more often. ✅ **Both still separate under Holm.** ✅ **And the
+`money.side-margin.*` rows did not move at all**, which is the check that the bonus landed in the
+round column — **the failure mode this packet had to fix in two places to avoid** (below).
+
+🔥 **The bonus is collected in about one round in six** — 15.4% at the ladder, 16.2% at the dial,
+17.4% at the two-arm cell (`docs/STRATEGY.md` §14) — **by rungs that have never heard of the rule.**
+⚠️ **Published as a floor and for two independent reasons**, both stated in the document: no rung
+will part with a joker (`CoverScore.Potential` returns `int.MaxValue`), and §9 #33's default may
+make the bonus unreachable for a hand that has to shed one early.
+
+⚠️ **Three things a later packet needs from this one.**
+
+1. 🔥 **The seam a net delta is split at is a real defect surface, and it bit in two places.**
+   `Settlement` pays the round and the side bet as one number; **two consumers re-derive the split
+   in order to show it** — the console's settlement panel and `Sim`'s `SeatRow.Flat`/`SideBet`.
+   Both computed the round half as `RoundValue`, so **the bonus would have landed silently in the
+   side-bet column that every money measurement reads**, and every `money.side-margin.*` row would
+   have moved for a reason that has nothing to do with the side bet. ✅ **`Settlement.RoundPayment`
+   is public for exactly this** — the split is done once, in the domain, and the consumers ask.
+   ⚠️ **The unchanged side-margin rows are the evidence it was done right**, and they are the first
+   thing to check if this ever happens again.
+2. ⚠️ **The packet did *not* fold P32 in, against this file's own recommendation, and the reason is
+   attribution** — the same argument this plan used to put P31 before P32. A run that changed the
+   scoring rule *and* the table size could not have said which moved a number, and the whole result
+   above is a statement about which rows a change can reach. **It cost a second three-hour suite and
+   bought the cleanest reproduction in the project.** ✅ **P32 now starts from a complete, current
+   four-handed baseline** and its own decision (full crossing or a stated subsample) is untouched.
+3. ⚠️ **No rung plays for the bonus and that was deliberate** (build item 3). A rung that sheds a
+   joker for the multiplier is a **new rung** under P15's discipline — measured before it joins the
+   ladder — not a change to `outs`. 🔥 **The arithmetic says it is worth trying**: at four seats the
+   bonus pays **+$5 a head** against a whole round's flat prize of $5 a head, so turning one round
+   in six into one in three is worth about a sixth of a round's prize every round — **well inside
+   what the apparatus resolves** (`STRATEGY.md` §7).
+
+✅ **What was built, precisely.** `TableRules.JokerlessMultiplier` (the §7.3 table as data, beside
+§7.1.1's, in the one place a per-seat-count rule is written down); `Settlement.IsJokerless` (the
+predicate — a scan of the declared thirteen, and **`Meld.IsClean` is not consulted anywhere**);
+`Settlement.RoundPayment`; `Settlement.ForRound` takes the winner's declared thirteen and
+`RoundEngine` hands it that seat's hand after the discard; both front ends say when the bonus was
+paid; `RuleConformance` re-derives it from the seat count and the melds laid down, with a mutant
+catching a clean hand paid flat, a jokered one paid the bonus, **and five seats paid at the
+four-seat multiplier**; and §7.3's registry entry in `SettledRuleCoverageTests` is
+`Checked(...)` rather than `Exempt(...)`.
+
+⚠️ **Six tests changed their expected payouts and none of them was wrong before** — every
+hand-computed four-handed settlement in the suite was a jokerless declaration, so all six doubled.
+🔥 **That is itself a measurement of a kind**: the scripted hands this project reaches for when it
+wants a winning thirteen are clean ones, which is a hint that the 15.4% floor above understates how
+often a *player* would get there.
+
+**The packet as written follows.**
 
 ✅ **UNBLOCKED 2026-08-22 by `RULES.md` rev 26.** The expert corrected her own rule unprompted and
 closed §9 **#34 and #35** — #35 being the row with no safe default that stopped this packet.
@@ -5380,15 +5448,35 @@ implements.
 
 ---
 
-### P32 — Five-handed is the default table ☐ — ✅ **unblocked 2026-08-22 (rev 26 closed §9 #35)**
+### P32 — Five-handed is the default table ☐ — ✅ **unblocked 2026-08-22; P33 shipped and this is next**
 
-🔥 **Rev 26 changed this packet's relationship to P33 rather than merely unblocking it.** The bonus
-exists at five seats and pays **×3** there, where §7.1.1 requires nothing clean — so **the bonus is
-the only thing cleanliness is ever worth at five seats.** ⚠️ **Measuring the five-handed game and
-measuring the bonus are therefore one measurement, not two**, and running them as two costs a
-second three-hour suite for a figure the first one invalidates. **Strongly consider folding this
-packet's seat-count change into P33's single regeneration.** P33 still goes first: the scoring rule
-has to exist before a table can be measured under it.
+⚠️ **The recommendation to fold this packet into P33 was not taken, and the amendment is here so
+that nobody re-litigates it.** Rev 26 observed that at five seats the bonus is the only thing
+cleanliness is ever worth, and concluded that measuring the five-handed game and measuring the
+bonus are one measurement. **P33 ran its regeneration at four seats anyway**, on this plan's own
+P31-before-P32 argument: *a run that changes two things at once cannot say which moved a number.*
+
+🔥 **The choice paid for itself.** P33's four-handed run reproduced **111 of 116 rows byte-identical
+and moved exactly the five denominated in dollars a round** — which is a clean statement that the
+bonus reaches the money and nothing else, and it would have been unrecoverable from a run that had
+also changed the table size. ✅ **So this packet inherits a complete, current four-handed baseline**,
+and every figure it produces at five seats is comparable with one measured under the same rules.
+⚠️ **The cost was a second three-hour suite, and it is spent.** Do not spend a third: **P32 is one
+regeneration, and there is nothing left to fold into it.**
+
+🔥 **What P33 leaves this packet to look for, and it is now a *prediction* rather than a hope.**
+§7.1.1 requires a joker-free series at four seats and **nothing at all** at five, while §7.3 pays
+**×2** at four and **×3** at five. So the two rules pull in opposite directions across the seam:
+- **The jokerless rate should *fall*** at five seats — a four-handed hand must already carry one
+  clean run, and at five nothing pushes it that way. `STRATEGY.md` §14's 15.4% is the four-handed
+  figure to beat.
+- **What the bonus is *worth* should rise** — ×3 rather than ×2, and paid to more losers.
+- ⚠️ **Which of those wins is unmeasured**, and it is the single most interesting number this
+  packet can produce. **Write the prediction down before the run**, as P29 and P31 both did.
+
+**P33's other bequest**: the `bonus.jokerless-rate.*` rows and
+`StandingAnswerTests.TheDocumentSaysHowOftenTheCleanBonusIsActuallyCollected` exist already, so the
+five-handed rate arrives in the file without any new harness work.
 
 **Goal.** Move the whole standing set to **five seats**, which is the size this game is actually
 played at, and re-fit the difficulty dial there.

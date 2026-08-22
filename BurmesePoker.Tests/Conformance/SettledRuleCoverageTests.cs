@@ -90,21 +90,26 @@ public class SettledRuleCoverageTests
             + "four-versus-five mutant; the table itself: HandEvaluatorTests. ⚠️ 2–3-handed is "
             + "correct and unreachable (§10 #7), as §2's entry records."),
         ["7.2"] = Checked(
-            "Flat round value from each loser, money settled separately by owner, no deadwood "
-            + "penalty, zero sum: RuleConformance.TheSettlementIsTheRules and its deadwood "
-            + "mutant. 'Nothing ends the session' is a property of MatchEngine having no end "
-            + "condition — asserted by its own tests, not observable in one round."),
-        ["7.3"] = Exempt(
-            "⚠️ The clean bonus is Settled and UNBUILT — the one entry in this registry that is "
-            + "exempt because the code is missing rather than because no check could exist. "
-            + "RULES.md §10 #19 is the standing ruling; packet P33 builds it. A jokerless "
-            + "declaration pays ×2 at 2–4 seats and ×3 at 5+, and Settlement pays §7.2 step 1 "
-            + "flat at every table size, so a conformance check written today would re-derive "
-            + "the rule and fail every round somebody declares jokerless. 🔥 This exemption is "
-            + "the fire alarm P33 must silence: convert it to Checked(...) naming a "
-            + "RuleConformance re-derivation, do not delete it. ⚠️ Two details of the rule are "
-            + "still open (§9 #36 the money settlement, #37 six-plus seats) and neither blocks "
-            + "the build; both have recorded defaults."),
+            "Round value from each loser (flat in what they held; see §7.3 for the multiplier "
+            + "on how they won), money settled separately by owner, no deadwood penalty, zero "
+            + "sum: RuleConformance.TheSettlementIsTheRules and its deadwood mutant. 'Nothing "
+            + "ends the session' is a property of MatchEngine having no end condition — "
+            + "asserted by its own tests, not observable in one round."),
+        ["7.3"] = Checked(
+            "The clean bonus, re-derived from the seat count and the cards laid down: "
+            + "RuleConformance.TheSettlementIsTheRules over every settled round — a jokerless "
+            + "declaration pays ×2 at 2–4 seats and ×3 at 5+, and the mutants that pay a clean "
+            + "hand flat, pay a jokered one the bonus, or use the wrong side of the 4/5 seam "
+            + "are all caught: RuleConformanceTests.MutantTheCleanBonusIsCaughtBothWaysRound"
+            + "AndBothWaysWrong. The rule itself: SettlementTests (the multiplier by table "
+            + "size, the joker-in-a-set case, four sets and no series at five seats); the "
+            + "table: TableRulesTests. ⚠️ Two details are still open (§9 #36 the money "
+            + "settlement, #37 six-plus seats), both proceeding on their recorded defaults and "
+            + "both fenced by a test that says so. 🔥 This entry was an Exempt(...) between "
+            + "rev 26 and P33 — the only exemption this registry has carried because the code "
+            + "was missing rather than because no ordinary-play check could exist. P33 built "
+            + "the rule and converted it, which is the alarm being answered rather than "
+            + "silenced."),
     };
 
     // §9 (the question ledger) and §10 (the divergence ledger) are deliberately absent: they

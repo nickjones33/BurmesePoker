@@ -178,7 +178,12 @@ public static class GameRunner
     {
         var result = record.Result;
         var table = record.Table;
-        var winnings = stakes.RoundValue * (players.Count - 1);
+        // §7.2 step 1 as amended by §7.3: what a loser pays is the round value only when the
+        // winner declared holding a joker. Splitting the net at the wrong place would post the
+        // jokerless bonus to the side-bet column, where every money measurement reads it.
+        var payment = Settlement.RoundPayment(
+            stakes, TableRules.For(players.Count), result.Jokerless);
+        var winnings = payment * (players.Count - 1);
 
         var seats = new List<SeatRow>(players.Count);
 
@@ -187,7 +192,7 @@ public static class GameRunner
             var player = players[seat];
             var won = player == result.Winner;
             var net = result.Payouts[player];
-            var flat = won ? winnings : -stakes.RoundValue;
+            var flat = won ? winnings : -payment;
 
             seats.Add(new SeatRow(
                 Seat: seat,
@@ -206,6 +211,7 @@ public static class GameRunner
                 LockBites: recorders[player].LockBites));
         }
 
-        return new RoundRow(result.Round, result.Turns, observer.Reshuffles, observer.Refusals, seats);
+        return new RoundRow(
+            result.Round, result.Turns, observer.Reshuffles, observer.Refusals, seats, result.Jokerless);
     }
 }

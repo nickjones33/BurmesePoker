@@ -82,9 +82,16 @@ public class RoundEngineTests
 
         // ⚠️ This said "nobody owns a money card" until P26, and the deal had not changed —
         // **jokers became permanent money cards** (RULES.md §4.1, rev 21). This deal gives Bob
-        // the black joker and Dan the red one, so each collects $1 a head on top of the flat $5.
+        // the black joker and Dan the red one, so each collects $1 a head on top of the round
+        // payment.
+        //
+        // 🔥 And the round payment doubled at P33: WinningHand is 2♥–7♥, 8♦9♦10♦ and four
+        // kings — **no joker anywhere in the thirteen** — so §7.3 pays ×2 at this four-handed
+        // table and each loser pays $10 rather than $5. The hand was jokerless the whole time;
+        // it is what the hand is *worth* that changed.
+        Assert.True(result.Jokerless);
         Assert.Equal(
-            new Dictionary<PlayerId, int> { [Alice] = 13, [Bob] = -3, [Carol] = -7, [Dan] = -3 },
+            new Dictionary<PlayerId, int> { [Alice] = 28, [Bob] = -8, [Carol] = -12, [Dan] = -8 },
             result.Payouts);
 
         var jokers = engine.Table.Ownership.Records
@@ -95,6 +102,68 @@ public class RoundEngineTests
         // Named rather than left implicit in the arithmetic above: two jokers, nothing else.
         Assert.Equal(2, jokers.Count);
         Assert.All(jokers, card => Assert.True(card.IsJoker));
+    }
+
+    [Fact]
+    public void AJokerAnywhereInTheDeclaredThirteenPaysFlat()
+    {
+        // RULES.md §7.3, the discriminating case, played out: 2♥–7♥ and 8♦9♦10♦ are clean
+        // series and the fourth meld is a **set** of kings with two jokers standing in. Every
+        // series here is clean — rev 25's withdrawn reading would have paid the bonus — and the
+        // thirteen hold jokers, so rev 26 pays the flat $5 a loser.
+        var jokerInASet =
+            new[] { "2H", "3H", "4H", "5H", "6H", "7H", "8D", "9D", "10D", "KC", "KH", "RJ", "BJ" };
+        var order = Order(DealBuilder.ForPlayers(4).Give(0, jokerInASet));
+        var engine = Engine(order, Agents(new ScriptedPlayerAgent(new ScriptedTurn { Declare = true })));
+
+        var result = engine.Play();
+
+        Assert.Equal(Alice, result.Winner);
+        Assert.Equal(13, result.Melds.Sum(meld => meld.Count));
+        Assert.False(result.Jokerless);
+
+        // Alice owns both jokers, so the side bet pays her $1 a head twice; the round pays the
+        // flat $15. Nobody else owns a paying card — this deal took both jokers out of the
+        // filler that would otherwise have scattered them.
+        Assert.Equal(
+            new Dictionary<PlayerId, int> { [Alice] = 15 + 6, [Bob] = -7, [Carol] = -7, [Dan] = -7 },
+            result.Payouts);
+    }
+
+    [Fact]
+    public void FiveHandedAJokerlessDeclarationPaysTripleTheRoundValue()
+    {
+        // RULES.md §7.3 and §9 #35's answer: at five seats §7.1.1 asks nothing of the partition
+        // and the bonus is the only thing cleanliness is worth — ×3, so $15 a loser.
+        var eve = new PlayerId(4);
+        var players = new[] { Alice, Bob, Carol, Dan, eve };
+        var order = DealBuilder.ForPlayers(5)
+            .Give(0, WinningHand)
+            .Give(1, "RJ", "BJ")
+            .TurnUpFromTop("3C")
+            .TurnUpFromBottom("4C")
+            .Build();
+
+        var agents = players.ToDictionary(
+            player => player,
+            player => player == Alice
+                ? (IPlayerAgent)new ScriptedPlayerAgent(new ScriptedTurn { Declare = true })
+                : ScriptedPlayerAgent.Passive());
+
+        var result = new RoundEngine(players, agents, Stakes.Standard, order, new Random(1)).Play();
+
+        Assert.NotNull(result);
+        Assert.Equal(Alice, result.Winner);
+        Assert.True(result.Jokerless);
+
+        // $15 from each of four losers, and Bob's two jokers pay him $1 a head from the other
+        // four on top of that.
+        Assert.Equal(
+            new Dictionary<PlayerId, int>
+            {
+                [Alice] = 60 - 2, [Bob] = -15 + 8, [Carol] = -17, [Dan] = -17, [eve] = -17
+            },
+            result.Payouts);
     }
 
     [Fact]
@@ -154,9 +223,12 @@ public class RoundEngineTests
         // ⚠️ The rest of the movement is jokers, permanent money cards since RULES.md rev 21
         // (§4.1): Carol holds the red one and Dan the black one, and each collects $1 a head.
         // **Alice claimed a money card and still collects nothing for it**, which is the point.
+        // 🔥 The round half doubled at P33: Alice declares 2♥–7♥, 8♦9♦10♦ and four kings with
+        // no joker in the thirteen, so §7.3 pays ×2 at four seats — $10 a loser.
         Assert.Equal(1, engine.Table.MoneyCards.Multiplier(claimed));
+        Assert.True(result.Jokerless);
         Assert.Equal(
-            new Dictionary<PlayerId, int> { [Alice] = 13, [Bob] = -7, [Carol] = -3, [Dan] = -3 },
+            new Dictionary<PlayerId, int> { [Alice] = 28, [Bob] = -12, [Carol] = -8, [Dan] = -8 },
             result.Payouts);
 
         Assert.Equal(DeckBuilder.TotalCards, engine.Table.AllCards.Select(card => card.Id).Distinct().Count());
@@ -186,11 +258,16 @@ public class RoundEngineTests
         Assert.Equal(Bob, result.Winner);
         Assert.Equal(Alice, engine.Table.Ownership.OwnerOf(sevenOfDiamonds.Id));
 
-        // Bob wins $5 a head but pays Alice $1 for the 7♦ he is holding. ⚠️ Alice also owns
+        // Bob wins $10 a head but pays Alice $1 for the 7♦ he is holding. ⚠️ Alice also owns
         // the black joker and Dan the red one — permanent money cards since RULES.md rev 21
-        // (§4.1) — so Alice collects on two cards and comes out level.
+        // (§4.1) — so Alice collects on two cards.
+        // 🔥 $10 and not $5 since P33: Bob's thirteen are 5♦–9♦, 2♥–5♥ and four kings, with no
+        // joker among them, so §7.3 doubles the round payment at this four-handed table. ⚠️ It
+        // is what takes Alice from level to $5 down — the bonus is paid by every loser,
+        // including one who is collecting on two money cards.
+        Assert.True(result.Jokerless);
         Assert.Equal(
-            new Dictionary<PlayerId, int> { [Alice] = 0, [Bob] = 12, [Carol] = -8, [Dan] = -4 },
+            new Dictionary<PlayerId, int> { [Alice] = -5, [Bob] = 27, [Carol] = -13, [Dan] = -9 },
             result.Payouts);
     }
 

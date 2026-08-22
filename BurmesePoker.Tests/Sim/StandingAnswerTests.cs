@@ -285,10 +285,41 @@ public class StandingAnswerTests
         Assert.True(Published.ContainsKey("claim.permission.money.refuse-over-allow"));
     }
 
+    /// <summary>
+    /// ✅ <b>P33, in P23's and P30.2's idiom: a rule that changes what a win is worth cannot be
+    /// built without being measured.</b> RULES.md §7.3 pays a jokerless declaration ×2 or ×3, so
+    /// the document has to say how often that is actually collected — at every scope it reports
+    /// a round length for.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The rate is asserted to be a rate and not to be any particular number</b>, exactly
+    /// as the abandoned count is. What it must not be is <b>absent</b>: a bonus nobody measured
+    /// is a scoring rule the document cannot price.
+    /// <para>
+    /// ⚠️ <b>And what it measures is a floor.</b> No rung in the field knows the bonus exists —
+    /// <c>CoverScore.Potential</c> returns <c>int.MaxValue</c> for a joker — so every jokerless
+    /// declaration counted here came out clean by accident. A rung that played for the bonus
+    /// would be a new rung under P15's discipline and would arrive with its own row.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheDocumentSaysHowOftenTheCleanBonusIsActuallyCollected()
+    {
+        foreach (var scope in new[] { "ladder", "difficulty", "claim-permission" })
+        {
+            var row = Row($"bonus.jokerless-rate.{scope}");
+            var rate = double.Parse(row[Column.Mean], CultureInfo.InvariantCulture);
+
+            Assert.InRange(rate, 0, 1);
+            Assert.Equal("jokerless rate", row[Column.Metric]);
+        }
+    }
+
     /// <summary>Which column of a row is which. The header names them; this is the order.</summary>
     private static class Column
     {
         internal const int Subject = 1;
+        internal const int Metric = 2;
         internal const int Mean = 4;
         internal const int Interval = 6;
         internal const int Verdict = 7;

@@ -44,9 +44,13 @@ public class GreedyBotAgentTests
 
         // ⚠️ This said "nobody owns a money card" until P26 and the deal has not changed —
         // **jokers became permanent money cards** (RULES.md §4.1, rev 21), and this deal hands
-        // one to Carol and one to Dan. $1 a head each way on top of the flat $5.
+        // one to Carol and one to Dan. $1 a head each way on top of the round payment.
+        // 🔥 And the round payment doubled at P33: the thirteen Alice keeps hold no joker, so
+        // RULES.md §7.3 pays ×2 at four seats — $10 a loser rather than $5. **A greedy bot won
+        // the bonus without knowing it exists**, which is exactly what §14's "floor" means.
+        Assert.True(result.Jokerless);
         Assert.Equal(
-            new Dictionary<PlayerId, int> { [Alice] = 13, [Bob] = -7, [Carol] = -3, [Dan] = -3 },
+            new Dictionary<PlayerId, int> { [Alice] = 28, [Bob] = -12, [Carol] = -8, [Dan] = -8 },
             result.Payouts);
     }
 

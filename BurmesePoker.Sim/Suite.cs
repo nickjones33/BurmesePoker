@@ -524,6 +524,22 @@ public static class Suite
                 string.Empty));
 
             measurements.Add(new SuiteMeasurement(
+                $"bonus.jokerless-rate.{scope}",
+                "Share of settled rounds won with no joker in the declared thirteen, which is "
+                + "what RULES.md §7.3 pays ×2 at two, three or four seats and ×3 at five or "
+                + "more. ⚠️ **A floor and not an estimate**: no rung in this field knows the "
+                + "bonus exists — CoverScore.Potential returns int.MaxValue for a joker, so "
+                + "every one of them holds a joker over everything — and §9 #33 is open on "
+                + "whether a joker may be shed before the declaring discard, which P33 defaults "
+                + "to no. A rung that played for the bonus would be a new rung under P15's "
+                + "discipline and would be measured as one.",
+                command,
+                scope,
+                "jokerless rate",
+                new Measurement(cell.Rounds, cell.JokerlessRate, 0),
+                string.Empty));
+
+            measurements.Add(new SuiteMeasurement(
                 $"claim.attempt-rate.{scope}",
                 "Share of rounds in which the opener asked for the turned-up money card at all "
                 + "— the denominator the refusal rate is out of.",

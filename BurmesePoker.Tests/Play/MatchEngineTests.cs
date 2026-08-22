@@ -32,8 +32,11 @@ public class MatchEngineTests
         // Alice goes out on the opening turn of every round, so nobody has drawn anything.
         // ⚠️ That used to mean "no money card is owned"; since RULES.md rev 21 **jokers are
         // permanent money cards** (§4.1), and this deal hands the black one to Bob and the red
-        // one to Dan. So $1 a head moves each way on top of the flat round value (§7.2), every
+        // one to Dan. So $1 a head moves each way on top of the round value (§7.2), every
         // round, identically — which is what makes the banks still a clean multiple.
+        // 🔥 And since P33 the round value is doubled: Alice's WinningHand holds no joker, so
+        // RULES.md §7.3 pays ×2 at four seats. $30 a round to her rather than $15, and the
+        // multiple is 28 rather than 13.
         var match = Match(WinsImmediately());
 
         for (var round = 1; round <= 3; round++)
@@ -43,12 +46,12 @@ public class MatchEngineTests
             Assert.Equal(round, played.Result.Round);
             Assert.Equal(round, match.RoundsPlayed);
             Assert.Equal(Alice, played.Result.Winner);
-            Assert.Equal(round * 13, match.Banks[Alice]);
-            Assert.Equal(round * -3, match.Banks[Bob]);
+            Assert.Equal(round * 28, match.Banks[Alice]);
+            Assert.Equal(round * -8, match.Banks[Bob]);
         }
 
         Assert.Equal(
-            new Dictionary<PlayerId, int> { [Alice] = 39, [Bob] = -9, [Carol] = -21, [Dan] = -9 },
+            new Dictionary<PlayerId, int> { [Alice] = 84, [Bob] = -24, [Carol] = -36, [Dan] = -24 },
             match.Banks);
         Assert.Equal(0, match.Banks.Values.Sum());
     }
@@ -113,12 +116,14 @@ public class MatchEngineTests
             Assert.Equal(13, seat.Hand.Count);
         }
 
-        // And the side bet is the remainder once the flat round payment is taken out.
+        // And the side bet is the remainder once the round payment is taken out — which since
+        // RULES.md §7.3 is the round value only when the winner declared holding a joker.
+        var payment = Settlement.RoundPayment(table.Stakes, table.Rules, played.Result.Jokerless);
         var sideBet = table.Players.ToDictionary(
             player => player,
             player => played.Result.Payouts[player] - (player == played.Result.Winner
-                ? table.Stakes.RoundValue * (table.Players.Count - 1)
-                : -table.Stakes.RoundValue));
+                ? payment * (table.Players.Count - 1)
+                : -payment));
 
         // ⚠️ Every share was zero until P26, because this deal owns no *designated* card. It
         // owns two **jokers**, which are permanent money cards since RULES.md rev 21 (§4.1) —
@@ -176,7 +181,7 @@ public class MatchEngineTests
         }
 
         Assert.Equal(12, match.RoundsPlayed);
-        Assert.Equal(12 * 13, match.Banks[Alice]);
+        Assert.Equal(12 * 28, match.Banks[Alice]);
     }
 
     [Fact]
@@ -305,7 +310,7 @@ public class MatchEngineTests
         match.PlayRound(Deal());
 
         Assert.Equal([FourPlayers, FourPlayers], observer.Seatings);
-        Assert.Equal(2, match.Banks[Alice] / 13);
+        Assert.Equal(2, match.Banks[Alice] / 28);
     }
 
     private static List<string> SeatingsOf(int seed)

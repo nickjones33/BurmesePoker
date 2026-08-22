@@ -443,6 +443,11 @@ internal static class Program
         var players = table.Players;
         var owned = PayingCardsByOwner(table);
 
+        // §7.3: a jokerless declaration multiplies the round payment (×2 at 2–4 seats, ×3 at
+        // 5+). The Round column has to be split at the same place the domain settled it, or the
+        // bonus turns up in the Money cards column and the panel silently lies.
+        var payment = Settlement.RoundPayment(table.Stakes, table.Rules, result.Jokerless);
+
         var grid = new Table().Border(TableBorder.Rounded);
         grid.AddColumn("Player");
         grid.AddColumn("Money cards owned");
@@ -454,8 +459,8 @@ internal static class Program
         {
             var net = result.Payouts[player];
             var round = player == result.Winner
-                ? table.Stakes.RoundValue * (players.Count - 1)
-                : -table.Stakes.RoundValue;
+                ? payment * (players.Count - 1)
+                : -payment;
 
             grid.AddRow(
                 CardFormatting.Name(names, player) + (player == result.Winner ? $" [{Palette.Good}](out)[/]" : string.Empty),
@@ -468,6 +473,14 @@ internal static class Program
         }
 
         console.Write(grid);
+        if (result.Jokerless)
+        {
+            console.MarkupLine(
+                $"[{Palette.Good}]Jokerless — the round pays ×{table.Rules.JokerlessMultiplier} "
+                + $"({players.Count} playing).[/] "
+                + $"[{Palette.Quiet}]No joker anywhere in the declared thirteen (RULES.md §7.3).[/]");
+        }
+
         console.MarkupLine(
             $"[{Palette.Quiet}]A money card pays its owner — whoever the deck gave it to — whether they "
             + "still hold it or threw it away (RULES.md §4.4).[/]");

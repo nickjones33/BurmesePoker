@@ -11,67 +11,59 @@ transcribed, out of `docs/strategy/measurements.csv`, which is written by one co
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seed 20260819
 ```
 
-Last generated **2026-08-22** (BUILD-PLAN P31). **116 measurements in 11,020 s — three hours** —
+Last generated **2026-08-22** (BUILD-PLAN P33). **119 measurements in 11,159 s — three hours** —
 the ladder ranked, the difficulty dial calibrated beside it, the money sweep, P12's headline under
-both seatings, how long a round runs and what the claim's permission is worth, and, new in this
-run, **`warden` and how often the feeding ban actually bites** (§13).
+both seatings, how long a round runs, what the claim's permission is worth, how often the feeding
+ban bites, and, new in this run, **how often the clean bonus is actually collected** (§14).
 
-✅ **Everything here is measured under the rules as they actually are** — `RULES.md` rev 24, with
-P25's win condition, P26's money layer, P27's feeding ban and P28's claim permission all in force.
-P29 was the first regeneration under them; this is the second, and no rule moved between the two.
+✅ **Everything here is measured under the rules as they actually are** — `RULES.md` rev 26, with
+P25's win condition, P26's money layer, P27's feeding ban, P28's claim permission **and P33's
+clean bonus (§7.3)** all in force. ✅ **`RULES.md` again records nothing Settled that nothing
+implements**, which has not been true since rev 25.
 
-⚠️ **`RULES.md` is rev 26 as of 2026-08-22 and these figures still stand**, because neither rev 25
-nor rev 26 changed play: rev 25's three expert answers all confirmed the standing default (§9 #19,
-#27, #32), and rev 26 corrected an unbuilt scoring rule. 🔥 **But that rule is §7.3 — a bonus on the
-winning prize for declaring *jokerless*, ×2 at two, three or four seats and ×3 at five or more — and
-nothing implements it. Building it will invalidate every number in this document more thoroughly
-than P25–P28 did.** Those packets changed what a winning hand *is*; this changes what winning is
-*worth*, and it hands every rung a reason to throw a joker away that none of them currently has —
-`CoverScore.Potential` returns `int.MaxValue` for a joker, so **every figure below is measured in a
-world where no reason to part with one exists.**
-⚠️ **And the bonus is worth most at five seats**, where §7.1.1 requires nothing clean — so it is the
-*only* thing cleanliness is ever worth there. **Do not plan a five-handed regeneration (P32) around
-these figures**; P33 must land first, and the two regenerations should be one.
+🔥 **The headline is a reproduction, and it is the cleanest separation this document has ever
+recorded: 111 of the 116 rows both runs contain came back byte-identical, and the five that moved
+are exactly — and only — the five rows denominated in dollars a round.** Every win rate, every
+head-to-head cell, every pairing ratio, the whole difficulty dial, every take rate, **every
+side-bet margin**, the turn counts, the abandoned counts, the claim rates and the whole of §13
+reproduced to the digit.
 
-🔥 **71 of the 88 rows that both runs contain came back byte-identical, and the 17 that moved are
-exactly the rows a new rung must move.** Every head-to-head cell among the six older rungs, every
-pairing ratio, **the whole difficulty dial and the whole money sweep** reproduced to the digit. The
-17 are the free-for-all column (a different table — seven rungs crossed, not six), the mean-margin
-ranking (over 21 comparisons, not 15), and the four ladder-scope statistics computed off the
-free-for-all cell. ⚠️ **Contrast P29, which reproduced 4 of 91** — because P29 ran across a rules
-change and this one did not. **"Does it reproduce" is a question with an answer again**, and the
-answer is the strongest this document has carried: P23's best was 59 of 77.
-
-**What P31 predicted, and it got the headline backwards.** `BUILD-PLAN.md` §5 P31 wrote three
-predictions down before the run so that the packet could be wrong.
-
-| Prediction | Outcome |
+| | |
 |---|---|
-| **1. `warden` is a null or close to one** — denial has measured nothing twice, and the apparatus floor is about a point. | ❌ **Wrong, and not by a little.** It is **−9.3 ± 1.0 against `outs`** and about six points behind `greedy`, `cautious` and `counting` — the largest separated *loss* in this document. §3, §8. |
-| **2. If it is a null, the mechanism is that the lock is cheap to escape** rather than that denial is worthless. | ⚠️ **The escape hatch is closed.** §5.1 takes the card a seat meant to throw on **9.4% of every turn** in the crossed field, and a lock is live on **30.5%**. The rule bites hard and the rung still loses. §13. |
-| **3. `warden` should meld worse than `outs`**, because it takes cards for a reason other than its own hand. | ✅ **Consistent with everything measured.** An all-`warden` table runs **31.9 turns a round against `outs`' 24.1** (`sim bench`): it converts about a third of its draws into locks, and a draw is the only thing that improves a hand. |
+| **What P33 changed** | what a win is **worth** — a jokerless declaration pays ×2 at two, three or four seats and ×3 at five or more (`RULES.md` §7.3) |
+| **What it did not change** | **anything any player does.** No rung knows the bonus exists: `CoverScore.Potential` still returns `int.MaxValue` for a joker, so no rung will part with one |
+| **What the file shows** | precisely that, with nothing left over. **The prediction was written down before the run and the CSV is the check** |
 
-🔥 **Prediction 1 being wrong is the packet's result, and prediction 2 is why it is a finding
-rather than a shrug.** Had the mechanism variable not been built, `warden`'s loss would have been
-open to the reading *"the ban does nothing, so a rung built on it can do nothing"*. §13 forecloses
-that: **the ban is one of the most active rules in the game.** What `warden` gets wrong is the
-*price* — it declines any lock that would cost it a melded card, and then pays for every lock it
-takes with a **draw**, which nothing in its rule prices at all.
+⚠️ **Contrast P29, which reproduced 4 of 91 rows across P25–P28.** Those packets changed what a
+winning hand *is*, so every seat played differently and nothing could survive. This one changed
+what winning *pays*, and the file separates the two kinds of change by itself. 🔥 **"Does it
+reproduce" now has a third answer** — *it reproduces everywhere the change could not reach* —
+which is a sharper instrument than either of the first two.
 
-⚠️ **The suite is now a three-hour job**, 11,020 s against P29's 9,981 s. **A seventh ranked rung
-is 21 head-to-head cells rather than 15** — 40% more — and it cost only 10% more wall clock,
-because `warden` is *cheaper per turn* than `outs` (5.6× a `greedy` round against 6.1×; its
-candidate set is smaller) even though its rounds are a third longer. **`--pairs adjacent` exists**
-(P19) if it ever stops finishing, but that would throw away the matrix in §3, which is the
-document's centre.
+🔥 **And the five rows that moved are a finding, not bookkeeping. The clean bonus is a tax on
+trading wins for money.** Every one of them is a `net per round margin` for a rung that buys money
+cards at the cost of rounds, and every one of them **fell**:
 
-⚠️ **The `--strategies` list is gone from that command, and its absence is the point.** P20 added
-a fifth rung and had to spell the field out in three places to make it appear; the field is a
-**filter of `BotCatalog`** now (P18, P20, P23), so a rung cannot be added without being measured
-— which is how `outs` came to be measured against all five of the others without anybody naming
-it. ⚠️ **What is filtered out is not dropped**: a rung whose play reads the *stakes* is settled by
-the money sweep instead of by a field played at one stakes, and §11 is where that promise is made
-mechanical.
+| row | P31 | **P33** |
+|---|--:|--:|
+| `prospector` over `outs` at **$5/$20** | +5.32 ± 2.27 | **+4.13 ± 2.26** |
+| `prospector` over `outs` at **$5/$40** | +14.63 ± 4.48 | **+13.43 ± 4.47** |
+| …at $5/$10 | −0.21 ± 1.15 | **−0.66 ± 1.15** |
+| …at $5/$1 (the identity cell) | +0.05 ± 0.25 | **+0.07 ± 0.29** |
+| `outs/refuse` over `outs/allow`, money | +0.02 ± 0.25 | **+0.06 ± 0.29** |
+
+**The mechanism is one sentence: the bonus multiplies the round prize, and the round prize is what
+`prospector` sells.** It wins **20 points fewer rounds** at the high ratios, so `outs` collects the
+multiplier far more often than it does, and the margin narrows by about **$1.20 a round** at both
+separated cells. ✅ **Both are still separated under Holm and the ranking is unchanged** — but the
+side bet is now competing against a prize that is sometimes double, and **§10's crossover has moved
+back up the stakes scale a little for the first time since P22.** ⚠️ **The `money.side-margin.*`
+rows did not move at all**, which is the check that the bonus landed in the round column rather than
+being mis-attributed to the side bet — the failure mode P33 had to fix in two places to avoid.
+
+⚠️ **The suite cost 11,159 s against P31's 11,020 s** for three rows more. **The bonus is free**: it
+is one scan of thirteen cards at the end of a round, and nothing in the search or the decision
+touches it.
 
 The fuller report the tables below are drawn from comes from the same seed:
 
@@ -723,13 +715,22 @@ the better player.
 
 | stakes | money card is worth | `prospector` take % | **$ a round** | win % | Holm |
 |---|--:|--:|--:|--:|---|
-| **$5/$1** — as played | 0.2 rounds | 24.3 | **+0.05 ± 0.25** | +0.5 ± 1.0 | inside |
-| $5/$10 | 2 rounds | 13.8 | **−0.21 ± 1.15** | −7.9 ± 1.0 | inside |
-| $5/$20 | 4 rounds | 0.1 | **+5.32 ± 2.27** | −20.2 ± 0.9 | **separated** |
-| $5/$40 | 8 rounds | 0.0 | **+14.63 ± 4.48** | −20.2 ± 0.9 | **separated** |
+| **$5/$1** — as played | 0.2 rounds | 24.3 | **+0.07 ± 0.29** | +0.5 ± 1.0 | inside |
+| $5/$10 | 2 rounds | 13.8 | **−0.66 ± 1.15** | −7.9 ± 1.0 | inside |
+| $5/$20 | 4 rounds | 0.1 | **+4.13 ± 2.26** | −20.2 ± 0.9 | **separated** |
+| $5/$40 | 8 rounds | 0.0 | **+13.43 ± 4.47** | −20.2 ± 0.9 | **separated** |
 
 `outs` takes about 24% of its cards off the pile in every cell, which is the control: the only
 thing moving down that column is the rule firing.
+
+🔥 **The money column fell at P33 and the win-rate column did not move by a digit** — which is the
+whole of §7.3's effect on this section, isolated. **The clean bonus multiplies the round prize, and
+the round prize is exactly what `prospector` sells.** Both separated cells lost about **$1.20 a
+round** (`+5.32 → +4.13`, `+14.63 → +13.43`) because `outs` wins 20 points more rounds and so
+collects the multiplier far more often. ⚠️ **The take rates and the `money.side-margin.*` rows are
+byte-identical to P31's**, so this is a change in the *price of a round*, not in anybody's play or
+in the side bet itself. **The crossover is still at or below four rounds, and it is a little
+further off than it was.**
 
 🔥 **P29's prediction 3, and it was right by a whole ratio.** P26 made the permanent money cards
 eight rather than four and made a designation landing on one pay **×3**, so a blind draw's
@@ -796,7 +797,7 @@ and measured by nothing is the failure this whole section exists to make impossi
 ## 11. Regenerating this document's data
 
 ```bash
-# the standing set — writes docs/strategy/measurements.csv. ⚠️ About three hours (11,020 s at P31).
+# the standing set — writes docs/strategy/measurements.csv. ⚠️ About three hours (11,159 s at P33).
 # No --strategies: the field is a filter of BotCatalog, and between the ladder tournament
 # and the money sweep every rung there is gets measured exactly once.
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seed 20260819
@@ -827,8 +828,11 @@ generated from it**, including §10's — the money sweep is part of the standin
 computed on every run since P22 and published nowhere the suite writes — and
 `claim.permission.money.refuse-over-allow` is **paired** now, which widened its interval from
 `±0.18` to **`±0.25`** exactly as predicted. ⚠️ **Neither was a regression and both change a
-published figure**: the money null in §12 is `+0.02 ± 0.25` rather than `+0.02 ± 0.18`, and the
-null survives.
+published figure**: the money null in §12 was `+0.02 ± 0.25` rather than `+0.02 ± 0.18`, and the
+null survives. ⚠️ **That row has since moved again for an unrelated reason** — P33's clean bonus
+changed what a round pays, so it reads `+0.06 ± 0.29` now. **Still a null, and still the same
+null**; the two corrections are separate events and this file should not be read as though the R3
+pairing moved it twice.
 
 ### The rule that keeps this file honest
 
@@ -934,7 +938,7 @@ holder may refuse. So P29 measured it.
 | rounds in which the opener asks for the card | **24.8–28.5%** |
 | of those, how often the upstream seat vetoes | **51.7%** at the ladder, **53.7%** at the dial |
 | `outs/refuse` over `outs/allow`, win rate | **+0.4 ± 1.0** — inside the interval |
-| `outs/refuse` over `outs/allow`, money a round | **+0.02 ± 0.25** — inside the interval |
+| `outs/refuse` over `outs/allow`, money a round | **+0.06 ± 0.29** — inside the interval |
 
 ✅ **The money row is paired now and the correction has landed** (review R3, raised 2026-08-21,
 regenerated by P31 the same day). It had been computed with the independent formula on a
@@ -943,6 +947,13 @@ exactly the case `Measurement.Paired`'s own remarks call anti-conservative. **Th
 from ±0.18 to ±0.25 and the mean did not move at all** — `+0.020230` before and after, to six
 decimal places. ⚠️ **Widening keeps a null a null**, so the finding is unchanged; what changed is
 that the printed interval is no longer understated.
+
+⚠️ **P33 then moved this row for a different reason, and it is the only row in §12 that moved.**
+The clean bonus (§7.3, §14) multiplies the round payment on a jokerless declaration, so every
+figure denominated in dollars a round is measured against a bigger prize: `+0.020` became
+**`+0.058 ± 0.292`**. ✅ **The win-rate row above it is byte-identical**, as are the ask rate, the
+veto rate and the round lengths — **the two arms play the same rounds they always did.** The null
+stands, on a slightly larger currency.
 
 🔥 **A null, published** (the discipline P20 set). Two arms of one rung differing in exactly that
 one answer, 8,008 games, and neither the win rate nor the money can tell them apart. ⚠️ **This is
@@ -1026,3 +1037,69 @@ of its discards were restricted) because a list length is free.
 ✅ **The instrument changes no card.** `LockBiteTests` asserts that a run with the counterfactual
 on and a run with it off produce byte-identical CSVs — which is what makes the two cells that
 bought it comparable with the 108 rows that did not.
+
+---
+
+## 14. How often the clean bonus is actually collected
+
+**Added by P33, the packet that built `RULES.md` §7.3 — and the first number in this document
+about what a win is *worth* rather than about who wins.**
+
+🔥 **The rule.** A declaration with **no joker anywhere in the thirteen** pays the winner **×2** the
+round value at two, three or four seats and **×3** at five or more. It is `EXPERT` and Settled, and
+it was volunteered — and then corrected the same day — by Mya Lay while she was answering a
+question about something else. At the standard $5 stakes it takes a four-handed win from $15 to
+**$30** and a five-handed one from $20 to **$60**.
+
+| field | rounds settled | **won jokerless** |
+|---|---:|---:|
+| the ladder, all seven rungs crossed | 9,595 | **15.4%** |
+| the difficulty dial, all four levels crossed | 8,192 | **16.2%** |
+| the two-arm claim-permission cell | 8,008 | **17.4%** |
+
+**So about one round in six is worth double**, at a four-handed table of rungs that have never
+heard of the rule.
+
+⚠️ **Read that as a floor, and there are two independent reasons why.**
+
+1. 🔥 **No rung is trying.** `CoverScore.Potential` returns `int.MaxValue` for a joker, so every
+   rung in this project holds a joker over everything else it could keep. **Every one of the
+   declarations counted above came out clean by accident.** The expert named shedding a joker as
+   *the* reason a joker is ever thrown away, and **that behaviour still cannot arise here** — a rung
+   that played for the bonus would be a **new rung** under P15's discipline (§11), measured before
+   it joined the ladder, rather than a change to `outs`.
+2. ⚠️ **The rule may not even be reachable when it would pay.** `RULES.md` §9 **#33** is open on
+   whether the joker may be thrown **before** the declaring discard. P33 built the default that
+   says it may not — §5.1 exception 2 and nothing more — so **a hand that needed to shed a joker a
+   turn early could not reach the bonus at all.** If that answer comes back the other way, this
+   number can only go up.
+
+🔥 **What it is worth to the field, and it is the finding.** The bonus does not change anybody's
+play, so its whole effect is on the money — and the money moved in exactly one direction. **Every
+row in this document denominated in dollars a round fell for the rung that trades rounds for money
+cards** (§10): `prospector` over `outs` went `+5.32 → +4.13` at $5/$20 and `+14.63 → +13.43` at
+$5/$40. **A prize that is sometimes doubled is a tax on selling rounds.** ⚠️ **That is the first
+measured interaction between the money layer and the scoring layer in this project**, and it
+arrived without either being changed for the other's sake.
+
+⚠️ **What this does not measure.** It does not say how often a hand *could* have been brought home
+jokerless — only how often one was. A rung that valued the bonus would trade cover count for
+cleanliness and the rate would move; **by how much is unmeasured and is the obvious next
+experiment.** 🔥 **And the arithmetic already says roughly what the prize for trying is worth**:
+at four seats the bonus pays **+$5 a head**, against a whole round's flat prize of $5 a head — so a
+rung that could turn one round in six into one in three would be collecting an extra sixth of a
+round's prize every round, which is well inside what this apparatus resolves (§7).
+
+⚠️ **And it does not reach five seats, where the rule pays most.** Everything above is four-handed,
+and §7.1.1 requires a joker-free series at four seats and nothing at all at five — so at five seats
+the bonus is **the only thing cleanliness is ever worth**, and it pays ×3 rather than ×2. **That is
+`BUILD-PLAN.md` P32's measurement, not this one's.**
+
+```bash
+# the ladder cell this rate comes from — the bonus rows are bonus.jokerless-rate.*
+dotnet run -c Release --project BurmesePoker.Sim -- tournament --games 8000 --seed 20260819
+```
+
+⚠️ **`StandingAnswerTests.TheDocumentSaysHowOftenTheCleanBonusIsActuallyCollected` fails the build
+if this section's rate stops being published** — the same mechanism §11 describes for a rung, applied
+to a scoring rule. **A bonus nobody measured is a rule the document cannot price.**

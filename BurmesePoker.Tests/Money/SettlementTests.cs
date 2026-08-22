@@ -1,14 +1,21 @@
 using System.Reflection;
 using BurmesePoker.Domain.Cards;
+using BurmesePoker.Domain.Melds;
 using BurmesePoker.Domain.Money;
 using BurmesePoker.Domain.Play;
 
 namespace BurmesePoker.Tests.Money;
 
 /// <summary>
-/// Settling a finished round (RULES.md §4.3, §4.4, §7.2): the flat round payment to the
+/// Settling a finished round (RULES.md §4.3, §4.4, §7.2, §7.3): the round payment to the
 /// winner, plus the pairwise money-card side-bet paid to each card's <b>owner</b>.
 /// </summary>
+/// <remarks>
+/// ⚠️ <b>Every test below that works a payout out by hand declares <see cref="Jokered"/></b>,
+/// which is the flat case §7.2 has named since rev 1. The §7.3 bonus has its own tests at the
+/// foot of the file, and the flat ones say <i>jokered</i> rather than saying nothing so that
+/// the multiplier is visible at every site it could have applied to.
+/// </remarks>
 public class SettlementTests
 {
     private static readonly IReadOnlyList<Card> Shoe = DeckBuilder.BuildTwoDecks();
@@ -28,7 +35,16 @@ public class SettlementTests
     /// <summary>Five players at the standard stakes, with Ava going out.</summary>
     private static IReadOnlyDictionary<PlayerId, int> Settle(
         MoneyCardRegistry moneyCards, CardOwnership ownership) =>
-        Settlement.ForRound(FivePlayers, Ava, Stakes.Standard, moneyCards, ownership, Shoe);
+        Settlement.ForRound(FivePlayers, Ava, Stakes.Standard, moneyCards, ownership, Shoe, Jokered());
+
+    /// <summary>
+    /// A declared thirteen with a joker in it — no §7.3 bonus, so the round pays flat.
+    /// </summary>
+    private static IReadOnlyList<Card> Jokered() =>
+        [.. Shoe.Where(card => !card.IsJoker).Take(12), Shoe.First(card => card.IsJoker)];
+
+    /// <summary>A declared thirteen with no joker anywhere — the §7.3 bonus qualifies.</summary>
+    private static IReadOnlyList<Card> Jokerless() => [.. Shoe.Where(card => !card.IsJoker).Take(13)];
 
     private static MoneyCardRegistry TurnedUp(params Card[] cards) => new(cards);
 
@@ -238,7 +254,7 @@ public class SettlementTests
 
         var deltas = Settlement.ForRound(
             [Ava, Bo, Cy], Ava, Stakes.Standard,
-            TurnedUp(Copy(Rank.Five, Suit.Hearts)), ownership, Shoe);
+            TurnedUp(Copy(Rank.Five, Suit.Hearts)), ownership, Shoe, Jokered());
 
         Assert.Equal(10 - 2, deltas[Ava]);
         Assert.Equal(-5 + 2 - 1, deltas[Bo]);
@@ -252,7 +268,7 @@ public class SettlementTests
         // Heads-up at $5/$5: Bo's money card exactly cancels the round he lost.
         var deltas = Settlement.ForRound(
             [Ava, Bo], Ava, new Stakes(5, 5),
-            TurnedUp(), OwnedBy(Bo, Copy(Rank.Ace, Suit.Spades)), Shoe);
+            TurnedUp(), OwnedBy(Bo, Copy(Rank.Ace, Suit.Spades)), Shoe, Jokered());
 
         Assert.Equal([Ava, Bo], deltas.Keys.OrderBy(player => player.Value));
         Assert.Equal(0, deltas[Ava]);
@@ -285,17 +301,21 @@ public class SettlementTests
 
             var deltas = Settlement.ForRound(
                 players, players[random.Next(players.Count)], stakes,
-                new MoneyCardRegistry(turnedUp), ownership, Shoe);
+                new MoneyCardRegistry(turnedUp), ownership, Shoe,
+                random.Next(2) == 0 ? Jokerless() : Jokered());
 
             Assert.Equal(0, deltas.Values.Sum());
         }
     }
 
     [Fact]
-    public void SettlementIsNeverGivenAHand()
+    public void TheOnlyHandSettlementIsGivenIsTheWinnersDeclaredThirteen()
     {
-        // RULES.md §4.4: the question at settlement is never "who holds this card?". The
-        // parameter list is where that rule is enforced — nothing here can reach a hand.
+        // RULES.md §4.4: the question the *side bet* asks is never "who holds this card?", and
+        // the parameter list is where that is enforced — no table, no seat, no player state.
+        // ⚠️ This test used to be called SettlementIsNeverGivenAHand and asserted six
+        // parameters. §7.3 gave it a seventh, and the rule it guards did not change: what
+        // arrives is a list of cards with no owner attached to it, so step 2 still cannot ask.
         var parameters = typeof(Settlement)
             .GetMethod(nameof(Settlement.ForRound), BindingFlags.Public | BindingFlags.Static)!
             .GetParameters()
@@ -308,6 +328,7 @@ public class SettlementTests
                 typeof(Stakes),
                 typeof(MoneyCardRegistry),
                 typeof(CardOwnership),
+                typeof(IReadOnlyList<Card>),
                 typeof(IReadOnlyList<Card>)
             ],
             parameters);
@@ -316,23 +337,23 @@ public class SettlementTests
     [Fact]
     public void AWinnerWhoIsNotAtTheTableIsRejected() =>
         Assert.Throws<ArgumentException>(() => Settlement.ForRound(
-            [Ava, Bo], Cy, Stakes.Standard, TurnedUp(), new CardOwnership(), Shoe));
+            [Ava, Bo], Cy, Stakes.Standard, TurnedUp(), new CardOwnership(), Shoe, Jokered()));
 
     [Fact]
     public void TheSamePlayerTwiceAtTheTableIsRejected() =>
         Assert.Throws<ArgumentException>(() => Settlement.ForRound(
-            [Ava, Bo, Ava], Ava, Stakes.Standard, TurnedUp(), new CardOwnership(), Shoe));
+            [Ava, Bo, Ava], Ava, Stakes.Standard, TurnedUp(), new CardOwnership(), Shoe, Jokered()));
 
     [Fact]
     public void AnEmptyTableIsRejected() =>
         Assert.Throws<ArgumentException>(() => Settlement.ForRound(
-            [], Ava, Stakes.Standard, TurnedUp(), new CardOwnership(), Shoe));
+            [], Ava, Stakes.Standard, TurnedUp(), new CardOwnership(), Shoe, Jokered()));
 
     [Fact]
     public void ACardOwnedBySomebodyNotAtTheTableIsRejected() =>
         Assert.Throws<ArgumentException>(() => Settlement.ForRound(
             [Ava, Bo], Ava, Stakes.Standard, TurnedUp(),
-            OwnedBy(Eve, Copy(Rank.Ace, Suit.Spades)), Shoe));
+            OwnedBy(Eve, Copy(Rank.Ace, Suit.Spades)), Shoe, Jokered()));
 
     [Fact]
     public void AShuffledDeckIsRejectedAsTheShoe()
@@ -344,7 +365,8 @@ public class SettlementTests
         deck.Shuffle(new Random(1));
 
         var exception = Assert.Throws<ArgumentException>(() => Settlement.ForRound(
-            FivePlayers, Ava, Stakes.Standard, TurnedUp(), new CardOwnership(), deck.Cards));
+            FivePlayers, Ava, Stakes.Standard, TurnedUp(), new CardOwnership(), deck.Cards,
+            Jokered()));
 
         Assert.Contains("BuildTwoDecks", exception.Message, StringComparison.Ordinal);
     }
@@ -356,6 +378,115 @@ public class SettlementTests
         ownership.RecordFromDeck(new CardId(500), Ava);
 
         Assert.Throws<ArgumentException>(() => Settlement.ForRound(
-            FivePlayers, Ava, Stakes.Standard, TurnedUp(), ownership, Shoe));
+            FivePlayers, Ava, Stakes.Standard, TurnedUp(), ownership, Shoe, Jokered()));
+    }
+
+    // ── RULES.md §7.3: the clean bonus ───────────────────────────────────────────────────
+    //
+    // A *jokerless* declaration multiplies the round payment: ×2 at two, three or four seats
+    // and ×3 at five or more. The condition is the whole declared thirteen, so a joker in a
+    // set forfeits it exactly as one in a run does — which is the correction rev 26 made to
+    // rev 25's "all series clean".
+
+    [Theory]
+    [InlineData(2, 2)]
+    [InlineData(3, 2)]
+    [InlineData(4, 2)]
+    [InlineData(5, 3)]
+    [InlineData(6, 3)]
+    public void AJokerlessDeclarationMultipliesTheRoundPaymentByTheTableSize(int seats, int multiplier)
+    {
+        var players = Enumerable.Range(0, seats).Select(seat => new PlayerId(seat)).ToArray();
+        var winner = players[0];
+
+        var flat = Settlement.ForRound(
+            players, winner, Stakes.Standard, TurnedUp(), new CardOwnership(), Shoe, Jokered());
+        var bonus = Settlement.ForRound(
+            players, winner, Stakes.Standard, TurnedUp(), new CardOwnership(), Shoe, Jokerless());
+
+        // The losers each pay the round value, times the multiplier, and nothing else moves.
+        Assert.Equal(5 * (seats - 1), flat[winner]);
+        Assert.Equal(5 * multiplier * (seats - 1), bonus[winner]);
+        Assert.All(players.Skip(1), player => Assert.Equal(-5 * multiplier, bonus[player]));
+        Assert.Equal(0, bonus.Values.Sum());
+    }
+
+    [Fact]
+    public void AJokerInASetForfeitsTheBonusExactlyAsOneInARunDoes()
+    {
+        // 🔥 The discriminating case, and the whole of what rev 26 corrected. These thirteen
+        // are four clean series and one set — 2♥–5♥, 7♦–9♦, 4♣–6♣ and three queens, one of
+        // them a joker. Every *series* here is clean, so rev 25's withdrawn reading would have
+        // paid the bonus; rev 26 asks the thirteen and does not.
+        var jokerInASet = Hands.Of(
+            "2H", "3H", "4H", "5H", "7D", "8D", "9D", "4C", "5C", "6C", "QS", "QD", "RJ");
+
+        Assert.False(Settlement.IsJokerless(jokerInASet));
+
+        var deltas = Settlement.ForRound(
+            FivePlayers, Ava, Stakes.Standard, TurnedUp(), new CardOwnership(), Shoe, jokerInASet);
+
+        Assert.Equal(4 * 5, deltas[Ava]);
+    }
+
+    [Fact]
+    public void FiveHandedFourSetsAndNoSeriesAtAllStillPaysTripleIfItIsJokerless()
+    {
+        // §9 #35's answer, and the thing a hand-wide predicate can express and a series-wide
+        // one cannot: at five seats §7.1.1 requires no series, so this is a legal declaration
+        // holding none — and it is jokerless, so it pays ×3.
+        var fourSets = Hands.Of(
+            "2H", "2S", "2C", "5D", "5H", "5S", "9C", "9D", "9H", "KS", "KC", "KD", "KH");
+
+        Assert.True(Settlement.IsJokerless(fourSets));
+
+        var deltas = Settlement.ForRound(
+            FivePlayers, Ava, Stakes.Standard, TurnedUp(), new CardOwnership(), Shoe, fourSets);
+
+        Assert.Equal(4 * 15, deltas[Ava]);
+        Assert.All(new[] { Bo, Cy, Di, Eve }, player => Assert.Equal(-15, deltas[player]));
+    }
+
+    [Fact]
+    public void TheBonusDoesNotReachTheMoneyCardSettlement()
+    {
+        // RULES.md §9 #36's recorded default, fenced: three sayings name "the winning prize"
+        // and none names the money, so step 2 is untouched. ⚠️ If the expert answers otherwise
+        // this test is the one that has to change, which is what it is for.
+        var ownership = OwnedBy(Bo, Copy(Rank.Ace, Suit.Spades));
+
+        var flat = Settlement.ForRound(
+            FivePlayers, Ava, Stakes.Standard, TurnedUp(), ownership, Shoe, Jokered());
+        var bonus = Settlement.ForRound(
+            FivePlayers, Ava, Stakes.Standard, TurnedUp(), ownership, Shoe, Jokerless());
+
+        // The A♠ is a permanent money card and nothing designates it, so it pays ×1 — $1 a
+        // head from four opponents. Bo's side-bet take is $4 either way; only the round
+        // payment moved, from $5 to $15.
+        Assert.Equal(-5 + 4, flat[Bo]);
+        Assert.Equal(-15 + 4, bonus[Bo]);
+        Assert.Equal(flat[Bo] + 5, bonus[Bo] + 15);
+    }
+
+    [Theory]
+    [InlineData(2, false, 5)]
+    [InlineData(4, true, 10)]
+    [InlineData(5, true, 15)]
+    [InlineData(6, true, 15)]
+    public void WhatOneLoserPaysIsPublishedSoAConsumerSplitsTheNetWhereTheDomainDid(
+        int seats, bool jokerless, int expected) =>
+        Assert.Equal(
+            expected,
+            Settlement.RoundPayment(Stakes.Standard, TableRules.For(seats), jokerless));
+
+    [Fact]
+    public void TheJokerlessPredicateIsAboutCardsAndNotAboutMelds()
+    {
+        // A joker held is a joker declared: the predicate cannot be dodged by covering it
+        // inside a meld, because it never looks at a meld.
+        Assert.True(Settlement.IsJokerless(Hands.Of("2H", "3H", "4H")));
+        Assert.False(Settlement.IsJokerless(Hands.Of("2H", "3H", "RJ")));
+        Assert.False(Settlement.IsJokerless(Hands.Of("BJ", "RJ", "BJ")));
+        Assert.True(Settlement.IsJokerless([]));
     }
 }

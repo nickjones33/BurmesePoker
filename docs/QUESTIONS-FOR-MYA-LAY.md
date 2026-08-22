@@ -692,7 +692,14 @@ was still thinking about it.
 
 ### What is left to ask
 
-**Three, and none of them blocks a packet.**
+**Three, and none of them blocks a packet.** ⚠️ **P33 built §7.3 on 2026-08-22 while all three were
+open**, each on its recorded default and each fenced by a named test, so an answer that goes the
+other way is a small change with a failing test to find it:
+`SettlementTests.TheBonusDoesNotReachTheMoneyCardSettlement` (#36) and
+`TableRulesTests.TheTwoRulesThatMoveWithTheTableSizeSplitAtTheSameSeam` (#37). ⚠️ **#33 is the one
+with a measurable cost**: `docs/STRATEGY.md` §14's jokerless rate is published as a **floor** partly
+because the default says a hand needing to shed a joker early cannot reach the bonus at all — **so
+an answer here can only move that number up.**
 
 1. **When the joker may be thrown.** *"You've got a joker in your hand and you're going for the
    jokerless prize, so you need to get rid of it — but I've taken a joker, so jokers are shut

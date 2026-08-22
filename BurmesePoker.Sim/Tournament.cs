@@ -247,7 +247,8 @@ public sealed record TournamentCell(
     int ClaimsRefused = 0,
     long DiscardsChosen = 0,
     long RestrictedTurns = 0,
-    long LockBites = 0)
+    long LockBites = 0,
+    int JokerlessRounds = 0)
 {
     /// <summary>Average turns to a declaration in this cell.</summary>
     public double TurnsPerRound => Rounds == 0 ? 0 : (double)Turns / Rounds;
@@ -280,6 +281,20 @@ public sealed record TournamentCell(
 
     /// <summary>Share of the rounds in which the opener asked for the turned-up money card.</summary>
     public double ClaimRate => Rounds == 0 ? 0 : (double)ClaimAttempts / Rounds;
+
+    /// <summary>
+    /// Share of the rounds won with no joker in the declared thirteen — <b>how often RULES.md
+    /// §7.3's bonus is actually collected</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A floor rather than an estimate, and for two separate reasons.</b> (1) No rung
+    /// knows the bonus exists: <c>CoverScore.Potential</c> returns <c>int.MaxValue</c> for a
+    /// joker, so every rung here holds one over everything and none of these declarations was
+    /// aimed at the bonus. (2) RULES.md §9 #33 is open on whether the joker may be shed before
+    /// the declaring discard, and P33 took the default that says it may not, so a hand needing
+    /// to throw one a turn early cannot reach the bonus at all.
+    /// </remarks>
+    public double JokerlessRate => Rounds == 0 ? 0 : (double)JokerlessRounds / Rounds;
 
     /// <summary>How the cell reads in a report.</summary>
     /// <remarks>
@@ -529,6 +544,7 @@ public static class Tournament
         var discards = 0L;
         var restricted = 0L;
         var bites = 0L;
+        var jokerless = 0;
 
         foreach (var game in report.Games)
         {
@@ -541,6 +557,11 @@ public static class Tournament
                 discards += round.Seats.Sum(seat => seat.DiscardsChosen);
                 restricted += round.Seats.Sum(seat => seat.RestrictedTurns);
                 bites += round.Seats.Sum(seat => seat.LockBites);
+
+                if (round.Jokerless)
+                {
+                    jokerless++;
+                }
             }
         }
 
@@ -560,7 +581,7 @@ public static class Tournament
             return new TournamentCell(
                 kind, row, column, assignments.Count, report.Games.Count, settled,
                 report.Games.Count - settled, cellPlayers, default, default,
-                rounds, turns, attempts, refused, discards, restricted, bites);
+                rounds, turns, attempts, refused, discards, restricted, bites, jokerless);
         }
 
         var rowSeries = series.Single(one => one.Name == row);
@@ -583,7 +604,8 @@ public static class Tournament
             refused,
             discards,
             restricted,
-            bites);
+            bites,
+            jokerless);
     }
 
     private static IReadOnlyList<Standing> Standings(

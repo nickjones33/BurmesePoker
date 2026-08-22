@@ -1401,11 +1401,25 @@ nonetheless the more consequential of the two by a wide margin**: the 7♦/A♠ 
 | **§9 #36** — does the multiplier reach the **money-card settlement** (§7.2 step 2)? | ⚠️ **Strengthened, not closed.** The new sentence names *"the winning prize"* twice more and never names the money. The recommendation — **round payment only** — now rests on three sayings rather than one. |
 | **§9 #37** — is **six or more** also ×3? | 🔥 **New.** The sentence names *"five players"*, and §7.1.1 groups **five or more**. Recommend **five-or-more → ×3**, which matches the grouping this document already has and the `DERIVED` argument above. ✅ **Safe default** — unlike #35, no reading of it pays for nothing. |
 
-⚠️ **Nothing here is built.** `Settlement` pays §7.2 step 1 flat; no rung knows the bonus exists;
-and **the one behaviour the expert named as the reason jokers are ever discarded cannot arise** —
-`CoverScore.Potential` returns `int.MaxValue` for a joker, so every rung in this project holds one
-over everything. **Every figure in `docs/STRATEGY.md` is measured in a world where the reason to
-part with a joker does not exist.** **See §10 #19, and packet P33.**
+✅ **Built by P33 on 2026-08-22, and §10 #19 is discharged.** `TableRules.JokerlessMultiplier` is
+the table above as data — beside §7.1.1's, in the one place a per-seat-count rule is written down —
+and `Settlement.RoundPayment(stakes, rules, jokerless)` is the whole of the arithmetic, asked once a
+round. **`Settlement.ForRound` now takes the winner's declared thirteen**, which is the only hand it
+has ever been given; the predicate is `Settlement.IsJokerless`, a scan for a joker and nothing more.
+⚠️ **`Meld.IsClean` is not consulted anywhere in it** — that implements §7.1.1's *required clean
+series*, the different rule that shares a word.
+
+⚠️ **What is still not built, deliberately: no rung knows the bonus exists.** `CoverScore.Potential`
+returns `int.MaxValue` for a joker, so every rung in this project still holds one over everything,
+and **the one behaviour the expert named as the reason jokers are ever discarded still cannot
+arise**. A rung that played for the bonus would be a **new rung** under P15's discipline — measured
+before it joined the ladder — rather than a change to an existing one. **So the jokerless rate
+`docs/STRATEGY.md` §14 publishes is a floor**: it counts the hands that came out clean by accident,
+never the hands that were played clean on purpose. ⚠️ **§9 #33 is the second reason it is a floor**
+— if §5.1 only yields on the declaring discard, a hand needing to shed a joker a turn early cannot
+reach the bonus at all.
+
+**See §10 #19, and packet P33.**
 
 🔥 **And this is where the win condition and the scoring stop being separable.** Before rev 26,
 cleanliness was irrelevant at five or more seats (§7.1.1) and irrelevant to what a win was worth
@@ -1543,9 +1557,9 @@ what it is.
 
 | # | Question | § | Status | Blocks |
 |---:|---|---|---|---|
-| 33 | **Is the joker throw an exception to §5.1, or is it exception 2 restated?** Jokers are closed against you and you are going out clean, so you must shed your joker. If that throw is your **declaring discard**, exception 2 already permits it and nothing new is needed. But if you must shed the joker **a turn or more before** you can declare, §5.1 forbids it and the bonus is unreachable. *"Can you throw the joker at me the turn before you go out, or only as the very last card?"* | 5.1, 7.3 | Unknown — recommend **exception 2 only** (change nothing), because it is the reading that adds no rule | Whether the bonus is reachable at all |
-| 36 | **Does the multiplier reach the money cards?** *"Two/three times of the winning prize"* names the round payment (§7.2 step 1). Does the money-card settlement (step 2) scale with it, or is it untouched? | 7.3, 4.3 | Unknown — recommend **the round payment only**. ✅ **Strengthened in rev 26**: the correcting sentence names *the winning prize* twice more and never names the money | Settlement |
-| 37 | **Is six or more also ×3?** The sentence names *"five players"* against *"two players, three players, or four players"*; §7.1.1 groups **five or more** and asks nothing of any of them. *"Six of us are playing and I go out with no joker anywhere in my hand. Is that three times, the same as five?"* | 7.3, 7.1.1 | Unknown — recommend **five-or-more → ×3**, matching §7.1.1's own grouping and §7.3's `DERIVED` note. ✅ **Safe default** — no reading of it pays for nothing | Settlement, at six seats only |
+| 33 | **Is the joker throw an exception to §5.1, or is it exception 2 restated?** Jokers are closed against you and you are going out clean, so you must shed your joker. If that throw is your **declaring discard**, exception 2 already permits it and nothing new is needed. But if you must shed the joker **a turn or more before** you can declare, §5.1 forbids it and the bonus is unreachable. *"Can you throw the joker at me the turn before you go out, or only as the very last card?"* | 5.1, 7.3 | Unknown — recommend **exception 2 only** (change nothing), because it is the reading that adds no rule | Whether the bonus is reachable at all. ⚠️ **P33 built §7.3 on this default and said so**: `docs/STRATEGY.md` §14's jokerless rate is a **floor**, because a hand that had to shed a joker early could not reach the bonus |
+| 36 | **Does the multiplier reach the money cards?** *"Two/three times of the winning prize"* names the round payment (§7.2 step 1). Does the money-card settlement (step 2) scale with it, or is it untouched? | 7.3, 4.3 | Unknown — recommend **the round payment only**. ✅ **Strengthened in rev 26**: the correcting sentence names *the winning prize* twice more and never names the money | Settlement. ✅ **P33 built it this way and fenced it with a test** (`SettlementTests.TheBonusDoesNotReachTheMoneyCardSettlement`), so the answer arriving is a one-line change with a failing test to find it |
+| 37 | **Is six or more also ×3?** The sentence names *"five players"* against *"two players, three players, or four players"*; §7.1.1 groups **five or more** and asks nothing of any of them. *"Six of us are playing and I go out with no joker anywhere in my hand. Is that three times, the same as five?"* | 7.3, 7.1.1 | Unknown — recommend **five-or-more → ×3**, matching §7.1.1's own grouping and §7.3's `DERIVED` note. ✅ **Safe default** — no reading of it pays for nothing | Settlement, at six seats only. ✅ **P33 built it this way**: `TableRules.For(n)` returns ×3 for every n ≥ 5, and `TableRulesTests.TheTwoRulesThatMoveWithTheTableSizeSplitAtTheSameSeam` asserts the seam rather than the cases |
 
 ✅ **#35 — the row that had no safe default — closed on the day it was written, and closed the
 expensive way: the bonus *does* exist at five or more, and pays **most** there.** So
@@ -1944,9 +1958,12 @@ not a question.**
 
 Decisions here that the implementation contradicts or lacks.
 
-⚠️ **Rev 25 reopened this section after P28 emptied it.** Every ruling below was discharged by a
-packet; **#19 is new, is `EXPERT`, and is unbuilt** — so the claim *"every rule this document
-records as Settled is implemented"*, true from P28 to rev 24, is false again.
+✅ **Empty again as of 2026-08-22.** Rev 25 reopened this section after P28 had emptied it, with
+#19 — the clean bonus — new, `EXPERT` and unbuilt. **P33 built it**, so every ruling below is
+discharged by a packet and the claim *"every rule this document records as Settled is
+implemented"* is true once more. ⚠️ **It was false for two days**, which is the shortest this
+section has ever been open, and the reason is that the rule arrived from a rules session rather
+than from the 2023 code.
 
 1. **Remove the ace wrap** (§6.1). Fixes the illegal `K-A-2` meld *and* the verified
    infinite loop.
@@ -2115,9 +2132,18 @@ records as Settled is implemented"*, true from P28 to rev 24, is false again.
     may, on §4.5's own reasoning — the claim would close that rank in its hand — and **no rung
     prices the disclosure**. Whether refusing is right is unmeasured (P29).
 
-19. 🔥 **A jokerless declaration pays ×2 at two, three or four seats and ×3 at five or more**
-    (§7.3) — **the only Settled rule in this document that nothing implements, the first one that
-    is about what a win is *worth*, and the second whose content is a function of the table size.**
+19. ✅ **DISCHARGED — built by P33 on 2026-08-22.** 🔥 **A jokerless declaration pays ×2 at two,
+    three or four seats and ×3 at five or more** (§7.3) — **the first rule in this document that is
+    about what a win is *worth*, and the second whose content is a function of the table size.**
+    ✅ **`TableRules.JokerlessMultiplier` holds the table; `Settlement.RoundPayment` is the
+    arithmetic; `Settlement.IsJokerless` is the predicate; `Settlement.ForRound` takes the declared
+    thirteen and `RoundEngine` hands it that seat's hand after the discard.** ⚠️ **Two consumers
+    that split a net delta into *the round* and *the side bet* had to be split at the same place**
+    — the console's settlement panel and `Sim`'s `SeatRow.Flat`/`SideBet` — **or the bonus would
+    have landed silently in the side-bet column that every money measurement reads.**
+    ⚠️ **What was deliberately not built: a rung that plays for it** (see §7.3). **With this,
+    `RULES.md` again records nothing Settled that nothing implements.**
+    The record of what it was built from follows.
     `Settlement.ForRound` pays §7.2 step 1 flat from every loser to the winner, and nothing
     anywhere asks whether the declared hand held a joker. **The round payment stops being a
     constant, and it stops being seat-count-independent at the same time.**

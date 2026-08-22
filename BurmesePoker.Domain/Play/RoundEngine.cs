@@ -232,8 +232,12 @@ public sealed class RoundEngine
 
         _observer.PlayerDeclared(seat.Id, melds);
 
+        // The declared thirteen decide the §7.3 bonus, so the hand goes to settlement — and it
+        // is this seat's hand *after* the discard, which is what "the declared thirteen" means
+        // (§7.1: the discard comes first and the reveal follows it).
         var payouts = Settlement.ForRound(
-            Table.Players, seat.Id, Table.Stakes, Table.MoneyCards, Table.Ownership, Table.Shoe);
+            Table.Players, seat.Id, Table.Stakes, Table.MoneyCards, Table.Ownership, Table.Shoe,
+            seat.Hand);
 
         var result = new RoundResult(_round, seat.Id, melds, payouts, turn);
         _observer.RoundSettled(result);

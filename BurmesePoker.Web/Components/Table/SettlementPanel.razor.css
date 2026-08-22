@@ -28,6 +28,16 @@ h2 {
     font-weight: 400;
 }
 
+.jokerless {
+    padding: 0.05rem 0.45rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 999px;
+    background: var(--raised);
+    color: var(--on-raised-money);
+    font-size: 0.8rem;
+    font-weight: 400;
+}
+
 .melds {
     display: flex;
     flex-direction: column;

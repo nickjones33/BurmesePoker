@@ -253,7 +253,7 @@ internal sealed class RuleConformance : IGameObserver
 
         TheSettlementIsTheRules(
             result.Payouts, result.Winner, _seating, Table.Stakes, _turnedUp,
-            Table.Ownership.Records, Table.Shoe);
+            Table.Ownership.Records, Table.Shoe, result.Melds);
         EverythingHolds(allowedNewOwnership: null);
     }
 
@@ -486,18 +486,25 @@ internal sealed class RuleConformance : IGameObserver
         Stakes stakes,
         IReadOnlyList<Card> turnedUp,
         IReadOnlyDictionary<CardId, PlayerId> ownership,
-        IReadOnlyList<Card> shoe)
+        IReadOnlyList<Card> shoe,
+        IReadOnlyList<Meld> declared)
     {
         var expected = players.ToDictionary(player => player, _ => 0);
 
-        // §7.2 step 1: the flat round payment. No per-card penalty exists, so this is the whole
-        // of what losing costs.
+        // §7.2 step 1, as amended by §7.3: the round payment. No per-card penalty exists, so
+        // this is the whole of what losing costs — but it is not flat any more. A declaration
+        // with no joker anywhere in the thirteen pays ×2 at two, three or four seats and ×3 at
+        // five or more, re-derived here from the seat count and the cards laid down rather than
+        // asked of TableRules or of Settlement.
+        var jokerless = declared.SelectMany(meld => meld.Cards).All(card => !card.IsJoker);
+        var payment = stakes.RoundValue * (jokerless ? players.Count >= 5 ? 3 : 2 : 1);
+
         foreach (var player in players)
         {
             if (player != winner)
             {
-                expected[player] -= stakes.RoundValue;
-                expected[winner] += stakes.RoundValue;
+                expected[player] -= payment;
+                expected[winner] += payment;
             }
         }
 
