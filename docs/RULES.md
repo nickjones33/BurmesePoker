@@ -4,7 +4,50 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-22 (rev 26 — 🔥 **the expert corrected her own rule the same day, and the
+Last revised: 2026-08-22 (rev 29 — ✅ **§9 #45 ruled by Nick: a re-seating happens *"when people
+agree to do it"*, not when one player asks.** `PLAYER`, so `EXPERT` may still overturn it and the
+row stays open. ⚠️ **It reverses that row's own recommendation** — *one asking is enough* was
+recommended because it invents no machinery, and **the more expensive reading is the one taken**.
+⚠️ **Opens #47**: does *agree* mean everybody or most of them? — recommended **unanimous**, because
+a majority vote moves somebody's seat against their will in a game with money on it. 🔥 **And
+agreement forces a design question a bare request did not: a computer seat cannot want this either
+way, and a bot that abstained would make the rule dead at every table with a bot in it.** §10 gains
+**#23** and the work splits — **P36** holds the seating, **P37** is the agreeing.
+
+Rev 28 — 🔥 **rev 27's collision was real, and it was the *old* rule that
+was wrong.** §7.5 blames *the player before you* for a losing streak, which means nothing if that
+player changes every deal — so §9 #43 was put to **Aung Aung**, who answered that in real games
+***you don't shuffle seats every round, only when people ask for it.*** ✅ **§3 step 2 is
+corrected**: a seating is **drawn once and held**, and re-drawing is an event somebody **asks for**.
+❌ **Rev 19's *"every round, not once"* is withdrawn** — it recorded what *may* happen between games
+as what happens every time. 🔥 **So the engine is wrong again, in the opposite direction to the
+error P28 fixed** (§10 **#22**): before P28 a seating was held for a whole match, which is very
+nearly right, and P28 replaced it with the reading now withdrawn. ⚠️ **The fix is not a revert** —
+what is wanted is a held seating that can be re-drawn on request, which neither version does.
+✅ **#42 goes moot and #43 closes**; ⚠️ **#45 opens — is asking a *request* or a *vote*?** — and
+**#46**, for a re-seating mid-streak. ✅ **No published measurement moves**: `Sim` plays one round a
+game. **Packet P36 owns it, and P35 now depends on it.**
+🔥 **The heuristic that found this is worth keeping: when two Settled `EXPERT` rules collide,
+suspect the older recording rather than the newer saying.**
+
+Rev 27 — 🔥 **two scoring rules from a second expert, and one of them
+reaches across rounds.** **Aung Aung**, unprompted: *"if you win on an initial deal you get double
+payout"* (**§7.4**) and *"if you win three in a row then the player proceeding you in turn order
+pays your whole payout (blamed for feeding)"* (**§7.5**). 🔥 **§7.5 is the first rule in this
+document that cannot be settled from a single round, and the first that changes *who pays* rather
+than how much.** ✅ **It is also the third independent saying to single out the seat *above* you** —
+§5.1 bans feeding the seat below, §4.5 needs the permission of the seat above, and now the seat
+above is blamed for a streak: **three sayings, two people, one edge of the table.**
+⚠️ **Seven questions open at once — §9 #38–#44, the largest single addition that section has
+taken** — and 🔥 **#43 has no safe default**: §3 re-draws the seats every round, so *"the player
+before you"* is a different person each round and the seat blamed for a three-round run may never
+have fed the winner at all. **Either §7.5's blame is about one round's seating, or §3 is narrower
+than recorded.** ⚠️ **§10 is open again with #20 and #21**, hours after P33 emptied it.
+**Nothing here changes play**; both are settlement, both are unbuilt, and **P35 owns them**.
+⚠️ **§7.5 is invisible to every measurement this project has ever taken** — `Sim` plays one round
+a game.
+
+Rev 26 — 🔥 **the expert corrected her own rule the same day, and the
 correction is two rules.** §7.3's bonus is **×2 at two, three or four seats and ×3 at five or
 more** — not the flat ×3 rev 25 recorded — and its condition is **jokerless over the whole declared
 thirteen**, not *"all series clean"*. Verbatim: *"if you play two players, three players, or four
@@ -251,7 +294,10 @@ add a third deck — 162 cards — rather than reduce the hand size.
 Order matters. `CODE`, Settled:
 
 1. Shuffle both decks together.
-2. **Randomize seating order — every round, not once.** `EXPERT`, rev 19 (§9 #14).
+2. **Seat the players.** ⚠️ **Corrected in rev 28 — this is *not* done every round.** A seating
+   is drawn once and **held until the players agree to change it** (`EXPERT`, Aung Aung,
+   2026-08-22, for the holding; `PLAYER`, Nick, 2026-08-22, for *agree* rather than *ask* — §9 #45).
+   See the note below; the rev 19 reading is superseded.
 3. Deal **13 cards** to each player, one at a time around the table.
 4. Turn up **two money cards** — one from the **bottom** of the deck, one from the **top**.
 5. Designate money cards (§4).
@@ -267,13 +313,42 @@ copy of a card that is about to become a money card. That appears to be the poin
 > a sequence of them with the banks carrying over (§7.2), and **nothing about it is remembered
 > except the money**.
 >
-> 🔥 **This is what makes §9 #14's answer bite.** Seating is re-randomised *between games*, and
-> a game is a round — so **step 2 runs before every deal**. There is no fixed table, no dealer
-> rotation, and no persistent seat: the player on your left this round is on the far side of the
-> table the next. ✅ **Built 2026-08-21 (P28), and §10 #16 is discharged**: `MatchEngine` draws the
-> seats again before every deal and narrates the order it drew. The first round keeps the seating it
-> was handed, because whoever opened the table drew that one. ⚠️ **A seed from before P28 no longer
-> plays the same match** — the seating draw takes numbers the deal used to take.
+> ❌ **Rev 19 read this as *step 2 runs before every deal*, and rev 28 withdraws that reading.**
+> The paragraph below is kept because the reasoning was sound and only the premise was wrong.
+>
+> > *"Seating is re-randomised between games, and a game is a round — so step 2 runs before every
+> > deal. There is no fixed table, no dealer rotation, and no persistent seat: the player on your
+> > left this round is on the far side of the table the next."*
+>
+> 🔥 **What was actually said, and it took a contradiction to find it.** §7.5 (rev 27) blames
+> *the player before you* for a three-round losing streak — which cannot mean anything if that
+> player changes every round. Asked directly (§9 #43), **Aung Aung, 2026-08-22:** *in real games
+> **you don't shuffle seats every round, only when people ask for it.*** ✅ **So a seating is drawn
+> once and held**, and re-drawing is an **event somebody asks for** rather than a step of the deal.
+> **§9 #14's answer was about what *may* happen between games, not about what happens every time.**
+>
+> ⚠️ **The engine now contradicts this document again, and in the opposite direction to before.**
+> P28 built the every-round reading — `MatchEngine` draws the seats again before every deal — so
+> what was §10 #16's fix is now §10 #22's defect. **This is the second time §3 step 2 has been the
+> thing the code got wrong**, and the two errors point opposite ways. **Packet P36 owns it.**
+>
+> ✅ **Nothing published moves.** Every experiment in `BurmesePoker.Sim` runs `RoundsPerGame = 1`,
+> so there is never a second round for a re-draw to happen before — **the same argument that made
+> P28 free makes its reversal free.** ⚠️ **The front ends are where it shows**, and it shows as a
+> table that stops rearranging itself around a fixed viewer every deal, which is what P13.5's
+> layout always assumed.
+>
+> ✅ **How the asking works was ruled by Nick on 2026-08-22: *"when people agree to do it."***
+> `PLAYER` — so a re-draw happens when **the table agrees**, not when one player asks. ⚠️ **That
+> reverses §9 #45's own recommendation**, which was *one asking is enough* on the grounds that it
+> invents no machinery; **the more expensive reading is the one taken**, and it is taken by the
+> person whose game this is. It stands until `EXPERT` says otherwise.
+> ⚠️ **What *agree* means — everybody, or most of them — is §9 #47**, recommended **unanimous**.
+> 🔥 **And agreement makes one design question unavoidable that a bare request did not: what does a
+> computer seat do?** A rung decides about cards, and *"shall we move seats"* is not a card
+> decision — so a bot cannot meaningfully want this either way, and a bot that abstained would make
+> the rule **dead at every table with a computer in it**. **That is a design decision and not a
+> rule** — see packet P37, which records it rather than deciding it here.
 >
 > ⚠️ **This document keeps saying *round*** — every rule, every cross-reference, and every column
 > in `docs/strategy/measurements.csv` — because renaming the unit would break far more than it
@@ -1295,14 +1370,19 @@ value, whether you were one card short or holding all thirteen.
 
 | Detail | Provenance | Confidence |
 |---|---|---|
-| Flat round value to the winner from each other player — ⚠️ **except on a *jokerless* declaration, which pays ×2 at two, three or four seats and ×3 at five or more (§7.3)**. | `PLAYER` | Settled, amended rev 25, corrected rev 26 |
+| Flat round value to the winner from each other player — ⚠️ **except on a *jokerless* declaration, which pays ×2 at two, three or four seats and ×3 at five or more (§7.3)**, ⚠️ **and except on a win from the initial deal, which pays ×2 (§7.4)**. | `PLAYER` | Settled, amended rev 25, corrected rev 26, amended rev 27 |
+| ⚠️ **Who pays is not always everybody.** On the winner's **third consecutive win**, the seat immediately above them pays the whole round payment and the others pay nothing (§7.5). | `EXPERT` | Settled — rev 27, **unbuilt** |
 | Money cards settle separately and pairwise, by owner. | `PLAYER` | Settled |
 | **No** penalty for unmelded cards. | `PLAYER` | Settled |
 | **Nothing ends the session automatically.** Rounds repeat and banks carry over; players stop when they choose. | `PLAYER` | Settled |
 
 ⚠️ **"Flat" survived twenty-four revisions and is no longer the whole story.** Step 1 is flat in
 *what the loser held* — there is still no deadwood count — but it is **not** flat in *how the
-winner won*, ⚠️ **and since rev 26 it is not flat in *how many are playing* either.** See §7.3.
+winner won* (§7.3), ⚠️ **not flat in *how many are playing*** since rev 26 (§7.3 again),
+⚠️ **not flat in *when* they won** since rev 27 (§7.4), and 🔥 **since rev 27 it is not even a
+payment from everybody** (§7.5). **Four qualifications on one word, three of them added in three
+days** — step 1 is now the most amended sentence in this document, and a fifth should be expected
+rather than treated as a surprise.
 
 ---
 
@@ -1427,6 +1507,87 @@ anywhere. **It is now relevant at every table size**, and it is worth *most* at 
 win condition itself asks least. ✅ **That unblocks P32** — a five-handed re-measurement now has a
 scoring rule to be measured under — ⚠️ **but it makes P33 and P32 one measurement rather than two**,
 because the bonus is the only thing cleanliness is ever worth at five seats.
+
+---
+
+### 7.4 The deal bonus — winning on the **initial deal** pays double — `EXPERT`, Settled
+
+**Volunteered by Aung Aung on 2026-08-22**, with §7.5, as two scoring rules this document had
+never recorded:
+
+> *"If you win on an initial deal you get double payout."*
+
+🔥 **The second rule that pays the winner for *how* they won** (§7.3 is the first), and the first
+that pays for **when**. ⚠️ **It is also the first rule in this document that can make a round end
+before anybody has played a card**, which is why so much of it is open below.
+
+#### The rule
+
+| | |
+|---|---|
+| **Condition** | The winner goes out **on the initial deal** — the thirteen dealt to them already win, without play. |
+| **Pays** | **×2** the round value, from every other player. |
+| **Provenance** | `EXPERT` (Aung Aung, 2026-08-22). |
+
+⚠️ **What "on the initial deal" means is not settled, and it is the whole rule.** §7.1 requires a
+declaration and §5 makes a turn *take one, throw one* — so a player holding a winning thirteen at
+the deal has never yet been asked anything. **Whether the rule fires before the first draw, or on
+the winner's first turn, is §9 #38**, and it decides whether §7.4 is a common event or an almost
+impossible one.
+
+⚠️ **How it combines with §7.3 is open — §9 #39.** A jokerless win on the deal at five seats is
+either ×6, or ×3, or ×2, depending on whether the two multipliers multiply, or the larger wins, or
+they are exclusive. **Nothing in either saying addresses the other**, and this document must not
+choose for them.
+
+⚠️ **Whether it reaches the money-card settlement is §9 #40**, which is #36 asked again about a
+second multiplier. **The recommendation is the same — round payment only** — and it is the same
+recommendation for the same reason: the saying names the *payout*, and §7.2 step 2 is not a payout
+to the winner but a pairwise settlement in which the winner is one participant like anyone else.
+
+**See §10 #20, and packet P35.** Nothing implements this.
+
+---
+
+### 7.5 The feeding blame — a **third consecutive win** is paid entirely by the seat above you — `EXPERT`, Settled
+
+**Volunteered by Aung Aung on 2026-08-22**, with §7.4:
+
+> *"If you win three in a row then the player proceeding you in turn order pays your whole payout
+> (blamed for feeding)."*
+
+🔥 **The first rule in this game that reaches across rounds**, and 🔥 **the first that changes *who
+pays* rather than *how much*.** Every rule before it settles one round from that round alone.
+
+#### The rule
+
+| | |
+|---|---|
+| **Condition** | The winner has now won **three rounds in a row**. |
+| **Effect** | The player **immediately before the winner in turn order** pays the winner's **whole** round payment; the other players pay **nothing**. |
+| **Why** | They are **blamed for feeding** — the seat above you is the one whose discards you may take (§5), and §5.1 already treats that relationship as the one that matters. |
+| **Provenance** | `EXPERT` (Aung Aung, 2026-08-22). |
+
+🔥 **It is the third rule to single out the upstream seat, and that is strong corroboration rather
+than coincidence.** §5.1 bans you from feeding *the seat below you*; §4.5 makes a claim need the
+permission of *the seat above you*; and §7.5 blames *the seat above you* for a streak. **Three
+independent sayings, from two people, all naming the same edge of the table.**
+
+⚠️ **And it collides with §3 — this is the most important line in this section.** Since rev 19,
+**the seats are re-drawn before every round** (`EXPERT`, Settled), so *"the player before you"* is
+a **different person each round** and the seat blamed for a three-round streak may have sat
+downstream of the winner for the other two — or never have played a card near them at all.
+**Either the blame is deliberately about the third round's seating alone, or §3 and §7.5 cannot
+both be as recorded.** This document does not choose: **§9 #43**, and it is the row with no safe
+default.
+
+⚠️ **Four further things are open** — whether the streak resets or keeps firing (**#41**), which
+round's seating decides (**#42**), whether the substitution reaches the money cards (**#44**), and
+whether a multiplied payout is multiplied *before* the substitution. See §9.
+
+**See §10 #21, and packet P35.** Nothing implements this, and ⚠️ **nothing in this project can
+currently observe it**: `BurmesePoker.Sim` plays `RoundsPerGame = 1`, so a three-round streak is
+invisible to every measurement the programme has ever taken.
 
 ---
 
@@ -1568,8 +1729,47 @@ scoring have stopped being separable questions. ⚠️ **That unblocks P32 and m
 at five seats the bonus is the only thing cleanliness is ever worth, so measuring the five-handed
 game and measuring the bonus are one job.
 
-⚠️ **Neither row left blocks anything.** #36 has a recommendation now backed three times over, and
-#37 reaches one table size the standing set does not use.
+⚠️ **That paragraph was true for one day.** 🔥 **Rev 27 opens seven rows at once — the largest
+single addition this section has ever taken — and one of them has no safe default.**
+
+### Opened in rev 27 — §7.4 and §7.5, from Aung Aung, 2026-08-22
+
+| # | Question | § | Status | Blocks |
+|---:|---|---|---|---|
+| 38 | **What is "on the initial deal"?** §7.1 needs a declaration and §5 makes a turn *take one, throw one*, so a player dealt a winning thirteen has not yet been asked anything. Does the bonus fire (a) **before any draw**, on the dealt thirteen alone, or (b) on the winner's **first turn**, after one take and one discard? *"I pick up my thirteen and they already all meld. What happens next, and what do I get paid?"* | 7.4, 7.1, 5 | Unknown — recommend **(a), the dealt thirteen alone**, because *"on an initial deal"* names the deal and not a turn, and because (b) is barely distinguishable from an ordinary fast win | **The whole of §7.4.** Under (a) the engine must offer a declaration *before* the first turn, which nothing does; under (b) it need only count turns |
+| 39 | **Does the deal bonus multiply with the clean bonus?** A jokerless win on the deal at five seats is ×6, or ×3, or ×2. *"I'm dealt thirteen that all meld and there's no joker in them, five of us playing. What do the others pay me?"* | 7.4, 7.3 | Unknown — recommend **multiply (×6)**, because the two rules pay for unrelated things and neither saying mentions the other. ⚠️ **Weak** — *"double payout"* may mean double *the round value* rather than double *the payout*, and those differ once another multiplier exists | Settlement arithmetic, and how `TableRules` composes |
+| 40 | **Does the deal bonus reach the money cards?** #36 asked again about a second multiplier. | 7.4, 4.3 | Unknown — recommend **round payment only**, exactly as #36, and for the same reason: §7.2 step 2 is a pairwise settlement rather than a payout to the winner | Settlement. ✅ **Safe default** — it is what §7.3 already does, so it composes |
+| 41 | **Does the streak reset when it pays?** Having won three in a row and been paid by the seat above, does a **fourth** consecutive win fire §7.5 again, or does the count start over? *"I've won three and he paid the lot. I win the next one too — who pays?"* | 7.5 | Unknown — recommend **it keeps firing** (the condition is *at least* three consecutive), because the rule is stated as a property of a run rather than as a prize collected once | How a streak is counted, and nothing else. ✅ **Safe default** |
+| ~~42~~ | ✅ **MOOT since #43 closed**: a seating is held across the streak, so all three rounds share one and there is nothing to choose between. Kept because it becomes live again the moment somebody asks for a re-draw mid-streak — *"I've won two, we re-shuffle, I win a third. Who pays?"* — which is **#46**. **Which round's seating decides who is blamed?** The winner's three rounds have three different seatings (§3). *"I've just won my third in a row. Which of them is the player who has to pay — the one who was above me this round, or the one who was above me when the run started?"* | 7.5, 3 | Unknown — recommend **the third round's seating**, the one being settled, because settlement is a property of the round it settles | Who pays. ✅ **Safe default** given #43's answer |
+| ~~43~~ | ✅ **CLOSED the same day — see below. The answer was *the seats do not re-draw every round*, and it corrected §3.** 🔥 **Does §7.5 mean the seats do *not* re-draw every round?** §3 (rev 19, `EXPERT`) says the seating is drawn again before every deal, so *"the player before you"* is a different person each round and the seat blamed for a three-round run may have sat **downstream** of the winner for the other two. The blame is *"for feeding"*, and a seat that never fed you cannot have fed you. *"You said the one before me pays because he fed me. But we shuffle for seats every deal — what if he wasn't sitting there for the first two?"* | 7.5, 3 | ⚠️ **Unknown, and there is no safe default.** Either §7.5's blame is about one round's seating and the word *feeding* is loose, **or** §3 is narrower than recorded and seats hold for longer than a deal. **Both readings change a rule that is already `EXPERT` and Settled**, which is why this may not be decided here | 🔥 **§3, §7.5 and every front end's seating loop.** Ask this one first |
+| 44 | **Does the substitution reach the money cards?** Does the seat above pay the winner's money-card collections too, or only the round payment? | 7.5, 4.3 | Unknown — recommend **round payment only**, consistent with #36 and #40, and because §4.3's settlement is explicitly pairwise and mutual — the winner is not privileged in it | Settlement. ✅ **Safe default** |
+
+✅ **#43 was asked and closed on the day it was opened, 2026-08-22, and the heuristic that
+predicted it was right.** It read: *a new rule that contradicts an old `EXPERT` one is much more
+likely to mean the old one was recorded too narrowly than that the new one is wrong.* 🔥 **That is
+exactly what happened.** **Aung Aung:** in real games *"you don't shuffle seats every round, only
+when people ask for it."* **§3 is corrected in rev 28**; §7.5's blame is coherent because the seat
+above you is **the same person for the whole streak**; §9 #42 goes moot; and **the engine is wrong
+again**, in the opposite direction to the error P28 fixed (§10 #22).
+
+⚠️ **Four consecutive revisions each answered *past* the question asked, three changed a rule
+nobody was asking about — and rev 28 is the first where a *new* rule exposed an *old* one as
+mis-recorded.** **This game's rules are recalled as wholes, not as answers**, and §7.5 was a piece
+of a whole that included the seating. 🔥 **The general lesson, now earned twice: when two Settled
+`EXPERT` rules collide, suspect the older recording rather than the newer saying.**
+
+### Opened in rev 28 — how a re-seating is asked for
+
+| # | Question | § | Status | Blocks |
+|---:|---|---|---|---|
+| 45 | 🔥 **What does "when people ask for it" mean — a request, or an agreement?** Does **one** player asking move the seats, or must the others want it too? *"Somebody says let's change seats. Does that just happen, or do the rest of you have to want it too?"* | 3 | ✅ **Ruled by Nick, 2026-08-22: *"when people agree to do it."*** `PLAYER`, so it stands until the expert says otherwise (`EXPERT` outranks it) — **the question stays in this table for that reason and is not struck through.** ⚠️ **It reverses this row's own recommendation**, which was *one player asking is enough* on the grounds that it invents no machinery: **agreement is the more expensive reading and it is the one taken.** ⚠️ **What "agree" means is #47** | **P37's whole user interaction.** ✅ **P36's seam is unaffected** — *when* a re-draw happens is a policy either way |
+| 47 | **Does agreement mean everybody, or most of them?** §9 #45 is ruled as *when people agree*; a table of five with one objector either re-seats or does not. *"Three of us want to change seats and two don't. Do we change?"* | 3 | Unknown — recommend **unanimous among the people at the table**, because *agree* reads as consent rather than as a count, and because the losing side of a majority vote is made to move seats against their will in a game with money on it | **P37 only.** ✅ **Safe default** — unanimity is the reading that never moves somebody who objected, so no player is worse off under it than under the alternative |
+| 46 | **What if the seats change mid-streak?** Somebody has won two in a row, the table re-seats, and they win a third. Is the seat above them at that moment blamed, even though they were somewhere else for the first two? *"I've won two, we re-shuffle, I win a third. Who pays?"* | 7.5, 3 | Unknown — recommend **the third round's seating** (the round being settled), which is old #42's recommendation surviving into the one case that can still produce it. ✅ **Safe default** — it is what settling a round from its own state already means | Nothing, until a re-seating exists to happen mid-streak |
+
+⚠️ **#36 and #37 still block nothing**, and #40 and #44 both inherit #36's recommendation, so the
+three money-multiplier rows now stand or fall together. 🔥 **That is worth noticing: one answer to
+#36 would settle three rows**, and it is a single question about whether a multiplier is a property
+of *the prize* or of *the settlement*.
 
 ✅ **Closed in rev 25, all three confirming the standing default and all three now `EXPERT`:**
 
@@ -1958,12 +2158,15 @@ not a question.**
 
 Decisions here that the implementation contradicts or lacks.
 
-✅ **Empty again as of 2026-08-22.** Rev 25 reopened this section after P28 had emptied it, with
-#19 — the clean bonus — new, `EXPERT` and unbuilt. **P33 built it**, so every ruling below is
-discharged by a packet and the claim *"every rule this document records as Settled is
-implemented"* is true once more. ⚠️ **It was false for two days**, which is the shortest this
-section has ever been open, and the reason is that the rule arrived from a rules session rather
-than from the 2023 code.
+⚠️ **Open again, with two entries, since rev 27 on 2026-08-22.** It had been empty for a matter of
+hours: rev 25 reopened it with #19 (the clean bonus), **P33 built that**, and then §7.4 and §7.5
+arrived the same day. 🔥 **So the claim *"every rule this document records as Settled is
+implemented"* is false again, and both exceptions are scoring rules from the same conversation.**
+They are **#20** and **#21** below, and **packet P35** owns them.
+
+⚠️ **Neither is a defect and neither blocks play** — a round settles correctly today under §7.2 and
+§7.3. What they block is the document's own claim, which is why they are recorded here rather than
+left in §7.
 
 1. **Remove the ace wrap** (§6.1). Fixes the illegal `K-A-2` meld *and* the verified
    infinite loop.
@@ -2173,6 +2376,39 @@ See `RULES-TECHNICAL.md` §7 for defects not driven by rules decisions, and
 `RECONCILIATION-PLAN.md` for sequencing.
 
 ---
+
+20. **Pay double on a win from the initial deal** (§7.4). `EXPERT` (Aung Aung, 2026-08-22) and
+    **wholly unimplemented.** `Settlement.RoundPayment(stakes, rules, jokerless)` takes no notion
+    of *when* a hand was won, and — under §9 #38's recommended reading — `RoundEngine` would have
+    to offer a declaration **before the first turn**, which no engine path does: a round begins by
+    asking seat 0 to take a card. ⚠️ **This is the first ruling here that would change the shape of
+    a round rather than the arithmetic at the end of it.** See packet **P35**.
+21. **A third consecutive win is paid entirely by the seat above the winner** (§7.5). `EXPERT`
+    (Aung Aung, 2026-08-22) and **wholly unimplemented.** 🔥 **It is the first rule in this
+    document that cannot be settled from one round**: `Settlement` is a pure function of a single
+    round and holds no history, and the streak lives above it. ⚠️ **And no measurement in this
+    project can currently see it** — `BurmesePoker.Sim` plays `RoundsPerGame = 1` by design
+    (BUILD-PLAN §3.8), so every published figure is one-round-per-game and a three-round run
+    cannot occur. **Both halves of that are P35's problem and are why it is an L rather than an
+    M.** ⚠️ **Blocked in part on §9 #43**, which asks whether §7.5 contradicts §3's per-round
+    re-seating.
+
+23. **A held seating can be re-drawn when the players agree to it** (§3 step 2, §9 #45).
+    `EXPERT` for the holding, `PLAYER` for *agree*, and **wholly unimplemented** — there is no way
+    to change a seating at all once #22 is fixed, which would leave the table more rigid than the
+    game is. ⚠️ **It needs a kind of question this project has never asked**: `SeatPrompt` is
+    seat-private by construction (P13.2), and this one is **public and put to everybody at once**.
+    ⚠️ **Blocked in part on §9 #47** (everybody, or most of them). See packet **P37**.
+
+22. **Stop re-drawing the seats before every deal** (§3 step 2). `EXPERT` (Aung Aung, 2026-08-22,
+    rev 28) and **actively contradicted by the code**: `MatchEngine` draws a fresh seating before
+    every round, which P28 built on rev 19's reading. 🔥 **This is the second time §3 step 2 has
+    been the thing the implementation got wrong, and the two errors point in opposite directions**
+    — before P28 the seating was drawn once and held for a whole match, which is very nearly the
+    behaviour that is now correct. ⚠️ **The fix is not a revert**: what is wanted is a *held*
+    seating that can be **re-drawn on request** (§9 #45), which neither the old code nor the new
+    code does. ✅ **No published measurement moves** — `Sim` plays `RoundsPerGame = 1`, so there is
+    never a second round for a re-draw to precede. See packet **P36**.
 
 ## Sources
 

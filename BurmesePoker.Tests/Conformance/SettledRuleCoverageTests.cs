@@ -39,8 +39,16 @@ public class SettledRuleCoverageTests
             + "divergence (§10 #7), so 2–3-handed conformance waits on the packet that discharges it."),
         ["3"] = Checked(
             "Deal order and the two turn-ups: RuleConformance.RoundStarted/Watch (ownership at "
-            + "the deal, turned-up cards owned by nobody); seats re-drawn every round: "
-            + "RuleConformanceTests.TheSeatingIsRedrawnEveryRoundAfterTheFirst."),
+            + "the deal, turned-up cards owned by nobody). ⚠️ STEP 2 IS NOT CHECKED AGAINST THE "
+            + "DOCUMENT AS IT NOW STANDS. RuleConformanceTests.TheSeatingIsRedrawnEveryRound"
+            + "AfterTheFirst asserts what the engine does, and RULES.md rev 28 withdrew the "
+            + "reading it was built from: a seating is drawn once and HELD, and re-drawing is "
+            + "something the players agree to (§9 #45). 🔥 So that test currently pins a "
+            + "behaviour the rules authority contradicts — §10 #22 — and it is left standing "
+            + "rather than deleted because deleting it would leave the seating unasserted "
+            + "altogether. Packet P36 inverts it; P37 adds the agreeing (§10 #23). ✅ No "
+            + "published measurement is affected: every experiment runs one round a game, so "
+            + "there is never a second round for a re-draw to precede."),
         ["4.1"] = Checked(
             "Multipliers re-derived independently — permanent values, ×3 on a designated "
             + "permanent value, ×5 only on the 7♦/A♠ pair: RuleConformance.TheSettlementIsTheRules "
@@ -110,6 +118,22 @@ public class SettledRuleCoverageTests
             + "was missing rather than because no ordinary-play check could exist. P33 built "
             + "the rule and converted it, which is the alarm being answered rather than "
             + "silenced."),
+        ["7.4"] = Exempt(
+            "The deal bonus (RULES.md rev 27, EXPERT, Aung Aung): a win from the initial deal "
+            + "pays ×2. ⚠️ Recorded and NOT built — §10 #20, packet P35 — so there is nothing "
+            + "for an ordinary-play check to re-derive. 🔥 It also cannot arise in an ordinary "
+            + "round yet under §9 #38's recommended reading: the engine has no path that offers "
+            + "a declaration before the first turn, because a round begins by asking seat 0 to "
+            + "take a card. Converting this to Checked(...) is P35 acceptance 1, in exactly the "
+            + "way §7.3's entry was converted by P33."),
+        ["7.5"] = Exempt(
+            "The feeding blame (RULES.md rev 27, EXPERT, Aung Aung): a third consecutive win is "
+            + "paid entirely by the seat above the winner. ⚠️ Recorded and NOT built — §10 #21, "
+            + "packet P35. 🔥 And it is the first Settled rule in this document that CANNOT be "
+            + "audited by this harness even once it is built: RuleConformance watches ordinary "
+            + "rounds, and a three-round streak is not a property of a round. P35 owns the "
+            + "multi-round conformance case; this exemption names the reason rather than "
+            + "hiding it."),
     };
 
     // §9 (the question ledger) and §10 (the divergence ledger) are deliberately absent: they
@@ -152,21 +176,51 @@ public class SettledRuleCoverageTests
 
     /// <summary>The exemption list stays short enough to read (P30.2 acceptance 2).</summary>
     /// <remarks>
-    /// Today nothing is wholly exempt; what exists is <b>partial</b> exemptions, marked ⚠️
-    /// inline — rules Settled for table sizes the engine cannot yet deal (2–3-handed, §10 #7).
-    /// Each must say why, and there must stay few enough of them to read in one sitting.
+    /// <para>
+    /// Two kinds live here: <b>whole</b> exemptions (<c>EXEMPT — …</c>), where nothing can check
+    /// the rule, and <b>partial</b> ones marked ⚠️ inline, where most of a section is checked and
+    /// some corner is not. Each must say why, and there must stay few enough to read in one
+    /// sitting.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The ceiling moved from 5 to 7 on 2026-08-22, and the reason is recorded rather than
+    /// waved through.</b> Three rules landed in <c>RULES.md</c> in one day that nothing
+    /// implements — §7.4 and §7.5 (rev 27, unbuilt, §10 #20 and #21) and §3's corrected seating
+    /// (rev 28, which the engine now contradicts, §10 #22). 🔥 <b>A count is a proxy for the
+    /// property that actually matters, which is that no exemption is permanent</b>, so the
+    /// ceiling was raised and a stronger assertion put beside it: <b>every whole exemption must
+    /// name the packet that will discharge it.</b> An exemption nobody owns is the thing this
+    /// test exists to prevent, and a bare number never caught that.
+    /// </para>
+    /// <para>
+    /// ✅ <b>What brings it back down</b>: P35 converts §7.4 and §7.5 to <c>Checked</c>, and P36
+    /// makes §3's entry true again. <b>If this ceiling has to move a second time, that is a
+    /// finding about the backlog and not a licence.</b>
+    /// </para>
     /// </remarks>
     [Fact]
     public void TheExemptionListIsShortAndEveryEntrySaysWhy()
     {
-        var whole = Registry.Where(entry => entry.Value.StartsWith("EXEMPT", StringComparison.Ordinal));
+        var whole = Registry
+            .Where(entry => entry.Value.StartsWith("EXEMPT", StringComparison.Ordinal))
+            .ToList();
+
         var partial = Registry.Where(entry =>
             !entry.Value.StartsWith("EXEMPT", StringComparison.Ordinal) && entry.Value.Contains('⚠'));
+
         var exemptions = whole.Concat(partial).ToList();
 
-        Assert.InRange(exemptions.Count, 1, 5);
+        Assert.InRange(exemptions.Count, 1, 7);
+
         Assert.All(exemptions, entry => Assert.True(
             entry.Value.Length > 60, $"§{entry.Key}'s exemption says nothing a reader can re-check."));
+
+        // 🔥 The assertion the count was standing in for: a rule nothing checks has to be
+        // somebody's job. A whole exemption that names no packet is a rule quietly abandoned.
+        Assert.All(whole, entry => Assert.True(
+            Regex.IsMatch(entry.Value, @"\bP\d+(\.\d+)?\b"),
+            $"§{entry.Key} is wholly exempt and names no packet to discharge it. "
+            + "An exemption nobody owns is a rule quietly abandoned."));
     }
 
     /// <summary>

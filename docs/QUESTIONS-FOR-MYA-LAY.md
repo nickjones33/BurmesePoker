@@ -722,3 +722,69 @@ it is not only that **this game's rules are recalled as wholes rather than as an
 a rule recalled in one piece will come back **in pieces over time**, and a piece may arrive hours
 after the session that produced the first one. ⚠️ **Do not treat a session as closed on the day it
 ends.** The morning's *"3-time winning game prize"* was true of one table size out of four.
+
+---
+
+## Q10 — Aung Aung's two scoring rules, 2026-08-22 **(the streak rule contradicts a Settled rule)**
+
+**What arrived, unprompted and from the *other* expert:**
+
+> *"If you win on an initial deal you get double payout."* — now **§7.4**
+
+> *"If you win three in a row then the player proceeding you in turn order pays your whole payout
+> (blamed for feeding)."* — now **§7.5**
+
+🔥 **Both are recorded as `EXPERT` and Settled; neither is built.** They opened **seven** rows in
+§9 (#38–#44), the largest single addition that section has ever taken. **Ask #43 first** — it is
+the only one with no safe default, and it is a question about a rule that is already settled.
+
+### The one to ask first — does the seating really change every deal?
+
+⚠️ **Neutral phrasing, and do not offer either reading.** The recommendation heuristic has been
+overturned once in this file already, and this is a question about §3, not about §7.5.
+
+1. *"You said the one before me pays because he fed me. But we shuffle for seats every deal — what
+   if he wasn't sitting there for the first two of my three wins?"* (§9 #43.)
+
+**Why it matters:** §3 says the seats are re-drawn before every round (`EXPERT`, rev 19), so *"the
+player before you"* is a different person each round and the seat blamed for a three-round run may
+have sat **downstream** of the winner for the other two, or nowhere near them. **A rule that blames
+somebody for feeding cannot be about somebody who never fed you.** Either §7.5's blame is about the
+third round's seating alone and the word *feeding* is loose, **or §3 is narrower than recorded and
+seats hold for longer than a deal.** 🔥 **Both readings change a Settled `EXPERT` rule**, which is
+why this may not be decided in the document.
+
+### The rest, in order of what they block
+
+2. **What "on the initial deal" means.** *"I pick up my thirteen and they already all meld, before
+   anybody has drawn anything. What happens next, and what do the others pay me?"* (§9 #38 — this
+   decides whether §7.4 is a rule about the deal or about the first turn, and under one reading
+   the engine has to offer a declaration before the round's first draw.)
+
+3. **Whether the two bonuses stack.** *"I'm dealt thirteen that all meld and there's no joker in
+   them, five of us playing. What do the others pay me?"* (§9 #39 — ⚠️ **do not say "six times"
+   first**, or any number; let the answer name its own.)
+
+4. **Whether the streak keeps firing.** *"I've won three and he paid the lot. I win the next one
+   too — who pays that one?"* (§9 #41.)
+
+5. **Which seating decides the blame.** *"I've just won my third in a row. Which of them has to pay
+   — the one who was above me this round, or the one who was above me when the run started?"*
+   (§9 #42 — ⚠️ only worth asking if #43 says the seats do re-draw.)
+
+6. **What the multipliers and the substitution reach.** *"When it's double for the deal, or when
+   the one before me pays the lot — does the money-card money change too, or is it only the $5 for
+   the round?"* (§9 #40 and #44 — 🔥 **this is #36 asked a third time**, so one answer settles
+   three rows. Ask it once, about all three.)
+
+### What was learned about asking
+
+🔥 **A second expert is a second whole**, and the first thing the second one said contradicted a
+rule the first one settled. **That is the pattern from Q9 arriving through a new door**: rules are
+recalled as wholes, and two people hold two wholes that need not agree at the edges. ⚠️ **Do not
+reconcile them in the document.** Record both, mark the collision, and ask.
+
+🔥 **And note what §7.5 corroborates while it collides.** It is the **third independent saying to
+single out the seat above you** — §5.1 bans feeding the seat below, §4.5 needs the permission of
+the seat above, §7.5 blames the seat above for a streak. **Three sayings, two people, one edge of
+the table.** Whatever #43's answer is, the upstream relationship is real and old.

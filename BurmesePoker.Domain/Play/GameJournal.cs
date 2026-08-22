@@ -142,8 +142,18 @@ public sealed record JournalHeader(
     /// the stamp still moves, because a journal is a record of which document a build was reading.
     /// Rev 26 is the second: it corrected §7.3 (the bonus is <b>jokerless</b>, and it is ×2 at two,
     /// three or four seats and ×3 at five or more) and §7.3 is still unbuilt.
+    /// Rev 27 is the third: §7.4 (a win from the initial deal pays ×2) and §7.5 (a third
+    /// consecutive win is paid entirely by the seat above the winner), both from Aung Aung, both
+    /// settlement, and both unbuilt — see packet P35.
+    /// Rev 28 is the first that changes play since rev 23 and the first to <em>withdraw</em> a
+    /// reading this project built: §3 step 2 no longer re-draws the seating before every deal —
+    /// a seating is held until somebody asks to change it — so <c>MatchEngine</c> contradicts the
+    /// document until P36 lands (§10 #22).
+    /// Rev 29 rules §9 #45: a re-seating happens when the players <em>agree</em>, not when one of
+    /// them asks — <c>PLAYER</c>, and the work splits into P36 (hold the seating) and P37 (the
+    /// agreeing).
     /// </remarks>
-    public const int CurrentRulesRevision = 26;
+    public const int CurrentRulesRevision = 29;
 
     /// <summary>How many seats were at the table.</summary>
     public int TableSize => Seats.Count;
