@@ -136,8 +136,12 @@ public sealed record JournalHeader(
     /// (review R2). <c>GameJournalTests.TheRevisionStampedIsTheRevisionRulesMdIsAt</c> now parses
     /// the rev out of <c>docs/RULES.md</c>'s header and fails the build when they disagree — the
     /// P23 idiom — and the <c>/poker</c> skill's Phase 6 names the bump.
+    /// ⚠️ <b>The binding is unconditional, so this moves with <em>every</em> revision and not only
+    /// with the play-changing ones.</b> Rev 25 is the first that did not change play — three
+    /// expert confirmations and one new settlement rule (§7.3) that nothing implements yet — and
+    /// the stamp still moves, because a journal is a record of which document a build was reading.
     /// </remarks>
-    public const int CurrentRulesRevision = 24;
+    public const int CurrentRulesRevision = 25;
 
     /// <summary>How many seats were at the table.</summary>
     public int TableSize => Seats.Count;

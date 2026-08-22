@@ -4,7 +4,20 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-21 (rev 24 — ✅ **no rule moved; §3's re-seating and §4.5's permission are
+Last revised: 2026-08-22 (rev 25 — 🔥 **three answers, two confirmations and a scoring rule
+nobody had ever recorded.** Asked flat: **#19** *does a release survive the reshuffle?* — **yes**;
+**#32** *does the ×5 need the 7♦ and the A♠ specifically?* — **"specifically"**; **#27** *what does
+taking a joker close?* — **"yeah"**, the other jokers. All three confirm the standing default, all
+three move from `PLAYER`/Unknown to `EXPERT`, and **§9 has no open row left.**
+🔥 **And #27's answer did not stop there.** *"Unless you want all series clean that got a 3-time
+winning game prize, you have a joker, so you discard the joker for the winning clean series."*
+**There is a ×3 prize for declaring with every series clean** — which §7.2 has recorded as **flat,
+`PLAYER`, Settled** since rev 1, and which nothing in this project implements. It is §7.3, it is
+`EXPERT`, and **four things about it are unspecified** — §9 #33–#36. ⚠️ **The fifth consecutive
+revision to answer past the question asked**, and the fourth to change a rule nobody was asking
+about. **Nothing here changes play**; the bonus is settlement and is unbuilt.
+
+Rev 24 — ✅ **no rule moved; §3's re-seating and §4.5's permission are
 code now, and this document no longer records anything settled that nothing implements.** Packet
 P28 built the last two: **the seats are drawn again before every deal** (§3 step 2) — which was the
 only rule here the engine actively *contradicted* rather than merely lacked (§10 #16) — and
@@ -267,7 +280,7 @@ The distinguishing mechanic of the game.
 | The **two turned-up cards** are money cards for that round. | `CODE` | Settled |
 | **A turned-up card is owned by nobody** — not by the table, and not by the opener who claims it. *"The ones shown cannot be owned whether you take them or not."* | `EXPERT` | Settled — rev 20 |
 | **If the turned-up card is a 7♦, an A♠ or a joker, that value pays ×3.** The shown copy is worthless, because nothing unowned pays — so in practice the **partner copy** carries all of it. | `EXPERT` | Settled — rev 20, restated rev 21 |
-| 🔥 **If the two turned-up cards are the 7♦ and the A♠, and one player owns *both* partners, the two pay ×5 each instead of ×3.** | `EXPERT` | Settled — rev 21; ⚠️ its reach is §9 #32 |
+| 🔥 **If the two turned-up cards are the 7♦ and the A♠, and one player owns *both* partners, the two pay ×5 each instead of ×3.** ✅ **The pair specifically** — not any two tripled values (§9 #32, closed rev 25). | `EXPERT` | Settled — rev 21, reach settled rev 25 |
 | A turned-up **joker** designates **the other joker of its own colour**. Colour is a joker's identity, so §4.2 applies unchanged. | `EXPERT` | Settled — rev 20 |
 | ~~If a turned-up money card is the 7♦ or A♠, it becomes a **double money card**.~~ | ~~`EXPERT`~~ | ⚠️ **Superseded in rev 20**, one day after it was recorded — see below |
 | Stacking past the triple is impossible to reach in a way that pays anyone. | `DERIVED` | Settled |
@@ -789,11 +802,25 @@ Three terms carry the whole rule:
 > only the Q♦s and leave the Q♣ that Mya Lay actually objected to perfectly legal. §4.2's
 > narrowness and §5.1's breadth are unrelated decisions that happen to be about the same word.
 
-> **`OPEN` — a joker has no rank at all.** `Card.Rank` is `null` for a joker, so *"the same rank"*
-> has nothing to bite on: taking a joker in the open closes **nothing**, read literally. Four
-> jokers are in the shoe and a joker is the most valuable card a rummy has, so *"you may not feed
-> the player the joker they just took"* is very much the rule's spirit — but the spirit is not the
-> rule. Tracked as §9 **#27**; the recommendation there is that **taking a joker closes jokers**.
+> ✅ **A joker has no rank, and taking one closes the other jokers** — `EXPERT`, rev 25. `Card.Rank`
+> is `null` for a joker, so *"the same rank"* has nothing to bite on and a literal reading closes
+> **nothing**; four jokers are in the shoe and a joker is the most valuable card a rummy has, so the
+> spirit plainly went the other way. Asked flat on 2026-08-22 — *"I take the joker you threw away.
+> Are you allowed to throw the other joker at me next turn?"* — and answered **"Yeah."**
+> §9 **#27** is closed, the `PLAYER` house ruling from *"I'd assume"* held, and **no code changes**:
+> `Card.SameRankAs` is `Rank == other.Rank`, and `null == null` is true, so the ruling falls out of
+> the type rather than out of a branch somebody wrote.
+>
+> ⚠️ **It closes all four jokers and not the two of a colour**, which is where it parts company with
+> §4.1's turned-up joker (#11 — that designates the other joker of *its own* colour). **The same
+> word means four cards in one rule and two in the other**, deliberately: feeding is about what an
+> opponent is collecting, designation is kept narrow to keep the side bet small (§4.2).
+>
+> 🔥 **The answer arrived with a rule attached that nobody asked about**, and it is why a joker
+> would ever be thrown at all: *"Unless you want all series clean that got a 3-time winning game
+> prize, you have a joker, so you discard the joker for the winning clean series."* **See §7.3.**
+> ⚠️ **Whether that is an exception to this ban or merely an explanation of exception 2 is §9 #33**,
+> and it is not decided here.
 
 **Why the rule exists.** Taking a card in the open announces what you are collecting. Handing the
 collector another one is not bad luck, it is a gift, and the seat upstream of you should not be
@@ -822,8 +849,13 @@ public statement that you are not collecting Queens, and it is not retracted by 
 > ⚠️ **At a table that question is answered by looking down her discards — legitimately, since
 > rev 17 closed §9 #15 and the discards are public — but in code it must not be.** §5 sweeps every
 > discard pile back into the draw pile when the deck runs out, which would take the evidence away
-> and silently re-arm a released rank mid-round — so the set is *kept*, not *read back*. See §9 #19, which is the same point as an open question about the rule rather
-> than about the implementation.
+> and silently re-arm a released rank mid-round — so the set is *kept*, not *read back*.
+> ✅ **§9 #19 is closed and the house ruling held: a release survives the reshuffle** — asked flat
+> on 2026-08-22 and answered **yes** (`EXPERT`, rev 25). It had stood since rev 18 as a `PLAYER`
+> ruling from *"nobody really knows"*, and it is now recalled rather than decided. **The
+> implementation needs no change**: keeping the set rather than reading the pile back is exactly
+> what this answer requires, and `AReleasedRankSurvivesTheReshuffleThatTakesTheEvidenceAway` is the
+> test that already said so.
 
 **2. Going out — the winning discard.** The ban never stands between a player and a win. If the
 discard would be the discarding player's **declaring discard** — the 14th card thrown immediately
@@ -1242,10 +1274,52 @@ value, whether you were one card short or holding all thirteen.
 
 | Detail | Provenance | Confidence |
 |---|---|---|
-| Flat round value to the winner from each other player. | `PLAYER` | Settled |
+| Flat round value to the winner from each other player — ⚠️ **except on an all-clean declaration, which pays ×3 (§7.3)**. | `PLAYER` | Settled, amended rev 25 |
 | Money cards settle separately and pairwise, by owner. | `PLAYER` | Settled |
 | **No** penalty for unmelded cards. | `PLAYER` | Settled |
 | **Nothing ends the session automatically.** Rounds repeat and banks carry over; players stop when they choose. | `PLAYER` | Settled |
+
+⚠️ **"Flat" survived twenty-four revisions and is no longer the whole story.** Step 1 is flat in
+*what the loser held* — there is still no deadwood count — but it is **not** flat in *how the
+winner won*. See §7.3.
+
+---
+
+### 7.3 The clean bonus — an all-clean declaration pays ×3 — `EXPERT`, the rule; the details are open
+
+🔥 **The first thing in this game that pays the winner for *how* they won rather than *that* they
+won**, and the first amendment to §7.2's flat round payment since rev 1.
+
+**Volunteered by Mya Lay on 2026-08-22**, while answering a question about jokers and the feeding
+ban (§9 #27). Verbatim:
+
+> *"Yeah. Unless you want all series clean that got a 3-time winning game prize, you have a joker,
+> so you discard the joker for the winning clean series."*
+
+**What is settled by that sentence:**
+
+| | |
+|---|---|
+| **There is a bonus** on the winning game prize for declaring with the series clean. | `EXPERT` |
+| **It is ×3.** | `EXPERT` |
+| **It is worth throwing a joker away for** — which is the only reason this document has ever recorded for parting with one. | `EXPERT` |
+
+🔥 **The size of it, and this is why it is not a footnote.** At standard stakes a round pays the
+winner $5 from each of the others — $15 at four seats, $20 at five. **A clean declaration makes
+that $45 and $60**, against a measured side bet of about $11.58 a round (§4.3). ⚠️ **It is
+therefore the largest single swing in the game, ahead of the ×5 jackpot**, and every strategy
+figure in `docs/STRATEGY.md` was measured with it absent.
+
+⚠️ **Nothing here is built.** `Settlement` pays §7.2 step 1 flat, and no rung knows the bonus
+exists — which means a rung would currently throw a joker only when forced, and the one behaviour
+the expert named as the *reason* jokers get discarded cannot arise. **See §10.**
+
+⚠️ **Four things it does not say, and none of them may be guessed** — §9 **#33–#36**. The most
+consequential is what *"all series clean"* means, because §7.1.1 has an established and
+deliberately narrow vocabulary here: cleanliness attaches to the series a table size **requires**
+and a surplus series need not be clean (§9 #28). **A hand-wide reading would be the third time this
+document recorded a purity rule as flat over the whole hand and had to narrow it** (§7.1.1's own
+history, and §9 #7).
 
 ---
 
@@ -1322,6 +1396,13 @@ the **7♦** — one of your two permanent money cards. Almost certainly chance.
 (§6.2), and the melding model (§6.3) — are resolved. What is left is unrecorded rather than
 disputed.
 
+🔥 **Rev 25 emptied this section and refilled it from one sentence.** #19, #27 and #32 all closed
+on 2026-08-22, all confirming their standing defaults — and #27's answer volunteered **§7.3, a ×3
+prize for an all-clean declaration**, which nothing in this document or this codebase knew about.
+**Four new rows (#33–#36) are what that one sentence leaves unspecified.** ⚠️ **This is the fifth
+consecutive revision to answer past the question asked**, and the fourth to change a rule nobody
+was asking about.
+
 ✅ **One question, and it exists because an answer made a combination the rule was never stated
 about.** Rev 21 closed #30 (**an objection turns on the rank alone**) and #31 (**a turned-up
 joker's partner pays ×3, same as any other permanent money card**) — and the second closed by its
@@ -1336,25 +1417,48 @@ answering how much one pays. ⚠️ **The pattern is worth naming: this game's r
 wholes, not as answers.** Asking a narrow question and recording only the narrow answer has lost
 material three times.
 
-⚠️ **What is left is one row, and it does not block play — only a correct settlement.**
+⚠️ **What is left is four rows, none of which blocks play — but §7.3 is unbuilt, so settlement is
+wrong by a factor of three on any round somebody declares clean.**
 
 ✅ **Nothing open blocks anything, and nothing settled is unbuilt.** §5.1's specification —
 #16–#20, #25 and #27 — was written on 2026-08-20; rev 18 closed the win condition's last two, #22
 and #29; and the one survivor has a recorded default that a shipped packet already runs on.
 🔥 **The backlog this paragraph used to describe is gone**: §7.1.1 (P25), §4 (P26), §5.1 (P27) and
 §3 with §4.5 (P28) are all code, so **every rule this document records as Settled is implemented**
-— §10 #13, #14, #16, #17 and #18 are all discharged. ⚠️ **What is not discharged is the
-measurement**: every figure in `docs/STRATEGY.md` was taken under rules the game no longer plays by
-(P29).
+— §10 #13, #14, #16, #17 and #18 are all discharged. ⚠️ **That stopped being true in rev 25**: **§7.3 is Settled and unbuilt**, so the sentence
+above now has exactly one exception and §10 carries it.
 
-⚠️ **One of the two is worth more than its size.** #11's default sends a joker's money value
-somewhere §5.1's #27 sends it elsewhere — two of the four jokers against all four — and the two
-rules are deliberately scoped in opposite directions (§4.1). **The wrong guess is invisible: it
-pays the wrong person a dollar in about one round in fourteen.**
+✅ **The measurement was discharged by P29 and re-run by P31** — `docs/STRATEGY.md` is measured
+against rev 24. ⚠️ **§7.3 will invalidate it again the moment it is built**, and it will invalidate
+it harder than P25–P28 did, because the bonus changes what a winning hand is *worth* rather than
+what it is.
 
 | # | Question | § | Status | Blocks |
 |---:|---|---|---|---|
-| 32 | Does the **×5** need the turn-up to be the **7♦ and the A♠ specifically**, or does any two tripled values do — a 7♦ and a joker, two jokers of opposite colours? *(Raised by rev 21 making jokers permanent, which created combinations the rule was never stated about.)* | 4.1 | Unknown — recommend the **narrow** reading, which is what was said | Settlement |
+| 33 | **Is the joker throw an exception to §5.1, or is it exception 2 restated?** Jokers are closed against you and you are going out clean, so you must shed your joker. If that throw is your **declaring discard**, exception 2 already permits it and nothing new is needed. But if you must shed the joker **a turn or more before** you can declare, §5.1 forbids it and the bonus is unreachable. *"Can you throw the joker at me the turn before you go out, or only as the very last card?"* | 5.1, 7.3 | Unknown — recommend **exception 2 only** (change nothing), because it is the reading that adds no rule | Whether the bonus is reachable at all |
+| 34 | **What does "all series clean" mean?** Every series in the declared hand joker-free — or the whole hand joker-free, jokers in *sets* included? §7.1.1's vocabulary is narrow: purity attaches to the series a table size **requires**, and a surplus series need not be clean (§9 #28). | 7.3 | Unknown — recommend **every series in the hand**, the literal words, ⚠️ **but see the warning in §7.3** | Settlement |
+| 35 | **Does it exist at five or more seats?** §7.1.1 requires **no series at all** there, so a declared hand may legitimately contain none. Is a hand with no series vacuously all-clean and paid ×3, is the bonus simply unavailable, or does it require at least one clean series to exist? | 7.3, 7.1.1 | Unknown — **no safe default**; the three readings pay different amounts and one of them pays ×3 for nothing | Settlement, and **P32** |
+| 36 | **Does the ×3 reach the money cards?** *"3-time winning game prize"* names the round payment (§7.2 step 1). Does the money-card settlement (step 2) triple with it, or is it untouched? | 7.3, 4.3 | Unknown — recommend **the round payment only**, which is what the words say | Settlement |
+
+⚠️ **#35 is the one with no safe default, and it is the one that blocks a packet.** P32 moves the
+standing set to five seats, where cleanliness is currently irrelevant (§7.1.1). If the bonus exists
+there, **cleanliness becomes relevant at every table size for the first time** and the win condition
+and the scoring stop being separable questions.
+
+✅ **Closed in rev 25, all three confirming the standing default and all three now `EXPERT`:**
+
+| # | Question | Answer |
+|---:|---|---|
+| 19 | Does a release survive the reshuffle? | **Yes** — the `PLAYER` ruling from *"nobody really knows"* held. No code change. |
+| 27 | A joker has no rank — what does taking one close? | **"Yeah"** — the other jokers, all four. The `PLAYER` ruling from *"I'd assume"* held. No code change. |
+| 32 | Does the ×5 need the 7♦ and A♠ specifically? | **"Specifically."** The narrow reading, which is what P26 built and fenced with two tests. No code change. |
+
+🔥 **Three for three on the recommendations, and it is the first revision in this document's
+history where every standing default was confirmed.** ⚠️ **Do not read that as a licence to trust
+the next one.** The three confirmed were all *narrow* readings — the reading that changes least —
+and the two this document has actually got wrong (§6.2, §7.1) were both cases where a *flat, broad*
+rule was recorded and later had to be narrowed. **#34 is exactly that shape**, which is why it is
+open rather than defaulted.
 
 
 > ✅ **#8 — closed in rev 18 by §9 #29, and the recommendation held.** The note below stands as
@@ -1711,7 +1815,11 @@ not a question.**
 
 ## 10. Rulings that change the code
 
-Decisions here that the implementation contradicts or lacks:
+Decisions here that the implementation contradicts or lacks.
+
+⚠️ **Rev 25 reopened this section after P28 emptied it.** Every ruling below was discharged by a
+packet; **#19 is new, is `EXPERT`, and is unbuilt** — so the claim *"every rule this document
+records as Settled is implemented"*, true from P28 to rev 24, is false again.
 
 1. **Remove the ace wrap** (§6.1). Fixes the illegal `K-A-2` meld *and* the verified
    infinite loop.
@@ -1879,6 +1987,25 @@ Decisions here that the implementation contradicts or lacks:
     ⚠️ **What the rungs answer is a decision and not a derivation.** Every bot refuses whenever it
     may, on §4.5's own reasoning — the claim would close that rank in its hand — and **no rung
     prices the disclosure**. Whether refusing is right is unmeasured (P29).
+
+19. 🔥 **An all-clean declaration pays ×3** (§7.3) — **the only Settled rule in this document
+    that nothing implements, and the first one that is about what a win is *worth*.**
+    `Settlement.ForRound` pays §7.2 step 1 flat from every loser to the winner, and nothing
+    anywhere asks whether the declared hand's series were clean. **`Meld.IsClean` already exists**
+    (§7.1.1 needs it to count the required clean series), so the predicate is not the work; the
+    work is that the round payment stops being a constant.
+    ⚠️ **It cannot be built from the sentence that produced it.** §9 **#34** decides *which* melds
+    have to be clean, **#35** decides whether the bonus exists at five or more seats where §7.1.1
+    requires no series at all, and **#36** decides whether the ×3 reaches the money settlement.
+    **#35 has no safe default** — the three readings pay different amounts and one of them pays ×3
+    for a hand with no series in it.
+    ⚠️ **And it reaches further than settlement.** No rung knows the bonus exists, so none of them
+    will shed a joker to earn it — the one behaviour the expert named as *the* reason a joker gets
+    discarded cannot currently arise. **Every figure in `docs/STRATEGY.md` is measured without it**,
+    and building it invalidates them more thoroughly than P25–P28 did, because it changes what
+    winning is worth rather than what winning is. ⚠️ **§9 #33 decides whether the joker can even be
+    shed** — if §5.1 only yields on the declaring discard, a hand that must shed a joker a turn
+    early cannot reach the bonus at all.
 
 See `RULES-TECHNICAL.md` §7 for defects not driven by rules decisions, and
 `RECONCILIATION-PLAN.md` for sequencing.

@@ -580,3 +580,74 @@ situation, never the taxonomy; never name the answer you expect; and **write dow
 was not an answer to your question**, because three times out of four that has been the part that
 mattered.
 
+
+---
+
+## Q10 — Three confirmations, and a scoring rule nobody knew about **(2026-08-22)**
+
+**Three questions were put flat, all three came back confirming the standing default — and the
+third one carried a rule this project had never heard of.** Promoted as `RULES.md` **rev 25**.
+
+| # | Asked | Answer | Promoted to |
+|---:|---|---|---|
+| 19 | *"…the deck runs out, and everything thrown away gets gathered up and shuffled… Are you still free to throw Queens?"* | **Yes.** | §5.1, closing §9 #19 |
+| 32 | *"Does the ×5 need the 7♦ and the A♠ specifically, or would any two tripled values do?"* | **"Specifically."** | §4.1, closing §9 #32 |
+| 27 | *"I take the joker you threw away. Are you allowed to throw the other joker at me next turn?"* | **"Yeah."** — the other jokers, all four. | §5.1, closing §9 #27 |
+| — | *volunteered* | 🔥 **A ×3 prize for declaring with all series clean.** | **§7.3** (new), §9 #33–#36 |
+
+### The one nobody asked for, again
+
+The answer to #27 did not stop at *"yeah"*. Verbatim:
+
+> *"Yeah. Unless you want all series clean that got a 3-time winning game prize, you have a joker,
+> so you discard the joker for the winning clean series."*
+
+🔥 **That is a scoring rule, and §7.2 has said the round payment is *flat* since rev 1** —
+`PLAYER`, Settled, and never questioned. An `EXPERT` answer outranks it. **A clean declaration
+pays three times the winning prize**: $45 rather than $15 at four seats, $60 rather than $20 at
+five, against a measured side bet of about $11.58 a round. **It is the largest single swing in the
+game and it is unbuilt.**
+
+⚠️ **It also answers a question nobody had thought to ask**: *why would anyone ever throw a joker
+away?* Every rung in this project holds a joker over everything, because a joker fits anywhere —
+and the expert's sentence names the one situation in which you part with one. **`docs/STRATEGY.md`
+is measured in a world where that reason does not exist.**
+
+### The four follow-ups, phrased flat
+
+**Ask these before anything is built.** One of them has no safe default.
+
+1. **When the joker may be thrown.** *"You've got a joker in your hand and you're going for the
+   clean prize, so you need to get rid of it — but I've taken a joker, so jokers are shut against
+   you. Can you throw it at me the turn before you go out, or only as the very last card when you
+   put everything down?"* (§9 #33 — if it is only the last card, §5.1's existing exception already
+   covers it and nothing changes; if it is any turn, the ban has a second exception.)
+
+2. **What "all series clean" reaches.** *"Say I go out with two runs and a set. Both runs are
+   clean, but I've used a joker in the set. Do I still get the triple?"* (§9 #34 — ⚠️ **do not
+   offer the alternative**; this document has recorded a purity rule as flat over the whole hand
+   and had to narrow it twice already.)
+
+3. **Five-handed, where no run is needed.** *"Five of us are playing, so nobody has to have a run
+   at all. I go out with four sets and no runs — none of them clean, because there are no runs to
+   be clean. Do I get the triple, or does the triple need me to actually have runs?"* (§9 #35 —
+   ⚠️ **the one with no safe default.** The three readings pay different amounts and one of them
+   pays triple for a hand containing no series at all. **It blocks the five-handed re-measurement,
+   P32.**)
+
+4. **What the triple multiplies.** *"When somebody wins clean and everyone pays them triple — does
+   the money-card money triple too, or is it just the $5 for the round?"* (§9 #36)
+
+### What was learned about asking
+
+🔥 **Three for three on the recommendations — the first session in this file where every standing
+default was confirmed.** ⚠️ **And it is the fifth session running where the answer went past the
+question.** The two facts sit together and the lesson is not *"trust the defaults"*: all three
+confirmed answers were **narrow** readings, the reading that changes least, and every rule this
+document has actually got wrong (§6.2, §7.1) was a **flat, broad** rule later narrowed. **#34 is
+that exact shape**, which is why it is being asked rather than defaulted.
+
+⚠️ **The volunteered rule arrived attached to a question about something else, for the fifth time.**
+The pattern named at Q9 holds: **this game's rules are recalled as wholes, not as answers.** A
+question about jokers and feeding produced a scoring rule, because to the person answering, *why
+you would throw a joker* and *what throwing a joker costs you* are one thought.

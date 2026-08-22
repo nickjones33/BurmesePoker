@@ -11,6 +11,31 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
+🔥 **READ THIS FIRST — the plan changed on 2026-08-22, after P31 shipped, and `P32` is blocked.**
+`RULES.md` is **rev 25**. Three questions went to the experts and **all three confirmed the
+standing default** (§9 #19 a release survives the reshuffle — *yes*; #32 the ×5 needs the 7♦/A♠
+pair — *"specifically"*; #27 taking a joker closes the other jokers — *"yeah"*). **No code changed
+and no play changed.** ⚠️ **But #27's answer carried a rule nobody had ever recorded**: *"Unless you
+want all series clean that got a 3-time winning game prize, you have a joker, so you discard the
+joker for the winning clean series."*
+
+🔥 **`RULES.md` §7.3 is new — an all-clean declaration pays ×3 the winning prize** — where §7.2 has
+called the round payment **flat** since rev 1. It takes a four-handed win from $15 to **$45**, which
+is **the largest single swing in the game**, and **nothing implements it** (§10 #19, the only
+Settled ruling that is unbuilt). ⚠️ **It also supplies the only reason this project has ever had for
+throwing a joker away** — no rung will part with one — so **every figure in `docs/STRATEGY.md` is
+measured in a world where that reason does not exist.** ⚠️ **Four things are unspecified and §9 #35
+has no safe default** (does the bonus exist at five-plus seats, where §7.1.1 requires no series at
+all?) — **that is what blocks P32.** All four are drafted flat in `docs/QUESTIONS-FOR-MYA-LAY.md`
+Q10. **The next packet is §7.3 (`P33`), not P32.**
+
+✅ **And one packet needs no answer at all: `P34`, the front door.** **There is no `README.md`** —
+a visitor's first sight of this project is *this file*, which is written for a cold session rather
+than for a person, and three of the ten documents in `docs/` are wholly historical without saying
+so above the fold. P34 builds the front door (current-only) and **turns the anti-staleness habit
+into tests**, in the idiom P23 and P30.2 established. It needs no expert answer and regenerates
+nothing, so **it is the packet to run while `P33` waits.**
+
 🔥 **`P31` shipped 2026-08-22 on Opus 5: `warden`, the feeding ban played offensively — and it
 lost, by more than any rung has lost before.** `Domain/Agents/WardenBotAgent.cs` is `outs` with the
 **take** changed: it takes a card it does not want when that closes the rank against the seat that
@@ -46,7 +71,7 @@ holds 116 measurements from an 11,020 s (three-hour) run.** ✅ **71 of the 88 r
 came back byte-identical** — every old head-to-head cell, every pairing ratio, the whole dial and
 the whole money sweep — which is the strongest reproduction this project has recorded. ✅ **R3 and
 R13's owed corrections landed**: the claim-money interval is paired at **±0.25** (mean unmoved) and
-`money.side-margin.*` rows exist. ✅ **The next packet is `P32`** (five seats as the default table),
+`money.side-margin.*` rows exist. ⚠️ **`P32`** (five seats as the default table) is **blocked by §7.3 — see the top of this file**;
 **re-costed by P31 and worse than it was**: the round-robin is 21 cells, and the five-handed
 free-for-all is `7⁵ = 16,807` seatings. ⚠️ **Set the model with `/model` before the session; the
 packet records which one and cannot choose it.** **P24.2** is still Nick's call.

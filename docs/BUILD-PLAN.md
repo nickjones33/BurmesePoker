@@ -5303,7 +5303,56 @@ nobody has confirmed. `JournalHeader.CurrentRulesRevision` is unchanged at 24.
 
 ---
 
-### P32 — Five-handed is the default table ☐
+### P33 — The clean bonus (§7.3) ☐ — **added 2026-08-22, and it goes before P32**
+
+**Goal.** Build `RULES.md` §7.3 — **an all-clean declaration pays ×3 the winning prize** — and
+re-measure under it.
+
+**Read first.** `docs/RULES.md` §7.3, §7.2, §7.1.1 and §9 #33–#36; `docs/QUESTIONS-FOR-MYA-LAY.md`
+Q10; `Domain/Money/Settlement.cs`; `Domain/Melds/Meld.cs` (`IsClean`).
+
+🔥 **Why it goes before P32.** §9 **#35** asks whether the bonus exists at five or more seats, where
+§7.1.1 requires **no series at all** — so a five-handed re-measurement taken before it is answered
+is a measurement of a game whose scoring is unknown. **It also invalidates every figure in
+`docs/STRATEGY.md` more thoroughly than P25–P28 did**: those changed what a winning hand *is*, this
+changes what winning is *worth*, and it hands every rung a reason to throw a joker away that none
+of them currently has.
+
+⚠️ **THE PACKET CANNOT START UNTIL §9 #33–#36 ARE ANSWERED.** The rule comes from one volunteered
+sentence and four things about it are unspecified; **#35 has no safe default** — the three readings
+pay different amounts and one of them pays triple for a hand containing no series at all. The four
+questions are drafted flat and ready to put (Q10). **This is a stop-and-ask, not a proceed-on-a-
+default.**
+
+**Build, once the answers are in.**
+
+1. **`Settlement` stops paying a constant.** §7.2 step 1 is the round value from every loser; it
+   becomes the round value **×3** when the declared hand qualifies. ⚠️ **#36 decides whether step 2
+   (the money cards) triples with it** — recommend not, which is what the words say.
+2. **The qualifying test reads the *declared partition*, not the hand.** `Meld.IsClean` already
+   exists because §7.1.1 counts required clean series with it, so the predicate is not the work —
+   ⚠️ **but a hand can partition more than one way**, and a partition with a clean run may exist
+   beside one without. **Whether the winner is paid on the best partition available or on the one
+   the engine happened to find is a question the packet must answer explicitly**, and `HandEvaluator`
+   returns one partition today.
+3. **The rungs get a reason to shed a joker**, which is the behaviour the expert named and which no
+   rung can currently produce. ⚠️ **Keep it out of the ladder unless it is measured**: a rung that
+   plays for the bonus is a new rung under P15's discipline, not a change to `outs`.
+4. **Regenerate the standing suite.** Three hours at four seats (P31's measured price).
+
+**Acceptance.**
+1. A round won with all series clean pays ×3, and one won with a joker in a required series does
+   not — both asserted against `Settlement` directly and through a played round.
+2. `RuleConformance` re-derives the bonus independently, and §7.3 is registered in
+   `SettledRuleCoverageTests`' registry rather than exempted.
+3. `docs/STRATEGY.md` says what the bonus did to the ladder.
+
+**Done when.** §10 #19 is discharged and `RULES.md` again records nothing Settled that nothing
+implements.
+
+---
+
+### P32 — Five-handed is the default table ☐ — ⚠️ **blocked by P33 (§9 #35)**
 
 **Goal.** Move the whole standing set to **five seats**, which is the size this game is actually
 played at, and re-fit the difficulty dial there.
@@ -5383,6 +5432,75 @@ denominator is not a measurement.
 
 **Done when.** The standing answer is about the table this game is played at, and the four-handed
 figures are kept beside it as the different game they measure.
+
+---
+
+### P34 — A front door, and a documentation set that cannot go stale quietly ☐ — **added 2026-08-22**
+
+**Goal.** Somebody who has never seen this repository can arrive at it, understand what it is
+within a screen, and **not be told anything that stopped being true three packets ago**.
+
+**Read first.** Every file in `docs/`, and `CLAUDE.md`. That is the packet.
+
+🔥 **There is no `README.md`.** A visitor's first sight of this project is a directory listing and
+then `CLAUDE.md` — which opens with a wall of accumulated packet history written *for a cold Claude
+session*, not for a person deciding whether this repository is interesting. **The two audiences want
+opposite documents**: a session wants everything that was ever learned, in priority order; a visitor
+wants what is true now, in a page.
+
+⚠️ **And the second half of the goal is the hard half.** These documents are written as a **running
+narrative** — they accumulate, they mark findings with 🔥 and ⚠️, and they preserve superseded
+reasoning on purpose, because *why* a wrong default was taken has repeatedly been worth more than
+the default. **That is a genuine strength and it must not be flattened.** But it means a reader
+cannot tell *current fact* from *historical record* without knowing the packet history, and three
+of the ten documents are wholly historical (`RECONCILIATION-PLAN.md` is marked superseded,
+`RULES-TECHNICAL.md` describes code that was deleted at P0, `REVIEW-2026-08.md` is a closed review).
+
+**Build.**
+
+1. **`README.md` — the front door, and the only document in the repository that is *only*
+   current.** What the game is (two decks, 13 cards, fully concealed, played for money); that no
+   published ruleset exists and `RULES.md` is a sourced reconstruction; what the seven projects are;
+   how to play it in thirty seconds; where the answers live. ⚠️ **No packet numbers, no 🔥, no
+   history.** If a sentence needs *"since P27"* to be true, it belongs somewhere else.
+2. **A staleness banner on every historical document**, at the top, above the fold — what it was
+   for, when it stopped being current, and what replaced it.
+3. 🔥 **Turn the habit into a test, which is this project's own idiom** (P18 → P20 → P23 made
+   "a rung cannot be added without being measured" a habit, then a default, then an assertion;
+   P30.2 did the same for Settled rules). **At minimum:**
+   - **Every document in `docs/` appears in the documentation map, and every entry in the map
+     exists.** An orphan document is one nobody maintains.
+   - **Every project and command named in a fenced `bash` block resolves.** `--seat` became
+     `--people` at P13.6 and prose elsewhere kept saying `--seat`; a command that no longer runs is
+     the most expensive kind of stale, because a visitor tries it.
+   - **The tree's test count and `RULES.md`'s rev, where prose quotes them, match reality.**
+     `GameJournalTests` already binds the rev; the test count has been wrong at least once
+     (P31 wrote 709 for 715 and it was caught by running, not by reading).
+   - **A number that also exists in `docs/strategy/measurements.csv` matches it.** §11 already
+     forbids quoting a figure from prose — this makes it checkable rather than a rule people
+     remember.
+4. **One pass over the prose for claims that expired.** ⚠️ **Expect the "was true when it was
+   written" class**, not outright falsehoods: *"every rule this document records as Settled is
+   implemented"* was true from P28 to rev 24 and is false again as of §7.3.
+
+⚠️ **What this packet must not do.** It must not delete the narrative, compress the findings into
+bullet points, or remove a superseded default and the reasoning behind it. **The accumulated *why*
+is the most valuable thing in `docs/`** and three packets have been shaped by re-reading it. The
+job is a front door and a smoke alarm, not a rewrite.
+
+**Acceptance.**
+1. `README.md` exists, is current-only, and a reader who knows nothing can say what the game is,
+   what the repository contains and how to run it.
+2. Every historical document says so in its first three lines.
+3. At least the four checks above are tests, and each is proved able to fail.
+4. `dotnet build && dotnet test` green, and the count in `STATUS.md` matches it.
+
+**Done when.** A stranger can read the front door and be right about the project, and a document
+cannot go stale without something turning red.
+
+⚠️ **This packet is independent of the rules work and of the measurement programme** — it needs no
+expert answer and regenerates nothing. 🔥 **So it is the packet to run while P33 is blocked on
+§9 #33–#36**, and it is the cheapest one on the plan.
 
 ---
 

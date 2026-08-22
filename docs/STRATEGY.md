@@ -20,6 +20,14 @@ run, **`warden` and how often the feeding ban actually bites** (§13).
 P25's win condition, P26's money layer, P27's feeding ban and P28's claim permission all in force.
 P29 was the first regeneration under them; this is the second, and no rule moved between the two.
 
+⚠️ **`RULES.md` is rev 25 as of 2026-08-22 and these figures still stand**, because rev 25 changed
+no play: three expert answers all confirmed the standing default (§9 #19, #27, #32). 🔥 **But rev 25
+also recorded §7.3 — a ×3 prize for declaring with all series clean — which nothing implements, and
+building it will invalidate every number in this document more thoroughly than P25–P28 did.**
+Those packets changed what a winning hand *is*; this changes what winning is *worth*, and it hands
+every rung a reason to throw a joker away that none of them currently has. **Do not plan a
+five-handed regeneration (P32) around these figures until §7.3 is settled and built.**
+
 🔥 **71 of the 88 rows that both runs contain came back byte-identical, and the 17 that moved are
 exactly the rows a new rung must move.** Every head-to-head cell among the six older rungs, every
 pairing ratio, **the whole difficulty dial and the whole money sweep** reproduced to the digit. The
