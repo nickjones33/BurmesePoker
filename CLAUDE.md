@@ -11,9 +11,32 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **READ THIS FIRST — `P32` shipped 2026-08-22 on Opus 5. The standing answer is about a
-*five-handed* table, `RULES.md` is **rev 29**, and `P24.2` is the next packet — Nick asked for it
-by name.**
+🔥 **READ THIS FIRST — `P24.2` shipped 2026-08-22 on Opus 5: the hint arrow grows a sentence, and
+the journal records where a person disagreed with the computer.** `RULES.md` is **rev 29**, the
+tree is green at **757**, and **`P36` is the next packet** (then `P37`, `P35`, `P34`).
+
+**What P24.2 built, and the three things a cold session needs from it.**
+🔥 **(1) `CoverScore.Ranking` is now a projection of `CoverScore.Scored`** — the keys the sort
+computes and threw away a line later are kept, so an explanation costs **no extra
+`PartialCover.Best` call** over the arrow (`ComputerAdvice.RankingsBought` asserts it, and the
+memo is keyed on the *identity* of the `TurnContext`). ⚠️ `ScoredCandidate.Refined` is `long?` and
+**null means the key was never asked**; null and zero sort identically, so **no measurement moved**.
+🔥 **(2) A rung never hands a front end a bare `long`.** `IExplainsDiscards` is the described
+sibling of `IRanksDiscards`; `DiscardKey` carries a name, a direction and **a phrase for its
+sentinel** — `outs` negates its outs key and `CoverScore.Potential` returns `int.MaxValue` for a
+joker, so raw numbers would draw *"−14 outs"* and *"2147483647 partners"*.
+🔥 **(3) The journal records an *opinion beside an answer***: `JournalDecision.Advice` and
+`DisagreedWithTheComputer`, human seats only, by `CardId`, **written even with the hints box off**.
+⚠️ **Each browser `<details>Why?</details>` now holds two kinds of sentence gated differently** —
+the rule **ungated** (a rule is not advice) and the computed paragraph **gated on hints**.
+⚠️ **`SeatPrompt` carries the rationale and a `TableEvent` may not** — asserted over the type,
+which is the first constraint `P37`'s public question will meet.
+✅ **The console is untouched and its capture is byte-identical**, which is also the proof that
+reshaping `CoverScore` was a refactor.
+
+---
+
+**Before that, `P32` shipped the same day: the standing answer is about a *five-handed* table.**
 
 **The default table is five seats and it is written down once: `RoundEngine.DefaultPlayers`.**
 `SuiteOptions.DefaultSeats`, every `--seats` default in `Sim` and the browser lobby all read it.
@@ -80,16 +103,10 @@ a bare number never caught that.
 
 ---
 
-⚠️ **`P24.2` is next — Nick asked for it 2026-08-22, from the browser**: the hint arrow is there
-and the *why* is not. 🔥 **Two things a cold session must know before opening it.** **(1) P31
-already built half of build item 1** — `IRanksDiscards.RankDiscards(context, candidates)` returns
-an ordered candidate list; **what is missing is the keys, not the ranking.** **(2) The browser
-already has five `<details>Why?</details>` blocks** in `TurnPrompt.razor` holding **static rule
-text**, ungated because a rule is not advice — **so the affordance exists and what P24.2 adds is a
-computed paragraph inside it, gated on hints while the rule text around it is not.**
-⚠️ **And P32 created a new trap**: at five seats §7.1.1 asks for **no series at all**, so an
-explanation phrased in runs is **false at the table the browser now deals.**
-**Then `P36`, `P37`, `P35`, `P34`.**
+✅ **`P24.2` is done (2026-08-22)** — both of its re-plan's bets were right: P31 had already built
+half of build item 1 (**the keys were missing, not the ranking**), and P32's trap was real, so the
+sentence reads the same `TableRules` the evaluator does and is asserted at four seats and at five.
+**`P36` is next, then `P37`, `P35`, `P34`.**
 
 ⚠️ **One leftover P32 did not take: `BurmesePoker.Console` still deals four** — its seat prompt
 defaults to `MinimumPlayers`. **One line plus a `drive-console.py` re-capture.**
@@ -700,7 +717,7 @@ verified bug to show for it.
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
 | `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration**, **§10 the side bet**, **§12 round length, abandoned rounds and what refusing a claim is worth** (P29), **§13 how often the feeding ban actually bites** (P31) and **§14 how often the clean bonus is actually collected** (P33). Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10, §12 and §13 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
-| `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it. Written for a person at the keyboard, not for a build session. |
+| `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it, **including what opening a "why?" now tells you** (P24.2). Written for a person at the keyboard, not for a build session. |
 | `docs/RULES-TECHNICAL.md` | What the **old** code does and where it diverges. Defect list. Historical reference. |
 | `docs/spec/RUN-CANDIDATES.md` | **Worked spec for packet P3**, the hardest one. Read before touching run generation. |
 | `docs/QUESTIONS-FOR-MYA-LAY.md` | Open rules questions phrased for an experienced player. Answers get promoted into `RULES.md` as `EXPERT`. |

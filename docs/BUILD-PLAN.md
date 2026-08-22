@@ -1000,7 +1000,7 @@ P16 ─┘                         ├─► P21  outs rung       (lookahead)  �
                                            └───────┴─► P32  five-handed is the ☐   ← Opus
                                                              default table
 
-   P24.2  the computer's reasoning ☐  ← ✅ asked for by Nick 2026-08-22; next after P32
+   P24.2  the computer's reasoning ☑  ← Opus 5, 2026-08-22 — asked for by Nick, from the browser
 ```
 
 🔥 **P25–P29 are new on 2026-08-21 and they are the first packets in this plan that came from
@@ -1053,14 +1053,14 @@ separate sessions — they touch `Melds/`, `Money/` and the turn respectively, a
 alone, `RULES.md` §9 #30) and writing it twice is the defect to avoid. **P29 depends on all
 four**, because each of them changes what a round is worth.
 
-✅ **P24.2's *whether* was answered on 2026-08-22: Nick asked for it, from the browser, and it is
-next after P32.** He was playing a five-handed table, saw the hint arrow and went looking for the
-sentence behind it — which is this packet's acceptance criterion arriving as a bug report. 🔥 **The
-arrow reads as a promise**, and the promise is the half of P24 that never shipped: P24.1's journal
-landed inside P30.2, P24.2 did not. **See §5 P24.2's re-plan block for what has changed underneath
-it** — most usefully that P31 already built half of its first build item (`IRanksDiscards`), and
-most dangerously that P32 made five seats the default, where `RULES.md` §7.1.1 asks for **no series
-at all** and a sentence phrased in runs would simply be false.
+✅ **P24.2 shipped on 2026-08-22, the same day Nick asked for it.** He was playing a five-handed
+table, saw the hint arrow and went looking for the sentence behind it — this packet's acceptance
+criterion arriving as a bug report. 🔥 **The arrow read as a promise**, and the promise is the half
+of P24 that had never shipped: P24.1's journal landed inside P30.2, P24.2 did not. ✅ **Both halves
+of P24 are now done.** The re-plan block in §5 was right on both of its bets: P31 had already built
+half of build item 1 (**the keys were missing, not the ranking**), and P32's trap was real — the
+closing clause reads the same `TableRules` the evaluator does, and is asserted at four seats and at
+five because they are different games.
 
 ⚠️ **The paragraph below is the argument that kept it waiting, and it is kept because it was
 right and is now spent.**
@@ -1176,9 +1176,9 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | P15 | A skill ladder | P12 | M — ☑ done 2026-08-19 |
 | P16 | Does the player before you decide your game? | P15 (**P14 ☑, so rich journals are available**) | M — ☑ done 2026-08-19 |
 | P17–P23 | The strategy programme | P15, P16, P18 | ☑ all done 2026-08-19/20 — see §4's second graph |
-| P24 | ~~The computer's reasoning, said out loud~~ — **split 2026-08-21 into P24.1 and P24.2** | — | ☐ see the two below |
+| P24 | ~~The computer's reasoning, said out loud~~ — **split 2026-08-21 into P24.1 and P24.2** | — | ☑ **both halves done** — P24.1 2026-08-21, P24.2 2026-08-22 |
 | **P24.1** | **A journal for the hosted table** | P13.6, P14 | S — ☑ **done 2026-08-21** · **Fable 5** — `TableOptions.Journal` opts a `TableSession` into `JournalingAgent.Wrap`; `TableSession.Journal()` hands the record back and the host writes the file (`--journal` on the Web, flushed after every settled round). Same format, replays identically |
-| **P24.2** | **The computer's reasoning, said out loud** | P24.1 ✅, P18 ✅, P21 ✅, **P31 ✅** (`IRanksDiscards` is half of build item 1), **P32** (five seats changes what a true sentence says) | M — ☐ **next, after P32** · ✅ **Nick asked for it 2026-08-22**, from the browser: the arrow is there and the *why* is not. See §5 P24.2's re-plan block |
+| **P24.2** | **The computer's reasoning, said out loud** | P24.1 ✅, P18 ✅, P21 ✅, P31 ✅, P32 ✅ | M — ☑ **done 2026-08-22** · **Opus 5** — `IExplainsDiscards` (the described sibling of `IRanksDiscards`), `CoverScore.Scored` with `Ranking` defined as its projection, `AdviceRationale`, five gated paragraphs inside the browser's existing `<details>`, and `JournalDecision.Advice` + `DisagreedWithTheComputer`. One ranking serves the arrow, the sentence and the journal — asserted by `ComputerAdvice.RankingsBought`. Console untouched; capture byte-identical |
 | **P25** | **The win condition is a function of the table size** | — | L — ☑ **done 2026-08-21** — `TableRules`, and the search carries the counts |
 | **P26** | **The money layer as it actually is** | — | M — ☑ **done 2026-08-21** — eight permanent cards, ×3, and a ×5 that needs the round's ownership |
 | **P27** | **The feeding ban** | — | L — ☑ done 2026-08-21 — **the first work since P0 that changed what a legal turn is**; a bot's cover count can now fall |
@@ -1189,7 +1189,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P31** | **`warden` — the feeding ban as a weapon** | P27 ✅, P30.2 | L — ☑ **done 2026-08-22** · **Opus** — it **lost**, `−9.3 ± 1.0` against `outs`; the ban bites on 9.4% of turns and the rung is what failed |
 | **P33** | **The clean bonus (§7.3)** | P31 ✅ | M — ☑ **done 2026-08-22 (Opus 5)** · jokerless pays ×2 at 2/3/4 and ×3 at 5+; **§10 #19 discharged** and the suite regenerated at four seats — **111 of 116 shared rows byte-identical, the 5 that moved are exactly the rows denominated in dollars a round** |
 | **P32** | **Five-handed is the default table** | P30.2, P31 ✅, **P33 ✅** | L — ☑ **done 2026-08-22** · **Opus 5** — the standing set is five-handed; **123 measurements in 12,445 s**. 🔥 **P29's explanation is falsified**: the five-handed ladder is the four-handed ladder divided by 1.25 (median margin ratio **0.801** against a base-rate scale of 0.800), so removing §7.1.1's series requirement did **nothing** to `simple`'s gaps. ✅ Full crossing, **no ε moved**, four-handed set kept frozen |
-| **P34** | **A front door, and docs that cannot go stale quietly** | — | S — ☐ **new 2026-08-22** — `README.md`, staleness banners, and the anti-staleness habit as tests. **Needs no expert answer.** ⚠️ **Was the cheapest thing on the plan and is no longer next**: P24.2 was asked for by name on 2026-08-22 and goes first |
+| **P34** | **A front door, and docs that cannot go stale quietly** | — | S — ☐ **new 2026-08-22** — `README.md`, staleness banners, and the anti-staleness habit as tests. **Needs no expert answer.** ⚠️ **P24.2 added one thing for it to watch**: `AdviceRationale.ForObjection` ships P29's §12 null as prose in the product. It carries **no number on purpose** so it cannot rot into a wrong figure — but if that measurement ever separates, the sentence is wrong |
 | **P35** | **The two scoring rules that reach outside a round** | P33 ✅, P32, **P36** | L — ☐ **new 2026-08-22** — `RULES.md` **§7.4** (a win on the initial deal pays ×2) and **§7.5** (a third consecutive win is paid **entirely by the seat above you**), both `EXPERT` from Aung Aung. 🔥 **§7.5 is the first rule that cannot be settled from one round**, and **no measurement in this project can see it** (`Sim` plays `RoundsPerGame = 1`). ✅ **Unblocked 2026-08-22**: §9 #43 was asked and closed — the seats do **not** re-draw every round — ⚠️ **but that makes it depend on P36**, since the blame needs a seating that survives three rounds |
 | **P36** | **How long a seating holds** | — | S–M — ☐ **new 2026-08-22** — `RULES.md` **§3 step 2, corrected in rev 28**: a seating is drawn **once and held**. 🔥 **The engine contradicts the document again** (§10 #22), in the **opposite** direction to the error P28 fixed. ⚠️ **Revert-shaped and must not be a revert** — pre-P28 held a seating and could never change it. ✅ **No measurement moves** (`RoundsPerGame = 1`) |
 | **P37** | **Asking the table to change seats** | **P36** | M — ☐ **new 2026-08-22** — §10 **#23**, and §9 #45 as Nick ruled it: a re-seating happens **when the players agree**. 🔥 **The first *public* question this project has ever asked** — `SeatPrompt` is seat-private by construction and this one is put to everybody at once — and the first asked **between** rounds. ✅ **A computer seat consents** (a design decision, recorded in §3, not a rule); ⚠️ **§9 #47 open — everybody or most?** |
@@ -4282,7 +4282,7 @@ description says *two times in five* now.
 
 ---
 
-### P24 — The computer's reasoning, said out loud ☐ — **split 2026-08-21**
+### P24 — The computer's reasoning, said out loud ☑ — **split 2026-08-21, both halves done**
 
 > 🔥 **Split into P24.1 and P24.2 on 2026-08-21, because P30 needs the first half and not the
 > second.** The packet always contained two unlike things: **a journal for the hosted table**,
@@ -4318,6 +4318,69 @@ description says *two times in five* now.
 > this packet.**
 
 **The body below is P24.2's, and P24.1 is the first two paragraphs of its *Build* section.**
+
+---
+
+#### ✅ Built 2026-08-22 (Opus 5) — what it turned out to be, and what it leaves for the packets after it
+
+**The re-plan below was right on both of its bets and the record is kept as written.** What is here
+is the difference between the plan and the thing.
+
+🔥 **1. `CoverScore.Ranking` became a projection, and that is the whole of acceptance 2.**
+`CoverScore.Scored` returns the candidates with the three keys the sort computes and discards a
+line later; `Ranking` is now `Scored(...).Select(c => c.Card)`. **There is one ordering, not two
+that agree by inspection** — the same discipline `Discard` already kept against `Ranking`, and the
+reason an explanation costs a front end nothing over the arrow it already draws.
+⚠️ **`ScoredCandidate.Refined` is `long?` and null means the key was never asked.** The expensive
+refinement is only put to candidates already tied at the top (P21), so a candidate that lost on
+cover count was never scored on it. **Null and zero sort identically there, so no published
+measurement moved** — what the null buys is that nobody can read back a key nobody took.
+
+🔥 **2. What crosses the layer boundary is a *described* key, and the sentinel is the point.**
+`DiscardKey` carries a name, a direction and `BeyondMeasure` — the phrase to print when the value
+is not a count. There is exactly one sentinel today: `CoverScore.Potential` returns
+`int.MaxValue` for a joker, which is a **refusal** rather than a partnership. Two assertions guard
+it, both in `BotCatalogTests`: every key a rung declares has a name and a direction, and
+**`BotCatalog.Hardest` must implement `IExplainsDiscards`** or the browser loses the feature
+silently. ⚠️ The second names `Hardest` and not `Ladder[^1]`, which is now a **fourth** place
+somebody could re-commit P31's coincidence-asserted-as-law.
+
+🔥 **3. `ComputerAdvice` holds one decision, keyed on the identity of the `TurnContext`.** That is
+the right key precisely because the engine builds a fresh context per decision (P7), so the memo
+remembers one decision and forgets it when the next arrives. The arrow, the sentence and the
+journal's second opinion are **one ranking between them**, and
+`ComputerAdvice.RankingsBought` is the observable that makes it an assertion rather than a hope.
+⚠️ **It must never become a cache across turns** — a context's hand is the seat's own live list,
+and an answer kept past the discard describes cards that have gone. ⚠️ It is safe for a table's
+seats to share **because a table plays one turn at a time** (§3.6).
+
+🔥 **4. The journal's advice needed a seam in the domain, because the domain cannot see
+Presentation.** `ISecondOpinion` is that seam and `ComputerAdvice` implements it;
+`JournalingAgent` asks it **before** the seat answers, exactly as it takes the snapshot.
+`JournalDecision.DisagreedWithTheComputer` is the query — by `CardId`, human seats only, and
+**recorded with the hints box off**, because a record of where somebody disagreed must not depend
+on whether they wanted to be told.
+
+⚠️ **5. What this leaves for P37, and it is the first thing that packet meets.**
+`ConcealmentTests.NoTableEventCanCarryTheComputersReasoning` now asserts over the **type** that no
+`TableEvent` carries an `AdviceRationale`, and `SeatPrompt` is where one rides. P37's *"shall we
+change seats?"* is the first **public** question this project has ever asked and the first asked
+*between* rounds — so it can ride on neither. **Decide where before writing it.**
+⚠️ **And a sixth `SeatQuestion` now fails quietly in two more places**: `RemotePlayerAgent.Why`'s
+null arm and `TurnPrompt.razor`'s inert final arm. Both are the `JournalFormat.Name` lesson applied
+— *a default arm is a mistranslation waiting for the next case* — but quiet is still quiet.
+
+⚠️ **6. The claim's *why* was scoped in, and the null is why it is interesting.**
+`AdviceRationale.ForObjection` says out loud that refusing has been measured and is worth nothing
+either way (§12). It **carries no number on purpose**, so it cannot rot into a wrong figure — but
+if that measurement ever separates, the sentence is wrong. **P34 owns knowing it is there.**
+
+⚠️ **7. Two test-fixture findings.** `ScriptedSeat`'s old no-hint fallback — *throw the first loose
+card* — **does not terminate**: it leaves the hand it started from rearranged, and a table of such
+seats runs until the round is abandoned on the clock. It throws the card just taken back now, which
+stands still while the bots race. And a table with two person-seats needs **both** scripted, or the
+unattended one spends its whole patience per question and the round dies on the clock rather than
+on the assertion.
 
 ---
 
@@ -5730,6 +5793,22 @@ In the tree: `Server/SeatPrompt.cs`, `Server/TableSession.cs`, `Server/HostedTab
 
 **Depends on.** **P36** — there is nothing to change until a seating is held.
 
+⚠️ **Amended 2026-08-22 by P24.2, and it tightens the constraint below rather than adding one.**
+`SeatPrompt` now carries an `AdviceRationale`, and
+`ConcealmentTests.NoTableEventCanCarryTheComputersReasoning` asserts over the **type** that no
+`TableEvent` may — a rationale names cards of a hand and says what the computer would keep, so an
+event carrying one hands every watcher a commentary on somebody else's thirteen (§3.11 A1).
+🔥 **So the two places a question could have lived are now both spoken for in opposite
+directions**: a `SeatPrompt` is private by construction and a `TableEvent` is public by
+construction and may not carry reasoning. **Decide where a public question lives before writing a
+line of it**, and say why in the packet.
+⚠️ **A sixth `SeatQuestion` now fails quietly in two more places** — `RemotePlayerAgent.Why`'s null
+arm and `TurnPrompt.razor`'s inert final arm. Both are `JournalFormat.Name`'s lesson applied (*a
+default arm is a mistranslation waiting for the next case*), but a question drawn as nothing and
+explained as nothing is still a seat with no way to answer. **Visit both.**
+⚠️ **And if the new question is one a person can be advised on, it needs a `Why` arm** — every
+other question has one, and the one that does not would read as the place somebody forgot.
+
 🔥 **This packet's difficulty is a shape, not a feature: it is the first *public* question this
 project has ever asked.** Every question the engine asks is put to **one seat** and answered
 privately — `SeatPrompt` is seat-private by construction, and `ConcealmentTests` sweeps every event
@@ -6018,6 +6097,17 @@ across rounds is either measured or explicitly and visibly not.
 within a screen, and **not be told anything that stopped being true three packets ago**.
 
 **Read first.** Every file in `docs/`, and `CLAUDE.md`. That is the packet.
+
+⚠️ **Amended 2026-08-22 by P24.2 — one measured claim now ships as prose *in the product*, and
+this packet's staleness sweep has to know it is there.** `AdviceRationale.ForObjection` tells a
+player that refusing a claim *"has been measured, and refusing is worth nothing either way — the
+difference is inside the margin of error"*, which is P29's `docs/STRATEGY.md` §12 null said out
+loud on the felt. 🔥 **A null makes an explanation more interesting rather than less** — it is a
+thing this project knows and no player does — and it deliberately **carries no number**, so it
+cannot rot into a wrong figure the way a quoted interval would. **But it is still a measurement,
+and it is the first one outside `docs/`.** If that cell ever separates, the sentence is wrong and
+nothing currently notices. **Either fence it with a test or list it in the staleness inventory; do
+not leave it as the one measured claim nobody is watching.**
 
 🔥 **There is no `README.md`.** A visitor's first sight of this project is a directory listing and
 then `CLAUDE.md` — which opens with a wall of accumulated packet history written *for a cold Claude

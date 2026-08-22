@@ -123,6 +123,122 @@ public class TableJournalTests
         Assert.Equal(0, journal.Header.Rounds);
     }
 
+    /// <summary>
+    /// ✅ <b>P24.2 acceptance 3 — the artifact the packet exists for.</b> A person's decisions
+    /// carry the adviser's card and its rationale, and <c>Answer != Advice.Card</c> picks out the
+    /// turns on which they and it chose differently.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>What is recorded is an opinion beside an answer, not a rationale on a decision.</b>
+    /// <c>JournalingAgent</c> writes down the answer <em>the seat gave</em>; this is a different
+    /// agent's opinion about the same moment. That is what turns <em>where the expert disagreed
+    /// with the computer</em> from something a person has to notice into a query.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>By <see cref="Domain.Cards.CardId"/> and never by value</b> (§3.1): two decks hold two
+    /// 5♥, and a comparison that said <em>"she agreed"</em> because the values matched would be
+    /// wrong on precisely the hands worth studying.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void APersonsDecisionsCarryTheComputersOpinionBesideThem()
+    {
+        var table = TableSession.Open(Seats(), Options(20260822));
+
+        // One follows the hint and one refuses to; the file has to tell them apart.
+        _ = new ScriptedSeat(table.ConnectionFor(One));
+        _ = new ScriptedSeat(table.ConnectionFor(Three)) { Contrarian = true };
+
+        table.PlayRound();
+
+        // The lines are the identity (P14): the advice has to survive the file, not merely exist
+        // in memory.
+        var journal = JournalFormat.Read(JournalFormat.Lines(table.Journal()!).ToList());
+
+        var advised = journal.Decisions
+            .Where(decision => decision.Question == JournalQuestion.Discard && decision.Advice is not null)
+            .ToArray();
+
+        Assert.NotEmpty(advised);
+
+        // ⚠️ Only seats a person is playing. A bot's advice is its own answer, so recording it
+        // would run the adviser twice a turn to learn nothing.
+        Assert.All(advised, decision => Assert.Contains(decision.Player, new[] { One, Three }));
+        Assert.DoesNotContain(
+            journal.Decisions,
+            decision => decision.Advice is not null && (decision.Player == Two || decision.Player == Four));
+
+        // Whose opinion it was, and the sentence as the seat was shown it.
+        Assert.All(advised, decision => Assert.Equal(BotCatalog.Hardest.Name, decision.Advice!.Rung));
+        Assert.All(advised, decision => Assert.False(string.IsNullOrWhiteSpace(decision.Advice!.Why)));
+
+        // 🔥 The query. The seat that followed the hint never disagrees; the one that would not
+        // does, on every turn it was asked.
+        Assert.DoesNotContain(
+            advised.Where(decision => decision.Player == One),
+            decision => decision.DisagreedWithTheComputer);
+
+        Assert.Contains(
+            advised.Where(decision => decision.Player == Three),
+            decision => decision.DisagreedWithTheComputer);
+    }
+
+    /// <summary>
+    /// ⚠️ <b>A record of where somebody disagreed with the computer must not depend on whether
+    /// they had the hints box ticked.</b> The hint is a thing you are shown; the opinion is a
+    /// thing that is written down.
+    /// </summary>
+    [Fact]
+    public void TheOpinionIsRecordedEvenWithTheHintsOff()
+    {
+        var table = TableSession.Open(Seats(), Options(3) with { Hints = false });
+
+        _ = new ScriptedSeat(table.ConnectionFor(One));
+        _ = new ScriptedSeat(table.ConnectionFor(Three));
+
+        table.PlayRound();
+
+        var journal = table.Journal()!;
+
+        // Nothing was marked on any hand, and nothing was explained on any prompt…
+        Assert.All(
+            journal.Decisions,
+            decision => Assert.True(decision.Question != JournalQuestion.Discard || decision.Advice is not null
+                || decision.Player == Two || decision.Player == Four));
+
+        Assert.Contains(
+            journal.Decisions,
+            decision => decision.Player == One && decision.Advice is not null);
+    }
+
+    /// <summary>
+    /// ✅ <b>Replay is unaffected</b> (P24.2): <c>JournalPlayerAgent</c> ignores the field, so a
+    /// file with advice in it plays back as the same game a file without it would.
+    /// </summary>
+    [Fact]
+    public void AdviceChangesNothingAboutReplay()
+    {
+        var table = TableSession.Open(Seats(), Options(41));
+
+        _ = new ScriptedSeat(table.ConnectionFor(One));
+        _ = new ScriptedSeat(table.ConnectionFor(Three)) { Contrarian = true };
+
+        var played = table.PlayRound().Result;
+        var journal = JournalFormat.Read(JournalFormat.Lines(table.Journal()!).ToList());
+
+        Assert.Contains(journal.Decisions, decision => decision.Advice is not null);
+        Assert.Equal(Summarise([played]), Summarise(Replay(journal)));
+
+        // …and stripping the advice out replays to the very same thing, which is what makes it a
+        // note in the margin rather than part of the record.
+        var stripped = new GameJournal(
+            journal.Header,
+            [.. journal.Decisions.Select(decision => decision with { Advice = null })]);
+
+        Assert.Equal(Summarise(Replay(journal)), Summarise(Replay(stripped)));
+    }
+
     private static TableOptions Options(int seed) =>
         TableSessionTests.Options(seed) with { Journal = "table.jsonl" };
 

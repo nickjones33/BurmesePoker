@@ -42,7 +42,7 @@
                    Throwing="@(_seat.Asking?.Question == SeatQuestion.Discard)"
                    OnThrow="Throw" />
 
-        <TurnPrompt @ref="_prompt" Asking="_seat.Asking" Names="Names" OnAnswer="Answer" />
+        <TurnPrompt @ref="_prompt" Asking="_seat.Asking" Hints="_hints" Names="Names" OnAnswer="Answer" />
     </section>
 }
 

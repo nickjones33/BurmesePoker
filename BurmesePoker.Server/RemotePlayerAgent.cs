@@ -107,10 +107,14 @@ public sealed class RemotePlayerAgent : IPlayerAgent
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        // The hint is only ever about which card to throw, so it is worth a GreedyBotAgent call
-        // on the one question where it means something (P11, P13.1).
-        var suggested = question == SeatQuestion.Discard ? _advice?.Discard(context) : null;
-        var answer = _connection.Ask(SeatPrompt.For(context, question, suggested), _patience);
+        // 🔥 The arrow is only ever about which card to throw (P11, P13.1) — but the *why* is
+        // asked of every question, because P24.2's scope is all of them and the arrow reading as
+        // a promise of a sentence that is not there is the bug report the packet came from.
+        // ⚠️ One call: the rationale carries the card it is about, so the discard's ranking is
+        // bought once and the hint comes off it (P24.2 acceptance 2).
+        var rationale = _advice is null ? null : Why(context, question);
+        var suggested = question == SeatQuestion.Discard ? rationale?.Advised : null;
+        var answer = _connection.Ask(SeatPrompt.For(context, question, suggested, rationale), _patience);
 
         if (answer is null)
         {
@@ -119,6 +123,24 @@ public sealed class RemotePlayerAgent : IPlayerAgent
 
         return answer;
     }
+
+    /// <summary>
+    /// The computer's opinion about the question standing, whichever of the five it is.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Every arm is named and there is no catch-all</b>, for <c>JournalFormat.Name</c>'s
+    /// reason: a default arm is a mistranslation waiting for the next case, and this one would
+    /// silently explain a new question as though it were an old one.
+    /// </remarks>
+    private AdviceRationale? Why(TurnContext context, SeatQuestion question) => question switch
+    {
+        SeatQuestion.Take => _advice!.WhyTake(context),
+        SeatQuestion.Discard => _advice!.WhyThrow(context),
+        SeatQuestion.ClaimMoneyCard => _advice!.WhyClaim(context),
+        SeatQuestion.ObjectToClaim => _advice!.WhyObject(context),
+        SeatQuestion.Declare => _advice!.WhyDeclare(context),
+        _ => null
+    };
 
     private void Announce(TurnContext context)
     {

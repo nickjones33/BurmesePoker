@@ -20,24 +20,53 @@ namespace BurmesePoker.Domain.Agents;
 /// been asked something else is not knowable from here, and a journal that guessed would be a
 /// worse record than one that did not.
 /// </para>
+/// <para>
+/// ⚠️ <b>P24.2 narrows that sentence rather than repealing it, and the narrowing is deliberate.</b>
+/// A seat may be given a <see cref="ISecondOpinion"/>, and then the discard is written down with
+/// <em>somebody else's</em> answer beside it (<see cref="JournalAdvice"/>). That is not a guess at
+/// the player's intention — it is a fact about the game, taken on the same
+/// <see cref="TurnContext"/> — and it is what turns <em>where the expert disagreed with the
+/// computer</em> from something a person has to notice into a query
+/// (<see cref="JournalDecision.DisagreedWithTheComputer"/>).
+/// </para>
+/// <para>
+/// ⚠️ <b>Only a seat a person is playing gets one.</b> A bot seat's advice is its own answer, so
+/// recording it would run the adviser twice a turn to learn nothing.
+/// </para>
 /// </remarks>
 /// <param name="inner">The strategy actually deciding — a bot, or a person at a keyboard.</param>
 /// <param name="journal">Where the answers go. One per game, shared by that game's seats.</param>
-public sealed class JournalingAgent(IPlayerAgent inner, GameJournalBuilder journal) : IPlayerAgent
+/// <param name="advice">
+/// Who to ask for a second opinion on the discard, or null — which is every bot seat and every
+/// table nobody asked for advice at.
+/// </param>
+public sealed class JournalingAgent(IPlayerAgent inner, GameJournalBuilder journal, ISecondOpinion? advice = null)
+    : IPlayerAgent
 {
     private readonly IPlayerAgent _inner = inner ?? throw new ArgumentNullException(nameof(inner));
     private readonly GameJournalBuilder _journal = journal ?? throw new ArgumentNullException(nameof(journal));
+    private readonly ISecondOpinion? _advice = advice;
 
     /// <summary>Wraps every seat of a table in one journal.</summary>
+    /// <param name="agents">The seats, as the engine will hold them.</param>
+    /// <param name="journal">Where the answers go.</param>
+    /// <param name="opinions">
+    /// Which seats get a second opinion recorded beside their discard, and whose. Absent seats
+    /// are journalled exactly as they always were (P24.2).
+    /// </param>
     public static Dictionary<PlayerId, IPlayerAgent> Wrap(
         IReadOnlyDictionary<PlayerId, IPlayerAgent> agents,
-        GameJournalBuilder journal)
+        GameJournalBuilder journal,
+        IReadOnlyDictionary<PlayerId, ISecondOpinion>? opinions = null)
     {
         ArgumentNullException.ThrowIfNull(agents);
 
         return agents.ToDictionary(
             seat => seat.Key,
-            IPlayerAgent (seat) => new JournalingAgent(seat.Value, journal));
+            IPlayerAgent (seat) => new JournalingAgent(
+                seat.Value,
+                journal,
+                opinions is not null && opinions.TryGetValue(seat.Key, out var opinion) ? opinion : null));
     }
 
     public TurnAction ChooseAction(TurnContext context)
@@ -50,13 +79,23 @@ public sealed class JournalingAgent(IPlayerAgent inner, GameJournalBuilder journ
         return action;
     }
 
+    /// <remarks>
+    /// ⚠️ <b>The opinion is taken before the seat answers</b>, exactly as the snapshot is: what is
+    /// being recorded is what the computer would have done <em>facing this</em>, and the engine
+    /// discards from the seat's own list the moment the answer comes back (P13.1).
+    /// </remarks>
     public Card ChooseDiscard(TurnContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 
         var snapshot = _journal.SnapshotOf(context);
+        var advice = _advice?.OnDiscard(context);
         var discard = _inner.ChooseDiscard(context);
-        _journal.Append(JournalDecision.Of(context.Round, context.TurnNumber, context.Player, discard, snapshot));
+
+        _journal.Append(
+            JournalDecision.Of(context.Round, context.TurnNumber, context.Player, discard, snapshot)
+                with { Advice = advice });
+
         return discard;
     }
 

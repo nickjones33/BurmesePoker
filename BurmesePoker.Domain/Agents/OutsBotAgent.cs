@@ -46,7 +46,7 @@ namespace BurmesePoker.Domain.Agents;
 /// BUILD-PLAN §3.4 as a rule of engagement rather than as advice.
 /// </para>
 /// </remarks>
-public sealed class OutsBotAgent : IPlayerAgent, IRanksDiscards
+public sealed class OutsBotAgent : IPlayerAgent, IRanksDiscards, IExplainsDiscards
 {
     /// <summary>
     /// Answers already bought, kept for the life of the seat.
@@ -99,6 +99,46 @@ public sealed class OutsBotAgent : IPlayerAgent, IRanksDiscards
         ArgumentNullException.ThrowIfNull(candidates);
 
         return CoverScore.Ranking(context.Hand, candidates, Preference, Outs);
+    }
+
+    /// <summary>
+    /// Three keys, strongest first: what still melds, what the hand would still be waiting for,
+    /// and greedy's partnership as the last resort (BUILD-PLAN P24.2).
+    /// </summary>
+    public IReadOnlyList<DiscardKey> DiscardKeys { get; } =
+        [DiscardKey.MeldedCardsKept, DiscardKey.LiveOuts, DiscardKey.Partners];
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// ⚠️ <b>The middle key is negated for the sort and un-negated here.</b>
+    /// <see cref="Outs"/> is <c>-LiveOuts.Count(…)</c> because the ranking takes the lowest
+    /// first; a front end drawing the stored number would say <em>"−14 outs"</em>.
+    /// ⚠️ And it is <b>null</b> on every candidate the refinement was never asked of, which is
+    /// every candidate that had already lost on the first key (<c>CoverScore.Refinement</c>, P21).
+    /// </remarks>
+    public IReadOnlyList<ScoredDiscard> ExplainDiscards(TurnContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        return
+        [
+            .. CoverScore.Scored(context.Hand, context.LegalDiscards, Preference, Outs)
+                .Select(candidate => new ScoredDiscard(
+                    candidate.Card,
+                    [
+                        new KeyReading(candidate.Covered),
+                        candidate.Refined is { } refined ? new KeyReading(-refined) : null,
+                        CoverScore.Partnership(candidate.Preference)
+                    ]))
+        ];
+    }
+
+    /// <inheritdoc/>
+    public int MeldedCount(IReadOnlyList<Card> cards)
+    {
+        ArgumentNullException.ThrowIfNull(cards);
+
+        return CoverScore.Covered(cards);
     }
 
     /// <inheritdoc cref="GreedyBotAgent.ClaimTurnedUpMoneyCard"/>

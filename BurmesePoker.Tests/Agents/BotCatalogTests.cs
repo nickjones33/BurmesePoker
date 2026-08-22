@@ -1,6 +1,7 @@
 using BurmesePoker.Domain.Abstractions;
 using BurmesePoker.Domain.Agents;
 using BurmesePoker.Sim;
+using BurmesePoker.Tests.Play;
 
 namespace BurmesePoker.Tests.Agents;
 
@@ -193,6 +194,72 @@ public class BotCatalogTests
         // one player at this table and the menu must not pretend otherwise. Ladder order breaks
         // the tie, which is why `outs` is still what a stand-in seat and a hint are built on.
         Assert.Equal(BotCatalog.Resolve("outs").Strength, BotCatalog.Resolve("prospector").Strength);
+    }
+
+    /// <summary>
+    /// ✅ <b>P24.2 acceptance 5 — the mechanical guarantee.</b> The adviser is always
+    /// <see cref="BotCatalog.Hardest"/> (<c>ComputerAdvice</c>), so promoting a rung that cannot
+    /// explain itself would take the <em>why</em> out of the browser <b>silently</b>. This is
+    /// where the build catches it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>It names <see cref="BotCatalog.Hardest"/> and not <c>Ladder[^1]</c>, and nobody may
+    /// "simplify" it back.</b> The catalog became a tree at P31 — <c>warden</c> and
+    /// <c>prospector</c> both hang off <c>outs</c> — so the last rung named stopped being the
+    /// strongest, which P31 found written down as a law in three places at once.
+    /// </remarks>
+    [Fact]
+    public void TheStrongestRungCanExplainItsOwnDiscards()
+    {
+        Assert.IsAssignableFrom<IExplainsDiscards>(BotCatalog.Hardest.Create(0));
+
+        // Non-vacuous: it is a property of that rung and not of every rung, so a promotion really
+        // can break it.
+        Assert.False(BotCatalog.Resolve("random").Create(0) is IExplainsDiscards);
+    }
+
+    /// <summary>
+    /// ✅ <b>P24.2's second mechanical guarantee.</b> Every key a rung declares carries a name
+    /// and a direction, and there is one reading per key on every candidate — so a fourth key
+    /// added later cannot reach a screen as a bare number.
+    /// </summary>
+    [Fact]
+    public void EveryKeyARungDeclaresCarriesANameAndADirection()
+    {
+        var context = TurnContexts.Holding(
+            Hands.Of("2H", "3H", "4H", "5H", "6H", "7H", "8D", "9D", "10D", "KC", "KH", "KS", "QC", "2S"));
+
+        var explaining = BotCatalog.All
+            .Select(rung => rung.Create(0))
+            .OfType<IExplainsDiscards>()
+            .ToArray();
+
+        Assert.NotEmpty(explaining);
+
+        foreach (var rung in explaining)
+        {
+            Assert.NotEmpty(rung.DiscardKeys);
+            Assert.All(rung.DiscardKeys, key => Assert.False(string.IsNullOrWhiteSpace(key.Name)));
+            Assert.All(
+                rung.DiscardKeys,
+                key => Assert.True(Enum.IsDefined(key.Better) && Enum.IsDefined(key.Subject)));
+
+            // A sentinel is only ever safe if its key says what to print instead.
+            Assert.All(
+                rung.ExplainDiscards(context),
+                candidate =>
+                {
+                    Assert.Equal(rung.DiscardKeys.Count, candidate.Keys.Count);
+
+                    for (var key = 0; key < candidate.Keys.Count; key++)
+                    {
+                        if (candidate.Keys[key] is { IsBeyondMeasure: true })
+                        {
+                            Assert.NotNull(rung.DiscardKeys[key].BeyondMeasure);
+                        }
+                    }
+                });
+        }
     }
 
     /// <remarks>

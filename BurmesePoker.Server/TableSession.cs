@@ -53,11 +53,18 @@ public sealed class TableSession
         _journal = options.Journal is null ? null : new GameJournalBuilder();
         _clock = new TableClock(options.RoundTimeLimit);
 
-        // One adviser for the whole table: it holds no state between turns, exactly as the
-        // agent it asks does not (P13.1).
-        var advice = options.Hints ? new ComputerAdvice() : null;
+        // One adviser for the whole table, and it is the same one twice over (P13.1, P24.2): it
+        // marks the hint on the prompt and it is the second opinion the journal writes beside a
+        // person's answer. ⚠️ It is built when *either* is wanted — a record of where somebody
+        // disagreed with the computer must not depend on whether they had the hints box ticked —
+        // and its one-decision memo is what keeps that to a single ranking a turn.
+        var advice = options.Hints || options.Journal is not null ? new ComputerAdvice() : null;
 
         var agents = new Dictionary<PlayerId, IPlayerAgent>(seats.Count);
+
+        // ⚠️ Only seats a person is playing (P24.2). A bot seat's advice is its own answer, so
+        // recording it would run the adviser twice a turn to learn nothing.
+        var opinions = new Dictionary<PlayerId, ISecondOpinion>();
 
         foreach (var seat in seats)
         {
@@ -79,7 +86,12 @@ public sealed class TableSession
                 _seats[seat.Player] = connection;
                 _fanOut.Add(connection);
                 agent = new RemotePlayerAgent(
-                    connection, options.StandIn(), _fanOut, options.Patience, advice);
+                    connection, options.StandIn(), _fanOut, options.Patience, options.Hints ? advice : null);
+
+                if (advice is not null)
+                {
+                    opinions[seat.Player] = advice;
+                }
             }
 
             // Every seat is bounded, bots included: what the clock catches is a table nobody
@@ -93,7 +105,7 @@ public sealed class TableSession
             // The journal wraps outermost, exactly as the console's does (P14): what it records
             // is the answer that reached the engine — a stand-in's or the clock's included —
             // because that is the answer a replay has to give.
-            _journal is null ? agents : JournalingAgent.Wrap(agents, _journal),
+            _journal is null ? agents : JournalingAgent.Wrap(agents, _journal, opinions),
             options.Stakes,
             new Random(options.Seed),
             _fanOut);

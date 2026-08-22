@@ -180,14 +180,31 @@ public sealed record JournalHeader(
 /// rather than by hand: the question decides which is meaningful, and those three say so.
 /// </param>
 /// <param name="Snapshot">What the seat could see, under <see cref="JournalFidelity.Rich"/> only.</param>
+/// <param name="Advice">
+/// What the computer would have answered, when a seat was shown its opinion — null everywhere
+/// else, which is every bot seat and every seat at a table nobody asked for advice at (P24.2).
+/// </param>
 public sealed record JournalDecision(
     int Round,
     int Turn,
     PlayerId Player,
     JournalQuestion Question,
     string Answer,
-    DecisionSnapshot? Snapshot = null)
+    DecisionSnapshot? Snapshot = null,
+    JournalAdvice? Advice = null)
 {
+    /// <summary>
+    /// Whether the seat and the computer chose differently — <b>the query this whole field
+    /// exists for</b> (BUILD-PLAN P24.2). False when nothing advised.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>By <see cref="CardId"/>, exactly as <see cref="Answer"/> is written</b> (§3.1). Two
+    /// decks hold two 5♥, and a comparison that said <em>"she agreed"</em> because the values
+    /// matched would be wrong on precisely the hands worth studying.
+    /// </remarks>
+    public bool DisagreedWithTheComputer =>
+        Advice is { } advice && Question == JournalQuestion.Discard && AsCardId() != advice.Card;
+
     /// <summary>Writes down how a card was taken.</summary>
     public static JournalDecision Of(int round, int turn, PlayerId player, TurnAction action, DecisionSnapshot? snapshot = null) =>
         new(round, turn, player, JournalQuestion.Action, action == TurnAction.TakeDiscard ? "take" : "draw", snapshot);
@@ -223,6 +240,50 @@ public sealed record JournalDecision(
 
     private JournalException Unreadable(string wanted) => new(
         $"Round {Round} turn {Turn}, {Player}: the {Question} answer reads '{Answer}', which is not {wanted}.");
+}
+
+/// <summary>
+/// The computer's opinion, written down <b>beside</b> a seat's answer rather than instead of it
+/// (BUILD-PLAN P24.2).
+/// </summary>
+/// <remarks>
+/// <para>
+/// 🔥 <b>It is an opinion beside an answer, not a rationale on a decision.</b>
+/// <see cref="Agents.JournalingAgent"/> records the answer <em>the seat gave</em>, and at a table
+/// with an expert in it that answer is hers. This is a different agent's opinion about the same
+/// moment — so <em>where an expert disagreed with the computer</em> becomes a query
+/// (<see cref="JournalDecision.DisagreedWithTheComputer"/>) rather than something somebody has to
+/// notice and write down. That is the artifact P24.2 exists to produce.
+/// </para>
+/// <para>
+/// ⚠️ <b>The card is a <see cref="CardId"/> for §3.1's reason</b>, and the rung is named because
+/// an opinion is only worth anything if you know whose it was — the adviser is
+/// <c>BotCatalog.Hardest</c> at ε = 0 and never the table's difficulty setting.
+/// </para>
+/// </remarks>
+/// <param name="Card">The card the adviser would have thrown.</param>
+/// <param name="Rung">Which way of playing said so — <c>outs</c>.</param>
+/// <param name="Why">The sentence it gave, as the seat was shown it.</param>
+public sealed record JournalAdvice(CardId Card, string Rung, string Why);
+
+/// <summary>
+/// Somebody's opinion about a decision, for recording beside the answer.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>The seam and nothing else.</b> The domain cannot reach <c>ComputerAdvice</c> — that lives
+/// in Presentation, one layer out — so this is what a journal asks and what Presentation fills
+/// in. It is the same shape as every other decorator seam in the tree (BUILD-PLAN §3.8 item 2).
+/// </para>
+/// <para>
+/// ⚠️ <b>The discard alone.</b> The other four questions have no ranking behind them, and a
+/// disagreement about which card to throw is the one a person actually argues with.
+/// </para>
+/// </remarks>
+public interface ISecondOpinion
+{
+    /// <summary>What the adviser would throw here, and why — or null if it has no opinion.</summary>
+    JournalAdvice? OnDiscard(TurnContext context);
 }
 
 /// <summary>

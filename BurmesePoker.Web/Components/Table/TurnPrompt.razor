@@ -18,6 +18,16 @@
     place (SeatBoard) rather than spread across the markup.
 
     Which card to throw is asked of the hand itself, because the cards are the controls.
+
+    🔥 Each "why?" holds TWO kinds of sentence and they are gated differently (BUILD-PLAN P24.2).
+    The first paragraph is the RULE, and it is ungated on purpose — a rule is not advice, which is
+    the same distinction HandPanel.Words draws when it tells the ear about §5.1's ban outside the
+    hints gate. The second is the COMPUTER'S REASONING about this very turn, and it is gated,
+    because that is advice and the hints box is where a player says whether they want any.
+
+    ⚠️ Both live inside the <details>, which is one of exactly two places MarkupStandardsTests
+    lets prose onto the felt (§3.11 B9). A computed explanation is three sentences and the budget
+    outside a disclosure is eighty characters.
 *@
 
 @using BurmesePoker.Domain.Money
@@ -61,6 +71,10 @@ else if (asking.Question == SeatQuestion.Take)
                 (RULES.md §4.4). A money card off the deck is yours and pays you at settlement
                 whether you keep it or throw it away.
             </p>
+            @if (Hints && asking.Rationale is { } why)
+            {
+                <p class="advice">@why.Sentence</p>
+            }
         </details>
     </section>
 }
@@ -94,6 +108,10 @@ else if (asking.Question == SeatQuestion.ClaimMoneyCard)
                 Only the opening player may (RULES.md §4.5). It costs you your draw, and the
                 table gives it rather than the deck — so you hold it, but it pays nobody.
             </p>
+            @if (Hints && asking.Rationale is { } why)
+            {
+                <p class="advice">@why.Sentence</p>
+            }
         </details>
     </section>
 }
@@ -133,6 +151,10 @@ else if (asking.Question == SeatQuestion.ObjectToClaim)
                 to them for the rest of the round (RULES.md §5.1) — and refusing tells the table
                 you are holding one.
             </p>
+            @if (Hints && asking.Rationale is { } why)
+            {
+                <p class="advice">@why.Sentence</p>
+            }
         </details>
     </section>
 }
@@ -156,6 +178,10 @@ else if (asking.Question == SeatQuestion.Discard)
                 throwing it costs you — how many melded cards it gives up — and you may throw
                 back the one you just took.
             </p>
+            @if (Hints && asking.Rationale is { } why)
+            {
+                <p class="advice">@why.Sentence</p>
+            }
         </details>
     </section>
 }
@@ -193,6 +219,10 @@ else if (asking.Question == SeatQuestion.Declare)
                 once, in melds that share no card. The winner takes a flat stake from everybody
                 else, and the money cards pay their owners whatever happens.
             </p>
+            @if (Hints && asking.Rationale is { } why)
+            {
+                <p class="advice">@why.Sentence</p>
+            }
         </details>
     </section>
 }
@@ -213,6 +243,17 @@ else
     /// <summary>The question standing, or null when it is not your turn.</summary>
     [Parameter]
     public SeatPrompt? Asking { get; set; }
+
+    /// <summary>
+    /// Whether the computer is allowed to have an opinion — the hints box, handed down.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>It gates the computed paragraph and nothing else.</b> The rule text in every "why?"
+    /// stays on with the hints off, because a rule is not advice (BUILD-PLAN P24.2). Unticking the
+    /// box takes away the arrow and the reasoning and leaves the game explained.
+    /// </remarks>
+    [Parameter]
+    public bool Hints { get; set; } = true;
 
     /// <summary>Called with the answer pressed. Refusing it is the seat's business, not this one's.</summary>
     [Parameter]

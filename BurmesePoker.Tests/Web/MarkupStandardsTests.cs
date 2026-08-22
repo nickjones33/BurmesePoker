@@ -512,6 +512,43 @@ public class MarkupStandardsTests
     private const int ProseBudget = 80;
 
     /// <summary>The table itself, and the page that is nothing but the table.</summary>
+    /// <summary>
+    /// ✅ <b>P24.2 acceptance 4, and the fiddly half of the packet.</b> Each <em>"why?"</em> holds
+    /// two kinds of sentence and they are gated differently: the <b>rule</b> is ungated, because a
+    /// rule is not advice, and the <b>computed explanation</b> beside it is gated on the hints box,
+    /// because it is.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Both live inside the disclosure</b>, which is one of exactly two places prose is
+    /// allowed onto the felt (§3.11 B9) — the other assertion in this class is what would catch a
+    /// three-sentence explanation escaping onto the table.
+    /// </remarks>
+    [Fact]
+    public void TheComputersReasoningIsGatedOnHintsAndTheRuleBesideItIsNot()
+    {
+        var prompt = Sources.Components
+            .Single(file => file.Path.EndsWith("TurnPrompt.razor", StringComparison.Ordinal));
+
+        var disclosures = Regex.Matches(prompt.Text, "<details.*?</details>", RegexOptions.Singleline);
+
+        Assert.Equal(5, disclosures.Count);
+
+        foreach (Match disclosure in disclosures)
+        {
+            // The rule text: a paragraph with no gate in front of it.
+            Assert.Contains("<summary>Why?</summary>", disclosure.Value, StringComparison.Ordinal);
+
+            // The advice: gated, and inside this very disclosure.
+            Assert.Contains("@if (Hints && asking.Rationale is { } why)", disclosure.Value, StringComparison.Ordinal);
+            Assert.Contains("<p class=\"advice\">@why.Sentence</p>", disclosure.Value, StringComparison.Ordinal);
+        }
+
+        // ⚠️ Nothing outside a disclosure reads the rationale — the sentence is three sentences
+        // long and the budget on the felt is eighty characters.
+        var outside = Regex.Replace(prompt.Text, "<details.*?</details>", " ", RegexOptions.Singleline);
+        Assert.DoesNotContain("Rationale", outside, StringComparison.Ordinal);
+    }
+
     private static IEnumerable<(string Path, string Text)> Felt => Sources.Components
         .Where(file => file.Path.Contains("Components/Table/", StringComparison.Ordinal)
             || file.Path.Contains("Components\\Table\\", StringComparison.Ordinal)

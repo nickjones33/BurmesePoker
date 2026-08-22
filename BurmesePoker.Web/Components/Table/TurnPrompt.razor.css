@@ -122,6 +122,20 @@ h3 {
     color: var(--on-raised-muted);
 }
 
+/*
+    The computer's reasoning about this turn, under the rule that governs it (BUILD-PLAN P24.2).
+
+    ⚠️ It is drawn apart from the rule above it on purpose. The paragraph before is what the game
+    says and is true every turn; this one is an opinion about this deal, it moves every turn, and
+    it disappears with the hints box. Reading as one block of grey would make a claim look like a
+    rule — which is the failure that still looks right.
+*/
+.why p.advice {
+    padding-left: 0.6rem;
+    border-left: 2px solid var(--edge-raised);
+    color: var(--on-raised);
+}
+
 .laid {
     display: flex;
     flex-wrap: wrap;

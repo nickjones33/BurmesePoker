@@ -1,5 +1,6 @@
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Play;
+using BurmesePoker.Presentation;
 using BurmesePoker.Server;
 
 namespace BurmesePoker.Tests.Server;
@@ -70,6 +71,42 @@ public sealed class WatchedRound
 [Collection(WallClockBudgets.Collection)]
 public class ConcealmentTests(WatchedRound round) : IClassFixture<WatchedRound>
 {
+    /// <summary>
+    /// ✅ <b>P24.2 acceptance 4.</b> The computer's reasoning rides on <c>SeatPrompt</c> and never
+    /// on a <c>TableEvent</c>.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>One seat's reasoning on the bus is precisely the leak §3.11 A1 exists to catch.</b>
+    /// A rationale names cards of a hand and says what the computer would keep, so an event
+    /// carrying one would hand every watcher a running commentary on somebody else's thirteen.
+    /// A prompt is seat-private by construction; an event is public by construction.
+    /// ⚠️ <b>Asserted over the type and not over one round</b>: what matters is that there is no
+    /// event that <em>could</em> carry one, which a played round can only ever sample.
+    /// </remarks>
+    [Fact]
+    public void NoTableEventCanCarryTheComputersReasoning()
+    {
+        var events = typeof(TableEvent).Assembly
+            .GetTypes()
+            .Where(type => typeof(TableEvent).IsAssignableFrom(type))
+            .ToArray();
+
+        Assert.NotEmpty(events);
+
+        foreach (var kind in events)
+        {
+            Assert.DoesNotContain(
+                kind.GetProperties(),
+                property => property.PropertyType == typeof(AdviceRationale));
+        }
+
+        // Non-vacuous: the type really is reachable from this layer, and the one thing that does
+        // carry it is the seat-private prompt.
+        Assert.Contains(
+            typeof(SeatPrompt).GetProperties(),
+            property => property.PropertyType == typeof(AdviceRationale));
+    }
+
     /// <summary>
     /// The form P13.1 made writable: build the seat's own view for every seat of a round and
     /// assert that no card reached two hands <b>except by way of the table</b>.

@@ -524,6 +524,54 @@ public class TableSessionTests
         Assert.DoesNotContain(watcher, table.RemoteSeats.Select(table.ConnectionFor));
     }
 
+    /// <summary>
+    /// ✅ <b>P24.2 acceptance 1, end to end.</b> Every question a browser seat is asked arrives
+    /// with the computer's reasoning attached, and the discard's names the card the arrow points
+    /// at — the bug report the packet came from was that the arrow is there and the sentence is
+    /// not.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>And with the hints off there is none</b>, because it is advice. The rule text the
+    /// browser draws around it is not gated, which is <c>MarkupStandardsTests</c>' assertion.
+    /// </remarks>
+    [Fact]
+    public void EveryQuestionArrivesWithTheComputersReasoningWhenHintsAreOn()
+    {
+        var table = TableSession.Open(TwoPeopleAndTwoBots(), Options(20260822));
+        var nick = new ScriptedSeat(table.ConnectionFor(One));
+        _ = new ScriptedSeat(table.ConnectionFor(Three));
+
+        table.PlayRound();
+
+        Assert.NotEmpty(nick.Prompts);
+        Assert.All(nick.Prompts, prompt => Assert.NotNull(prompt.Rationale));
+        Assert.All(nick.Prompts, prompt => Assert.NotEmpty(prompt.Rationale!.Sentence));
+
+        var discards = nick.Prompts.Where(prompt => prompt.Question == SeatQuestion.Discard).ToArray();
+
+        Assert.NotEmpty(discards);
+        Assert.All(
+            discards,
+            prompt => Assert.Equal(
+                prompt.Hand.Cards.Single(card => card.IsSuggestedThrow).Card.Id,
+                prompt.Rationale!.Advised!.Value.Id));
+
+        // ⚠️ The sentence is true at the table it is played at (RULES.md §7.1.1, P32): four here.
+        Assert.All(discards, prompt => Assert.Contains("At 4", prompt.Rationale!.Sentence, StringComparison.Ordinal));
+
+        var unhinted = TableSession.Open(TwoPeopleAndTwoBots(), Options(20260822) with { Hints = false });
+        var quiet = new ScriptedSeat(unhinted.ConnectionFor(One));
+
+        // ⚠️ Both people, or the unattended seat spends its whole patience on every question and
+        // the round dies on the clock rather than on the assertion (P13.4, P13.6).
+        _ = new ScriptedSeat(unhinted.ConnectionFor(Three));
+
+        unhinted.PlayRound();
+
+        Assert.NotEmpty(quiet.Prompts);
+        Assert.All(quiet.Prompts, prompt => Assert.Null(prompt.Rationale));
+    }
+
     internal static TableOptions Options(int seed) => new()
     {
         Seed = seed,

@@ -61,6 +61,17 @@ public sealed class ScriptedSeat
     /// </summary>
     public Func<SeatPrompt, bool>? Away { get; set; }
 
+    /// <summary>
+    /// Whether it deliberately throws something <em>other</em> than the card the computer marked.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>For P24.2 acceptance 3, and it has to be a real disagreement.</b> The journal records
+    /// the computer's opinion beside the seat's answer so that
+    /// <c>JournalDecision.DisagreedWithTheComputer</c> picks the arguments out of a file; a test
+    /// in which every seat follows the hint would assert that against nothing.
+    /// </remarks>
+    public bool Contrarian { get; set; }
+
     private void OnUpdated(SeatConnection connection)
     {
         if (connection.Pending is not { } prompt)
@@ -77,7 +88,9 @@ public sealed class ScriptedSeat
 
         var reply = prompt.Question == SeatQuestion.ObjectToClaim
             ? new SeatAnswer.Objection(Objects)
-            : Reply(prompt);
+            : Contrarian && prompt.Question == SeatQuestion.Discard
+                ? new SeatAnswer.Discard(SomethingElse(prompt))
+                : Reply(prompt);
 
         if (connection.Answer(reply))
         {
@@ -96,8 +109,18 @@ public sealed class ScriptedSeat
     };
 
     /// <summary>
-    /// The card the computer marked, or the first loose one if the table is not offering hints.
+    /// The card the computer marked, or — at a table not offering hints — the card just taken.
     /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Throwing back what you took is the fallback because it <em>terminates</em>.</b> The
+    /// obvious one, <em>the first loose card</em>, does not: the hand it leaves is the hand it
+    /// started from rearranged, and a table of seats doing that runs until the clock stops it
+    /// (found by turning the hints off in <c>TableJournalTests</c>). Throwing the taken card back
+    /// leaves the hand exactly as it was, so this seat simply stands still while the bots at the
+    /// table race to thirteen — which is what a test about the <em>record</em> wants from a seat.
+    /// ⚠️ It is filtered like any other card (RULES.md §5.1, §9 #13), so where the ban has closed
+    /// its rank the first legal card is taken instead.
+    /// </remarks>
     private static Card Throw(SeatPrompt prompt)
     {
         foreach (var card in prompt.Hand.Cards)
@@ -108,6 +131,38 @@ public sealed class ScriptedSeat
             }
         }
 
-        return prompt.Hand.Loose.Count > 0 ? prompt.Hand.Loose[0].Card : prompt.Hand.Cards[0].Card;
+        if (prompt.Taken is { } taken && prompt.MayThrow(taken))
+        {
+            return taken;
+        }
+
+        foreach (var card in prompt.Hand.Cards)
+        {
+            if (prompt.MayThrow(card.Card))
+            {
+                return card.Card;
+            }
+        }
+
+        return prompt.Hand.Cards[0].Card;
+    }
+
+    /// <summary>
+    /// Any card but the computer's — and a <b>legal</b> one, because the feeding ban makes a
+    /// banned card an impossible move rather than a wrong answer (RULES.md §5.1).
+    /// </summary>
+    private static Card SomethingElse(SeatPrompt prompt)
+    {
+        var suggested = Throw(prompt);
+
+        foreach (var card in prompt.Hand.Cards)
+        {
+            if (card.Card.Id != suggested.Id && prompt.MayThrow(card.Card))
+            {
+                return card.Card;
+            }
+        }
+
+        return suggested;
     }
 }

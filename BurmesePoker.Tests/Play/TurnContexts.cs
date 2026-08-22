@@ -27,8 +27,14 @@ internal static class TurnContexts
     private static readonly Card FromTop = Card.Ranked(new CardId(1_002), Rank.Four, Suit.Clubs);
 
     /// <summary>A seat holding these cards, mid-turn, being asked what to throw.</summary>
-    internal static TurnContext Holding(IReadOnlyList<Card> hand) =>
-        Build(hand, offered: null, Stakes.Standard, FromBottom, FromTop, hand[^1]);
+    /// <param name="hand">The fourteen held.</param>
+    /// <param name="seats">
+    /// How many are playing. ⚠️ <b>An argument since P24.2</b>: what a declaration must contain is
+    /// a function of the table size (RULES.md §7.1.1), so four-handed and five-handed are
+    /// different games and a sentence true at one can be false at the other.
+    /// </param>
+    internal static TurnContext Holding(IReadOnlyList<Card> hand, int seats = 4) =>
+        Build(hand, offered: null, Stakes.Standard, FromBottom, FromTop, hand[^1], seats: seats);
 
     /// <summary>
     /// The same seat, with the player it discards to having taken those cards in the open — so
@@ -105,9 +111,10 @@ internal static class TurnContexts
         Card? taken,
         IReadOnlyList<Card>? takenByTheSeatYouFeed = null,
         IReadOnlyList<Card>? takenByYou = null,
-        IReadOnlyList<Card>? thrownByYou = null)
+        IReadOnlyList<Card>? thrownByYou = null,
+        int seats = 4)
     {
-        var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, 4).Select(seat => new PlayerId(seat))];
+        var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, seats).Select(seat => new PlayerId(seat))];
         var shoe = Deck.TwoDecks();
 
         var table = new TableState(players, stakes, shoe, shoe.Cards, turnedUpFromBottom, turnedUpFromTop);

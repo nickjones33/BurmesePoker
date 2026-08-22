@@ -48,6 +48,10 @@ namespace BurmesePoker.Server;
 /// table is offering hints. ⚠️ <b>The suggestion comes from <see cref="ComputerAdvice"/></b> and
 /// is never re-derived (P13.1).
 /// </param>
+/// <param name="Rationale">
+/// <b>Why</b> the computer would answer this question the way it would, or null when the table
+/// is not offering hints (P24.2).
+/// </param>
 public sealed record SeatPrompt(
     PlayerId Player,
     SeatQuestion Question,
@@ -62,13 +66,24 @@ public sealed record SeatPrompt(
     IReadOnlyList<Card> TurnedUpMoneyCards,
     MoneyCardRegistry MoneyCards,
     Stakes Stakes,
-    HandView Hand)
+    HandView Hand,
+    AdviceRationale? Rationale = null)
 {
     /// <summary>Photographs the turn as the asked seat may see it.</summary>
     /// <param name="context">The decision being put. Only the asking seat's own view is read.</param>
     /// <param name="question">Which of the five questions it is.</param>
     /// <param name="suggestedThrow">The computer's answer, or null when hints are off.</param>
-    public static SeatPrompt For(TurnContext context, SeatQuestion question, Card? suggestedThrow = null)
+    /// <param name="rationale">
+    /// Why it would answer that way, or null when hints are off. ⚠️ <b>It rides here and never on
+    /// a <c>TableEvent</c></b>: this record is seat-private by construction, and one seat's
+    /// reasoning on the bus is precisely the leak <c>ConcealmentTests</c> exists to catch
+    /// (BUILD-PLAN §3.11 A1).
+    /// </param>
+    public static SeatPrompt For(
+        TurnContext context,
+        SeatQuestion question,
+        Card? suggestedThrow = null,
+        AdviceRationale? rationale = null)
     {
         ArgumentNullException.ThrowIfNull(context);
 
@@ -89,7 +104,8 @@ public sealed record SeatPrompt(
             [.. context.TurnedUpMoneyCards],
             context.MoneyCards,
             context.Stakes,
-            HandView.Of(context, suggestedThrow));
+            HandView.Of(context, suggestedThrow),
+            rationale);
     }
 
     /// <summary>

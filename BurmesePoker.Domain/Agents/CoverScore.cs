@@ -159,10 +159,50 @@ internal static class CoverScore
         IReadOnlyList<Card> hand,
         IReadOnlyList<Card> candidates,
         Func<Card, IReadOnlyList<Card>, long> tieBreak,
+        Refinement? amongTheBest = null) =>
+        [.. Scored(hand, candidates, tieBreak, amongTheBest).Select(candidate => candidate.Card)];
+
+    /// <summary>
+    /// One candidate discard with the three keys this file orders by, as the sort saw them.
+    /// </summary>
+    /// <param name="Card">The card that would be thrown.</param>
+    /// <param name="Covered">How many of the hand still meld once it is gone. Higher wins.</param>
+    /// <param name="Refined">
+    /// The expensive second key, or <b>null where it was not asked</b> — which is every
+    /// candidate that had already lost on <paramref name="Covered"/>, and every candidate at all
+    /// when the caller supplied no <see cref="Refinement"/>. Lower wins.
+    /// </param>
+    /// <param name="Preference">The cheap last resort. Lower wins.</param>
+    internal readonly record struct ScoredCandidate(Card Card, int Covered, long? Refined, long Preference);
+
+    /// <summary>
+    /// <see cref="Ranking(IReadOnlyList{Card},IReadOnlyList{Card},Func{Card,IReadOnlyList{Card},long},Refinement?)"/>
+    /// with the keys kept rather than thrown away — <b>the same call, and the ranking is defined
+    /// as its projection</b> (BUILD-PLAN P24.2).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Why this is the shape and not a second loop.</b> Everything a rung compares is
+    /// computed here and discarded a line later; an explanation that recomputed it would be a
+    /// second ordering that had to agree with the first by inspection, which is the drift this
+    /// whole file exists to prevent. It is also what makes an explanation free: a front end that
+    /// already draws the hint has already paid for every number in the sentence.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b><see cref="ScoredCandidate.Refined"/> is nullable and the order is unchanged by it.</b>
+    /// An unasked key used to be a zero, and a zero sorts where a null sorts — first — but every
+    /// unasked candidate has already lost on <see cref="ScoredCandidate.Covered"/>, so no
+    /// published measurement moves. What the null buys is that nobody can read a key nobody asked.
+    /// </para>
+    /// </remarks>
+    internal static IReadOnlyList<ScoredCandidate> Scored(
+        IReadOnlyList<Card> hand,
+        IReadOnlyList<Card> candidates,
+        Func<Card, IReadOnlyList<Card>, long> tieBreak,
         Refinement? amongTheBest = null)
     {
         var judged = new List<Card>(candidates.Count);
-        var scored = new List<(Card Card, List<Card> Kept, int Cost, long Refined, long Preference)>(candidates.Count);
+        var scored = new List<(Card Card, List<Card> Kept, int Cost, long? Refined, long Preference)>(candidates.Count);
         var best = int.MinValue;
         var tied = 0;
 
@@ -178,7 +218,7 @@ internal static class CoverScore
             var kept = Without(hand, card);
             var cost = Covered(kept);
 
-            scored.Add((card, kept, cost, 0L, tieBreak(card, hand)));
+            scored.Add((card, kept, cost, null, tieBreak(card, hand)));
 
             if (cost > best)
             {
@@ -213,9 +253,24 @@ internal static class CoverScore
                 .OrderByDescending(candidate => candidate.Cost)
                 .ThenBy(candidate => candidate.Refined)
                 .ThenBy(candidate => candidate.Preference)
-                .Select(candidate => candidate.Card)
+                .Select(candidate => new ScoredCandidate(
+                    candidate.Card, candidate.Cost, candidate.Refined, candidate.Preference))
         ];
     }
+
+    /// <summary>
+    /// <see cref="Potential"/> as a person reads it — a count, or a refusal.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>The one sentinel in the ladder that reaches a screen.</b> A joker scores
+    /// <see cref="int.MaxValue"/> here, which is not a partnership at all: it is
+    /// <see cref="Potential"/> saying that a joker fits anywhere and is never thrown. Drawn as a
+    /// number it would read <em>"2147483647 partners"</em>, so it crosses as
+    /// <see cref="KeyReading.IsBeyondMeasure"/> and <see cref="DiscardKey.BeyondMeasure"/> says
+    /// what it means (BUILD-PLAN P24.2).
+    /// </remarks>
+    internal static KeyReading Partnership(long preference) =>
+        preference >= int.MaxValue ? new KeyReading(0, IsBeyondMeasure: true) : new KeyReading(preference);
 
     /// <summary>A tie-break that breaks no ties: the first card of equal cost wins.</summary>
     internal static readonly Func<Card, IReadOnlyList<Card>, long> NoPreference = static (_, _) => 0;

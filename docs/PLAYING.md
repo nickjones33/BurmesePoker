@@ -340,7 +340,24 @@ card goes on paying you after you have thrown it away**, and a money card *witho
 you are merely holding for somebody else. That is why throwing a money card costs you nothing.
 
 Under the hand is **one bar with the question on it**, at most two buttons, and a **"why?"** you
-can open for the rule behind it.
+can open.
+
+**Open the "why?" and you get two things.** The first is **the rule** behind the question — the
+same sentence every turn, and it stays there whether or not you have the hints ticked, because a
+rule is not advice. The second is **what the computer is thinking about this turn**, which appears
+only with hints on:
+
+> Q♣ and 2♠ both leave 12 of your cards melded. Q♣ leaves 10 cards of the pack that would improve
+> the hand; 2♠ leaves 8. That is why. At 5 any thirteen that all meld win, runs and sets alike.
+
+**It is the `←` explained**: which card it would throw, what it nearly threw instead, and the one
+thing that separated them. ⚠️ **When nothing separated them it says so** — the computer has no
+preference on that turn and you very well might. It also tells you when the feeding ban has taken
+cards out of the choice (that is a rule, not the computer's opinion), and it never claims to be
+playing for the clean bonus, because it is not: it simply never throws a joker.
+
+⚠️ **The advice is the strongest computer player's, whatever the table's difficulty is set to.**
+Asking the computer what to do and being told what a weak player would do would be absurd.
 
 ### The rest of it
 

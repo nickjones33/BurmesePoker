@@ -299,6 +299,43 @@ public class OutsBotAgentTests
         }
     }
 
+    /// <summary>
+    /// ✅ <b>P24.2 — the explained ranking <em>is</em> the ranking, and the discard is its head.</b>
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>The claim is that an explanation is free, and this is what makes it true</b>: the keys
+    /// are kept rather than recomputed, so a front end drawing the arrow has already paid for every
+    /// number in the sentence. Two orderings that had to agree by inspection would be exactly the
+    /// drift <c>CoverScore</c> exists to prevent.
+    /// </remarks>
+    [Fact]
+    public void TheExplainedOrderingIsTheOrderingAndTheDiscardIsItsHead()
+    {
+        var rung = new OutsBotAgent();
+        var checkedHands = 0;
+
+        foreach (var hand in RandomHands(count: 40, cards: 14, seed: 20260822))
+        {
+            var context = Turn(hand);
+            var explained = rung.ExplainDiscards(context);
+
+            Assert.Equal(rung.RankDiscards(context).Select(card => card.Id), explained.Select(card => card.Card.Id));
+            Assert.Equal(rung.ChooseDiscard(context).Id, explained[0].Card.Id);
+            Assert.All(explained, candidate => Assert.Equal(rung.DiscardKeys.Count, candidate.Keys.Count));
+
+            // ⚠️ The expensive middle key is asked only of what is tied at the top, and a null is
+            // not a zero: reading one back as a measurement would report a number nobody took.
+            var best = explained[0].Keys[0]!.Value.Value;
+            Assert.All(
+                explained.Where(candidate => candidate.Keys[0]!.Value.Value < best),
+                candidate => Assert.Null(candidate.Keys[1]));
+
+            checkedHands++;
+        }
+
+        Assert.Equal(40, checkedHands);
+    }
+
     /// <summary>The hand less the first card of that value.</summary>
     private static IReadOnlyList<Card> Kept(IReadOnlyList<Card> hand, Card value)
     {

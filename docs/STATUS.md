@@ -2,13 +2,81 @@
 
 Cross-session progress tracker. **`/poker` reads this first and updates it last.**
 
-Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 26) · Skill: `.claude/skills/poker/SKILL.md`
+Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 29) · Skill: `.claude/skills/poker/SKILL.md`
 
 State markers: `☐` not started · `◐` in progress · `☑` done
 
 ---
 
 ## Current state
+
+🔥 **`P24.2` shipped 2026-08-22 on Opus 5: the arrow grows a sentence, and the journal records
+where a person disagreed with the computer.** Nick asked for it from the browser the same day —
+*"I see the suggested card for me to discard but I don't see where the explanation for that is"* —
+and it is the packet's own acceptance criterion arriving as a bug report.
+
+**What is on screen.** Every one of the five questions now arrives with a computed paragraph
+inside the `<details>Why?</details>` that was already there. The discard's reads, at the table the
+browser deals:
+
+> Q♣ and 2♠ both leave 12 of your cards melded. Q♣ leaves 10 cards of the pack that would improve
+> the hand; 2♠ leaves 8. That is why. At 5 any thirteen that all meld win, runs and sets alike.
+
+🔥 **Each disclosure now holds two kinds of sentence and they are gated differently, which is the
+fiddly part of the packet and it is fiddly in markup rather than in the domain.** The rule text is
+**ungated** — a rule is not advice, the same distinction `HandPanel.Words` draws about §5.1 — and
+the computed paragraph beside it **is** gated on the hints box.
+`MarkupStandardsTests.TheComputersReasoningIsGatedOnHintsAndTheRuleBesideItIsNot` fixes that by
+test rather than by taste.
+
+🔥 **The keys were the missing half, not the ranking, and the trap is that they are packed for
+sorting rather than for reading.** `IExplainsDiscards` is the described sibling of P31's
+`IRanksDiscards`: `DiscardKey` carries a **name**, a **direction** and — the part that matters —
+**what to say when the value is a sentinel**. `outs` stores its second key as `-LiveOuts.Count(…)`
+because the sort takes the lowest first, and `CoverScore.Potential` returns `int.MaxValue` for a
+joker. ⚠️ **A front end reading the raw numbers would draw *"−14 outs"* and *"2147483647
+partners"***; nothing in `AdviceRationale` ever interprets a bare `long`.
+
+✅ **`CoverScore.Scored` is the same call as `CoverScore.Ranking`, and the ranking is now defined
+as its projection** — so an explanation is free: a page drawing the arrow has already paid for
+every number in the sentence. ⚠️ **One deliberate behaviour change with no effect on order**: the
+refinement key is `long?` and **null where it was never asked**, which is every candidate that had
+already lost on cover count. A zero and a null sort identically there, so **no published
+measurement moves** — what the null buys is that nobody can read back a key nobody took.
+`ComputerAdvice.RankingsBought` is the instrument that makes acceptance 2 an assertion: the arrow,
+the sentence and the journal's second opinion are **one ranking between them**, memoised on the
+identity of the `TurnContext` (the engine builds a fresh one per decision, so it remembers one
+decision and forgets it when the next arrives).
+
+🔥 **The journal records an *opinion beside an answer*, and that is deliberately narrower than
+`JournalingAgent`'s stated stance.** `JournalDecision.Advice` is a `JournalAdvice(CardId, Rung,
+Why)`, and `JournalDecision.DisagreedWithTheComputer` is the query the packet exists for. It is
+**not** a guess at the player's intention: it is a different agent's answer to the same
+`TurnContext`, taken before the seat replies. ⚠️ **Only seats a person is playing** — a bot's
+advice is its own answer. ⚠️ **By `CardId`** (§3.1): two decks hold two 5♥ and a value comparison
+would say *"she agreed"* on precisely the hands worth studying. ✅ **It is recorded with the hints
+box off**, because a record of where somebody disagreed must not depend on whether they wanted to
+be told; replay ignores the field and `CurrentRulesRevision` does not move.
+
+⚠️ **Three traps the packet named in advance, all closed by assertion.** **(1)** The explanation is
+the **bare rung's at ε = 0 and never a level's** — `FallibleAgent`'s mistake *is* the runner-up of
+the very ranking this renders, so explaining through a level would confidently justify a move
+chosen **because it was second best**. **(2)** A banned card is explained as a **rule**, and on the
+turn §5.1's floor yields the sentence **stops saying it** — computed per turn, never from a ban
+worked out earlier. **(3)** No sentence implies the computer plays for §7.3's clean bonus: it does
+not, and the true sentence is *"it will never throw a joker."*
+
+⚠️ **P32's trap was real and is closed**: the closing clause reads the same `TableRules` the
+evaluator does, so it says *"At 4 one of your melds must be a run…"* and *"At 5 any thirteen that
+all meld win"* — **asserted at both, because they are different games.**
+
+✅ **Two facts about scope.** The **console is untouched** and `drive-console.py`'s capture is
+**byte-identical to `HEAD`** at `--seed 20260819 --pick 0`, which is also the proof that
+`CoverScore`'s reshaping was a refactor. And **no rules question arose** — `RULES.md` stays rev 29.
+
+⚠️ **The tree is green at 757 tests**, from 736.
+
+---
 
 🔥 **`P32` shipped 2026-08-22 on Opus 5: the standing answer is about a *five-handed* table, and
 the headline is a negative result about this project's own published explanation.**
@@ -104,34 +172,41 @@ unasserted altogether.
 
 ---
 
-## What is next, and it changed twice this session
+## What is next
 
-1. **`P24.2` — the computer's reasoning, said out loud.** ✅ **Nick asked for it on 2026-08-22**,
-   from the browser: the hint arrow is there and the *why* is not. Its *whether* had been open
-   since 2026-08-20. 🔥 **Two things a cold session must know.** **(1) P31 already built half of
-   build item 1** — `IRanksDiscards.RankDiscards(context, candidates)` returns an ordered
-   candidate list; **what is missing is the keys, not the ranking.** **(2) The browser already has
-   five `<details>Why?</details>` blocks** in `TurnPrompt.razor` holding **static rule text**,
-   ungated because a rule is not advice. **The affordance exists; what P24.2 adds is a computed
-   paragraph inside it, gated on hints while the rule text around it is not.**
-   ⚠️ **And P32 created a new trap for it**: at five seats §7.1.1 asks for **no series at all**, so
-   an explanation phrased in terms of runs is **false at the table the browser now deals.**
-2. **`P36` — how long a seating holds** (§10 #22). ⚠️ **Revert-shaped and must not be a revert.**
-3. **`P37` — asking the table to change seats** (§10 #23, §9 #45). 🔥 **The first *public* question
+✅ **`P24.2` is done, so the queue moves up by one.**
+
+1. **`P36` — how long a seating holds** (§10 #22). ⚠️ **Revert-shaped and must not be a revert**:
+   `MatchEngine` re-draws before every deal (P28 built the reading rev 28 withdrew), and pre-P28
+   held a seating that could never change. The rules want *held until the players agree*, which is
+   neither.
+2. **`P37` — asking the table to change seats** (§10 #23, §9 #45). 🔥 **The first *public* question
    this project has ever asked** — `SeatPrompt` is seat-private by construction — and the first
    asked *between* rounds. ✅ **A computer seat consents**: a design decision, recorded in
    `BUILD-PLAN` §3 rather than invented as a rule, because a bot that abstained would make the
    rule dead at every table with a bot in it.
-4. **`P35` — §7.4 and §7.5.** ✅ Unblocked by rev 28, ⚠️ **but now depends on P36**: a streak
-   blamed on the seat above you needs a seating that survives three rounds.
-5. **`P34` — the front door.** Still needs no expert answer and collides with nothing.
+   ⚠️ **P24.2 has changed what that costs.** `SeatPrompt` gained a `Rationale`, and
+   `ConcealmentTests.NoTableEventCanCarryTheComputersReasoning` now asserts over the *type* that no
+   `TableEvent` carries one. A public between-rounds question is the first thing that would have to
+   sit somewhere other than a `SeatPrompt` — **decide where before writing it**, and note that a
+   sixth `SeatQuestion` would land on `RemotePlayerAgent.Why`'s null arm and on
+   `TurnPrompt.razor`'s inert final arm, both of which are deliberate and both of which fail
+   quietly rather than loudly.
+3. **`P35` — §7.4 and §7.5.** ✅ Unblocked by rev 28, ⚠️ **but depends on P36**: a streak blamed on
+   the seat above you needs a seating that survives three rounds.
+4. **`P34` — the front door.** Still needs no expert answer and collides with nothing.
+   ⚠️ **P24.2 added one thing for it to watch**: `AdviceRationale.ForObjection` says out loud that
+   refusing a claim *"has been measured, and is worth nothing either way"*. That is a measured
+   claim shipped as prose in the product — **deliberately carrying no number**, so it cannot rot
+   into a wrong figure, but P34's staleness habit should know it is there.
 
-⚠️ **One leftover P32 did not take: the console still deals four.** `Console/Program.cs`'s seat
-prompt defaults to `RoundEngine.MinimumPlayers`. The browser was moved to `DefaultPlayers` when
-Nick asked for it mid-session; the console was left because changing it invalidates
-`drive-console.py`'s captures and was not in P32's build list. **One line plus a re-capture.**
+⚠️ **Two leftovers, both one line.** **(1) The console still deals four** —
+`Console/Program.cs`'s seat prompt defaults to `RoundEngine.MinimumPlayers` rather than
+`DefaultPlayers` (P32's leftover; one line plus a `drive-console.py` re-capture). **(2) The console
+gains nothing from P24.2 and that was the packet's scope decision, not an oversight** — it keeps
+its arrow, which is what keeps P21's and P23's byte-identical captures spendable.
 
-⚠️ **The tree is green at 736 tests**, from 733.
+⚠️ **The tree is green at 757 tests**, from 736.
 
 ---
 
@@ -1393,9 +1468,9 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P21** Outs: the first rung that looks ahead | P17, P18 | done 2026-08-20 — **it separates**: `+3.1 ± 1.0` over `greedy`, and the whole solution got 45% faster on the way |
 | ☑ | **P22** Money: is there a strategy in the side bet? | P17, P18 | done 2026-08-20 — **no at $5/$1, where the rule never fires at all; `+7.3 ± 3.3` a round at $5/$40** |
 | ☑ | **P23** The standing answer | P17, P19 | done 2026-08-20 — **the last packet**: the dial re-fitted (one ε moved), **59 of 77 rows byte-identical**, and "a rung cannot be added without being measured" made a test |
-| ☐ | **P24** ~~The computer's reasoning~~ — **split 2026-08-21** | — | see P24.1 and P24.2 |
+| ☑ | **P24** ~~The computer's reasoning~~ — **split 2026-08-21** | — | **both halves done**: P24.1 2026-08-21, P24.2 2026-08-22 |
 | ☑ | **P24.1** A journal for the hosted table · **Fable 5** | P13.6, P14 | **done 2026-08-21** — `TableOptions.Journal` opts the session into `JournalingAgent.Wrap` (**outermost**, so the record is the answer that reached the engine — a stand-in's or the clock's included); `TableSession.Journal()` hands the record back and **the file stays the host's** (`HostedTable` flushes after every settled round, on the dealer's own thread). `TableSeat.Strategy` is the attribution — a level's name for a Web bot, `human` for a remote seat. A hosted round **replays identically** through the ordinary `JournalPlayerAgent`; an abandoned round marks `Header.Abandoned`. ⚠️ The rev-13 stamp (R2) is untouched on purpose — P30.2's fix, one constant for all three writers. |
-| ☐ | **P24.2** The computer's reasoning, said out loud | P24.1, P18, P21 | **planned 2026-08-20** — the browser's arrow grows a *why*, and the journal records where an expert disagreed. ⚠️ **Never explain through `FallibleAgent`** |
+| ☑ | **P24.2** The computer's reasoning, said out loud · **Opus 5** | P24.1, P18, P21, P31, P32 | **done 2026-08-22** — `IExplainsDiscards` is the described sibling of P31's `IRanksDiscards`: `CoverScore.Scored` keeps the keys the ranking threw away, and `Ranking` is now *defined as* its projection, so an explanation costs no extra `PartialCover.Best` call (asserted by `ComputerAdvice.RankingsBought`). Every key carries a name, a direction and **a phrase for its sentinel** — `outs` negates its outs key and a joker's partnership is `int.MaxValue`, and neither ever reaches a screen. `AdviceRationale` assembles winner-versus-runner-up, says so when *nothing* separated them, reads the table's own `TableRules` for the closing clause, explains a banned card as a **rule** (and stops on the turn §5.1's floor yields), and never implies the computer plays for §7.3's bonus. The browser's five existing `<details>` gain a computed paragraph **gated on hints while the rule text around them is not**. The journal grows `JournalDecision.Advice` — an *opinion beside an answer*, human seats only, by `CardId` — and `DisagreedWithTheComputer` is the query. ⚠️ **The console is untouched and its capture is byte-identical.** |
 | ☑ | **P25** The win condition is a function of the table size | — | **done 2026-08-21** — `TableRules.For(players)` is the §7.1.1 table as data; `HandEvaluator` takes it and **has no parameterless overload**. The search carries what is still owing **along** the partition; two-handed prunes sets out of the candidates; `Meld.IsClean` needs no case for the all-joker meld. 🔥 **The change is real and `drive-console.py` cannot see it** — both captures are byte-identical because neither script reaches a declaration. |
 | ☑ | **P26** The money layer as it actually is | — | **done 2026-08-21** — `Permanent` is **three values and eight cards**, `Multiplier(Card)` returns 0/1/**3**, and the ×5 is `Multiplier(card, owner, MoneyOwnership)` under a configuration `Settlement` reads **once a round**. 🔥 **The packet's stated prediction held**: a designation on the 7♦ and one on an ordinary card leave *exactly the same* money loose in the shoe, now an equality assertion. 🔥 **The side-bet went from `$8.50` to `$11.58 ± 0.34` a round at five seats — 42.5% → 58% of the round prize — and play did not move at all.** ⚠️ **The ×5 is fenced to the 7♦/A♠ pair** (§9 #32) by two tests. |
 | ☑ | **P27** The feeding ban | — | **done 2026-08-21** — §5.1 enforced **by construction**: `FeedingBan` is two rank sets a seat, `TurnContext.LegalDiscards` is the whole of the choice a turn presents and is **never empty**, and `CoverScore.Ranking` takes a context so **every rung including the runner-up is filtered without any rung remembering to**. 🔥 **The predicate is `Card.SameRankAs`, which is `Rank == other.Rank`** — nullable equality is what makes a joker close the other jokers (§9 #27), so the house ruling falls out of the type. 🔥 **A bot's cover count can now fall**, which breaks the monotonicity argument that says a table of bots terminates. ⚠️ Both front ends draw a closed card as **not a control** (`CardDisplayState.Unthrowable`). |
@@ -1453,6 +1528,64 @@ harness prints today would be a guess wearing a number.
 ---
 
 ## Notes for the next session
+
+### What P24.2 built, for the session that opens P36 (2026-08-22)
+
+**Read this before touching `CoverScore`, `ComputerAdvice`, `SeatPrompt` or the journal.**
+
+🔥 **1. `CoverScore.Ranking` is now a projection of `CoverScore.Scored`, and that is load-bearing
+rather than tidy.** Everything a rung compares is computed in `Scored` and thrown away a line
+later; the whole claim that an explanation is *free* rests on there being one function, not two
+that agree by inspection. **Do not add a second ordering.** ⚠️ The refinement key is `long?` and
+**null means the key was never asked** — a candidate that lost on cover count is never scored on
+the expensive one. Null and zero sort identically there, so nothing measured moved, but **reading a
+null back as a zero would publish a number nobody took.**
+
+🔥 **2. A rung must never hand a front end a bare `long`.** `DiscardKey` carries a name, a
+direction and `BeyondMeasure` — the phrase to print when the value is a sentinel. Today there is
+exactly one sentinel: `CoverScore.Potential` returns `int.MaxValue` for a joker, which is not a
+partnership but a **refusal**. `CoverScore.Partnership` is the one place that is read back.
+`BotCatalogTests.EveryKeyARungDeclaresCarriesANameAndADirection` fails the build if a fourth key
+arrives without one, and `TheStrongestRungCanExplainItsOwnDiscards` fails it if a rung is promoted
+to `BotCatalog.Hardest` that cannot explain itself. ⚠️ **It names `Hardest`, not `Ladder[^1]`** —
+P31 found that coincidence written down as a law in three places at once, and this is a fourth
+place somebody could "simplify" it back into.
+
+🔥 **3. `ComputerAdvice` holds one decision, keyed on the identity of the `TurnContext`.** The
+engine builds a fresh context per decision, so the memo remembers one and forgets it when the next
+arrives. ⚠️ **It must never become a cache across turns**: a context's hand is the seat's own live
+list, and an answer kept past the discard describes cards that have gone (P13.1's finding, which
+this is one edit away from re-committing). It is safe for a whole table's seats to share **because
+a table plays one turn at a time** (§3.6) — a table that ever played two would need this reworked
+before anything else.
+
+⚠️ **4. `SeatPrompt` carries a `Rationale` and a `TableEvent` must never.**
+`ConcealmentTests.NoTableEventCanCarryTheComputersReasoning` asserts that over the **type**, not
+over a played round. A rationale names cards of a hand and says what the computer would keep, so an
+event carrying one hands every watcher a commentary on somebody else's thirteen (§3.11 A1).
+🔥 **This is the constraint P37 will meet first**: the first *public* question this project asks
+cannot ride on a `SeatPrompt`, and it cannot ride on a `TableEvent` carrying advice either.
+
+⚠️ **5. A sixth `SeatQuestion` now fails quietly in two more places, both deliberately.**
+`RemotePlayerAgent.Why` has a null arm and `TurnPrompt.razor` has an inert final arm. Both are the
+`JournalFormat.Name` lesson applied — *a default arm is a mistranslation waiting for the next
+case* — but **quiet is still quiet**. A packet adding a question must visit both.
+
+⚠️ **6. Two test-fixture findings worth more than they look.** `ScriptedSeat`'s old no-hint
+fallback — *throw the first loose card* — **does not terminate**: it leaves the hand it started
+from rearranged, and a table of such seats runs until the round is abandoned on the clock. It
+throws back the card just taken now, which stands still while the bots race to thirteen. And a
+table with two person-seats needs **both** scripted, or the unattended one spends its whole
+patience on every question and the round dies on the clock rather than on the assertion.
+
+✅ **7. The prose the product now ships, and what could rot.**
+`AdviceRationale.ForObjection` tells a player that refusing a claim *"has been measured, and is
+worth nothing either way"* — P29's §12 null, said out loud, because **a null makes the explanation
+more interesting rather than less**: it is a thing this project knows and no player does. It
+**carries no number on purpose**, so it cannot rot into a wrong figure; if the measurement ever
+separates, that sentence is the thing to change. **P34's staleness habit should know it is there.**
+
+---
 
 ### What P33 built, for the session that opens P32 (2026-08-22)
 
@@ -3122,6 +3255,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 ## Session log
 
 | Date | Packet | Outcome |
+| 2026-08-22 | P24.2 | **Done — the computer's reasoning, said out loud, on Opus 5. The arrow was a promise of a sentence that was not there, and Nick reported it as a bug from the browser the same day.** `Domain/Agents/IExplainsDiscards.cs` is written as the **described sibling** of P31's `IRanksDiscards` — the packet's own re-plan said what was missing was *the keys, not the ranking*, and that was exactly right. `CoverScore.Scored` returns the candidates with the three keys the sort computes and discards a line later, and `CoverScore.Ranking` is now **defined as its projection**, which is the same discipline `Discard` already keeps against `Ranking`. 🔥 **The trap the interface exists to close: the keys are packed for sorting, not for reading.** `outs` stores its second key as `-LiveOuts.Count(…)` because the sort takes the lowest first, and `CoverScore.Potential` returns `int.MaxValue` for a joker — a front end drawing the raw numbers would say *"−14 outs"* and *"2147483647 partners"*. So a rung supplies each key's **name**, **direction** and **the phrase to print in place of a sentinel** (`DiscardKey.BeyondMeasure`), and `AdviceRationale` never interprets a bare `long`. ⚠️ **One deliberate change with no effect on order**: `ScoredCandidate.Refined` is `long?` and **null where the refinement was never asked** — every candidate that had already lost on cover count. Null and zero sort identically there, so **no published measurement moves**; what the null buys is that nobody can read back a key nobody took. ✅ **Acceptance 2 is an assertion, not a hope**: `ComputerAdvice.RankingsBought` counts what was actually paid for, and the arrow, the sentence and the journal's second opinion are **one ranking between them** — memoised on the *identity* of the `TurnContext`, which is the right key because the engine builds a fresh one per decision and so the memo remembers one decision and forgets it when the next arrives. 🔥 **On screen: all five questions, inside the `<details>Why?</details>` blocks that already existed, and each disclosure now holds two kinds of sentence gated differently** — the rule **ungated** (a rule is not advice, `HandPanel.Words`' distinction) and the computed paragraph **gated on hints**. That is the fiddly half of the packet and it is fiddly in markup; `MarkupStandardsTests.TheComputersReasoningIsGatedOnHintsAndTheRuleBesideItIsNot` fixes it by test rather than by taste. 🔥 **The journal records an *opinion beside an answer*** — `JournalAdvice(CardId, Rung, Why)` on `JournalDecision`, with `DisagreedWithTheComputer` as the query the packet exists for. ⚠️ **That narrows `JournalingAgent`'s stated stance rather than repealing it**: what is recorded is a different agent's answer to the same `TurnContext`, taken before the seat replies, which is a fact about the game and not a guess at the player. **Human seats only**; **by `CardId`** (§3.1 — two decks hold two 5♥, and a value comparison would say *"she agreed"* on precisely the hands worth studying); **recorded with the hints box off**, because a record of disagreement must not depend on whether somebody wanted to be told; replay ignores the field. ⚠️ **Three named traps, all closed by assertion.** The explanation is the **bare rung's at ε = 0 and never a level's** — `FallibleAgent`'s mistake *is* the runner-up of the very ranking this renders. A banned card is explained as a **rule**, and on the turn §5.1's floor yields the sentence **stops saying it**. And no sentence implies the computer plays for §7.3's bonus — the true sentence is *"it will never throw a joker."* ✅ **P32's trap closed**: the closing clause reads the same `TableRules` the evaluator does — *"At 4 one of your melds must be a run…"* against *"At 5 any thirteen that all meld win"* — **asserted at both, because they are different games.** ⚠️ **Two test-fixture findings.** `ScriptedSeat`'s no-hint fallback (*throw the first loose card*) **does not terminate** — it leaves the hand it started from rearranged, and a table of such seats runs until the clock abandons the round; it throws back the card just taken now, which stands still while the bots race. And a hands-off table needs **every** person-seat scripted or the unattended one spends its whole patience per question. ✅ **The console is untouched by design and `drive-console.py` is byte-identical to `HEAD`** at `--seed 20260819 --pick 0`, which is also the proof that reshaping `CoverScore` was a refactor. ✅ **No rules question arose; `RULES.md` stays rev 29** and `JournalHeader.CurrentRulesRevision` is unchanged. 🔥 **Green at 757 / 0**, from 736. |
 | 2026-08-22 | P33 | **Done — the clean bonus (`RULES.md` §7.3) is built, `§10 #19` is discharged, and the regeneration produced the cleanest reproduction this project has recorded.** `TableRules.JokerlessMultiplier` puts §7.3's table beside §7.1.1's — **×2 at 2/3/4 seats, ×3 at 5+** — in the one place a per-seat-count rule is written down; `Settlement.IsJokerless` is the predicate (a scan of the declared thirteen, and **`Meld.IsClean` is not consulted anywhere**, because it implements §7.1.1's *required clean series*, a different rule sharing a word); `Settlement.RoundPayment(stakes, rules, jokerless)` is the arithmetic; `Settlement.ForRound` takes the winner's declared thirteen and `RoundEngine` hands it that seat's hand **after** the discard (§7.1). 🔥 **The result: `sim suite --games 8000 --seed 20260819` = 119 measurements in 11,159 s, and 111 of the 116 shared rows came back byte-identical — the five that moved are exactly, and only, the five denominated in dollars a round.** The prediction was written down before the run (no rung reads the bonus, so play cannot move and only money can) and the file shows it with nothing left over. ⚠️ **Contrast P29's 4 of 91**: those packets changed what a winning hand *is*; this changed what winning *pays*. 🔥 **"Does it reproduce" has a third answer — *it reproduces everywhere the change could not reach*.** 🔥 **And the five rows are a finding: the clean bonus is a tax on trading wins for money.** Every one is a `prospector`-over-`outs` `net per round margin` and every one fell — **+5.32 → +4.13** at $5/$20 and **+14.63 → +13.43** at $5/$40 (both still separated under Holm), because the bonus multiplies the round prize and the round prize is what `prospector` sells; it wins 20 points fewer rounds, so `outs` collects the multiplier far more often. ✅ **The `money.side-margin.*` rows did not move at all**, which is the check that the bonus landed in the round column. 🔥 **The defect surface this packet is really about: two consumers re-derive the round/side-bet split in order to display it** — the console's settlement panel and `Sim`'s `SeatRow.Flat`/`SideBet` — and both computed the round half as `RoundValue`, so **the bonus would have landed silently in the side-bet column every money measurement reads**; `Settlement.RoundPayment` is public for exactly that reason. 🔥 **Measured: the bonus is collected in about one round in six** — 15.4% ladder, 16.2% dial, 17.4% two-arm cell — **by rungs that have never heard of the rule**, and it is published as a **floor** for two independent reasons (no rung will part with a joker; §9 #33's default may make it unreachable for a hand that must shed one early). ⚠️ **P32 was deliberately not folded in**, against `BUILD-PLAN`'s own recommendation, on this plan's P31-before-P32 argument: a run changing the scoring rule *and* the table size could not say which moved a number — **and the whole result above is a statement about which rows a change can reach.** It cost a second three-hour suite and the amendment is in `BUILD-PLAN.md` §5 P32. ⚠️ **Six tests changed their expected payouts and none was wrong before** — every hand-computed four-handed settlement in the suite was a jokerless declaration, so all six doubled, which hints the 15.4% floor understates a *player*. ✅ §7.3's registry entry is **`Checked(...)`** rather than `Exempt(...)`, with a mutant catching a clean hand paid flat, a jokered one paid the bonus, **and five seats paid at the four-seat multiplier**. ✅ **No rules question arose; `RULES.md` stays rev 26** — §7.3's *"nothing here is built"* replaced and §10 #19 discharged, status rather than a rule moving, so `JournalHeader.CurrentRulesRevision` is unchanged. ⚠️ **New in `docs/STRATEGY.md`: §14**, and `StandingAnswerTests.TheDocumentSaysHowOftenTheCleanBonusIsActuallyCollected` fails the build if the rate stops being published. 🔥 **Green at 733 / 0**, from 715. |
 | 2026-08-22 | — | **Rules session: the expert corrected her own rule, unprompted, hours after giving it — and the correction is two rules.** Rev 25 had recorded §7.3 as a flat **×3** for declaring with *"all series clean"*. Mya Lay came back the same day: *"if you play two players, three players, or four players, you will only get two times of the winning prize … you got three times of the winning prize if we are playing five players. **Not just series, if you want to win with jokerless** … you can discard the joker."* 🔥 **(1) The multiplier is a function of the table size** — ×2 at 2/3/4 seats, ×3 at 5+ — making §7.3 **the second rule in the document whose content changes with the player count, splitting at exactly §7.1.1's seam** (2/3/4 require a series; 5+ require nothing). 🔥 **(2) The condition is *jokerless* over the whole declared thirteen**, not a property of its series — a joker in a **set** forfeits it too. ✅ **Closes §9 #34 and #35.** **#35 was the row with no safe default and the one blocking `P32`**, and it closed the expensive way: the bonus exists at five-plus and pays **most** there, so **cleanliness is relevant at every table size for the first time** and the win condition and the scoring stop being separable. **Both P32 and P33 are unblocked.** ⚠️ **Opens #37** (is six-plus also ×3? recommend yes, matching §7.1.1's grouping — safe). **#33 and #36 stay open, neither blocking**; #36's recommendation is *strengthened* — the new sentence names *the winning prize* twice more and never the money. 🔥 **P33 got smaller, and the reason is the finding**: rev 25 flagged its hardest problem as *which partition the winner is paid on* — **jokerless is a property of the hand, so the question does not arise**; `HandEvaluator` needs nothing and `Meld.IsClean` is **not** the predicate (it implements §7.1.1's *required clean series*, a different rule sharing a word). ⚠️ **The multiplier does need the seat count**, which `Settlement` has never taken; `TableRules.For(n)` is its home. ⚠️ **Rev 25's arithmetic corrected**: four-handed clean is **$30**, not $45, and the *"largest single swing, ahead of the ×5 jackpot"* claim is **withdrawn** — per opponent the bonus is +$5 a head at 2/3/4 and +$10 at 5+ against the jackpot's $10, so it is half the jackpot at small tables and level with it at five (still far more consequential: 1-in-1,444 against routine). ⚠️ **P33 and P32 are now one measurement** — at five seats the bonus is the only thing cleanliness is worth — **so fold P32's seat-count change into P33's regeneration**. 🔥 **Methodological finding: rev 25's own lesson was backwards.** It recommended the **narrow** reading of #34 because the two rules this document got wrong were *flat and later narrowed*; the answer was the **broad** one. What §6.2 and §7.1 share is not breadth — it is that **a broad rule was inferred from a narrow sentence**; §7.3 inferred a narrow rule from a narrow sentence and erred the other way. **Inference from silence is the variable.** ⚠️ **Six sessions running have answered past the question asked, and this one answered a question that was never put — do not treat a rules session as closed on the day it ends.** **rev 26**, `JournalHeader.CurrentRulesRevision` bumped to match. 🔥 **One test went red on the rev alone, and it is the mechanism working**: §7.3's heading claims Settled now, so `SettledRuleCoverageTests.EverySettledRuleIsCheckedOrNamesWhyItCannotBe` failed — registered as an `Exempt(...)` entry, **the only one in that registry excused because *the code is missing* rather than because no ordinary-play check could exist**; ⚠️ **P33 converts it to `Checked(...)` and must not delete it.** 🔥 **Green at 715 / 0, unchanged — this revision is documentation.** |
 | 2026-08-22 | — | **Rules session: three answers, and the third one moved the plan.** Asked flat and all three confirmed their standing default — **#19** *does a release survive the reshuffle?* **yes**; **#32** *does the ×5 need the 7♦ and A♠ specifically?* **"specifically"**; **#27** *what does taking a joker close?* **"yeah"**, the other jokers. All three move `PLAYER`/Unknown → `EXPERT`, **no code changed and no play changed**, and §9 was momentarily empty. 🔥 **Then #27's answer carried a rule nobody had ever recorded**: *"Unless you want all series clean that got a 3-time winning game prize, you have a joker, so you discard the joker for the winning clean series."* **`RULES.md` §7.3 is new — an all-clean declaration pays ×3 the winning prize** — against §7.2's *flat*, `PLAYER`, Settled since rev 1. At standard stakes a four-handed win goes $15 → **$45**: **the largest single swing in the game**, and **nothing implements it** (§10 #19, a list P28 had emptied). ⚠️ **It also supplies the only reason this project has ever had for throwing a joker away**, which no rung can currently produce — so every figure in `STRATEGY.md` is measured in a world where that reason does not exist. **Four things unspecified (§9 #33–#36); #35 has no safe default** and decides whether the bonus exists at five-plus seats, **which blocks P32**. All four drafted flat in `QUESTIONS-FOR-MYA-LAY.md` Q10. **rev 25**, `JournalHeader.CurrentRulesRevision` bumped to match (the binding is unconditional; rev 25 is the first non-play-changing rev to move it). New packets: **P33** the clean bonus (blocked on the answers) and **P34** a front door plus anti-staleness tests (blocked on nothing). 🔥 **Green at 715 / 0, unchanged — this revision is documentation.** |

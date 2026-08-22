@@ -39,7 +39,7 @@ namespace BurmesePoker.Domain.Agents;
 /// agent fell into.
 /// </para>
 /// </remarks>
-public sealed class GreedyBotAgent : IPlayerAgent, IRanksDiscards
+public sealed class GreedyBotAgent : IPlayerAgent, IRanksDiscards, IExplainsDiscards
 {
     /// <summary>
     /// Take the discard only if it melds more of the hand than what is already held.
@@ -98,6 +98,35 @@ public sealed class GreedyBotAgent : IPlayerAgent, IRanksDiscards
         ArgumentNullException.ThrowIfNull(candidates);
 
         return CoverScore.Ranking(context.Hand, candidates, Preference);
+    }
+
+    /// <summary>
+    /// Two keys, strongest first — this rung asks no expensive question in between, so the
+    /// middle position <see cref="OutsBotAgent"/> uses is simply not there (BUILD-PLAN P24.2).
+    /// </summary>
+    public IReadOnlyList<DiscardKey> DiscardKeys { get; } =
+        [DiscardKey.MeldedCardsKept, DiscardKey.Partners];
+
+    /// <inheritdoc/>
+    public IReadOnlyList<ScoredDiscard> ExplainDiscards(TurnContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        return
+        [
+            .. CoverScore.Scored(context.Hand, context.LegalDiscards, Preference)
+                .Select(candidate => new ScoredDiscard(
+                    candidate.Card,
+                    [new KeyReading(candidate.Covered), CoverScore.Partnership(candidate.Preference)]))
+        ];
+    }
+
+    /// <inheritdoc/>
+    public int MeldedCount(IReadOnlyList<Card> cards)
+    {
+        ArgumentNullException.ThrowIfNull(cards);
+
+        return CoverScore.Covered(cards);
     }
 
     /// <summary>

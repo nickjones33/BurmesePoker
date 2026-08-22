@@ -169,6 +169,13 @@ public static class JournalFormat
         Append(line, "question", Name(decision.Question));
         Append(line, "answer", decision.Answer);
 
+        if (decision.Advice is { } advice)
+        {
+            Append(line, "advice_card", advice.Card.Value);
+            Append(line, "advice_rung", advice.Rung);
+            Append(line, "advice_why", advice.Why);
+        }
+
         if (decision.Snapshot is { } snapshot)
         {
             line.Append(",\"hand\":[");
@@ -249,13 +256,21 @@ public static class JournalFormat
                 OptionalNumber(root, "draw_pile") ?? 0);
         }
 
+        var advice = OptionalNumber(root, "advice_card") is { } advised
+            ? new JournalAdvice(
+                new CardId(advised),
+                OptionalText(root, "advice_rung") ?? string.Empty,
+                OptionalText(root, "advice_why") ?? string.Empty)
+            : null;
+
         return new JournalDecision(
             Number(root, "round", number),
             Number(root, "turn", number),
             new PlayerId(Number(root, "player", number)),
             question,
             Text(root, "answer", number),
-            snapshot);
+            snapshot,
+            advice);
     }
 
     /// <remarks>
