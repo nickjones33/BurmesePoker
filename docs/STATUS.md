@@ -435,9 +435,36 @@ unasserted altogether.
 
 ## What is next
 
-🔥 **`P34` is done, and with it every packet in `BUILD-PLAN.md` §5.** There is nothing to pick up:
-the next session **chooses** work rather than continuing it. What is on the table, in the order
-this file would recommend it:
+🔥 **`P38` — the rulebook — is next, and `P39` — the strategy guide — is behind it.** Both were
+added on 2026-08-23, after P34 shipped, from a question Nick asked: *do we have a rules onboarding
+document for a new player, and a definitive guide to strategy?* **The answer to both was no.**
+
+🔥 **The gap is one of *audience*, not of content.** Everything a rulebook needs is in `RULES.md`
+and everything a strategy guide needs is in `STRATEGY.md` — but `RULES.md` is organised as a
+**reconstruction** (provenance on every rule, a live ledger of what nobody knows) and `STRATEGY.md`
+is organised as a **research report** (paired margins, Holm verdicts, rungs indexed by packet).
+⚠️ **Neither is wrong; both are written for the project rather than for a player**, and
+`RULES-PRIMER.md` says in its own first line that it is a *recall aid* for somebody who already
+knows the game.
+
+1. **`P38` — the rulebook** (`docs/RULEBOOK.md`). The game taught in reading order, one answer per
+   rule, no provenance tags and no open questions, with a generated worked round and a one-page
+   reference. ⚠️ **`RULES.md` stays the sole authority** and the rulebook decides nothing; it
+   stamps the rev it was derived from and **a test binds the two**, because a rulebook is the
+   highest-consequence stale document this project could own — it is the one a person plays from
+   and the furthest from anything a build would break. 🔥 **The hard part: eleven §9 rows are
+   played on a recorded default, and a rulebook must state one** — so it carries a short *house
+   readings* appendix in a player's language, for the day somebody sits down with a player who
+   learned the game elsewhere.
+2. **`P39` — how to play well** (`docs/HOW-TO-PLAY-WELL.md`). What has actually been measured, in
+   plain language, organised by decision rather than by experiment, **with the nulls given as much
+   room as the margins** — discarding a money card costs nothing, most of the money is decided at
+   the deal, refusing a claim is worth nothing, counting cards is worth nothing. ⚠️ **It takes
+   ownership of `PLAYING.md`'s *Playing better* figures**, which are the ones that went two whole
+   measurements stale before P34 fenced them: **a figure with two homes has none.**
+
+**Behind them, four candidates** — none written up as a packet yet, in the order this file would
+recommend:
 
 1. **`RULES.md` §10 #7 — the table sizes nobody can deal.** `RoundEngine.MinimumPlayers` is 4 and
    §2 records 2 to 6 as Settled, so `TableRules.For(2)` and `For(3)` are correct, tested and

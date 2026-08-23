@@ -13,9 +13,12 @@ over ad-hoc changes.
 
 🔥 **READ THIS FIRST — `P34` shipped 2026-08-23 on Opus 5: there is a `README.md`, and the
 documentation set cannot go stale quietly any more.** `RULES.md` is **rev 30**,
-`JournalHeader.CurrentRulesRevision` is **30**, the tree is green at **827**, and 🔥 **every packet
-on the plan is done — `BUILD-PLAN.md` §5 is empty and the next piece of work has to be chosen
-rather than picked up.**
+`JournalHeader.CurrentRulesRevision` is **30**, the tree is green at **827**, and **every packet
+built from §0 is done.** 🔥 **`P38` — the rulebook — is next, with `P39` — the strategy guide —
+behind it**: both were added the same day, after Nick asked whether this project has a rules
+onboarding document for a new player or a usable strategy guide, and **it has neither**. ⚠️ **The
+gap is one of audience rather than content** — `RULES.md` is a reconstruction and `STRATEGY.md` is
+a research report, both written for the project rather than for a player.
 
 **What P34 built, and the five things a cold session needs from it.**
 🔥 **(1) `README.md` is the front door and the only current-only document in the repository.**
