@@ -11,10 +11,46 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **READ THIS FIRST — `P35` shipped 2026-08-23 on Opus 5: the two scoring rules that reach
-outside a round are played, `RULES.md` §10 is empty, and every rule the document records as Settled
-is implemented.** `RULES.md` is **rev 30**, `JournalHeader.CurrentRulesRevision` is **30**, the tree
-is green at **819**, and **`P34` — the front door — is the only packet left on the plan.**
+🔥 **READ THIS FIRST — `P34` shipped 2026-08-23 on Opus 5: there is a `README.md`, and the
+documentation set cannot go stale quietly any more.** `RULES.md` is **rev 30**,
+`JournalHeader.CurrentRulesRevision` is **30**, the tree is green at **827**, and 🔥 **every packet
+on the plan is done — `BUILD-PLAN.md` §5 is empty and the next piece of work has to be chosen
+rather than picked up.**
+
+**What P34 built, and the five things a cold session needs from it.**
+🔥 **(1) `README.md` is the front door and the only current-only document in the repository.**
+Everything else here is a **running narrative**, newest-first, keeping superseded reasoning on
+purpose — which is the most valuable thing in `docs/` and must not be flattened. ⚠️ **The two
+audiences want opposite documents**: a cold session wants everything ever learned in priority
+order, a visitor wants what is true now in a page. **No packet numbers and no history in
+`README.md`** — if a sentence needs *"since P27"* to be true it belongs in this file.
+🔥 **(2) Eight tests now hold the documentation to the tree, and each was proved able to fail by
+mutating the document rather than the code** (`BurmesePoker.Tests/Docs/`). The map is complete
+both ways; every historical document carries a banner and **no current one does**; every command
+in a fenced `bash` block resolves against the source that parses it; every test `RULES.md` names
+as a fence exists; every figure `STRATEGY.md` tabulates and every figure `PLAYING.md` quotes
+agrees with `measurements.csv`; and the product's one spoken measurement is still a null.
+🔥 **(3) The test count is now discovered, not trusted** — facts plus theory rows, by reflection —
+**so a packet that adds a test and leaves the prose alone is a red build.** ⚠️ **Only the *first*
+count and the *first* rev in each document are checked**, because these files are newest-first and
+every earlier figure was true when it was written; demanding they all agree would be asking the
+project to delete its own history.
+⚠️ **(4) Two documents were a measurement behind and nothing had noticed.** `PLAYING.md` told a
+player the four difficulty settings win **13.8/21.7/28.4/36.1%** — a **four-handed** reference
+table, from a run two measurements old, on a page describing a **five**-handed table — and it said
+*"your neighbours change every round"*, false since P36. **Prose has no column to disagree with**,
+which is why the fix was a test and not a proofread. `RULES-PRIMER.md` was worse: four `[⚠ code
+disagrees]` tags for divergences closed at P25–P28, and a settlement section that stopped at
+*flat*.
+⚠️ **(5) `RULES.md` §10 says *"empty"* and it has one standing exception, now said out loud: #7.**
+`RoundEngine.MinimumPlayers` is **4** against §2's Settled 2-to-6, so the two- and three-handed
+win conditions are implemented, tested and unreachable from a dealt game — **the oldest entry in
+that list, and no packet owns it.** *(No rule changed; the rev did not move.)*
+
+---
+
+**Before that, `P35` shipped the same day: the two scoring rules that reach outside a round
+are played.** `RULES.md` §10 is empty, the tree was green at **819**.
 
 **What P35 built, and the five things a cold session needs from it.**
 🔥 **(1) §7.4 changed the shape of a round, which nothing had done since P0.** §9 #38's recorded
@@ -799,6 +835,7 @@ verified bug to show for it.
 
 | File | Purpose |
 |---|---|
+| `README.md` | **The front door**, and the only document here that is *only* current: what the game is, what the projects are, how to run it. ⚠️ **No packet numbers and no history** — if a sentence needs one to be true it belongs in this file or in `docs/STATUS.md`. |
 | `.claude/skills/poker/SKILL.md` | The `/poker` work cycle. |
 | `docs/STATUS.md` | Cross-session progress. Read first, update last. |
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
@@ -806,7 +843,9 @@ verified bug to show for it.
 | `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration**, **§10 the side bet**, **§12 round length, abandoned rounds and what refusing a claim is worth** (P29), **§13 how often the feeding ban actually bites** (P31), **§14 how often the clean bonus is actually collected** (P33) and **§15 how often a hand wins before anybody plays it** (P35, and ⚠️ **§11 says why §7.5 has no section at all**). Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10, §12 and §13 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
 | `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it, **including what opening a "why?" now tells you** (P24.2). Written for a person at the keyboard, not for a build session. |
-| `docs/RULES-TECHNICAL.md` | What the **old** code does and where it diverges. Defect list. Historical reference. |
 | `docs/spec/RUN-CANDIDATES.md` | **Worked spec for packet P3**, the hardest one. Read before touching run generation. |
 | `docs/QUESTIONS-FOR-MYA-LAY.md` | Open rules questions phrased for an experienced player. Answers get promoted into `RULES.md` as `EXPERT`. |
-| `docs/RECONCILIATION-PLAN.md` | **Superseded.** Kept for its defect analysis only. |
+| `docs/strategy/dial-away-from-the-default-table.md` | The difficulty dial at four and six seats — **deliberately not a row in `measurements.csv`**, because `sim suite` measures one table size. Quoted from a console rather than generated, and says so. |
+| `docs/RULES-TECHNICAL.md` | ⚠️ **HISTORICAL.** What the **deleted 2023** code did and where it diverged. Defect list. No rule may be inferred from it. |
+| `docs/REVIEW-2026-08.md` | ⚠️ **HISTORICAL.** A closed review of the tree as it stood on 2026-08-21; every finding triaged and shipped. Kept for the reasoning. |
+| `docs/RECONCILIATION-PLAN.md` | ⚠️ **HISTORICAL — superseded** by `BUILD-PLAN.md`. Kept for its defect analysis only. |

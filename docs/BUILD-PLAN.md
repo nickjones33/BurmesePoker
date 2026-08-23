@@ -1267,8 +1267,8 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P31** | **`warden` — the feeding ban as a weapon** | P27 ✅, P30.2 | L — ☑ **done 2026-08-22** · **Opus** — it **lost**, `−9.3 ± 1.0` against `outs`; the ban bites on 9.4% of turns and the rung is what failed |
 | **P33** | **The clean bonus (§7.3)** | P31 ✅ | M — ☑ **done 2026-08-22 (Opus 5)** · jokerless pays ×2 at 2/3/4 and ×3 at 5+; **§10 #19 discharged** and the suite regenerated at four seats — **111 of 116 shared rows byte-identical, the 5 that moved are exactly the rows denominated in dollars a round** |
 | **P32** | **Five-handed is the default table** | P30.2, P31 ✅, **P33 ✅** | L — ☑ **done 2026-08-22** · **Opus 5** — the standing set is five-handed; **123 measurements in 12,445 s**. 🔥 **P29's explanation is falsified**: the five-handed ladder is the four-handed ladder divided by 1.25 (median margin ratio **0.801** against a base-rate scale of 0.800), so removing §7.1.1's series requirement did **nothing** to `simple`'s gaps. ✅ Full crossing, **no ε moved**, four-handed set kept frozen |
-| **P34** | **A front door, and docs that cannot go stale quietly** | — | S — ☐ **new 2026-08-22** — `README.md`, staleness banners, and the anti-staleness habit as tests. **Needs no expert answer.** ⚠️ **P24.2 added one thing for it to watch**: `AdviceRationale.ForObjection` ships P29's §12 null as prose in the product. It carries **no number on purpose** so it cannot rot into a wrong figure — but if that measurement ever separates, the sentence is wrong |
-| **P35** | **The two scoring rules that reach outside a round** | P33 ✅, P32 ✅, **P36 ✅** | L — ☐ **new 2026-08-22** — `RULES.md` **§7.4** (a win on the initial deal pays ×2) and **§7.5** (a third consecutive win is paid **entirely by the seat above you**), both `EXPERT` from Aung Aung. 🔥 **§7.5 is the first rule that cannot be settled from one round**, and **no measurement in this project can see it** (`Sim` plays `RoundsPerGame = 1`). ✅ **Unblocked 2026-08-22**: §9 #43 was asked and closed — the seats do **not** re-draw every round — ⚠️ **but that makes it depend on P36**, since the blame needs a seating that survives three rounds |
+| **P34** | **A front door, and docs that cannot go stale quietly** | — | S — ☑ **done 2026-08-23** · **Opus 5** — `README.md` is the only current-only document here; the three historical documents carry banners; **eight tests in `BurmesePoker.Tests/Docs/`**, each proved able to fail by mutating the document. 🔥 **The test count is discovered by reflection**, so a packet that adds a test and leaves the prose alone is a red build — and **only the first count and rev in each newest-first document are checked**, so the narrative keeps every superseded figure. ⚠️ **What was actually stale was the two documents written for people**: `PLAYING.md` quoted a four-handed reference table on a five-handed page, `RULES-PRIMER.md` carried four divergence tags closed at P25–P28 |
+| **P35** | **The two scoring rules that reach outside a round** | P33 ✅, P32 ✅, P36 ✅ | L — ☑ **done 2026-08-23** · **Opus 5** — §7.4 and §7.5 played; **§10 #20 and #21 discharged**. 🔥 **§7.4 changed the shape of a round** — a dealt thirteen that already wins is offered the declaration before the first take, so a round can run **no turns at all** — and 🔥 **`MatchEngine.Streak` is the first state in this game that reaches across rounds and is not money**. ✅ **107 of 124 shared rows byte-identical**; nine rounds in 33,008 ended on the deal and **no win rate, margin or ε moved**. ⚠️ **§7.5 is not in the standing set and cannot be** while every experiment plays one round a game |
 | **P36** | **How long a seating holds** | — | S–M — ☑ **done 2026-08-22 (Opus 5)** — `Domain/Play/SeatingPolicy.cs`: **held by default**, `RoundsBetweenSeatings` of *N* re-draws every *N* rounds, and **0 is never**. §10 **#22 discharged**; `RuleConformance`'s seating check inverted; two fences named for §9 #45 and #47. ✅ **No measurement moved** and it is asserted (`AOneRoundGameIsTheSameGameUnderEveryPolicy`). ⚠️ **A seed or journal from between P28 and P36 replays differently**; the journal header records the policy so a front end's does not |
 | **P37** | **Asking the table to change seats** | **P36 ✅** | M — ☑ **done 2026-08-22 (Opus 5)** — §10 **#23 discharged**, and §9 #45 as Nick ruled it: a re-seating happens **when the players agree**. 🔥 **Consent is not desire** — `SeatingOpinion` is three answers, so an all-bot table never re-seats itself and *fail closed* fell out for free. ⚠️ **A public question is a standing answer, not a pending prompt** (§3.13); **six decorators had to forward the first default interface member this project has.** 🔥 **The first *public* question this project has ever asked** — `SeatPrompt` is seat-private by construction and this one is put to everybody at once — and the first asked **between** rounds. ✅ **A computer seat consents** (a design decision, recorded in §3, not a rule); ⚠️ **§9 #47 open — everybody or most?** |
 
@@ -6355,7 +6355,7 @@ money figure moving.
 
 ---
 
-### P34 — A front door, and a documentation set that cannot go stale quietly ☐ — **added 2026-08-22**
+### P34 — A front door, and a documentation set that cannot go stale quietly ☑ — **done 2026-08-23**
 
 **Goal.** Somebody who has never seen this repository can arrive at it, understand what it is
 within a screen, and **not be told anything that stopped being true three packets ago**.
@@ -6456,6 +6456,92 @@ quotes; P35 moved it 7 → 6.
 this document records as Settled is implemented"* is **true again** as of P35 — §10 is empty — so
 the sentence to hunt is no longer that one. **It is a better example for having been false twice
 and true three times**; keep it as the illustration and stop using it as the bug.
+
+---
+
+#### What it built, 2026-08-23 — and the four things that were not in the plan
+
+✅ **All five checks landed and each was proved able to fail by mutating the document**, which is
+the P30.2 discipline applied to prose: a deleted map row, a stripped banner, `--people` renamed
+back to `--seat`, a fence renamed away, a nudged reference-table cell, the four-handed figures put
+back into `PLAYING.md`, and the claim-permission null made to separate — **seven mutants, seven red
+tests.** `BurmesePoker.Tests/Docs/` is three files: `Documentation` (the set itself),
+`DocumentationTests` (map, banners, commands, fences) and `PublishedFigureTests` (the figures, the
+count, the rev, and the product's one spoken measurement).
+
+🔥 **(1) The test count is *discoverable*, which the plan did not assume.** `[Fact]`s plus theory
+rows counted by reflection over the test assembly comes to exactly the number a run reports, so the
+check is against reality rather than against another document. ⚠️ **The counter knows `InlineData`
+and `MemberData` and throws by name on anything else** — a `ClassData` arriving needs one arm added
+rather than a silent undercount.
+
+🔥 **(2) The narrative form is what makes the current figure findable, and that turned into the
+rule.** Every one of these documents is newest-first, so **the first count in a file is the current
+count** and everything after it is dated record. Checking only the first is not a hedge: the log
+records the tree at 677, 697, 715 and 795, and **a check demanding they all agree would ask the
+project to delete its own history** — which is precisely what this packet was told not to do.
+
+⚠️ **(3) What was actually stale was neither of the documents the plan named.** It was
+`docs/PLAYING.md` and `docs/RULES-PRIMER.md` — **the two written for a person rather than for a
+session**, and the two nothing else in the tree depends on. The guide quoted a **four-handed**
+difficulty reference table on a page describing a five-handed table, a `headline.balanced.*` pair
+matching no row in either CSV, and *"your neighbours change every round"* (false since P36); the
+primer carried **four `[⚠ code disagrees]` tags for divergences closed at P25–P28** and a
+settlement section that stopped at *flat*. 🔥 **The lesson is where to look: the documents that go
+stale are the ones nothing in the tree depends on.**
+
+⚠️ **(4) One documentation-accuracy finding in `RULES.md`, recorded rather than fixed silently.**
+§10's headline says *empty* and there is a standing exception — **#7**, `RoundEngine.MinimumPlayers`
+is 4 against §2's Settled 2-to-6 — so the two- and three-handed win conditions are implemented,
+tested and unreachable from a dealt game. **It is the oldest entry in that list and no packet owns
+it**, which is why it is now the first candidate in `STATUS.md`'s *What is next*. No rule changed
+and the rev did not move.
+
+⚠️ **`AdviceRationale.ForObjection` is fenced rather than inventoried.**
+`PublishedFigureTests.TheOnlyMeasuredClaimTheProductSpeaksAloudIsStillANull` asserts the sentence
+still exists **and** that the cell it speaks for is still inside its interval in both currencies —
+so the day refusing a claim starts to be worth something, the product's own prose goes red.
+
+---
+
+### ⚠️ There is no P38 — this section is empty, 2026-08-23
+
+🔥 **Every packet in §5 is done.** P34 was the last, and for the first time since P0 a session
+opening this file has nothing to pick up: **the next piece of work has to be chosen.** That is a
+milestone rather than an ending — §0's five goals are all delivered — but it changes what a cold
+start does, so the candidates are written down here rather than left to be re-derived.
+
+⚠️ **Nothing below is a packet yet.** Each is a paragraph, in the order this plan would take them,
+and whoever takes one writes it up properly first.
+
+1. 🔥 **`RULES.md` §10 #7 — the table sizes nobody can deal.** `RoundEngine.MinimumPlayers` is 4;
+   §2 records **2 to 6** as Settled. So `TableRules.For(2)` and `For(3)` are correct, tested and
+   **unreachable from a dealt game** — the only Settled rule the program does not play, and the
+   oldest entry in §10 that no packet owns. ⚠️ **Not a constant.** Two-handed is a different game:
+   series only, **a set is illegal as a meld**, and §7.3's multiplier and §5.1's mutual lock both
+   have two-handed readings that are written down and have never been played. **Small in the
+   engine, real in the front ends** (a lobby that offers two seats, a console prompt that allows
+   them), and it would let `RuleConformance` audit at 2 and 3 for the first time — the caveat
+   `SettledRuleCoverageTests`' §2 entry has carried since P30.2.
+2. 🔥 **An expert session, which is worth more than any code here.** Eleven §9 rows are being
+   **played on a recorded default**, each fenced by a test named for the question (#33, #36, #37,
+   #38–#41, #44, #46, #47, #48). **The failing tests would be the change list**, which is the whole
+   point of the discipline — and this project's own history says a rules conversation answers past
+   the question asked, so the value is not bounded by the list.
+3. ⚠️ **The console still deals four.** `Console/Program.cs`'s seat prompt defaults to
+   `RoundEngine.MinimumPlayers` rather than `DefaultPlayers`. **One line and a `drive-console.py`
+   re-capture**, outstanding since P32 and through five packets. ⚠️ It interacts with candidate 1:
+   if the floor moves, the default must not follow it.
+4. ⚠️ **A rung that knows the scoring rules exist.** No rung reads §7.3, §7.4 or §7.5 —
+   deliberately, under P15's discipline — so **nothing in this project prices a joker thrown for
+   the clean bonus**, and §14's rate is published as a floor for that reason. 🔥 **And §7.5 is the
+   first rule a player can act on *between* rounds** (ask to change seats before somebody's third
+   win), which no instrument here can measure at all while `RoundsPerGame = 1`. Either is a new
+   rung and arrives measured; the second needs the harness to play matches first, which is a
+   packet of its own and would reopen §3.8.
+
+⚠️ **Whatever is chosen, `STATUS.md`'s *What is next* is the copy a session reads first** — keep
+the two in step.
 
 ---
 

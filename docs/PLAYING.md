@@ -231,8 +231,8 @@ left holding, how many meld?* Take the discard if it raises that number, claim t
 card if it raises that number, throw whichever card leaves it highest.
 
 **What separates a thinking bot from a simple one is only the tie-break** — and it is worth
-half again as many wins: **29.8% of rounds against 20.3%**, at four seats over every way of
-seating the two (`docs/strategy/measurements.csv`, `headline.balanced.*`). Early in a round
+half again as many wins: **23.9% of rounds against 16.1%**, at five seats over every way of
+seating the two (`docs/strategy/measurements.csv`, `headline.balanced.5-handed.*`). Early in a round
 almost every discard costs you nothing, so the count alone cannot choose. It then keeps:
 
 - cards with **partners** — another suit of the same rank, or a neighbour in the same suit;
@@ -241,7 +241,7 @@ almost every discard costs you nothing, so the count alone cannot choose. It the
 **And the one thing that beats that is looking one card further ahead.** Where two discards
 leave the hand equally melded, the strongest player the computer has keeps the thirteen that
 **more of the pack would improve** — it counts, for each card still out there, whether drawing
-it would help. That is worth **3.1 ± 1.0 points** of win rate over the partner rule alone, and
+it would help. That is worth **2.7 ± 0.8 points** of win rate over the partner rule alone, and
 it is the only idea in this project that has ever beaten it. Three others were tried and
 measured nothing (`docs/STRATEGY.md`).
 
@@ -254,10 +254,10 @@ slips, which is what a weaker person does.
 ### Which one should you play?
 
 **Start at *hard* and move.** The four are spaced by measurement rather than by taste, about
-**seven and a half points of win rate apart** at a table of all four — far enough that a step is
-something you feel within a session, close enough that *"a bit easier"* is a real request. At a
-four-handed table a fair share is 25% of the rounds, and against three of the same setting these
-win **13.8% / 21.7% / 28.4% / 36.1%** of them, weakest first.
+**seven points of win rate apart** at a table of all four — far enough that a step is something
+you feel within a session, close enough that *"a bit easier"* is a real request. At a five-handed
+table a fair share is 20% of the rounds, and at a table holding all four settings these win
+**10.3% / 16.2% / 23.0% / 30.6%** of them, weakest first.
 
 - ***easy*** feeds you cards. It knows what to keep and throws the wrong one nearly every turn,
   so the discard beside you is often the one you wanted.
@@ -292,9 +292,10 @@ them.
 **Nothing ends a session but the players** (`RULES.md` §7.2) — there is no target score and no
 round limit, so *"Another round?"* is asked until you say no.
 
-⚠️ **The seats are drawn again for every deal** (`RULES.md` §3), so the round begins by printing
-the new order and who opens. **Your neighbours change every round** — the player who was feeding
-you discards is somewhere else next time, and so is the one you were feeding.
+⚠️ **The seats are drawn once and then held** (`RULES.md` §3), so the round begins by printing
+the order and who opens, and it is the **same** order next deal. **Your neighbours do not change
+on their own** — the player feeding you discards goes on feeding you until the table agrees to
+re-draw, which is what makes the third-win-in-a-row rule mean anything.
 
 If the draw pile runs out, every discard pile is gathered, shuffled, and becomes the new draw
 pile; the table is told when it happens. In practice you will only see it at a **full table** —

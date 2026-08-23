@@ -28,9 +28,10 @@ structural point (see `RULES.md` §8).
   leaves too thin a draw pile. **[✓]** **[⚠ engine's minimum is 4]**
 - **13 cards** each, dealt one at a time.
 - Then **two money cards are turned up** — one from the bottom of the deck, one from the top.
-- **Re-draw for seats before every deal.** A "game" is one round — from the turn-up to somebody
-  going out — and the seating is randomised between games, so your neighbours change each time.
-  **[✓]** **[⚠ engine seats you once and keeps it]**
+- **Draw for seats once, and keep them.** A "game" is one round — from the turn-up to somebody
+  going out — and you do **not** re-shuffle the seats every deal. You re-draw **when the players
+  agree to**, which is what makes *"the player before you"* the same person for a whole run of
+  rounds. **[✓]**
 
 ## Money cards
 
@@ -97,12 +98,12 @@ throw, so there's no penalty to argue about. And if the ban ever left you with *
 throw, **the ban yields** for that turn: you must discard, so you may. See `RULES.md` §5.1.
 
 **The opening turn is special:** that player may take the turned-up top money card instead
-of drawing — taking the **actual card**, which leaves the table. **[~]** **[⚠ code clones it]**
+of drawing — taking the **actual card**, which leaves the table. **[~]**
 **It is offered every round** **[✓]**, and taking it does **not** stop that value paying — the
 other copy still pays whoever the deck gave it to. **[✓]**
 
 🔥 **But you must ask permission first — from the player who plays *before* you**, the last one
-round the table, the one who discards to you. **[✓]** **[⚠ engine asks nobody]** They may say no
+round the table, the one who discards to you. **[✓]** They may say no
 **only if they're holding that card**: your taking it in the open closes that rank to them under
 the feeding ban, and they'd be stuck with it all round. So the opener's free card comes out of
 that player's hand, and that player gets a veto.
@@ -113,7 +114,7 @@ one. It's the only thing in this game you reveal on purpose.
 ## Melds
 
 **Runs** — 3+ cards, same suit, consecutive. **[✓]**
-- **Aces don't wrap.** `A-2-3` ✓ · `Q-K-A` ✓ · `K-A-2` ✗ **[✓]** **[⚠ code allows K-A-2, and it causes a verified infinite loop]**
+- **Aces don't wrap.** `A-2-3` ✓ · `Q-K-A` ✓ · `K-A-2` ✗ **[✓]**
 - Jokers substitute for a missing card, with **no limit on how many** in one meld. **[~]**
 - **Three jokers on their own are a run.** But it is never a *clean* one, so it can only ever be
   a run you did **not** need — never one the table size requires. **[✓]**
@@ -150,16 +151,29 @@ the clean-run count is just the required-run count. Nought and nought, one and o
 
 ## Settlement **[✓]**
 
-1. **Every loser pays the winner the round value** — flat, $5 at standard stakes. In a
-   5-player game the winner collects **$20**.
+1. **Every loser pays the winner the round value** — $5 at standard stakes, so in a 5-player
+   game the winner collects **$20**. ⚠️ **Three rules can change that**, see below.
 2. **Money cards settle pairwise** — each owner collects the money card value per card from
    everyone else. The winner takes part in this too.
 
 **No penalty for unmelded cards.** Losing costs exactly the round value whether you were
 one card short or holding all thirteen. **[✓]**
 
-→ So the game has **no points at all** — money is the only ledger, and `Player.Score`
-should be deleted.
+→ So the game has **no points at all** — money is the only ledger.
+
+### What can change what a win is worth
+
+- **No joker anywhere in the declared thirteen: ×2** at 2–4 players, **×3** at 5 or more.
+  It is a property of the **cards you laid down**, not of which melds you needed. **[✓]**
+- **Winning on the initial deal — the thirteen you were dealt already melds: ×2**, on top of
+  the one above, so a jokerless hand dealt complete at five seats pays **×6**. **[✓]**
+  **[? the two multiplying is the reading taken, and it has not been confirmed]**
+- **A third win in a row: the whole payment comes from the player immediately before you in
+  turn order**, blamed for feeding you, and everybody else pays nothing. **[✓]** It is the only
+  rule in the game that reaches across rounds, and the only one that changes *who* pays.
+
+→ Both bonuses multiply the **round payment only**. Neither touches the money cards, which
+settle the same way whatever the round was worth. **[? recommended reading, not confirmed]**
 
 ---
 
@@ -168,9 +182,14 @@ should be deleted.
 ✅ **Every question about the money layer is answered.** `RULES.md` §9 is the live list, and what
 is on it now was raised *by* those answers rather than left over from before:
 
-1. **Does the ×5 need the 7♦ and the A♠ specifically**, or would any two tripled cards do — a 7♦
-   and a joker, two jokers of opposite colours? Nobody has asked, and the combination only exists
-   because jokers turned out to be permanent money cards.
+1. ✅ **Does the ×5 need the 7♦ and the A♠ specifically?** **Answered: it does** — no other pair
+   of tripled cards is a jackpot.
+
+What is open now is all downstream of the two scoring rules above: how the deal bonus combines
+with the clean bonus, whether either reaches the money cards, whether a streak keeps firing at a
+fourth win, and what happens if two players are dealt a winning thirteen at once. Every one of
+them is being **played on a recorded default** rather than left undecided, and each default has a
+test named after the question, so the day an expert answers, the failing test is the change list.
 
 The two items this section used to carry were settled long ago and are kept struck through so the
 rot stays visible:
@@ -178,16 +197,13 @@ rot stays visible:
 1. ~~**What happens when the deck runs out?**~~ Gather the discards and shuffle.
 2. ~~**What ends a match?**~~ Nothing does — banks carry over and you stop when you stop.
 
-⚠️ **What is left is the opposite problem: rules that are settled and unbuilt.** ✅ **Two of the
-three closed on 2026-08-21** and one is left, so the gap between this page and the program is
-nearly shut.
+✅ **The gap between this page and the program is shut.** Every rule above is played, including
+the feeding ban (a closed rank is not offered at all — the console leaves it out of the list and
+the browser draws it as a card you cannot press), the win condition by player count, the seating
+that holds until the table agrees to change it, and all three of the settlement rules.
 
-- ✅ **The feeding ban** (above, §5.1) — **built (P27)**. A closed rank is not offered at all: the
-  console leaves it out of the list and the browser draws it as a card you cannot press, marked
-  `closed`.
-- ✅ **The win condition by player count** (*Winning*, §7.1.1) — **built (P25)**. ⚠️ The engine
-  still deals for four to six, so the two- and three-handed rules are implemented and unreachable.
-- ⚠️ **Re-drawing for seats every round** (*Setup*, §3) — still the one that is settled and
-  unbuilt: the engine seats you once and keeps it for the whole match.
+⚠️ **One divergence is left**, and it is the one tagged in *Setup*: **the program deals for four
+to six players**, so the two- and three-handed win conditions are implemented, tested, and
+unreachable from a dealt game.
 
-Full list in `RULES.md` §9. Algorithms, edge cases and verified bugs in `RULES-TECHNICAL.md`.
+Full list in `RULES.md` §9, which is where every open question and its recorded default lives.

@@ -10,6 +10,52 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
+🔥 **`P34` shipped 2026-08-23 on Opus 5: there is a front door, and the documentation set cannot
+go stale quietly any more.** `README.md` exists; the three wholly historical documents say so above
+the fold; and **eight tests in `BurmesePoker.Tests/Docs/` hold the documents to the tree**, each
+proved able to fail by mutating the document rather than the code. 🔥 **Every packet on the plan is
+now done** — `BUILD-PLAN.md` §5 has nothing left in it, and the next piece of work has to be
+**chosen** rather than picked up.
+
+🔥 **(1) The front door and the narrative are two documents for two audiences, and the second must
+not be flattened into the first.** `README.md` is the only current-only file here: what the game
+is, what the seven projects are, how to run it, where the answers live — **no packet numbers, no
+🔥, no history**. Everything else stays a running narrative that keeps superseded reasoning on
+purpose, which is the most valuable thing in `docs/` and has shaped three packets.
+
+🔥 **(2) The habit is a test now, which is this project's third time doing that** (a rung cannot be
+added without being measured; a Settled rule cannot be recorded without being checked). The joins
+asserted: **the map is complete both ways**; **every historical document carries a banner and no
+current one does**; **every command in a fenced `bash` block resolves** against the source that
+parses it; **every test `RULES.md` names as a fence exists**; **every figure `STRATEGY.md`
+tabulates and every figure `PLAYING.md` quotes agrees with `measurements.csv`**; and **the one
+measurement the product speaks aloud is still a null**.
+
+🔥 **(3) The test count is discovered rather than trusted.** `[Fact]`s plus theory rows, by
+reflection over this assembly — the number a run reports — so **a packet that adds a test and
+leaves the prose alone is a red build**. ⚠️ **Only the *first* count and the *first* rev in each
+document are checked**: these files are newest-first and the log records the tree at 677, 697, 715
+and 795, every one true when it was written. **A check demanding they all agree would be asking
+the project to delete its own history.**
+
+⚠️ **(4) Two documents were a whole measurement behind and nothing had noticed.** `PLAYING.md`
+told a player the four settings win **13.8 / 21.7 / 28.4 / 36.1%** — the **four-handed** reference
+table, from a run two measurements old, on a page describing a **five**-handed table — quoted
+`headline.balanced.*` figures that match no row in either CSV, and said *"your neighbours change
+every round"*, false since P36. 🔥 **Prose has no column to disagree with**, which is why the fix
+is a test rather than a proofread. `RULES-PRIMER.md` was worse: **four `[⚠ code disagrees]` tags
+for divergences closed at P25–P28**, a settlement section that stopped at *flat*, and an open
+question that was answered a revision later.
+
+⚠️ **(5) `RULES.md` §10 says *empty* and has one standing exception, now said out loud: #7.**
+`RoundEngine.MinimumPlayers` is **4** against §2's Settled 2-to-6, so the two- and three-handed win
+conditions are implemented, tested and **unreachable from a dealt game**. It is the oldest entry in
+that list and **no packet owns it**. *(No rule changed and no play changed; the rev did not move.)*
+
+⚠️ **The tree is green at 827 tests**, from 819.
+
+---
+
 🔥 **`P35` shipped 2026-08-23 on Opus 5: the two scoring rules that reach outside a round are
 played, and `RULES.md` §10 is empty — every rule the document records as Settled is implemented.**
 `RULES.md` is **rev 30**; `JournalHeader.CurrentRulesRevision` is **30**.
@@ -389,6 +435,28 @@ unasserted altogether.
 
 ## What is next
 
+🔥 **`P34` is done, and with it every packet in `BUILD-PLAN.md` §5.** There is nothing to pick up:
+the next session **chooses** work rather than continuing it. What is on the table, in the order
+this file would recommend it:
+
+1. **`RULES.md` §10 #7 — the table sizes nobody can deal.** `RoundEngine.MinimumPlayers` is 4 and
+   §2 records 2 to 6 as Settled, so `TableRules.For(2)` and `For(3)` are correct, tested and
+   unreachable. **It is the only Settled rule the program does not play**, and the oldest entry in
+   §10 that no packet owns. ⚠️ **Two-handed is a different game** — series only, sets illegal as
+   melds — so this is a rules-shaped packet and not a constant.
+2. **The answers that are being played on a default.** Seven §9 rows are live defaults with a test
+   named for each (#33, #36, #37, #38–#41, #44, #46, #47, #48). **An expert session is worth more
+   than any code here**: the failing tests would be the change list.
+3. **The console still deals four** — its seat prompt defaults to `RoundEngine.MinimumPlayers`
+   rather than `DefaultPlayers`. **One line plus a `drive-console.py` re-capture**, outstanding
+   since P32 and now through five packets.
+4. **A rung that knows §7.3, §7.4 or §7.5 exists.** No rung does, deliberately (P15's discipline),
+   so nothing prices a joker thrown for the clean bonus or a seating asked for before somebody's
+   third win. **Either is a new rung and arrives measured.**
+
+<details>
+<summary>What used to stand here, before P34 shipped</summary>
+
 ✅ **`P35` is done, so `P34` — the front door — is the only packet left on the plan.** §10 is empty
 and every rule `RULES.md` records as Settled is implemented.
 
@@ -439,6 +507,17 @@ is what keeps P21's and P23's byte-identical captures spendable. **(3) No rung k
 exists**, deliberately: a rung that declined a deal-bonus win, or that played the seating question
 around somebody's streak, would be a **new rung** under P15's discipline — measured before it
 joined the ladder — and not a change to `outs`.
+
+</details>
+
+⚠️ **Three leftovers carried into whatever comes next.** **(1) The console still deals four** —
+`Console/Program.cs`'s seat prompt defaults to `RoundEngine.MinimumPlayers` rather than
+`DefaultPlayers`; one line plus a `drive-console.py` re-capture, outstanding since P32 and now
+through **five** packets. **(2) The console gains nothing from P24.2**, which was that packet's
+scope decision and is what keeps P21's and P23's byte-identical captures spendable. **(3) No rung
+knows §7.3, §7.4 or §7.5 exists**, deliberately: a rung that threw a joker for the clean bonus,
+declined a deal-bonus win, or played the seating question around somebody's streak would be a
+**new rung** under P15's discipline — measured before it joined the ladder.
 
 ---
 
@@ -1716,7 +1795,7 @@ test that plays a round outside the harness has no such protection.
 | ☑ | **P37** Asking the table to change seats · **Opus 5** | **P36 ✅** | **done 2026-08-22** — §10 **#23 discharged**, so §3 step 2 is built in both halves and §10 is empty again. `IPlayerAgent.AskAboutTheSeating` is a **sixth question** and the first that is not about cards: every seat is asked between rounds, and the seats move on **one `Ask` and no `Refuse`**. 🔥 **Consent is not desire** — a yes-or-no question would have re-seated an all-bot table every deal, so `SeatingOpinion` is three answers and *fail closed* fell out for free. ⚠️ **A public question is a standing answer, not a pending prompt** (§3.13). 🔥 **The first interface member with a default implementation, so six decorators had to forward it** — a wrapper that forgets answers *consent* in its own name and silently drops what it wraps. ✅ Replay was free; ✅ concealment asserted by type and by broadcast; ✅ P36's two leftovers taken. |
 | ☑ | **P36** How long a seating holds · **Opus 5** | — | **done 2026-08-22** — `Domain/Play/SeatingPolicy.cs`: **held by default**, *N* rounds between seatings, **0 is never**, one condition in one place. §10 **#22 discharged** and the engine stops contradicting §3 step 2 for the second time in opposite directions. ⚠️ **Not a revert** — pre-P28 held a seating that could never change. Two fences named for §9 #45 and #47; a layering scan bans a second copy (it found one in `JournalFormat`); the journal writes `seating_rounds` only when the seating moved, so **every journal ever written is byte-identical**. ⚠️ **A seed from between P28 and P36 replays differently**, and `SeatBoardTests`' fixture went 3 → 5 rounds because of it. ✅ **No measurement moved, asserted rather than argued.** |
 | ☑ | **P35** The two scoring rules that reach outside a round (§7.4, §7.5) · **Opus 5** | P33 ✅, P32 ✅, **P36 ✅** | **done 2026-08-23** — §10 **#20 and #21 discharged, and §10 is empty**: every rule `RULES.md` records as Settled is implemented. 🔥 **§7.4 changed the shape of a round** (a dealt thirteen that wins is offered the declaration before the first take; `Turns` is 0) and 🔥 **§7.5 put the first state in this game that reaches across rounds** (`MatchEngine.Streak`, handed **down** — settlement is told, never made to remember). ⚠️ **`Settlement.RoundPayments` replaced two re-derivations** of the round/side-bet split that had both assumed every loser pays the same. ✅ **Conformance gained its first multi-round case; no whole exemptions remain (ceiling 7 → 6).** 🔥 **Re-measured: 107 of 124 shared rows byte-identical, nine deal wins in 33,008 rounds, and no win rate moved at all** (`STRATEGY.md` §15). ⚠️ **§7.5 is not measurable here and §11 says so.** **rev 30. 819 / 0.** |
-| ☐ | **P34** A front door, and docs that cannot go stale quietly · **model TBD** | — | **new 2026-08-22** — **there is no `README.md`**: a visitor's first sight of this project is `CLAUDE.md`, which is written for a cold Claude session rather than for a person. Build the front door (current-only, no packet numbers, no history), banner the three wholly historical documents, and 🔥 **turn the anti-staleness habit into tests** in this project's own idiom — the doc map is complete both ways, every command in a fenced block resolves (`--seat` → `--people` drifted at P13.6), quoted test counts and revs match reality, and a number that also lives in `measurements.csv` agrees with it. ⚠️ **Must not flatten the narrative** — the accumulated *why* has shaped three packets. ✅ **Independent of the rules work and of the measurement programme.** ⚠️ **P33 has shipped, so it is no longer the packet to run *instead* of anything** — it is simply the cheapest thing on the plan, and it collides with nothing. |
+| ☑ | **P34** A front door, and docs that cannot go stale quietly | — | done 2026-08-23 on **Opus 5** — `README.md` exists; the three historical documents carry banners; **eight tests in `BurmesePoker.Tests/Docs/` hold the documents to the tree**, each proved able to fail by mutating the document. 🔥 **The test count is discovered by reflection, so a packet that adds a test and leaves the prose alone is a red build** — and only the *first* count and rev in each newest-first document are checked, so the narrative keeps every superseded figure. ⚠️ **Found: `PLAYING.md` was quoting a four-handed reference table on a five-handed page and `RULES-PRIMER.md` carried four divergence tags closed at P25–P28.** |
 
 **P14, P15 and P16 are all done, and not one of them needed a line of the engine.** P14 cost
 nothing measurable in throughput at either fidelity; P15 and P16 raised no rules question
@@ -1763,6 +1842,44 @@ harness prints today would be a guess wearing a number.
 ---
 
 ## Notes for the next session
+
+### What P34 built, for the session that opens whatever comes next (2026-08-23)
+
+**Five things a cold session needs.**
+
+🔥 **(1) There is no next packet.** `BUILD-PLAN.md` §5 is empty for the first time since P0, so the
+first job is choosing rather than orienting. **What is next** above ranks the four candidates; the
+one this file would take is **§10 #7**, the table sizes nobody can deal, because it is the only
+Settled rule the program does not play and it is the oldest entry in §10 that nobody owns.
+
+⚠️ **(2) Adding a test now costs a documentation edit, and that is the design.**
+`PublishedFigureTests.TheFirstCountAndRevisionEachDocumentQuotesAreTheCurrentOnes` counts
+`[Fact]`s plus theory rows by reflection and compares against the **first** *"green at N"* in
+`CLAUDE.md` and in this file. **A red build there is the count being wrong, not the test** — put
+the new number in both places. ⚠️ **The counter knows `InlineData` and `MemberData` and throws by
+name on anything else**, so a `ClassData` arriving needs one arm added rather than a silent
+undercount.
+
+🔥 **(3) The commands check reads the parser, not a list.** Each front end recognises switches its
+own way — the harness's `Arguments`, the console's `case "--flag"`, the browser's
+`GetValue<T>("key")` — and `DocumentationTests.Options` has one regex per shape. **A new front end,
+or a new way of parsing in an old one, needs an arm there or its documented flags stop being
+checked.** ⚠️ **The negative control is load-bearing**: the test asserts `--seat` still does *not*
+resolve for the browser, because without it the recogniser could accept everything and every
+assertion in the file would be vacuous.
+
+⚠️ **(4) The figure checks fence the *tables*, never the prose.** `STRATEGY.md`'s matrix, ranking,
+reference table and steps are located **by their header text** — rename a header and the test says
+so rather than skipping — and the tolerance is derived from the printed precision. **Prose figures
+are deliberately unchecked**, because the documents quote historical numbers on purpose and a check
+over all of them would forbid the comparisons that are the findings.
+
+🔥 **(5) The staleness that was actually there was in the two documents written for people.**
+`PLAYING.md` and `RULES-PRIMER.md` are the pages a player reads and the ones no build session
+opens; both were a rules change and a measurement behind. ⚠️ **The lesson is where to look**: the
+documents that go stale are the ones nothing else in the tree depends on.
+
+---
 
 ### What P35 built, for the session that opens P34 (2026-08-23)
 
@@ -3608,6 +3725,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 ## Session log
 
 | Date | Packet | Outcome |
+| 2026-08-23 | P34 | **Done — a front door, and a documentation set that cannot go stale quietly, on Opus 5. Every packet in `BUILD-PLAN.md` §5 is now done.** `README.md` is the only current-only document in the repository — what the game is, the seven projects, how to run it, where the answers live, **no packet numbers and no history** — and the three wholly historical documents (`RULES-TECHNICAL.md`, `REVIEW-2026-08.md`, `RECONCILIATION-PLAN.md`) carry a banner in their first three lines saying what they were for and what replaced them. 🔥 **The habit is a test now, for the third time in this project's life** (a rung cannot be added without being measured, P18→P20→P23; a Settled rule cannot be recorded without being checked, P30.2): **eight tests in `BurmesePoker.Tests/Docs/`**, each **proved able to fail by mutating the document rather than the code** — the map complete both ways, banners asserted **both** ways (a current document flagged historical is the same lie the other way round), every command in a fenced `bash` block resolved against the source that parses it, every test `RULES.md` names as a fence existing, every figure `STRATEGY.md` tabulates and every figure `PLAYING.md` quotes agreeing with `measurements.csv`, and the product's one spoken measurement still a null. 🔥 **The test count is discovered rather than trusted** — `[Fact]`s plus theory rows by reflection, which is the number a run reports — **so a packet that adds a test and leaves the prose alone is a red build**. ⚠️ **Only the *first* count and *first* rev in each document are checked**: these files are newest-first and the log records 677, 697, 715 and 795, every one true when written — **a check demanding they all agree would ask the project to delete its own history**. ⚠️ **The staleness that was actually there was in the two documents written for people, and nothing else in the tree depends on either.** `PLAYING.md` told a player the four settings win **13.8 / 21.7 / 28.4 / 36.1%** — the **four-handed** reference table on a five-handed page — quoted a `headline.balanced.*` pair matching no row in either CSV, and said *"your neighbours change every round"*, false since P36; `RULES-PRIMER.md` carried **four `[⚠ code disagrees]` tags for divergences closed at P25–P28**, a settlement section that stopped at *flat*, and an open question answered a revision later. **Prose has no column to disagree with**, which is why both were fixed *and* fenced. ⚠️ **One documentation-accuracy finding in `RULES.md`**: §10 says *empty* and has a standing exception — **#7**, `RoundEngine.MinimumPlayers` is 4 against §2's Settled 2-to-6 — now said out loud above the list. **No rule changed, no play changed, `RULES.md` stays rev 30** and `JournalHeader.CurrentRulesRevision` is unmoved. ✅ **No new rules question arose.** 🔥 **Green at 827 / 0**, from 819. |
 | 2026-08-23 | P35 | **Done — the two scoring rules that reach outside a round are played, on Opus 5, and `RULES.md` §10 #20 and #21 are discharged. §10 is empty: every rule the document records as Settled is implemented.** 🔥 **§7.4 changed the shape of a round, which nothing had done since P0.** §9 #38's recorded default is *the dealt thirteen alone*, so `RoundEngine.Play` offers the declaration to every seat whose **dealt** hand already covers, in turn order, **before the first take**; a seat may decline (§7.1) and there is no §5.1 exception in play, because nothing has been discarded. ⚠️ **A round can now run no turns at all** — `RoundResult.Turns` is 0 — and **`TurnNumber` 0 is a real value** reaching the journal, the console's turn heading and the server's `TurnBegan`. ⚠️ **It opened §9 #48** (two seats dealt a winning thirteen at once), defaulted to the earlier in turn order. 🔥 **§7.5 was cheap once the division was seen: settlement is *told*, never made to remember.** `MatchEngine.Streak` is **the only state in this project that reaches across rounds and is not money**; `Settlement` still holds no history and takes no match, asserted over its parameter list, and `Win` is the record it is told. ⚠️ **The reading matters and the first implementation had it backwards**: *"pays your whole payout"* means the winner collects **exactly what they would have collected**, out of one pocket — a test caught it, not a reading. 🔥 **The predicted consumer trap was real and the fix was to delete the re-derivation**: `Settlement.RoundPayments` is the round column, computed once in the domain, and the console's panel and `SeatRow.Flat` both read it — **both had assumed every loser pays the same amount**, true from rev 1 until rev 27, and a split at the wrong place posts the difference into the **side-bet** column with the totals still adding up. ⚠️ **`ScriptedPlayerAgent` was silently declining the new question by accident** — its script advances by turn number and starts at 0 — which is why 795 tests stayed green the moment the path went in; it is an explicit `DeclaresOnTheDeal` now, defaulted to no **as a decision**, and exactly two tests really changed behaviour. 🔥 **Conformance gained its first multi-round case**: the audit still watches one round but can be **told** what the rounds before it did, with the count kept by the driver rather than read off `MatchEngine`, and **fails if 120 rounds contain no streak at all**. ✅ **Both registry entries are `Checked` and there are now no whole exemptions at all** — a first since P30.2 — ceiling **7 → 6**. 🔥 **The re-measurement (13,257 s, 126 rows) is the strongest reproduction this project has recorded: 107 of 124 shared rows byte-identical, and the seventeen that moved all count turns or money.** **Nine rounds in 33,008 ended on the deal** (§15, about one in 3,700) and **not one win rate, margin, Holm verdict, ranking, pairing ratio or ε moved by a millionth** — §7.4 changed *when* those rounds ended, not *who won them*. ✅ **Three columns corroborate**: turns fell **502,830 → 502,812**, the feeding-ban denominator fell by the same 18, and two claim attempts disappeared against 7 × 28.6% = 2.0. ❌ **The written prediction that money moving without a win rate would mean a bug was wrong**; ✅ **the column that discriminates is the side bet, and all four `money.side-margin.*` rows are byte-identical** (acceptance 3). ⚠️ **§7.5 is not in the standing set and cannot be** while every experiment plays one round a game — `STRATEGY.md` §11 says so and says what it leaves unknown. ✅ **The console capture is byte-identical to `HEAD`.** ⚠️ **Two stale product sentences and two stale documents fixed on the way past**, including a **four-handed** figure left in §11 by P32. **`RULES.md` rev 30**, `JournalHeader.CurrentRulesRevision` **30**. 🔥 **Green at 819 / 0**, from 795. |
 | 2026-08-22 | P37 | **Done — the table can agree to change seats, on Opus 5, and `RULES.md` §10 #23 is discharged. §10 is empty again: every rule the document records as Settled is implemented.** `IPlayerAgent.AskAboutTheSeating` is a **sixth question** and the first that is not about cards: every seat is asked in the gap before a round, and the seats move on **one `Ask` and no `Refuse`**. It is asked in `MatchEngine.NextSeating`, beside P36's policy — **the agreement first, and the policy not asked on top of it**. 🔥 **The finding is that consent is not desire.** The design decision going in was *a computer seat consents* (BUILD-PLAN **§3.13**, recorded there rather than invented in `RULES.md`) — but a consenting bot answering *yes* would re-seat an all-bot table every deal, which is the opposite of the rule. **`SeatingOpinion` is three answers**, `Consent` the default and a no-op, and the packet's *fail closed* build item then disappeared as a problem: silence, an unattended seat and every bot in the game all consent, and consent moves nothing. **No clock, no timeout, no special case.** ⚠️ **A public question is a standing answer, not a pending prompt** — blocking would have cost one patience per seat to settle one question, so it stands on the seat's `SeatChannel` and the engine **consumes** it: one press moves the seats once. 🔥 **The trap the packet did not name is the one that would have shipped quietly**: this is the first member of `IPlayerAgent` with a default implementation, so a decorator that does not override it answers *consent* in its own name and silently drops what it wraps — a re-seating that never reaches the journal, or a replay that deals to different seats. **Six decorators needed it**, found **by type** rather than by list. ✅ **Replay was free**, which is why the asking is an agent question and not a host call: `JournalingAgent` records it at turn 0, `JournalPlayerAgent` answers it, and `GameRunner.Replay` needed no new path; ⚠️ **it peeks rather than consuming**, because absence has to mean consent or no pre-P37 journal replays. ✅ **Concealment asserted rather than passed over**: three seating events carrying no card, hand or rationale, a watcher who holds no seat hearing every word, and a superseded connection unable to say anything in somebody else's name (R8). ✅ **§9 #47 built on its recorded default — unanimous — and fenced by a test named for it.** ✅ **Two leftovers taken**: `AboutTable` says what the seats are doing, and the console's round-start line stopped claiming *"the seats are re-drawn every round"*, which **P36 had left false for a day**. ⚠️ **The console capture changed and the driver did not**; it is only visible in a two-round capture. ✅ **No published measurement can move** — one round a game, and the question is never put before the first. **`RULES.md` stays rev 29. 795 passed, 0 failed.** |
 | 2026-08-22 | P36 | **Done — a seating is drawn once and held, on Opus 5, and `RULES.md` §10 #22 is discharged.** The engine had contradicted the rules document in **both directions**: before P28 it held a seating that could never change, and between P28 and P36 it re-drew one before every deal (rev 19's reading, which rev 28 withdrew on the expert's own words). Neither is the rule, which is that a seating **holds until the players agree to change it**. 🔥 **`Domain/Play/SeatingPolicy.cs` is *when a re-draw happens* and it is one condition in one place**: `Held` is the default, *N* rounds between seatings re-draws every *N*, **0 is never**, and there is no flag beside the number. `MatchEngine` takes one, asks it in one place, and exposes it read-only — deliberately, because a policy that could be talked to would have answered §9 #45 by accident. ⚠️ **The setting is the mechanism and it is not the rule**: a number chosen when a table opens is not people agreeing, which is P37, and two tests named for §9 #45 and #47 fence it. 🔥 **Acceptance 2 is a source scan in the P18/P19 idiom — only `MatchEngine` may ask the question and only `SeatingPolicy` may do arithmetic on the number — and it caught a real second copy**: `JournalFormat` was deciding what 0 meant in order to omit the field. ✅ **The journal writes `seating_rounds` only when the seating moved, so every journal ever written is byte-identical and absence means the rule**; `GameRunner.Replay` reads the header's policy rather than this build's default. ⚠️ **The one journal that cannot say what it did is one from between P28 and P36** — no field, reads back as held, replays differently — which is what `CurrentRulesRevision` 28 is for. 🔥 **A seed stopped meaning what it meant for the second time in this project's life** (§3.9 point 2): a held seating takes **no** numbers out of the match's generator, and `SeatBoardTests`' three-round fixture went red because the claim's permission stopped turning up. It turns up at **five** rounds; nothing was tuned to pass, and the assertion was doing its job. ✅ **No published measurement moved and it is asserted rather than argued** (`AOneRoundGameIsTheSameGameUnderEveryPolicy`). ✅ **Both front ends offer the setting out of the domain's one list** — a console `SelectionPrompt`, a lobby `<select>` and `--seating` — and **the browser stops rearranging itself around a fixed viewer every deal**, checked rather than assumed. ⚠️ **The console capture changed by exactly the new prompt and one sentence**, 16 lines, everything from the deal on identical; `drive-console.py` needed no change. **`RULES.md` stays rev 29 — no rule changed. 778 passed, 0 failed.** |

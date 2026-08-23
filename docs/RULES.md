@@ -2231,6 +2231,12 @@ Aung Aung volunteered in rev 27 — were the last two, and they were discharged 
 that had to invent both a round with no turn in it and the first state in this game that reaches
 across rounds.
 
+⚠️ **With one standing exception, said out loud rather than left to the reader to notice (P34):
+#7.** `RoundEngine.MinimumPlayers` is **4**, and §2 records 2 to 6 as Settled, so the two- and
+three-handed rules are implemented, tested and **unreachable from a dealt game**. It is the
+oldest entry here that nothing has discharged, **no packet owns it**, and *"§10 is empty"* is
+true of every rule that can be reached and not of that one.
+
 ⚠️ **This section has now been emptied four times and reopened three.** The pattern is worth
 naming: a rules conversation adds a rule, this list records what the code does not do, and a
 packet closes it. **An entry here is a debt with an owner, and one that names no packet is the
