@@ -2,13 +2,43 @@
 
 Cross-session progress tracker. **`/poker` reads this first and updates it last.**
 
-Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 30) · Skill: `.claude/skills/poker/SKILL.md`
+Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 31) · Skill: `.claude/skills/poker/SKILL.md`
 
 State markers: `☐` not started · `◐` in progress · `☑` done
 
 ---
 
 ## Current state
+
+🔥 **`RULES.md` went to rev 31 on 2026-08-23 — two visibility rules from Nick — and none of it
+is built.** `JournalHeader.CurrentRulesRevision` is **31**; the tree is green at **832**.
+
+- **(1) The public discard piles, corroborated**: every card in every player's pile may be
+  looked through, not merely the top card — §5's rev-17 `EXPERT` rule, now independently
+  `PLAYER` too. ⚠️ **No front end has ever let a player do it.**
+- **(2) §5.2, new**: a card taken in the open is laid **face up in front of its taker, visible
+  to everybody, for as long as it stays in their hand**. `PLAYER`, Settled. It amends §6.3's
+  *"the only public information is the discards"*. ✅ **It changes what the table shows, not
+  what the table knows** — open takes and discards are already public events by `CardId`, so
+  the face-up set is a pure fold over the event stream: no engine change, no journal change,
+  every journal ever written replays identically, and **no measurement should move**. ⚠️ **One
+  instance-level exception**: two decks mean the event log alone cannot pin *which copy* a
+  player still holds; the face-up card can (§9 #50).
+- **Opens §9 #49** (does the claimed turn-up lie face up too? — recommend yes) **and #50**
+  (which copy leaves when a duplicate is thrown? — recommend the player chooses; it is what
+  discard-by-`CardId` already does). Both phrased for the experts in
+  `QUESTIONS-FOR-MYA-LAY.md` Q13.
+- **§10 reopens with #24** — the fourth reopening — and the coverage registry carries §5.2 as
+  its first whole exemption since P35, naming **P41**; the exemption ceiling moved **6 → 7**
+  with the finding written beside it. 🔥 **`P41` — the table shows what the rules make
+  public — is written up in `BUILD-PLAN.md` §5 and is the next packet.**
+- ✅ **The rulebook moved with the rules in the same session** (the rev-stamp fence's design,
+  exercised by hand before the build could force it): stamp **rev 31**, the face-up rule taught
+  in *A turn* and the table reference, and appendix rows 13–14 for #49/#50 — the citation fence
+  requires exactly that set. ⚠️ **P40's translations must be made against this rulebook** —
+  Burmese produced from the rev-30 text would arrive already stale.
+
+---
 
 🔥 **`P39` shipped 2026-08-23 on Fable 5: there is a strategy guide — `docs/HOW-TO-PLAY-WELL.md`
 — and the plan is empty again.** One document that answers *how do I get better?* from what this
@@ -525,9 +555,11 @@ unasserted altogether.
 
 ## What is next
 
-🔥 **`P40` — the game in Burmese (`docs/RULEBOOK.my.md`, `docs/HOW-TO-PLAY-WELL.my.md`) —
-is next, added 2026-08-23 at Nick's direction, and it is blocked on input only Nick can
-produce.** The translations are made outside the repository: Nick attaches the English
+🔥 **`P41` — the table shows what the rules make public — is next** (rev 31's two visibility
+rules, buildable now; `BUILD-PLAN.md` §5 P41). **`P40` — the game in Burmese — stands beside it,
+blocked on input only Nick can produce**, and ⚠️ **its translations must be made from the
+rev-31 rulebook** — attach the current `RULEBOOK.md`, which now teaches the face-up rule.
+ The translations are made outside the repository: Nick attaches the English
 documents and runs the prompts in **`docs/translation/PROMPTS.md`** against Gemini and ChatGPT
 — translate with one, cross-check with the other (prompt C), repeat until clean — and the
 packet lands the vetted Markdown and builds the fences (`BUILD-PLAN.md` §5 P40). ⚠️ **Do not
@@ -3879,6 +3911,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 ## Session log
 
 | Date | Packet | Outcome |
+| 2026-08-23 | rev 31 | **Two visibility rules recorded from Nick, and the whole cascade taken in one session.** **(1)** §5's public piles corroborated `PLAYER` (every card in every pile, rev 17's rule) — still exercisable in no front end. **(2)** §5.2 new: a card taken in the open lies **face up in front of its taker until that copy leaves their hand** — Settled, amends §6.3, and **changes what the table shows rather than what it knows** (open takes and discards are public events by `CardId`; the face-up set is a fold; journals replay identically; no measurement should move — with the one instance-level exception §5.2's notes record: the event log cannot pin *which copy* of a duplicate is still held, and the face-up card can). Opens **#49** (claimed turn-up face up too? recommend yes) and **#50** (which copy leaves? recommend the thrower chooses — what discard-by-`CardId` already does); `QUESTIONS-FOR-MYA-LAY.md` Q13. **§10 reopens with #24** (fourth reopening); registry gains §5.2 as a whole exemption naming **P41**, ceiling 6 → 7 with the finding recorded. `JournalHeader.CurrentRulesRevision` 30 → 31; **the rulebook moved in the same session** (stamp 31, the face-up rule taught, appendix rows 13–14) — the first time the rev fence's compelled maintenance was paid the same hour it was incurred. ⚠️ **P40 must translate the rev-31 rulebook.** 🔥 **P41 written up and next.** Green at **832 / 0** — no test count moved: the revision is rules text, one constant, and registry data. |
 | 2026-08-23 | P39 | **Done — the strategy guide, on Fable 5: `docs/HOW-TO-PLAY-WELL.md` answers *how do I get better?* from what was measured, and every figure it quotes is fenced.** Organised by decision rather than by experiment — the whole game in one sentence, the discard tie-break (the headline pair), the one refinement that has ever worked (`outs`, +2.7 ± 0.8), the money (settle it, never chase it — the $5/$1 cell is a null and the crossover is a money card worth four rounds), **the nulls given as much room as the margins** (refusing the claim, counting cards, feeding-aware discards, `warden`'s loss, the seat-side question stated with no digits at all because P16's figures are not CSV rows), the three **unpriced** bonuses stated as unknown-rather-than-small, and the difficulty dial with its reference table. 🔥 **The fence moved home with the figures and now fences verdicts too**: `TheFiguresThePlayersGuideQuotesAreTheFiguresInTheCsv` reads the guide — dial quad, headline pair, nine anchored margins with **the printed sign in the anchor and the scale carrying it**, two interval-free rates, and the eight verdicts the prose asserts (nulls must stay `inside the interval`, separations `separated (Holm)`). 🔥 **A figure has one home, asserted as an absence**: `TheFiguresHaveOneHomeAndThePlayingGuidePointsAtIt` requires `PLAYING.md` to point at the guide and contain no `±`, no reference-table quad, no headline pair — its *Playing better* section is one pointer paragraph. Both fences proved able to fail by mutation. ⚠️ **Found on the way**: `PLAYING.md`'s difficulty prompt row still quoted the four-handed 36%/14%, unfenced because P34's regex targeted the other sentence — digit-free with a pointer now. `README.md` and the documentation map carry the guide. ✅ **No rules question; `RULES.md` stays rev 30.** 🔥 **Green at 832 / 0**, from 831. |
 | 2026-08-23 | P38 | **Done — the rulebook, on Fable 5: `docs/RULEBOOK.md` teaches the game front to back and cannot fall behind the rules without a red build.** The whole game in reading order for somebody who has never seen it — setup, the turn, the feeding rule taught as table manners, the opening claim and its permission, melds, the win condition by table size, the three settlement bonuses, the money layer, a one-page table reference — **no provenance tags, no open questions, no packet numbers**, and `RULES.md` stays the sole authority. 🔥 **Four tests in `Tests/Docs/RulebookTests.cs`, each proved able to fail by mutating the document.** **(1) The rev stamp** equals `JournalHeader.CurrentRulesRevision`, which `GameJournalTests` already binds to `RULES.md`'s own header — so a play-changing revision is a red build until the rulebook is re-read, **which is the maintenance, compelled**. **(2) The worked round is replayed, not proofread**: `TheWorkedRoundIsTheRoundItsSeedActuallyPlays` re-runs the printed construction (seed **15**, five seats of `outs`, seat seed `seed × 100 + seat`) and asserts all five dealt hands, the turn-up, all seven owned money cards with multipliers, the 24 turns, the winner, the declared melds and all fifteen settlement cells with the round/money/net split asked of `Settlement.RoundPayments`. Seed 15 came from a 60-seed scan and earns its place twice: the winner declares **jokerless**, so the ×3 bonus appears in a real settlement ($60 against $15 a head), and **had discarded an owned A♠ mid-round and is still paid for it** — permanent ownership demonstrated by the engine. **(3) The house readings are fenced two ways with the citation set derived from `RULES.md` itself**: open §9 rows recognised by table shape (numbered, un-struck, five columns), and the appendix must cite exactly that set — #33, #36–#41, #44–#48 today. A question closing or opening moves the set and fails the build, which is the packet's hard problem — a rulebook silently promotes defaults to rules — made checkable. **(4) The voice is fenced**: no provenance tags, no confidence words, no packet ids, not the word *reconstruction*. `README.md` points at it as the way in; the documentation map carries it. ✅ **No rules question arose; `RULES.md` stays rev 30.** 🔥 **Green at 831 / 0**, from 827. |
 | 2026-08-23 | P34 | **Done — a front door, and a documentation set that cannot go stale quietly, on Opus 5. Every packet in `BUILD-PLAN.md` §5 is now done.** `README.md` is the only current-only document in the repository — what the game is, the seven projects, how to run it, where the answers live, **no packet numbers and no history** — and the three wholly historical documents (`RULES-TECHNICAL.md`, `REVIEW-2026-08.md`, `RECONCILIATION-PLAN.md`) carry a banner in their first three lines saying what they were for and what replaced them. 🔥 **The habit is a test now, for the third time in this project's life** (a rung cannot be added without being measured, P18→P20→P23; a Settled rule cannot be recorded without being checked, P30.2): **eight tests in `BurmesePoker.Tests/Docs/`**, each **proved able to fail by mutating the document rather than the code** — the map complete both ways, banners asserted **both** ways (a current document flagged historical is the same lie the other way round), every command in a fenced `bash` block resolved against the source that parses it, every test `RULES.md` names as a fence existing, every figure `STRATEGY.md` tabulates and every figure `PLAYING.md` quotes agreeing with `measurements.csv`, and the product's one spoken measurement still a null. 🔥 **The test count is discovered rather than trusted** — `[Fact]`s plus theory rows by reflection, which is the number a run reports — **so a packet that adds a test and leaves the prose alone is a red build**. ⚠️ **Only the *first* count and *first* rev in each document are checked**: these files are newest-first and the log records 677, 697, 715 and 795, every one true when written — **a check demanding they all agree would ask the project to delete its own history**. ⚠️ **The staleness that was actually there was in the two documents written for people, and nothing else in the tree depends on either.** `PLAYING.md` told a player the four settings win **13.8 / 21.7 / 28.4 / 36.1%** — the **four-handed** reference table on a five-handed page — quoted a `headline.balanced.*` pair matching no row in either CSV, and said *"your neighbours change every round"*, false since P36; `RULES-PRIMER.md` carried **four `[⚠ code disagrees]` tags for divergences closed at P25–P28**, a settlement section that stopped at *flat*, and an open question answered a revision later. **Prose has no column to disagree with**, which is why both were fixed *and* fenced. ⚠️ **One documentation-accuracy finding in `RULES.md`**: §10 says *empty* and has a standing exception — **#7**, `RoundEngine.MinimumPlayers` is 4 against §2's Settled 2-to-6 — now said out loud above the list. **No rule changed, no play changed, `RULES.md` stays rev 30** and `JournalHeader.CurrentRulesRevision` is unmoved. ✅ **No new rules question arose.** 🔥 **Green at 827 / 0**, from 819. |

@@ -124,10 +124,12 @@ even though two decks make it holdable. A set therefore caps at **4 cards**. **[
 
 ## Concealment **[✓]**
 
-**Nothing is ever played to the table.** You build entirely in hand and keep your intended
-melds secret until you go out, then reveal all 13 at once. There is **no laying off** on
-your own or anyone else's melds. The only public information is the discards — **and those are
-properly public: you may pick a pile up and look through it, not just see the top card.** **[✓]**
+**Nothing is ever played to the table.** You build in hand and keep your intended melds
+secret until you go out, then reveal all 13 at once. There is **no laying off** on your own or
+anyone else's melds. The public information is the discards — **properly public: you may pick
+any pile up and look through it, not just see the top card** — and **the cards you took in the
+open, which sit face up in front of you for as long as you hold them** (rev 31). Only what the
+deck gave you unseen stays hidden. **[✓]**
 
 ## Winning **[✓]**
 

@@ -1,7 +1,7 @@
 # Burmese Poker — The Rulebook
 
 *The game, taught front to back for somebody who has never seen it. Derived from the official
-rules in `RULES.md` at **rev 30** — that document decides every rule; this one only teaches
+rules in `RULES.md` at **rev 31** — that document decides every rule; this one only teaches
 them. A short list of points our table has had to choose for itself is at the end.*
 
 ---
@@ -10,8 +10,8 @@ them. A short list of points our table has had to choose for itself is at the en
 
 A rummy played for money. Everyone is dealt thirteen cards and races to arrange all thirteen
 into runs and sets by drawing and discarding one card a turn. Nothing is ever played to the
-table along the way — you build the whole hand in secret and reveal it all at once when you
-win.
+table along the way — you build the hand in secret, all but the cards you took in the open,
+which sit face up in front of you — and you reveal the melds all at once when you win.
 
 On top of the race sits the thing that makes this game *this* game: certain cards are **money
 cards**, and they pay their owner at the end of every round no matter who won. You can lose
@@ -71,6 +71,13 @@ Details that matter:
   You cannot take from across the table, and you cannot dig into a pile.
 - **Each player keeps their own discard pile**, face up in front of them — and the piles are
   **public**. Anyone may pick one up and read through it at any time.
+- **A card you take in the open stays in the open.** Take the previous player's discard — or
+  claim the turned-up card on the opening turn — and it is laid face up on the table in front
+  of you, where everyone can see it, for as long as it is in your hand. It is a hand card in
+  every other way: it counts toward your thirteen, it can be melded, and the feeding rule
+  applies to it like anything else. It leaves the table only when you throw that copy away or
+  when you reveal everything by going out. Cards drawn blind stay hidden like the rest of your
+  hand.
 - **You may throw back the very card you just took**, as long as no other rule stops you —
   in practice that means the feeding rule, next.
 - **If the draw pile runs out**, gather every discard pile, shuffle them together, and that
@@ -324,6 +331,9 @@ Keep this page out on the table.
 
 **A turn:** take one — the previous player's discard, or blind off the pile — then throw one.
 
+**In the open stays open:** anyone may read through any discard pile, and a card taken in the
+open sits face up in front of its taker until it leaves their hand.
+
 **You may not throw:** any rank the player after you has taken in the open, until they throw
 that rank back (opens it for good) or your throw is the one you go out on. A blind draw closes
 nothing.
@@ -376,6 +386,10 @@ game elsewhere, these are the lines to compare before money is on the table:
     in the round they win their third — that seating, not an earlier one — pays.
 12. **Two players dealt winning hands at once** (#48). The earlier in turn order wins. The
     offer goes around in turn order, and the first to accept takes the round.
+13. **The claimed turned-up card** (#49). It lies face up in front of the claimer like any
+    other card taken in the open, until it leaves their hand.
+14. **Throwing a duplicate of a face-up card** (#50). You choose which physical copy you
+    throw. Throw the hidden one, and the face-up card stays on the table in front of you.
 
 The numbers are the rows in `RULES.md` §9 where each reading is recorded, with the reasoning
 and the test that will change the day one of them is answered for good.

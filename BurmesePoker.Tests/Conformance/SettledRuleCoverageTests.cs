@@ -84,6 +84,13 @@ public class SettledRuleCoverageTests
             + "the floor applied or the round ended on it (exception 2 bound to the declaration "
             + "— review R1): RuleConformance.PlayerDiscarded/ResolvePendingClosedDiscard; the "
             + "§7.1.1-sensitive edge: FeedingBanTests.TheDeclaringDiscardExceptionAsksTheTablesOwnWinCondition."),
+        ["5.2"] = Exempt(
+            "A card taken in the open stays face up in front of its taker (rev 31) — a rule "
+            + "about what the table SHOWS, not what it knows: open takes and discards are "
+            + "already public events by CardId, so the engine plays identically and there is "
+            + "nothing for a round audit to re-derive until a view exists to check. The "
+            + "face-up fold, the browsable piles, and the fences for §9 #49/#50's defaults "
+            + "are P41, which converts this entry to Checked."),
         ["6.1"] = Checked(
             "Runs one suit, consecutive, ace never wrapping: RuleConformance.AValidRun on every "
             + "declared hand; the wrap mutant: MutantAnIllegalDeclarationIsCaughtEachWayItCanBeIllegal."),
@@ -242,6 +249,15 @@ public class SettledRuleCoverageTests
     /// <b>If this ceiling has to move up again, that is a finding about the backlog and not a
     /// licence.</b>
     /// </para>
+    /// <para>
+    /// ⚠️ <b>It moved up again on 2026-08-23, 6 → 7, and here is the finding stated:</b> rev 31
+    /// recorded §5.2 (a card taken in the open stays face up) as Settled with nothing built to
+    /// show it, so a whole exemption naming <b>P41</b> joined the six partials. The rule is
+    /// pure presentation — the engine already plays it, in the sense that nothing it would
+    /// require is absent from the event stream — which is exactly why no conformance audit can
+    /// check it yet: there is no view to audit. P41 discharges it and the ceiling comes back
+    /// to 6.
+    /// </para>
     /// </remarks>
     [Fact]
     public void TheExemptionListIsShortAndEveryEntrySaysWhy()
@@ -255,7 +271,7 @@ public class SettledRuleCoverageTests
 
         var exemptions = whole.Concat(partial).ToList();
 
-        Assert.InRange(exemptions.Count, 1, 6);
+        Assert.InRange(exemptions.Count, 1, 7);
 
         Assert.All(exemptions, entry => Assert.True(
             entry.Value.Length > 60, $"§{entry.Key}'s exemption says nothing a reader can re-check."));

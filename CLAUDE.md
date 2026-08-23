@@ -11,16 +11,26 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **READ THIS FIRST — `P39` shipped 2026-08-23 on Fable 5: there is a strategy guide, and the
-plan is empty.** `RULES.md` is **rev 30**, `JournalHeader.CurrentRulesRevision` is **30**, the
-tree is green at **832**, and **`P40` — the game in Burmese — is the next packet, added at
-Nick's direction and blocked on input only Nick can produce**: the vetted Burmese translations
-of `RULEBOOK.md` and `HOW-TO-PLAY-WELL.md`, made outside the repo with
+🔥 **READ THIS FIRST — `RULES.md` is at rev 31 (2026-08-23) and none of it is built: two
+visibility rules from Nick.** `JournalHeader.CurrentRulesRevision` is **31**, the tree is green at **832**, and **`P41` — the table shows what the rules make public — is the next packet.**
+**(1)** Every card in **every player's discard pile** may be looked through (§5, rev-17 `EXPERT`
+now corroborated `PLAYER`) — exercisable in no front end. **(2) §5.2, new**: a card taken in
+the open lies **face up in front of its taker, visible to all, for as long as it stays in their
+hand**. 🔥 **Both change what the table *shows*, not what it *knows*** — open takes and
+discards are public events by `CardId`, so the face-up set is a fold over the event stream: no
+engine change, journals replay identically, **no measurement should move, and P41 asserts that
+as byte-identity rather than arguing it**. ⚠️ §9 opens **#49** (claimed turn-up face up too?)
+and **#50** (which copy of a duplicate leaves?); §10 reopens with **#24**; the registry carries
+§5.2 as a whole exemption naming P41, **ceiling 6 → 7**. ✅ **The rulebook already moved** —
+stamp rev 31, the rule taught, appendix rows 13–14.
+
+**Beside P41: `P40` — the game in Burmese — stands blocked on input only Nick can produce**:
+vetted translations of `RULEBOOK.md` and `HOW-TO-PLAY-WELL.md`, made outside the repo with
 `docs/translation/PROMPTS.md` against Gemini/ChatGPT (translate with one, cross-check with the
-other). **Do not start P40 without that text.** Behind it stand the four candidates at the end
-of `docs/STATUS.md`'s *What is next* (the expert session on the eleven defaulted §9 rows is the
-one this file would take — and P40's Burmese rulebook is the best instrument to hand those
-experts).
+other). **Do not start P40 without that text, and translate the rev-31 rulebook, not an older
+one.** Behind both stand the four candidates at the end of `docs/STATUS.md`'s *What is next*
+(the expert session on the defaulted §9 rows — thirteen rows now — is the one this file would
+take, and P40's Burmese rulebook is the best instrument to hand those experts).
 
 **What P39 built, and the four things a cold session needs from it.**
 🔥 **(1) `docs/HOW-TO-PLAY-WELL.md` answers *how do I get better?* from what was measured, and
@@ -903,6 +913,9 @@ verified bug to show for it.
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
 | `docs/RULEBOOK.md` | **The game taught** — one document a stranger can learn to play from, in reading order, with a generated worked round and a house-readings appendix. Derived from `RULES.md` and decides nothing; stamps the rev it was derived from, bound by `RulebookTests`. |
 | `docs/HOW-TO-PLAY-WELL.md` | **How to get better** — the strategy guide for a player: what has actually been measured, organised by decision, with the nulls given as much room as the margins. Every figure it quotes is CSV-fenced by `PublishedFigureTests`, and it is the **only** home of the player-facing figures — `PLAYING.md` points here rather than quoting any. |
+| `docs/translation/promptA_geminiResponse1.md` | ⚠️ **P40 working input, first round** — Gemini's Burmese rulebook translation (prompt A), made from the **rev-30** rulebook, so it predates §5.2's face-up rule. Superseded by `corrections_geminiResponse1.md`; kept as the record of what the cross-check caught. |
+| `docs/translation/promptC_chatgptResponse1.md` | ⚠️ **P40 working input, first round** — ChatGPT's cross-check (prompt C) of the Gemini translation: Burmese numerals, glossary collisions, a meaning change. The review that proved the two-model loop earns its keep. |
+| `docs/translation/corrections_geminiResponse1.md` | ⚠️ **P40 working input, first round** — Gemini's corrected translation after the cross-check. **Not yet landable**: it is rev-30-based (no face-up rule), stamps rev 30, and has not itself been cross-checked. P40 re-runs the loop against the rev-31 rulebook. |
 | `docs/translation/PROMPTS.md` | **The translation workflow for P40** — three prompts (rulebook, strategy guide, cross-check) Nick runs against Gemini/ChatGPT outside the repo, and the rules they enforce (Latin digits, verbatim card notation, Unicode Burmese) that make the translations fence-able when the packet lands them. |
 | `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration**, **§10 the side bet**, **§12 round length, abandoned rounds and what refusing a claim is worth** (P29), **§13 how often the feeding ban actually bites** (P31), **§14 how often the clean bonus is actually collected** (P33) and **§15 how often a hand wins before anybody plays it** (P35, and ⚠️ **§11 says why §7.5 has no section at all**). Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10, §12 and §13 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |

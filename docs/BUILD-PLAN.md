@@ -1274,6 +1274,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P38** | **The rulebook — the game taught, not reconstructed** | — | M — ☑ **done 2026-08-23 (Fable 5)** — `docs/RULEBOOK.md`: the game as a board game ships it, in reading order, for somebody who has never seen it. **One answer per rule, no provenance tags, no open questions, no packet numbers.** ⚠️ **`RULES.md` stays the sole authority** — the rulebook is *derived*, stamps the rev it was derived from, and a test binds the two, so a rules change makes it red rather than stale. 🔥 **The hard part is that eleven §9 rows are played on a recorded default**: a rulebook must state one, which silently promotes a default to a rule for the reader — so it carries a short *house readings* appendix in a player's language |
 | **P39** | **How to play well — the strategy guide a player can use** | — | S–M — ☑ **done 2026-08-23 (Fable 5)** — `docs/HOW-TO-PLAY-WELL.md`: what was actually measured, organised by decision, **the nulls given as much room as the margins** and the three bonuses stated as *unpriced rather than small*. ⚠️ **`STRATEGY.md` stays the measurement authority, untouched** — the guide quotes only `measurements.csv`-fenced figures, and the fence covers **verdicts** as well as numbers (a null that separates is a red build). 🔥 **A figure has one home, asserted as an absence**: `PLAYING.md` points at the guide and may contain no `±`, no reference-table quad, no headline pair. ⚠️ **Found on the way**: `PLAYING.md`'s difficulty prompt row still quoted the four-handed 36%/14% — unfenced because P34's regex targeted the other sentence |
 | **P40** | **The game in Burmese — translated rulebook and strategy guide** | P38 ✅, P39 ✅, **the vetted Burmese text (Nick, outside the repo)** | S–M — ☐ **new 2026-08-23, at Nick's direction** — `docs/RULEBOOK.my.md` and `docs/HOW-TO-PLAY-WELL.my.md`: the two player-facing documents in the language the game actually comes from. 🔥 **The translation itself happens outside this repository** — Nick runs `docs/translation/PROMPTS.md` against Gemini/ChatGPT, cross-checks each model's output with the other, and hands the packet vetted Markdown; **the packet cannot start until that text exists.** ⚠️ **The fences fence what survives translation**: the rev stamp in Latin digits bound to `JournalHeader.CurrentRulesRevision`, and every figure, `±` interval, dollar amount and card symbol of the English source asserted present byte-for-byte in the Burmese — which is why the prompts forbid Burmese numerals. ⚠️ **Acceptance is a human read, not a test** — no test can read Burmese |
+| **P41** | **The table shows what the rules make public** | rev 31 ✅ | M — ☐ **new 2026-08-23, from rev 31** — §5's browsable piles and §5.2's face-up taken cards reach every place a player sits. 🔥 **The engine needs no rule**: open takes and discards are public events by `CardId`, so the face-up set and every pile are folds over the event stream — no engine state, no journal change, **journals and a seeded CSV byte-identical, asserted not argued**. ⚠️ **Concealment is the constraint** — a blind-drawn card must never acquire the mark, mutation-proved beside `ConcealmentTests`. ⚠️ **`TurnContext` is deliberately not widened**: no bot changes, no measurement moves; a rung that reads the piles is a new rung and arrives measured. Discharges §10 #24; fences §9 #49 and #50; registry §5.2 → Checked, ceiling back to 6 |
 
 ⚠️ **P25–P29 are the only packets in this table that do not descend from §0.** They come from
 `RULES.md` — four sessions with Mya Lay and Aung Aung on 2026-08-20/21 that closed twenty-three
@@ -6673,6 +6674,16 @@ in Burmese (Gemini or ChatGPT — reportedly the two best at it), using the prom
 `docs/translation/PROMPTS.md`, cross-checking each model's output with the other model, and the
 packet lands the vetted text and builds the fences. **It cannot start until that text exists.**
 
+⚠️ **A first round already ran, on 2026-08-23, and its artifacts are in `docs/translation/`** —
+Gemini's rulebook translation (`promptA_geminiResponse1.md`), ChatGPT's cross-check
+(`promptC_chatgptResponse1.md` — it caught Burmese numerals, glossary collisions and one
+meaning change, so the two-model loop earns its keep), and Gemini's corrected pass
+(`corrections_geminiResponse1.md`). 🔥 **None of it is landable yet**: all three were made from
+the **rev-30** rulebook, hours before rev 31 added §5.2's face-up rule to it, and the corrected
+pass has not itself been cross-checked. **The packet re-runs the loop against the rev-31
+rulebook** — the glossary already vetted in round one carries forward, so the re-run is cheaper
+than the first. The strategy-guide translation (prompt B) has not started.
+
 **Read first.** `docs/translation/PROMPTS.md` (the workflow and the three prompts),
 `BurmesePoker.Tests/Docs/RulebookTests.cs` (the rev-stamp binding to copy), and
 `BurmesePoker.Tests/Docs/PublishedFigureTests.cs` (what is already fenced in the English guide).
@@ -6738,6 +6749,66 @@ not a textbook) and the glossary-first instruction is what holds terminology con
 two documents translated in different sessions. **If the cross-check keeps finding meaning-level
 errors after two rounds, stop and say so** — a wrong rulebook in the experts' own language is
 worse than none, because they will trust it.
+
+---
+
+### P41 — The table shows what the rules make public ☐ — **added 2026-08-23, from rev 31**
+
+**Goal.** `RULES.md` §5 has said since rev 17 that every discard pile may be looked through, and
+rev 31 added §5.2 — a card taken in the open lies face up in front of its taker for as long as
+it is held. **Neither is visible anywhere a player sits.** This packet puts both in front of a
+person at either front end, discharges §10 #24, and converts the registry's §5.2 exemption to
+`Checked`.
+
+**Read first.** `RULES.md` §5 (the public-piles rule and its rev-31 corroboration), §5.2 whole,
+§9 #49 and #50; `BUILD-PLAN.md` §3.10–§3.11 (the browser's constraints); `Tests/Server`'s
+`ConcealmentTests` for the boundary this packet must not soften.
+
+🔥 **The load-bearing fact: the engine already plays these rules.** Open takes and discards are
+public events carrying a `CardId`, so **the face-up set is a pure fold**: a card enters it when
+taken in the open — the offered discard, and the claimed turn-up on §9 #49's recorded default —
+and leaves when that same `CardId` leaves the hand. Every pile's contents are likewise already
+in the event stream. **No engine state, no journal change, no new question to any agent.**
+⚠️ **So acceptance 4 is byte-identity, asserted rather than argued**: journals unchanged, and a
+seeded `Sim` CSV identical before and after.
+
+**Build.**
+
+1. **The face-up fold**, in Presentation/Server where the other event folds live. Two fences
+   named for the §9 rows, in the `…UntilTheExpertSaysOtherwise` idiom: the claimed turn-up
+   acquires the mark (#49), and the duplicate case — a face-up Q♣ beside a concealed Q♣, the
+   concealed copy thrown, the face-up card **staying** (#50, which is what discard-by-`CardId`
+   already does; the fence keeps it true on purpose rather than by accident).
+2. 🔥 **Concealment is the constraint, not the feature.** The face-up mark is the first
+   per-card public fact about a concealed hand, so a blind-drawn card must never acquire it —
+   extend `ConcealmentTests` with that discriminating case and prove it can fail by mutation,
+   exactly as P13.2 did for the blind draw itself.
+3. **Every seat's full pile in the view models and the fan-out**, in discard order, public to
+   every viewer — own pile included.
+4. **The console**: face-up cards shown at every seat and marked in your own hand panel (a
+   marker in the idiom of `★` and `($)`), pile contents reachable from the table panel. A
+   `drive-console.py` re-capture — ⚠️ the capture **will** differ, this is a presentation
+   change; byte-identity lives in the journal and the CSV, not the screen.
+5. **The browser**: each seat on the felt shows its face-up cards beside it — big symbols,
+   minimal prose (§3.11, and the browser's standing direction: a table, not a document) — and
+   each seat's pile opens on demand. Your own face-up cards are marked in your hand.
+6. ⚠️ **`TurnContext` is deliberately not widened.** No rung reads any of this today and none
+   starts to: a bot that reads the piles or the face-up marks is a **new rung** under P15's
+   discipline and arrives measured (`STRATEGY.md` §11's rule). P20's counting rung stays
+   as-measured; its §8 entry already records the narrower information set it chose.
+7. **Close the ledgers**: §10 #24 discharged; registry `["5.2"]` → `Checked` naming the fold
+   and the mutation test; exemption ceiling back **7 → 6**.
+
+**Acceptance.**
+
+1. A person at either front end can see every card of every discard pile and every face-up
+   card at every seat, their own included.
+2. The blind draw is still the only private fact — `ConcealmentTests` extended with the
+   face-up discriminator and proved able to fail.
+3. §9 #49 and #50's defaults each fenced by a test named for the row.
+4. **Byte-identity asserted**: journals unchanged and a seeded `Sim` CSV identical, so no
+   measurement moved and none could have.
+5. Green, `STATUS.md`'s count matching, ceiling back at 6.
 
 ---
 

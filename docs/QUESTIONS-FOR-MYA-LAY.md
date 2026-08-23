@@ -823,3 +823,19 @@ is much harder to see.** Before P35, §9 #38 was a paragraph saying nobody knew;
 working engine path, a test, and a sentence in `PLAYING.md` telling a person what happens. **The
 question has not moved an inch and the evidence for it has not either.** That is the reason each
 one is fenced by name rather than merely written down.
+
+
+## Q13 — Two situations about the card you picked up **(2026-08-23, §9 #49 and #50)**
+
+> Two situations about cards taken in the open — we play that a card you pick up from
+> somebody's discard pile sits face up on the table in front of you, where everyone can see
+> it, until it leaves your hand.
+>
+> **First:** I'm the opening player and I claim the turned-up money card instead of drawing.
+> Does that card sit face up in front of me too, like a card I took off your pile — or does it
+> go into my hand hidden, like a card I drew from the deck?
+>
+> **Second:** earlier in the round I took the Q♣ you threw, so it's sitting face up in front
+> of me. Later I draw the *other* Q♣ blind from the deck, so nobody knows I have it. Now I
+> want to throw a Q♣ away. Can I throw the hidden one and keep the face-up Q♣ sitting on the
+> table — or does the face-up one have to be the one that goes?

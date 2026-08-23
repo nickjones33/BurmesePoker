@@ -4,7 +4,22 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-22 (rev 30 — ✅ **§7.4 and §7.5 are built, and §10 is empty: every rule this
+Last revised: 2026-08-23 (rev 31 — 🔥 **Two visibility rules from Nick, and one of them is
+new.** **(1)** The public discard piles are **corroborated by a second, independent source**:
+every card in every player's pile may be looked through by anybody, not merely the top card —
+§5's rev-17 `EXPERT` rule, now also `PLAYER` — and ⚠️ **no front end has ever let a player do
+it**. **(2) §5.2 is new: a card taken in the open lies face up on the table in front of its
+taker, visible to every player, for as long as it stays in their hand.** `PLAYER`, Settled. It
+amends §6.3's *"the only public information is the discards"* and is the first rule that makes
+part of a concealed hand continuously public. ✅ **It changes what the table shows, not what
+the table knows** — every open take and every discard was already a public event — ⚠️ **with
+one instance-level exception recorded in §5.2's notes**: two decks mean the event log alone
+cannot pin *which copy* a player still holds, and the face-up card can. Opens **#49** (does the
+claimed turn-up lie face up too?) and **#50** (which copy leaves when a duplicate is thrown).
+⚠️ **Nothing here is built where a player could use it** — §10 reopens with **#24**, owned by
+**P41**. No play changes, no journal changes, and no measurement should move.)
+
+Rev 30 — ✅ **§7.4 and §7.5 are built, and §10 is empty: every rule this
 document records as Settled is implemented.** No rule changed and no answer arrived; what moved is
 that the two scoring rules Aung Aung volunteered in rev 27 are now played. 🔥 **§7.4 changed the
 shape of a round** — a dealt thirteen that already wins is offered the declaration before anybody
@@ -849,6 +864,12 @@ You are therefore always at 13 cards between turns, and 14 during your turn.
 >    load-bearing. ⚠️ **The reshuffle still sweeps every pile** (§5), which is why #19 had to be
 >    ruled on rather than read off.
 
+> ✅ **Corroborated independently in rev 31 (Nick, 2026-08-23, `PLAYER`)**: *players need to be
+> able to see all of the cards in every other player's discard pile, not just the most recent
+> one.* A second source, arrived at unprompted, for a rule rev 17 recorded from one expert —
+> and ⚠️ **the rule is still not built where it matters**: no front end lets a player look
+> through a pile, and `TurnContext` shows a seat less than §5 makes public (§10 #24, P41).
+
 > ✅ **Throwing back what you just took is legal — closed in rev 19 (§9 #13), and the answer came
 > with a rider that is the interesting half.** Asked flat, and answered **yes — *"as long as you
 > aren't violating any other discard rules."*** `EXPERT`. Several rummies forbid it as a null
@@ -1154,6 +1175,36 @@ like #19 and #27, and taken because a rule that changes shape with the table siz
 
 ---
 
+### 5.2 A card taken in the open stays face up — `PLAYER`, Settled
+
+**Any card you take in the open is laid face up on the table in front of you, where every
+player can see it, and it stays there for as long as it remains in your hand.** Recorded from
+Nick, 2026-08-23 (rev 31).
+
+- It covers the discard taken from the player before you (§5) and — on the recorded default of
+  §9 #49 — the turned-up money card claimed on the opening turn (§4.5).
+- A face-up card is **part of your hand for every purpose**: it counts toward your thirteen, it
+  may be melded in your declaration, and it is filtered by §5.1 like any other card.
+- It stops being face up only when **that copy** leaves your hand — thrown onto your own
+  discard pile, or revealed with everything else when you declare. Cards drawn blind are never
+  face up; §6.3's concealment covers everything the deck gives you unseen.
+- Which copy leaves when you hold a duplicate is §9 #50 — recorded default: **you choose which
+  physical copy to throw**, so throwing the concealed copy leaves the face-up card where it is.
+
+> **`DERIVED` — this changes what the table shows, not what the table knows, with one
+> instance-level exception.** Every open take and every discard is already a public event, so a
+> player with perfect memory could always reconstruct which ranks a seat has taken and not yet
+> thrown back — §5.1's enforcement depends on exactly that. What the event log alone cannot
+> carry is **which copy**: with two decks, a player who took a Q♣ in the open and later throws
+> *a* Q♣ may have thrown the other one, and the face-up card settles it by visibly staying or
+> visibly going (§9 #50). ⚠️ **For the engine this rule is presentation, not state**: takes
+> and discards are recorded by `CardId`, so the face-up set is a pure fold over public events —
+> no engine change, no journal change, and every journal ever written replays identically.
+
+> ⚠️ **Neither this rule nor §5's public piles is visible anywhere a player sits** — both
+> front ends draw one takeable discard and no pile, and no view model carries a face-up mark.
+> **§10 #24 records the debt and P41 owns it.**
+
 ## 6. Melds
 
 ### 6.1 Runs (sequences)
@@ -1224,7 +1275,9 @@ end the round. You keep all your intended plays secret until that point."*
 - Melds are **never** placed on the table during play. Nothing is revealed until a player
   goes out and declares the whole hand at once.
 - There is **no laying off** on your own or anyone else's melds.
-- Opponents' intentions are invisible; the only public information is the discards.
+- Opponents' intentions are invisible; the public information is the discards — every card in
+  every pile, not merely the top one (§5) — and, since rev 31, the cards a player has taken in
+  the open, which lie face up in front of them for as long as they are held (§5.2).
 
 This matches Indian Rummy (`IR`) and is consistent with the all-13-melded win condition —
 a single declaration event.
@@ -1798,6 +1851,20 @@ game and measuring the bonus are one job.
 ⚠️ **That paragraph was true for one day.** 🔥 **Rev 27 opens seven rows at once — the largest
 single addition this section has ever taken — and one of them has no safe default.**
 
+### Opened in rev 31 — what the table can see, from Nick, 2026-08-23
+
+🔥 **Rev 31 is two visibility rules, and one is a second independent source for a rule this
+document already had.** Nick, unprompted: players must be able to see **every** card in every
+player's discard pile — §5's rev-17 rule, corroborated — and **a card picked up from a discard
+pile is laid face up in front of the taker, visible to all players, for the entire time it is
+in their hand** — new, §5.2. ⚠️ **Both are Settled and neither is visible anywhere a player
+sits** (§10 #24, P41). The two rows below are the details the statement did not reach.
+
+| # | Question | § | Status | Blocks |
+|---:|---|---|---|---|
+| 49 | **Does the claimed turned-up money card lie face up too?** §5.2 was stated about a card picked up from a discard pile; the opening claim (§4.5) is the one other way a card reaches a hand in the open. *"I claimed the turned-up card at the start of the round. Does it sit face up in front of me like a card I took off your pile, or does it go into my hand hidden like a drawn card?"* | 5.2, 4.5 | Unknown — recommend **yes, face up**: the claim is the most public take there is, it already arms §5.1 exactly as an open take does (§9 #17), and a rule about open takes that excluded it would be the stranger rule | Nothing — P41 builds the default and fences it with a test named for this row |
+| 50 | **When you hold two copies and one is face up, which copy leaves when you throw one?** Two decks mean a player can hold the Q♣ they took in the open and a second Q♣ drawn blind. *"I've got the Q♣ I took from you sitting face up, and the other Q♣ hidden in my hand. I throw a Q♣ — can I throw the hidden one and keep the face-up one on the table?"* | 5.2 | Unknown — recommend **the player chooses which physical copy to throw** — it is what the physical table does (the face-up card visibly stays or visibly goes), and the engine already discards by exact card (`CardId`), so the choice exists without inventing a rule | Nothing — P41 builds the default and fences it with a test named for this row |
+
 ### Opened in rev 27 — §7.4 and §7.5, from Aung Aung, 2026-08-22
 
 | # | Question | § | Status | Blocks |
@@ -2225,6 +2292,12 @@ not a question.**
 
 Decisions here that the implementation contradicts or lacks.
 
+⚠️ **Reopened 2026-08-23 (rev 31): #24.** §5's public piles and §5.2's face-up taken cards are
+Settled and **no front end and no view model shows either** — a player at either front end
+cannot exercise a rule this document has recorded since rev 17. **P41 owns it**, and the
+conformance registry carries the exemption under §5.2. The paragraph below was true from P35
+until this revision and stands as written.
+
 ✅ **Empty again as of 2026-08-22 (P35): every rule this document records as Settled is
 implemented.** #20 and #21 — §7.4's deal bonus and §7.5's feeding blame, the two scoring rules
 Aung Aung volunteered in rev 27 — were the last two, and they were discharged by the same packet
@@ -2237,7 +2310,7 @@ three-handed rules are implemented, tested and **unreachable from a dealt game**
 oldest entry here that nothing has discharged, **no packet owns it**, and *"§10 is empty"* is
 true of every rule that can be reached and not of that one.
 
-⚠️ **This section has now been emptied four times and reopened three.** The pattern is worth
+⚠️ **This section has now been emptied four times and reopened four — rev 31 is the fourth reopening.** The pattern is worth
 naming: a rules conversation adds a rule, this list records what the code does not do, and a
 packet closes it. **An entry here is a debt with an owner, and one that names no packet is the
 thing that should worry a reader.**
@@ -2475,6 +2548,16 @@ See `RULES-TECHNICAL.md` §7 for defects not driven by rules decisions, and
     `docs/STRATEGY.md` §11 rather than left to silence: every experiment runs `RoundsPerGame = 1`
     (BUILD-PLAN §3.8), so a three-round run cannot occur. **It is audited instead** — the first
     conformance case in the project that watches a sequence of rounds rather than one.
+
+24. **Show what the rules make public** (§5, §5.2). Every player may look through every
+    discard pile, and a card taken in the open lies face up in front of its taker until that
+    copy leaves their hand — and **nothing shows either**: both front ends draw one takeable
+    discard and no pile, no view model carries a face-up mark, and `TurnContext` shows a seat
+    less than §5 makes public. ⚠️ **The engine needs no rule** — open takes and discards are
+    public events by `CardId`, so the face-up set and every pile's contents are folds over the
+    event stream: no engine state, no journal change, replays identical, and no measurement
+    should move. The work is Presentation, the Server fan-out and both front ends, plus fences
+    for §9 #49 and #50's recorded defaults. **P41.**
 
 23. ~~**A held seating can be re-drawn when the players agree to it**~~ (§3 step 2, §9 #45).
     ✅ **Discharged by P37 on 2026-08-22.** `EXPERT` for the holding, `PLAYER` for *agree*.

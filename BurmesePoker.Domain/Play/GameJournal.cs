@@ -167,7 +167,7 @@ public sealed record JournalHeader(
     /// replay rather than quietly, which is the intended behaviour. §7.5 needs nothing written
     /// down at all: a streak is derived from the results a replay reproduces anyway.
     /// </remarks>
-    public const int CurrentRulesRevision = 30;
+    public const int CurrentRulesRevision = 31;
 
     /// <summary>
     /// How long the seating held (RULES.md §3 step 2), as the policy this match played under.
