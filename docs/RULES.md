@@ -4,7 +4,19 @@
 aid) and `RULES-TECHNICAL.md` (implementation spec + defects) are subordinate to it.
 Where they disagree, this document wins.
 
-Last revised: 2026-08-22 (rev 29 — ✅ **§9 #45 ruled by Nick: a re-seating happens *"when people
+Last revised: 2026-08-22 (rev 30 — ✅ **§7.4 and §7.5 are built, and §10 is empty: every rule this
+document records as Settled is implemented.** No rule changed and no answer arrived; what moved is
+that the two scoring rules Aung Aung volunteered in rev 27 are now played. 🔥 **§7.4 changed the
+shape of a round** — a dealt thirteen that already wins is offered the declaration before anybody
+draws, so a round can run **no turns at all** — and 🔥 **§7.5 put the first state in this game that
+reaches across rounds**, counted on the match and handed down to each round rather than remembered
+by the settlement. ⚠️ **Six §9 defaults were built on and every one is fenced by a test named for
+it** — #38, #39, #40 (§7.4), #41, #44, #46 (§7.5) — and 🔥 **one new question was opened, #48**:
+two seats dealt a winning thirteen at once, defaulted to the earlier in turn order. ⚠️ **§7.5
+cannot be measured by this project at all** and that is stated in `docs/STRATEGY.md` §11 rather
+than left to silence.
+
+Rev 29 — ✅ **§9 #45 ruled by Nick: a re-seating happens *"when people
 agree to do it"*, not when one player asks.** `PLAYER`, so `EXPERT` may still overturn it and the
 row stays open. ⚠️ **It reverses that row's own recommendation** — *one asking is enough* was
 recommended because it invents no machinery, and **the more expensive reading is the one taken**.
@@ -1379,7 +1391,7 @@ value, whether you were one card short or holding all thirteen.
 | Detail | Provenance | Confidence |
 |---|---|---|
 | Flat round value to the winner from each other player — ⚠️ **except on a *jokerless* declaration, which pays ×2 at two, three or four seats and ×3 at five or more (§7.3)**, ⚠️ **and except on a win from the initial deal, which pays ×2 (§7.4)**. | `PLAYER` | Settled, amended rev 25, corrected rev 26, amended rev 27 |
-| ⚠️ **Who pays is not always everybody.** On the winner's **third consecutive win**, the seat immediately above them pays the whole round payment and the others pay nothing (§7.5). | `EXPERT` | Settled — rev 27, **unbuilt** |
+| ⚠️ **Who pays is not always everybody.** On the winner's **third consecutive win**, the seat immediately above them pays the whole round payment and the others pay nothing (§7.5). | `EXPERT` | Settled — rev 27, ✅ **built by P35** |
 | Money cards settle separately and pairwise, by owner. | `PLAYER` | Settled |
 | **No** penalty for unmelded cards. | `PLAYER` | Settled |
 | **Nothing ends the session automatically.** Rounds repeat and banks carry over; players stop when they choose. | `PLAYER` | Settled |
@@ -1553,7 +1565,30 @@ second multiplier. **The recommendation is the same — round payment only** —
 recommendation for the same reason: the saying names the *payout*, and §7.2 step 2 is not a payout
 to the winner but a pairwise settlement in which the winner is one participant like anyone else.
 
-**See §10 #20, and packet P35.** Nothing implements this.
+✅ **Built by P35 on 2026-08-22, and §10 #20 is discharged.** `Win.FromTheInitialDeal` is the
+fact, `Win.DealBonusMultiplier` is the ×2, and `Settlement.RoundPayment(stakes, rules, win)` is the
+whole of the arithmetic. ⚠️ **The multiplier is deliberately not in `TableRules`**: §7.3's is a
+function of the number of players and lives in the per-seat-count table for that reason, and this
+one is the same ×2 at every table size — putting it beside the other would imply a seam it does not
+have.
+
+🔥 **And it changed the shape of a round, which is the first time anything has since the rewrite
+began.** Under #38's recorded default, `RoundEngine.Play` offers the declaration to any seat whose
+**dealt** thirteen already wins, **in turn order, before the first card is taken**. A seat may
+decline and play the round out — declaring is a choice (§7.1), and nothing has been discarded for
+§5.1 exception 2 to bind. **A round won that way runs no turns at all**, which is what tells it
+apart from every other: `RoundResult.Turns` is 0.
+
+⚠️ **All three open details were built on their recorded defaults, and each is fenced by a test
+named for the question** — #38 (the dealt thirteen alone), #39 (the two bonuses **multiply**, so a
+jokerless win from the deal at five seats pays ×6), #40 (round payment only). **The day an expert
+answers any of them, a named test fails.**
+
+⚠️ **It opened one question of its own — §9 #48**: two seats can be dealt winning thirteens at
+once, and nobody has ever been asked what happens then. The default taken is **the earlier in turn
+order**, because that is the order the table would have found out in.
+
+**See §10 #20, and packet P35.**
 
 ---
 
@@ -1581,21 +1616,44 @@ than coincidence.** §5.1 bans you from feeding *the seat below you*; §4.5 make
 permission of *the seat above you*; and §7.5 blames *the seat above you* for a streak. **Three
 independent sayings, from two people, all naming the same edge of the table.**
 
-⚠️ **And it collides with §3 — this is the most important line in this section.** Since rev 19,
-**the seats are re-drawn before every round** (`EXPERT`, Settled), so *"the player before you"* is
-a **different person each round** and the seat blamed for a three-round streak may have sat
-downstream of the winner for the other two — or never have played a card near them at all.
-**Either the blame is deliberately about the third round's seating alone, or §3 and §7.5 cannot
-both be as recorded.** This document does not choose: **§9 #43**, and it is the row with no safe
-default.
+✅ **It collided with §3, and §3 was the rule that was wrong.** Rev 19 had recorded the seats as
+re-drawn before every round, which would have made *"the player before you"* a different person
+each deal and the blame incoherent. Asked directly (**§9 #43**), Aung Aung answered that in real
+games *"you don't shuffle seats every round, only when people ask for it"* — **§3 step 2 was
+corrected in rev 28**, and the seat above the winner is the same person for a whole streak.
+🔥 **This is the only place in the document where a new rule has exposed an old one as
+mis-recorded**, and the heuristic it earned is written into §9: *when two Settled `EXPERT` rules
+collide, suspect the older recording rather than the newer saying.*
 
-⚠️ **Four further things are open** — whether the streak resets or keeps firing (**#41**), which
-round's seating decides (**#42**), whether the substitution reaches the money cards (**#44**), and
-whether a multiplied payout is multiplied *before* the substitution. See §9.
+⚠️ **Three things are still open, all built on their recorded defaults and each fenced by a named
+test**: whether the streak resets or keeps firing (**#41** — it keeps firing), whether the
+substitution reaches the money cards (**#44** — it does not), and which seating decides who is
+blamed now that the seats can move mid-streak (**#46** — the round being settled). ~~#42~~ went
+moot when #43 closed. See §9.
 
-**See §10 #21, and packet P35.** Nothing implements this, and ⚠️ **nothing in this project can
-currently observe it**: `BurmesePoker.Sim` plays `RoundsPerGame = 1`, so a three-round streak is
-invisible to every measurement the programme has ever taken.
+✅ **Built by P35 on 2026-08-22, and §10 #21 is discharged.** 🔥 **The division that made it
+buildable is that settlement is *told* rather than made to remember.** `MatchEngine.Streak` counts
+consecutive wins — the only state in this project that reaches across rounds and is not money — and
+hands it down to each round as it is dealt; `Settlement` still holds no history and still takes no
+match. **`Win.ThirdConsecutiveWin` is the whole of what it is told.**
+
+⚠️ **The substitution is about *who owes*, not *how much*.** The winner collects exactly what they
+would have collected from the table between them; one seat pays all of it. Read the other way —
+the blamed seat paying one loser's share — the winner would be four fifths worse off for winning
+three in a row, which is not what *"pays your whole payout"* says.
+
+⚠️ **Which seating names the payer is §9 #46**, and the default taken is **the round being
+settled**: P36 and P37 between them made the seats a thing that can move mid-streak, so this is no
+longer hypothetical. The streak itself is untouched by a re-seating — it is about who keeps
+winning, not about where anybody sits.
+
+⚠️ **And nothing in this project can measure it, which is stated rather than left to silence.**
+`BurmesePoker.Sim` plays `RoundsPerGame = 1` by design (BUILD-PLAN §3.8), so a three-round run
+cannot occur in any experiment — see `docs/STRATEGY.md` §11. 🔥 **It is audited instead**: the
+conformance harness gained its first case that watches a *sequence* of rounds, keeping its own
+count and failing if 120 rounds happen to contain no streak at all.
+
+**See §10 #21, and packet P35.**
 
 ---
 
@@ -1744,13 +1802,13 @@ single addition this section has ever taken — and one of them has no safe defa
 
 | # | Question | § | Status | Blocks |
 |---:|---|---|---|---|
-| 38 | **What is "on the initial deal"?** §7.1 needs a declaration and §5 makes a turn *take one, throw one*, so a player dealt a winning thirteen has not yet been asked anything. Does the bonus fire (a) **before any draw**, on the dealt thirteen alone, or (b) on the winner's **first turn**, after one take and one discard? *"I pick up my thirteen and they already all meld. What happens next, and what do I get paid?"* | 7.4, 7.1, 5 | Unknown — recommend **(a), the dealt thirteen alone**, because *"on an initial deal"* names the deal and not a turn, and because (b) is barely distinguishable from an ordinary fast win | **The whole of §7.4.** Under (a) the engine must offer a declaration *before* the first turn, which nothing does; under (b) it need only count turns |
-| 39 | **Does the deal bonus multiply with the clean bonus?** A jokerless win on the deal at five seats is ×6, or ×3, or ×2. *"I'm dealt thirteen that all meld and there's no joker in them, five of us playing. What do the others pay me?"* | 7.4, 7.3 | Unknown — recommend **multiply (×6)**, because the two rules pay for unrelated things and neither saying mentions the other. ⚠️ **Weak** — *"double payout"* may mean double *the round value* rather than double *the payout*, and those differ once another multiplier exists | Settlement arithmetic, and how `TableRules` composes |
-| 40 | **Does the deal bonus reach the money cards?** #36 asked again about a second multiplier. | 7.4, 4.3 | Unknown — recommend **round payment only**, exactly as #36, and for the same reason: §7.2 step 2 is a pairwise settlement rather than a payout to the winner | Settlement. ✅ **Safe default** — it is what §7.3 already does, so it composes |
-| 41 | **Does the streak reset when it pays?** Having won three in a row and been paid by the seat above, does a **fourth** consecutive win fire §7.5 again, or does the count start over? *"I've won three and he paid the lot. I win the next one too — who pays?"* | 7.5 | Unknown — recommend **it keeps firing** (the condition is *at least* three consecutive), because the rule is stated as a property of a run rather than as a prize collected once | How a streak is counted, and nothing else. ✅ **Safe default** |
+| 38 | **What is "on the initial deal"?** §7.1 needs a declaration and §5 makes a turn *take one, throw one*, so a player dealt a winning thirteen has not yet been asked anything. Does the bonus fire (a) **before any draw**, on the dealt thirteen alone, or (b) on the winner's **first turn**, after one take and one discard? *"I pick up my thirteen and they already all meld. What happens next, and what do I get paid?"* | 7.4, 7.1, 5 | Unknown — recommend **(a), the dealt thirteen alone**, because *"on an initial deal"* names the deal and not a turn, and because (b) is barely distinguishable from an ordinary fast win | ⚠️ **Built on (a) by P35, 2026-08-22, and still open.** 🔥 **It cost a whole engine path**, which is what this row predicted: `RoundEngine.Play` offers the declaration before the first turn and a round can now run **no turns at all**. Fenced by `RoundEngineTests.TheDealBonusIsTheDealtThirteenAloneUntilTheExpertSaysOtherwise`, which plays the discriminating case — a hand completed on turn 1, which pays no deal bonus |
+| 39 | **Does the deal bonus multiply with the clean bonus?** A jokerless win on the deal at five seats is ×6, or ×3, or ×2. *"I'm dealt thirteen that all meld and there's no joker in them, five of us playing. What do the others pay me?"* | 7.4, 7.3 | Unknown — recommend **multiply (×6)**, because the two rules pay for unrelated things and neither saying mentions the other. ⚠️ **Weak** — *"double payout"* may mean double *the round value* rather than double *the payout*, and those differ once another multiplier exists | ⚠️ **Built on this default by P35, 2026-08-22, and still open — it is the weakest default the packet took.** `Win.Multiplier` multiplies the two; fenced by `SettlementTests.TheTwoBonusesMultiplyUntilTheExpertSaysOtherwise` |
+| 40 | **Does the deal bonus reach the money cards?** #36 asked again about a second multiplier. | 7.4, 4.3 | Unknown — recommend **round payment only**, exactly as #36, and for the same reason: §7.2 step 2 is a pairwise settlement rather than a payout to the winner | ⚠️ **Built on this default by P35, 2026-08-22, and still open.** ✅ **Safe default** — it is what §7.3 already does, so it composes. Fenced by `SettlementTests.TheDealBonusDoesNotReachTheMoneyCards` |
+| 41 | **Does the streak reset when it pays?** Having won three in a row and been paid by the seat above, does a **fourth** consecutive win fire §7.5 again, or does the count start over? *"I've won three and he paid the lot. I win the next one too — who pays?"* | 7.5 | Unknown — recommend **it keeps firing** (the condition is *at least* three consecutive), because the rule is stated as a property of a run rather than as a prize collected once | ⚠️ **Built on this default by P35, 2026-08-22, and still open.** ✅ **Safe default.** `WinStreak.BlamesTheSeatAboveIfWonBy` asks for three **or more**; fenced by `MatchEngineTests.TheStreakKeepsFiringUntilTheExpertSaysOtherwise` |
 | ~~42~~ | ✅ **MOOT since #43 closed**: a seating is held across the streak, so all three rounds share one and there is nothing to choose between. Kept because it becomes live again the moment somebody asks for a re-draw mid-streak — *"I've won two, we re-shuffle, I win a third. Who pays?"* — which is **#46**. **Which round's seating decides who is blamed?** The winner's three rounds have three different seatings (§3). *"I've just won my third in a row. Which of them is the player who has to pay — the one who was above me this round, or the one who was above me when the run started?"* | 7.5, 3 | Unknown — recommend **the third round's seating**, the one being settled, because settlement is a property of the round it settles | Who pays. ✅ **Safe default** given #43's answer |
 | ~~43~~ | ✅ **CLOSED the same day — see below. The answer was *the seats do not re-draw every round*, and it corrected §3.** 🔥 **Does §7.5 mean the seats do *not* re-draw every round?** §3 (rev 19, `EXPERT`) says the seating is drawn again before every deal, so *"the player before you"* is a different person each round and the seat blamed for a three-round run may have sat **downstream** of the winner for the other two. The blame is *"for feeding"*, and a seat that never fed you cannot have fed you. *"You said the one before me pays because he fed me. But we shuffle for seats every deal — what if he wasn't sitting there for the first two?"* | 7.5, 3 | ⚠️ **Unknown, and there is no safe default.** Either §7.5's blame is about one round's seating and the word *feeding* is loose, **or** §3 is narrower than recorded and seats hold for longer than a deal. **Both readings change a rule that is already `EXPERT` and Settled**, which is why this may not be decided here | 🔥 **§3, §7.5 and every front end's seating loop.** Ask this one first |
-| 44 | **Does the substitution reach the money cards?** Does the seat above pay the winner's money-card collections too, or only the round payment? | 7.5, 4.3 | Unknown — recommend **round payment only**, consistent with #36 and #40, and because §4.3's settlement is explicitly pairwise and mutual — the winner is not privileged in it | Settlement. ✅ **Safe default** |
+| 44 | **Does the substitution reach the money cards?** Does the seat above pay the winner's money-card collections too, or only the round payment? | 7.5, 4.3 | Unknown — recommend **round payment only**, consistent with #36 and #40, and because §4.3's settlement is explicitly pairwise and mutual — the winner is not privileged in it | ⚠️ **Built on this default by P35, 2026-08-22, and still open.** ✅ **Safe default.** 🔥 **It has a visible consequence worth knowing**: a seat that pays nothing towards a streak round can still finish it **ahead** on money cards alone. Fenced by `SettlementTests.TheStreakSubstitutionDoesNotReachTheMoneyCards` |
 
 ✅ **#43 was asked and closed on the day it was opened, 2026-08-22, and the heuristic that
 predicted it was right.** It read: *a new rule that contradicts an old `EXPERT` one is much more
@@ -1772,7 +1830,8 @@ of a whole that included the seating. 🔥 **The general lesson, now earned twic
 |---:|---|---|---|---|
 | 45 | 🔥 **What does "when people ask for it" mean — a request, or an agreement?** Does **one** player asking move the seats, or must the others want it too? *"Somebody says let's change seats. Does that just happen, or do the rest of you have to want it too?"* | 3 | ✅ **Ruled by Nick, 2026-08-22: *"when people agree to do it."*** `PLAYER`, so it stands until the expert says otherwise (`EXPERT` outranks it) — **the question stays in this table for that reason and is not struck through.** ⚠️ **It reverses this row's own recommendation**, which was *one player asking is enough* on the grounds that it invents no machinery: **agreement is the more expensive reading and it is the one taken.** ⚠️ **What "agree" means is #47** | ✅ **Built by P37, 2026-08-22, as an agreement and not a request**: every seat is asked between rounds and the seats move on **one asking and no refusal** (`SeatingAgreementTests`). ✅ **P36's seam held** — *when* a re-draw happens is a policy either way, and the policy still decides on a round count and nothing else |
 | 47 | **Does agreement mean everybody, or most of them?** §9 #45 is ruled as *when people agree*; a table of five with one objector either re-seats or does not. *"Three of us want to change seats and two don't. Do we change?"* | 3 | Unknown — recommend **unanimous among the people at the table**, because *agree* reads as consent rather than as a count, and because the losing side of a majority vote is made to move seats against their will in a game with money on it | ⚠️ **Built on this default by P37, 2026-08-22, and still open.** ✅ **Safe default** — unanimity is the reading that never moves somebody who objected, so no player is worse off under it than under the alternative. **Fenced by `SeatingAgreementTests.AgreementIsUnanimousUntilTheExpertSaysOtherwise`**, which plays three seats asking and one refusing — the case that separates the two readings — and is the test that fails the day an expert overturns this |
-| 46 | **What if the seats change mid-streak?** Somebody has won two in a row, the table re-seats, and they win a third. Is the seat above them at that moment blamed, even though they were somewhere else for the first two? *"I've won two, we re-shuffle, I win a third. Who pays?"* | 7.5, 3 | Unknown — recommend **the third round's seating** (the round being settled), which is old #42's recommendation surviving into the one case that can still produce it. ✅ **Safe default** — it is what settling a round from its own state already means | Nothing, until a re-seating exists to happen mid-streak |
+| 46 | **What if the seats change mid-streak?** Somebody has won two in a row, the table re-seats, and they win a third. Is the seat above them at that moment blamed, even though they were somewhere else for the first two? *"I've won two, we re-shuffle, I win a third. Who pays?"* | 7.5, 3 | Unknown — recommend **the third round's seating** (the round being settled), which is old #42's recommendation surviving into the one case that can still produce it. ✅ **Safe default** — it is what settling a round from its own state already means | ⚠️ **Built on this default by P35, 2026-08-22, and still open.** The streak is counted over **who keeps winning** and the payer is read off the seating of the round being settled — never off the membership, which does not move at all. Fenced by `RoundEngineTests.TheSeatBlamedIsTakenFromTheSeatingOfTheRoundBeingSettled`, which settles the same streak at two different seatings |
+| 48 | 🔥 **Two seats are dealt a winning thirteen. Who wins?** §7.4 pays a win from the initial deal, and nothing says what happens when the deal hands one to more than one person — a case that cannot arise in ordinary play, where somebody has to take a turn first. *"We pick up our hands and two of us have thirteen that already meld. Who wins, and what do we get paid?"* | 7.4, 7.1 | Unknown — recommend **the earlier in turn order**, because that is the order the table would have found out in, and because every other decision in this game is put to the seats in turn order. ⚠️ **Nothing rules out a split, or a re-deal** — both are ordinary answers in other games, and neither would be strange here | ⚠️ **Built on this default by P35, 2026-08-22.** ✅ **Safe default and vanishingly rare** — the engine asks each seat in turn order and the first to say yes takes the round. Fenced by `RoundEngineTests.WhenTwoSeatsAreDealtAWinningThirteenTheEarlierInTurnOrderTakesIt` |
 
 ⚠️ **#36 and #37 still block nothing**, and #40 and #44 both inherit #36's recommendation, so the
 three money-multiplier rows now stand or fall together. 🔥 **That is worth noticing: one answer to
@@ -2166,15 +2225,16 @@ not a question.**
 
 Decisions here that the implementation contradicts or lacks.
 
-⚠️ **Open again, with two entries, since rev 27 on 2026-08-22.** It had been empty for a matter of
-hours: rev 25 reopened it with #19 (the clean bonus), **P33 built that**, and then §7.4 and §7.5
-arrived the same day. 🔥 **So the claim *"every rule this document records as Settled is
-implemented"* is false again, and both exceptions are scoring rules from the same conversation.**
-They are **#20** and **#21** below, and **packet P35** owns them.
+✅ **Empty again as of 2026-08-22 (P35): every rule this document records as Settled is
+implemented.** #20 and #21 — §7.4's deal bonus and §7.5's feeding blame, the two scoring rules
+Aung Aung volunteered in rev 27 — were the last two, and they were discharged by the same packet
+that had to invent both a round with no turn in it and the first state in this game that reaches
+across rounds.
 
-⚠️ **Neither is a defect and neither blocks play** — a round settles correctly today under §7.2 and
-§7.3. What they block is the document's own claim, which is why they are recorded here rather than
-left in §7.
+⚠️ **This section has now been emptied four times and reopened three.** The pattern is worth
+naming: a rules conversation adds a rule, this list records what the code does not do, and a
+packet closes it. **An entry here is a debt with an owner, and one that names no packet is the
+thing that should worry a reader.**
 
 1. **Remove the ace wrap** (§6.1). Fixes the illegal `K-A-2` meld *and* the verified
    infinite loop.
@@ -2385,21 +2445,30 @@ See `RULES-TECHNICAL.md` §7 for defects not driven by rules decisions, and
 
 ---
 
-20. **Pay double on a win from the initial deal** (§7.4). `EXPERT` (Aung Aung, 2026-08-22) and
-    **wholly unimplemented.** `Settlement.RoundPayment(stakes, rules, jokerless)` takes no notion
-    of *when* a hand was won, and — under §9 #38's recommended reading — `RoundEngine` would have
-    to offer a declaration **before the first turn**, which no engine path does: a round begins by
-    asking seat 0 to take a card. ⚠️ **This is the first ruling here that would change the shape of
-    a round rather than the arithmetic at the end of it.** See packet **P35**.
-21. **A third consecutive win is paid entirely by the seat above the winner** (§7.5). `EXPERT`
-    (Aung Aung, 2026-08-22) and **wholly unimplemented.** 🔥 **It is the first rule in this
-    document that cannot be settled from one round**: `Settlement` is a pure function of a single
-    round and holds no history, and the streak lives above it. ⚠️ **And no measurement in this
-    project can currently see it** — `BurmesePoker.Sim` plays `RoundsPerGame = 1` by design
-    (BUILD-PLAN §3.8), so every published figure is one-round-per-game and a three-round run
-    cannot occur. **Both halves of that are P35's problem and are why it is an L rather than an
-    M.** ⚠️ **Blocked in part on §9 #43**, which asks whether §7.5 contradicts §3's per-round
-    re-seating.
+20. ~~**Pay double on a win from the initial deal**~~ (§7.4). ✅ **Discharged by P35 on
+    2026-08-22.** `EXPERT` (Aung Aung, 2026-08-22). 🔥 **It changed the shape of a round rather
+    than the arithmetic at the end of it, which is the first time since P0 that anything has.**
+    Under §9 #38's recorded default — *the dealt thirteen alone* — `RoundEngine.Play` now offers
+    the declaration to any seat whose **dealt** thirteen already wins, in turn order, before the
+    first card is taken; a seat may decline and play the round out, because declaring is a choice
+    (§7.1) and nothing has been discarded for §5.1 exception 2 to bind. **A round won that way has
+    no turn in it at all** — `RoundResult.Turns` is 0 — and that is how the conformance audit
+    tells it apart from any other. ⚠️ **`Settlement.RoundPayment` no longer takes a bare
+    `jokerless`**: what a win *was* is a `Win` record, because step 1 has now taken four
+    qualifications in three days and a fifth should be expected.
+21. ~~**A third consecutive win is paid entirely by the seat above the winner**~~ (§7.5).
+    ✅ **Discharged by P35 on 2026-08-22.** `EXPERT` (Aung Aung, 2026-08-22). 🔥 **It is the first
+    rule in this document that cannot be settled from one round, and the division that made it
+    buildable is that `Settlement` is *told* rather than made to remember**: the count lives on
+    `MatchEngine.Streak`, where a sequence of rounds is owned, and is handed down to each round as
+    it is dealt. **`Settlement` still holds no history and takes no match.** ⚠️ **The seat blamed
+    is read off the seating of the round being settled** (§9 #46), never off the membership, which
+    matters now that the seats can move mid-streak. ⚠️ **And the substitution is about *who owes*
+    rather than *how much*** — the winner collects exactly what they would have collected, out of
+    one pocket. ⚠️ **No published measurement can see it**, which is stated in
+    `docs/STRATEGY.md` §11 rather than left to silence: every experiment runs `RoundsPerGame = 1`
+    (BUILD-PLAN §3.8), so a three-round run cannot occur. **It is audited instead** — the first
+    conformance case in the project that watches a sequence of rounds rather than one.
 
 23. ~~**A held seating can be re-drawn when the players agree to it**~~ (§3 step 2, §9 #45).
     ✅ **Discharged by P37 on 2026-08-22.** `EXPERT` for the holding, `PLAYER` for *agree*.

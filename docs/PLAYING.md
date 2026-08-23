@@ -177,6 +177,15 @@ defaulted).
 **5. "Declare and end the round?"** — offered only when all thirteen genuinely meld, so it is
 never a trap. Say yes.
 
+🔥 **And it can arrive before the round starts.** If the thirteen you were *dealt* already meld,
+you are asked straight away, under a heading that says **"The deal"** rather than a turn number —
+nobody has drawn anything and there is nothing to throw. **A win from the deal pays double**
+(`RULES.md` §7.4), on top of the jokerless bonus if the thirteen hold no joker, so a clean deal at
+a five-handed table pays **six times** the round value. You may say no and play the round out; it
+will not be offered again unless you get back to thirteen that meld. ⚠️ **It is very rare** — rare
+enough that you may never see it — and if two people are dealt one at once, the earlier in turn
+order takes it (`RULES.md` §9 #48, nobody's answer yet).
+
 ---
 
 ## Winning, and what it pays
@@ -191,11 +200,21 @@ You win by **melding all thirteen** — no laying off, nothing on the table unti
 
 Settlement has two independent halves, and the console shows them as two columns:
 
-1. **The round.** Every loser pays the winner the round value, flat. **There is no penalty for
+1. **The round.** Every loser pays the winner the round value. **There is no penalty for
    unmelded cards** — losing costs the same whether you were one card short or holding
-   thirteen strangers.
+   thirteen strangers. ⚠️ **What it is not any more is flat.** It doubles or triples if the
+   winner declared with no joker in the thirteen (§7.3), doubles again if they won on the deal
+   (§7.4), and — on somebody's **third win in a row** — is paid **entirely by the player sitting
+   immediately before them**, with everybody else paying nothing (§7.5). The console names each
+   of those under the table when it happens, so a strange-looking column always says why.
 2. **The money cards.** Each owner collects the money card value per card from everyone else,
    whoever won. The winner takes part in this like anybody else.
+
+> **The one that changes how you sit: win twice in a row and the player above you is about to
+> pay for the third.** §7.5 blames them for feeding you — they are the only player whose discards
+> you can take — so a table that has been watching somebody win may well ask to change seats
+> before the third deal, which it can do (see *Changing the seats*). ⚠️ **Nobody has measured
+> whether that is worth doing**, and the computer never asks.
 
 > **The rule that changes how you play: ownership is permanent, and possession is
 > irrelevant.** You own a money card if the deck gave it to you — dealt in your opening

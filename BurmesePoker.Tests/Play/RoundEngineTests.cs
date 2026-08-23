@@ -1,6 +1,7 @@
 using System.Reflection;
 using BurmesePoker.Domain.Abstractions;
 using BurmesePoker.Domain.Cards;
+using BurmesePoker.Domain.Melds;
 using BurmesePoker.Domain.Money;
 using BurmesePoker.Domain.Play;
 
@@ -507,6 +508,193 @@ public class RoundEngineTests
     /// 7♦ back into somebody else's hands, which is the case the rule is about.
     /// </summary>
     private const int ReshuffleSeed = 2;
+
+    // ---------------------------------------------------------------------------------------
+    // RULES.md §7.4 — the deal bonus. Packet P35.
+    // ---------------------------------------------------------------------------------------
+
+    [Fact]
+    public void AThirteenThatAlreadyWinsIsLaidDownBeforeAnybodyDrawsAndPaysDouble()
+    {
+        // §7.4: "if you win on an initial deal you get double payout." Alice is dealt the
+        // winning thirteen and says yes to the one question a round now asks before it starts.
+        var order = Order(DealBuilder.ForPlayers(4).Give(0, WinningHand));
+        var alice = new ScriptedPlayerAgent { DeclaresOnTheDeal = true };
+        var observer = new RecordingObserver();
+        var engine = Engine(order, Agents(alice), observer);
+
+        var result = engine.Play();
+
+        Assert.Equal(Alice, result.Winner);
+        Assert.True(result.Win.FromTheInitialDeal);
+
+        // 🔥 A round with no turn in it — the first shape this engine has had that contains
+        // none. Nobody took a card, so nobody discarded one either.
+        Assert.Equal(0, result.Turns);
+        Assert.All(engine.Table.Seats, seat => Assert.Equal(13, seat.Hand.Count));
+        Assert.All(engine.Table.Seats, seat => Assert.Empty(seat.Discards));
+        Assert.Equal(54, engine.Table.DrawPileCount);
+
+        // The thirteen are jokerless as well, so §7.3's ×2 and §7.4's ×2 multiply (§9 #39):
+        // $20 a loser at this four-handed table. Bob and Dan still hold a joker each, which
+        // pays them $1 a head as it does in every other round of this file.
+        Assert.True(result.Jokerless);
+        Assert.Equal(
+            new Dictionary<PlayerId, int> { [Alice] = 58, [Bob] = -18, [Carol] = -22, [Dan] = -18 },
+            result.Payouts);
+    }
+
+    /// <summary>
+    /// ⚠️ <b>RULES.md §9 #38's recorded default, fenced: the bonus is <i>the dealt thirteen
+    /// alone</i>.</b> The competing reading is the winner's <b>first turn</b>, after one take and
+    /// one discard — which is a far commoner event, and would need no engine path at all.
+    /// <b>The day an expert answers, this is the test that fails.</b>
+    /// </summary>
+    [Fact]
+    public void TheDealBonusIsTheDealtThirteenAloneUntilTheExpertSaysOtherwise()
+    {
+        // Alice is dealt twelve of the winning thirteen and completes it on her first turn by
+        // drawing the king and throwing the spare. That is a win on turn 1 and not on the deal.
+        var order = Order(DealBuilder.ForPlayers(4)
+            .Give(0, [.. WinningHand[..12], "2C"])
+            .ThenDraw("KD"));
+
+        var alice = new ScriptedPlayerAgent(Declaring("2C")) { DeclaresOnTheDeal = true };
+
+        var result = Engine(order, Agents(alice)).Play();
+
+        Assert.Equal(Alice, result.Winner);
+        Assert.Equal(1, result.Turns);
+        Assert.False(result.Win.FromTheInitialDeal);
+
+        // ×2 for the jokerless thirteen and nothing else: $10 a loser, not $20.
+        Assert.True(result.Jokerless);
+        Assert.Equal(
+            10, Settlement.RoundPayment(Stakes.Standard, TableRules.For(4), result.Win));
+    }
+
+    [Fact]
+    public void ASeatDealtAWinningThirteenMayDeclineItAndPlayTheRoundOut()
+    {
+        // Declaring is a choice (§7.1), and there is no §5.1 exception in play before the first
+        // turn to make the move itself the declaration — nobody has discarded anything.
+        var order = Order(DealBuilder.ForPlayers(4).Give(0, WinningHand));
+        var alice = new ScriptedPlayerAgent(new ScriptedTurn { Declare = true });
+
+        var result = Engine(order, Agents(alice)).Play();
+
+        Assert.Equal(Alice, result.Winner);
+        Assert.Equal(1, result.Turns);
+        Assert.False(result.Win.FromTheInitialDeal);
+    }
+
+    /// <summary>
+    /// ⚠️ <b>RULES.md §9 #48's recorded default, fenced</b>: two seats can be dealt winning
+    /// thirteens at once, and the one earlier in <b>turn order</b> takes the round — the order
+    /// the table would have found out in. Nobody has been asked this.
+    /// </summary>
+    [Fact]
+    public void WhenTwoSeatsAreDealtAWinningThirteenTheEarlierInTurnOrderTakesIt()
+    {
+        var order = Order(DealBuilder.ForPlayers(4)
+            .Give(1, WinningHand)
+            .Give(2, "5S", "6S", "7S", "8S", "9S", "10S", "2D", "3D", "4D", "QC", "QH", "QS", "QD"));
+
+        var bob = new ScriptedPlayerAgent { DeclaresOnTheDeal = true };
+        var carol = new ScriptedPlayerAgent { DeclaresOnTheDeal = true };
+
+        var engine = Engine(order, Agents(ScriptedPlayerAgent.Passive(), bob, carol));
+
+        // Both hands really do win — the test would be vacuous if Carol's did not.
+        Assert.True(HandEvaluator.IsWinning(engine.Table.SeatOf(Carol).Hand, engine.Table.Rules));
+
+        var result = engine.Play();
+
+        Assert.Equal(Bob, result.Winner);
+        Assert.Equal(0, result.Turns);
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // RULES.md §7.5 — the feeding blame, as a round is told about it. Packet P35.
+    // ---------------------------------------------------------------------------------------
+
+    [Fact]
+    public void ARoundToldItIsAThirdConsecutiveWinBillsTheSeatAboveTheWinner()
+    {
+        // The streak is handed in — a round has no memory of any other round (RULES.md §7.5).
+        // Alice is seat 0, so the seat above her is Dan, who discards into her.
+        var order = Order(DealBuilder.ForPlayers(4).Give(0, WinningHand));
+        var agents = Agents(new ScriptedPlayerAgent(new ScriptedTurn { Declare = true }));
+
+        var result = new RoundEngine(
+            FourPlayers, agents, Stakes.Standard, order, new Random(1),
+            streak: new WinStreak(Alice, 2)).Play();
+
+        Assert.Equal(Alice, result.Winner);
+        Assert.True(result.Win.ThirdConsecutiveWin);
+
+        // The round half: $10 a head jokerless at four seats, ×3 losers = $30, all of it from
+        // Dan. The side bet is unmoved — Bob and Dan hold a joker each (§9 #44).
+        Assert.Equal(
+            new Dictionary<PlayerId, int> { [Alice] = 30 - 2, [Bob] = 2, [Carol] = -2, [Dan] = -28 },
+            result.Payouts);
+    }
+
+    /// <summary>
+    /// ⚠️ <b>RULES.md §9 #46's recorded default, fenced</b>: the seats can move between the
+    /// rounds of a streak — by a house policy (P36) or because the table agreed to it (P37) — so
+    /// <b>which</b> seating names the payer is a live question. The default is <b>the round
+    /// being settled</b>, which is what settling a round from its own state already means.
+    /// <b>The day an expert says the run's first seating decides, this is the test that
+    /// fails.</b>
+    /// </summary>
+    [Fact]
+    public void TheSeatBlamedIsTakenFromTheSeatingOfTheRoundBeingSettled()
+    {
+        // The same four people, dealt in a different order: Alice now sits second, so the seat
+        // above her is Bob and not Dan. Nothing about the streak changed — only where everybody
+        // is sitting for the round that settles it.
+        PlayerId[] seating = [Bob, Alice, Carol, Dan];
+
+        var order = Order(DealBuilder.ForPlayers(4).Give(1, WinningHand));
+        var agents = FourPlayers.ToDictionary(
+            player => player,
+            player => player == Alice
+                ? (IPlayerAgent)new ScriptedPlayerAgent(new ScriptedTurn { Declare = true })
+                : ScriptedPlayerAgent.Passive());
+
+        var result = new RoundEngine(
+            seating, agents, Stakes.Standard, order, new Random(1),
+            streak: new WinStreak(Alice, 2)).Play();
+
+        Assert.Equal(Alice, result.Winner);
+        Assert.True(result.Win.ThirdConsecutiveWin);
+
+        // $30 from Bob, nothing from Carol or Dan.
+        var rounds = Settlement.RoundPayments(seating, Alice, Stakes.Standard, result.Win);
+
+        Assert.Equal(-30, rounds[Bob]);
+        Assert.Equal(0, rounds[Carol]);
+        Assert.Equal(0, rounds[Dan]);
+        Assert.Equal(30, rounds[Alice]);
+    }
+
+    [Fact]
+    public void ARoundInNoStreakBillsEverybodyAsItAlwaysDid()
+    {
+        var order = Order(DealBuilder.ForPlayers(4).Give(0, WinningHand));
+        var agents = Agents(new ScriptedPlayerAgent(new ScriptedTurn { Declare = true }));
+
+        // Somebody else's two wins are not this winner's streak.
+        var result = new RoundEngine(
+            FourPlayers, agents, Stakes.Standard, order, new Random(1),
+            streak: new WinStreak(Bob, 2)).Play();
+
+        Assert.False(result.Win.ThirdConsecutiveWin);
+        Assert.Equal(
+            new Dictionary<PlayerId, int> { [Alice] = 28, [Bob] = -8, [Carol] = -12, [Dan] = -8 },
+            result.Payouts);
+    }
 
     /// <summary>
     /// A seat holding a winning hand that declines to declare until its <paramref name="turns"/>th

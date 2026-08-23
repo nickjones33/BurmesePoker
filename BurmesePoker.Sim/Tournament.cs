@@ -248,7 +248,8 @@ public sealed record TournamentCell(
     long DiscardsChosen = 0,
     long RestrictedTurns = 0,
     long LockBites = 0,
-    int JokerlessRounds = 0)
+    int JokerlessRounds = 0,
+    int DealWinRounds = 0)
 {
     /// <summary>Average turns to a declaration in this cell.</summary>
     public double TurnsPerRound => Rounds == 0 ? 0 : (double)Turns / Rounds;
@@ -295,6 +296,18 @@ public sealed record TournamentCell(
     /// to throw one a turn early cannot reach the bonus at all.
     /// </remarks>
     public double JokerlessRate => Rounds == 0 ? 0 : (double)JokerlessRounds / Rounds;
+
+    /// <summary>
+    /// Share of the rounds won on the <b>initial deal</b> — <b>how often RULES.md §7.4's bonus
+    /// is actually collected</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Expected to be zero or as near as makes no difference</b>, and published for that
+    /// reason rather than in spite of it: §7.4 is the only rule P35 built that a
+    /// one-round-per-game harness can see, so this is the column that would explain a money
+    /// figure moving. It counts §9 #38's recorded default — the dealt thirteen alone.
+    /// </remarks>
+    public double DealWinRate => Rounds == 0 ? 0 : (double)DealWinRounds / Rounds;
 
     /// <summary>How the cell reads in a report.</summary>
     /// <remarks>
@@ -545,6 +558,7 @@ public static class Tournament
         var restricted = 0L;
         var bites = 0L;
         var jokerless = 0;
+        var onTheDeal = 0;
 
         foreach (var game in report.Games)
         {
@@ -561,6 +575,11 @@ public static class Tournament
                 if (round.Jokerless)
                 {
                     jokerless++;
+                }
+
+                if (round.OnTheDeal)
+                {
+                    onTheDeal++;
                 }
             }
         }
@@ -581,7 +600,8 @@ public static class Tournament
             return new TournamentCell(
                 kind, row, column, assignments.Count, report.Games.Count, settled,
                 report.Games.Count - settled, cellPlayers, default, default,
-                rounds, turns, attempts, refused, discards, restricted, bites, jokerless);
+                rounds, turns, attempts, refused, discards, restricted, bites, jokerless,
+                onTheDeal);
         }
 
         var rowSeries = series.Single(one => one.Name == row);
@@ -605,7 +625,8 @@ public static class Tournament
             discards,
             restricted,
             bites,
-            jokerless);
+            jokerless,
+            onTheDeal);
     }
 
     private static IReadOnlyList<Standing> Standings(

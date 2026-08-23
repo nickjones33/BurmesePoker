@@ -216,8 +216,10 @@ else if (asking.Question == SeatQuestion.Declare)
             <summary>Why?</summary>
             <p>
                 Nothing ends a round but a declaration (RULES.md §7.1): all thirteen laid down at
-                once, in melds that share no card. The winner takes a flat stake from everybody
-                else, and the money cards pay their owners whatever happens.
+                once, in melds that share no card. The losers pay the winner the round stake — more
+                of it if the thirteen hold no joker (§7.3) or the deal already won (§7.4), and all
+                of it from one seat on somebody's third win in a row (§7.5) — and the money cards
+                pay their owners whatever happens.
             </p>
             @if (Hints && asking.Rationale is { } why)
             {

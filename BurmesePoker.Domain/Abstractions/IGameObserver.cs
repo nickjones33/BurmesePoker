@@ -21,13 +21,15 @@ public interface IGameObserver
 {
     /// <summary>
     /// The deal is done and the money cards are turned up — for <paramref name="seating"/>,
-    /// which was drawn for this round and no other (RULES.md §3 step 2).
+    /// which is the order <b>this</b> round is being dealt in (RULES.md §3 step 2).
     /// </summary>
     /// <remarks>
-    /// ⚠️ <b>The seating is narrated because it moves.</b> Seats are re-randomised every round
-    /// (§3, §9 #14), so a front end that drew the order it opened with would be drawing the
-    /// wrong neighbours from the second deal on — and who sits where is the most public fact
-    /// at a table.
+    /// ⚠️ <b>The seating is narrated because it can move</b>, not because it does. A seating is
+    /// drawn once and held (rev 28, P36) and changes only when the table agrees to it (P37) — but
+    /// a front end that drew the order it opened with would be drawing the wrong neighbours from
+    /// the deal after any change, and who sits where is the most public fact at a table.
+    /// ⚠️ <b>This doc comment said the opposite until P35</b>, which is what a rev-19 reading
+    /// looks like two revisions after it was withdrawn.
     /// </remarks>
     void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp) { }
 

@@ -788,3 +788,38 @@ reconcile them in the document.** Record both, mark the collision, and ask.
 single out the seat above you** — §5.1 bans feeding the seat below, §4.5 needs the permission of
 the seat above, §7.5 blames the seat above for a streak. **Three sayings, two people, one edge of
 the table.** Whatever #43's answer is, the upstream relationship is real and old.
+
+---
+
+## Q12 — Building the two scoring rules opened one more, 2026-08-22 **(nobody has been asked)**
+
+**Nothing was asked here.** Packet P35 built §7.4 and §7.5 on six recorded defaults, and one case
+turned up in the building that no saying covers and no question in §9 had reached.
+
+### The new one — two winning deals at once
+
+🔥 **§7.4 pays a win from the initial deal, and the deal can hand a winning thirteen to more than
+one person.** It cannot happen in ordinary play, where somebody has to take a turn before anybody
+can go out; it can happen at the moment the cards land. **The engine gives it to the earlier seat
+in turn order** and the document records that as a default with nobody's name on it.
+
+7. **Two winning deals.** *"We pick up our hands and two of us have thirteen that already meld.
+   Who wins, and what do we get paid?"* (§9 #48 — ⚠️ **do not offer the options.** "Whoever is
+   first" is one answer; a split, a re-deal, and *"that never happens, we'd deal again"* are all
+   ordinary answers in other games and none would be strange here.)
+
+### The five still standing from Q10, unchanged
+
+**#38, #39, #40, #41, #44 and #46 are all built on and all still open.** Building them changed
+nothing about how they should be asked — ⚠️ **and it makes them cheaper to answer wrongly**, because
+the code now has an opinion and a session that reads the code first will hear it. Each one is
+fenced by a test named for the question, so the day an answer arrives the failing test is the
+change list.
+
+### What was learned about asking
+
+⚠️ **A default that was recorded and then built is not more likely to be right than it was, and it
+is much harder to see.** Before P35, §9 #38 was a paragraph saying nobody knew; now there is a
+working engine path, a test, and a sentence in `PLAYING.md` telling a person what happens. **The
+question has not moved an inch and the evidence for it has not either.** That is the reason each
+one is fenced by name rather than merely written down.

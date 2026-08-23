@@ -85,13 +85,26 @@ public sealed record SeatRow(
 /// one a turn early cannot reach the bonus at all.
 /// </para>
 /// </param>
+/// <param name="OnTheDeal">
+/// Whether the winner's <b>dealt</b> thirteen already won, before anybody drew a card, which
+/// RULES.md §7.4 pays a further ×2 for.
+/// <para>
+/// ⚠️ <b>Expected to be all but zero, and published for exactly that reason.</b> §7.4 is the one
+/// rule P35 built that a one-round-per-game harness can observe at all (§7.5 needs three rounds
+/// in a row and cannot occur here), so if a money figure moves under it, this is the column that
+/// says why. ⚠️ It counts the <em>recorded default</em> reading of §9 #38 — the dealt thirteen
+/// alone. Under the competing reading (the winner's first turn) it would be a commoner event
+/// entirely.
+/// </para>
+/// </param>
 public sealed record RoundRow(
     int Round,
     int Turns,
     int Reshuffles,
     int ClaimsRefused,
     IReadOnlyList<SeatRow> Seats,
-    bool Jokerless = false);
+    bool Jokerless = false,
+    bool OnTheDeal = false);
 
 /// <summary>One game: a table, a seed, and the rounds it got through.</summary>
 /// <param name="Game">The game's index in the run.</param>

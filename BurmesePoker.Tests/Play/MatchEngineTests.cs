@@ -37,6 +37,11 @@ public class MatchEngineTests
         // 🔥 And since P33 the round value is doubled: Alice's WinningHand holds no joker, so
         // RULES.md §7.3 pays ×2 at four seats. $30 a round to her rather than $15, and the
         // multiple is 28 rather than 13.
+        // 🔥 P35 changed the **third** round of this test and nothing else. Alice has now won
+        // three in a row, so §7.5 bills the whole $30 to Dan — the seat above her — and Bob and
+        // Carol pay nothing towards it. **Alice's bank is unmoved**: the rule substitutes who
+        // owes the payment, not how much is owed, which is what makes the losers' columns the
+        // only ones that move.
         var match = Match(WinsImmediately());
 
         for (var round = 1; round <= 3; round++)
@@ -47,11 +52,10 @@ public class MatchEngineTests
             Assert.Equal(round, match.RoundsPlayed);
             Assert.Equal(Alice, played.Result.Winner);
             Assert.Equal(round * 28, match.Banks[Alice]);
-            Assert.Equal(round * -8, match.Banks[Bob]);
         }
 
         Assert.Equal(
-            new Dictionary<PlayerId, int> { [Alice] = 84, [Bob] = -24, [Carol] = -36, [Dan] = -24 },
+            new Dictionary<PlayerId, int> { [Alice] = 84, [Bob] = -14, [Carol] = -26, [Dan] = -44 },
             match.Banks);
         Assert.Equal(0, match.Banks.Values.Sum());
     }
@@ -117,13 +121,13 @@ public class MatchEngineTests
         }
 
         // And the side bet is the remainder once the round payment is taken out — which since
-        // RULES.md §7.3 is the round value only when the winner declared holding a joker.
-        var payment = Settlement.RoundPayment(table.Stakes, table.Rules, played.Result.Jokerless);
+        // RULES.md rev 27 is neither flat nor necessarily owed by everybody, so it is asked for
+        // rather than re-derived (§7.3, §7.4, §7.5).
+        var rounds = Settlement.RoundPayments(
+            table.Players, played.Result.Winner, table.Stakes, played.Result.Win);
         var sideBet = table.Players.ToDictionary(
             player => player,
-            player => played.Result.Payouts[player] - (player == played.Result.Winner
-                ? payment * (table.Players.Count - 1)
-                : -payment));
+            player => played.Result.Payouts[player] - rounds[player]);
 
         // ⚠️ Every share was zero until P26, because this deal owns no *designated* card. It
         // owns two **jokers**, which are permanent money cards since RULES.md rev 21 (§4.1) —
@@ -229,7 +233,9 @@ public class MatchEngineTests
         match.PlayRound(Deal());
         match.PlayRound(Deal());
 
-        Assert.Equal([(1, 1), (2, 1)], seen.Distinct().ToArray());
+        // ⚠️ Turn 0 is the initial-deal question (RULES.md §7.4), which this seat is asked in
+        // both rounds and declines; turn 1 is the turn it then plays.
+        Assert.Equal([(1, 0), (1, 1), (2, 0), (2, 1)], seen.Distinct().ToArray());
     }
 
     /// <summary>
@@ -434,6 +440,107 @@ public class MatchEngineTests
             player => player,
             player => player == Alice ? alice : ScriptedPlayerAgent.Passive());
 
+    // ---------------------------------------------------------------------------------------
+    // RULES.md §7.5 — the feeding blame, which is the first rule in this game that reaches
+    // across rounds. Packet P35.
+    // ---------------------------------------------------------------------------------------
+
+    [Fact]
+    public void TheStreakIsCountedHereBecauseARoundCannotKnowItAboutItself()
+    {
+        var match = Match(WinsImmediately());
+
+        Assert.Equal(WinStreak.None, match.Streak);
+
+        for (var round = 1; round <= 3; round++)
+        {
+            match.PlayRound(Deal());
+            Assert.Equal(new WinStreak(Alice, round), match.Streak);
+        }
+    }
+
+    [Fact]
+    public void AThirdConsecutiveWinIsPaidEntirelyByTheSeatAboveTheWinner()
+    {
+        // Alice wins every round. Alice is seat 0, so the seat above her — the one that
+        // discards into her, and the one §7.5 blames for feeding — is Dan, at the end of the
+        // turn order.
+        var match = Match(WinsImmediately());
+
+        var first = match.PlayRound(Deal());
+        var second = match.PlayRound(Deal());
+        var third = match.PlayRound(Deal());
+
+        Assert.False(first.Result.Win.ThirdConsecutiveWin);
+        Assert.False(second.Result.Win.ThirdConsecutiveWin);
+        Assert.True(third.Result.Win.ThirdConsecutiveWin);
+
+        // The round half is $10 a head jokerless at four seats — $30 in all — and every penny
+        // of it comes from Dan. ⚠️ The side bet is untouched (§9 #44): Bob and Dan hold a joker
+        // each, so $1 a head still moves both ways, and Bob ends the round **up** on a round he
+        // lost.
+        Assert.Equal(
+            new Dictionary<PlayerId, int> { [Alice] = 28, [Bob] = 2, [Carol] = -2, [Dan] = -28 },
+            third.Result.Payouts);
+
+        Assert.Equal(
+            new Dictionary<PlayerId, int> { [Alice] = 84, [Bob] = -14, [Carol] = -26, [Dan] = -44 },
+            match.Banks);
+        Assert.Equal(0, match.Banks.Values.Sum());
+    }
+
+    /// <summary>
+    /// ⚠️ <b>RULES.md §9 #41's recorded default, fenced</b>: the streak is stated as a property
+    /// of a run rather than as a prize collected once, so a <b>fourth</b> consecutive win is
+    /// blamed exactly as the third was. <b>The day an expert says it resets, this is the test
+    /// that fails.</b>
+    /// </summary>
+    [Fact]
+    public void TheStreakKeepsFiringUntilTheExpertSaysOtherwise()
+    {
+        var match = Match(WinsImmediately());
+
+        for (var round = 1; round <= 3; round++)
+        {
+            match.PlayRound(Deal());
+        }
+
+        var fourth = match.PlayRound(Deal());
+
+        Assert.True(fourth.Result.Win.ThirdConsecutiveWin);
+        Assert.Equal(new WinStreak(Alice, 4), match.Streak);
+        Assert.Equal(-28, fourth.Result.Payouts[Dan]);
+    }
+
+    [Fact]
+    public void SomebodyElseWinningStartsTheCountAgain()
+    {
+        var match = Match(WinsImmediately());
+
+        match.PlayRound(Deal());
+        match.PlayRound(Deal());
+
+        // Bob takes the third, so nobody is on three in a row and everybody pays as usual.
+        var agents = FourPlayers.ToDictionary(
+            player => player,
+            player => player == Bob
+                ? (IPlayerAgent)WinsImmediately()
+                : ScriptedPlayerAgent.Passive());
+
+        var bobsMatch = new MatchEngine(FourPlayers, agents, Stakes.Standard, new Random(1));
+        var bobsRound = bobsMatch.PlayRound(
+            DealBuilder.ForPlayers(4).Give(1, WinningHand)
+                .TurnUpFromTop("3C").TurnUpFromBottom("4C").Build());
+
+        Assert.Equal(new WinStreak(Bob, 1), bobsMatch.Streak);
+        Assert.False(bobsRound.Result.Win.ThirdConsecutiveWin);
+
+        // And back at Alice's table, a win by Bob would have reset the count rather than
+        // extending it — the streak is about who keeps winning, not about how many rounds ran.
+        Assert.Equal(new WinStreak(Bob, 1), new WinStreak(Alice, 2).After(Bob));
+        Assert.False(new WinStreak(Alice, 2).BlamesTheSeatAboveIfWonBy(Bob));
+    }
+
     private static ScriptedPlayerAgent WinsImmediately() => new(new ScriptedTurn { Declare = true });
 
     private static IReadOnlyList<Card> Deal(string top = "3C", string bottom = "4C") =>
@@ -471,7 +578,11 @@ public class MatchEngineTests
 
         public bool ObjectToClaim(TurnContext context) => Note(context, false);
 
-        public bool Declare(TurnContext context) => Note(context, true);
+        // ⚠️ Not on the initial deal (RULES.md §7.4): this seat is dealt a winning thirteen
+        // every round, and a seat that took the deal bonus would end each round at turn 0 —
+        // leaving this test with no turn to be told the number of. Declining is a legal answer
+        // (§7.1), and P35's own tests cover the seat that says yes.
+        public bool Declare(TurnContext context) => Note(context, context.TurnNumber > 0);
 
         private T Note<T>(TurnContext context, T answer)
         {

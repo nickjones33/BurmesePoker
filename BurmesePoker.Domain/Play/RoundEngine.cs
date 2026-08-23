@@ -85,6 +85,7 @@ public sealed class RoundEngine
     private readonly IGameObserver _observer;
     private readonly Random _random;
     private readonly int _round;
+    private readonly WinStreak _streak;
 
     /// <param name="players">The seating order. Between four and six, no duplicates.</param>
     /// <param name="agents">One agent per player.</param>
@@ -101,6 +102,13 @@ public sealed class RoundEngine
     /// </param>
     /// <param name="round">Which round of the match this is, for narration.</param>
     /// <param name="observer">Narration sink. Optional; nothing is required of it.</param>
+    /// <param name="streak">
+    /// How many rounds in a row the last winner has won, coming in (RULES.md §7.5). Default is
+    /// <see cref="WinStreak.None"/>, which is what a standalone round is: a streak is a property
+    /// of a sequence of rounds, so a round that is not part of one cannot be a third in a row.
+    /// ⚠️ <b>Told rather than counted</b> — this engine has no memory of any other round, and
+    /// keeping one here would make a round unplayable in isolation.
+    /// </param>
     public RoundEngine(
         IReadOnlyList<PlayerId> players,
         IReadOnlyDictionary<PlayerId, IPlayerAgent> agents,
@@ -108,7 +116,8 @@ public sealed class RoundEngine
         IReadOnlyList<Card> drawOrder,
         Random random,
         int round = 1,
-        IGameObserver? observer = null)
+        IGameObserver? observer = null,
+        WinStreak streak = default)
     {
         ArgumentNullException.ThrowIfNull(stakes);
         ArgumentNullException.ThrowIfNull(drawOrder);
@@ -118,6 +127,7 @@ public sealed class RoundEngine
         _agents = RequireAPlayableTable(players, agents);
         _random = random;
         _round = round;
+        _streak = streak;
         _observer = observer ?? new SilentObserver();
 
         var shoe = DeckBuilder.BuildTwoDecks();
@@ -134,14 +144,16 @@ public sealed class RoundEngine
         Stakes stakes,
         Random random,
         int round = 1,
-        IGameObserver? observer = null)
+        IGameObserver? observer = null,
+        WinStreak streak = default)
     {
         ArgumentNullException.ThrowIfNull(random);
 
         var deck = Deck.TwoDecks();
         deck.Shuffle(random);
 
-        return new RoundEngine(players, agents, stakes, [.. deck.Cards], random, round, observer);
+        return new RoundEngine(
+            players, agents, stakes, [.. deck.Cards], random, round, observer, streak);
     }
 
     /// <summary>
@@ -206,6 +218,13 @@ public sealed class RoundEngine
 
         var players = Table.Players;
 
+        // RULES.md §7.4: a thirteen that already wins is asked before anybody draws.
+        if (DeclaredOnTheDeal() is { } dealt)
+        {
+            Result = dealt;
+            return dealt;
+        }
+
         for (var turn = 1; ; turn++)
         {
             var seat = Table.SeatOf(players[(turn - 1) % players.Count]);
@@ -217,6 +236,58 @@ public sealed class RoundEngine
                 return result;
             }
         }
+    }
+
+    /// <summary>
+    /// Offers the declaration to any seat whose <b>dealt</b> thirteen already wins, in turn
+    /// order, before the first card is taken (RULES.md §7.4).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The first change to the shape of a round since P0, and it is one whole extra path
+    /// through the engine.</b> Every other declaration in this game follows a discard (§7.1: the
+    /// discard comes first and the reveal follows it); this one follows nothing, because there
+    /// is no fourteenth card to throw. ⚠️ <b>It exists because of §9 #38's recorded default —
+    /// <i>the dealt thirteen alone</i></b> — and not because a rule required it: the competing
+    /// reading is <i>the winner's first turn</i>, which needs no path at all and is a far
+    /// commoner event. Fenced by
+    /// <c>RoundEngineTests.TheDealBonusIsTheDealtThirteenAloneUntilTheExpertSaysOtherwise</c>.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The seat is asked, and may decline.</b> Declaring is a choice everywhere else
+    /// (§7.1), and there is no §5.1 exception in play here to make the move itself the
+    /// declaration — nobody has discarded anything. A seat that declines simply plays the round.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Asked in turn order, and the first to say yes ends the round.</b> Two seats can be
+    /// dealt winning thirteens at once — RULES.md §9 #48, opened by this packet — and turn order
+    /// is the recorded default because it is the order the table would have found out in.
+    /// </para>
+    /// </remarks>
+    private RoundResult? DeclaredOnTheDeal()
+    {
+        foreach (var player in Table.Players)
+        {
+            var seat = Table.SeatOf(player);
+
+            if (!HandEvaluator.TryFindCover(seat.Hand, Table.Rules, out var melds))
+            {
+                continue;
+            }
+
+            var context = new TurnContext(
+                Table, seat, _round, turnNumber: 0, availableDiscard: null,
+                canClaimTurnedUpMoneyCard: false, taken: null);
+
+            if (!_agents[player].Declare(context))
+            {
+                continue;
+            }
+
+            return Settle(seat, melds, turns: 0, fromTheInitialDeal: true);
+        }
+
+        return null;
     }
 
     private RoundResult? TakeTurn(PlayerState seat, PlayerState previous, int turn)
@@ -260,16 +331,34 @@ public sealed class RoundEngine
             return null;
         }
 
+        return Settle(seat, melds, turns: turn, fromTheInitialDeal: false);
+    }
+
+    /// <summary>
+    /// Lays the hand down and works out the money (RULES.md §7.1, §7.2).
+    /// </summary>
+    /// <remarks>
+    /// <b>Both ways of winning end here</b>, which is what keeps the two bonuses composing in one
+    /// place: the declared thirteen decide §7.3, the round's own shape decides §7.4, and the
+    /// match's streak — handed in at construction, never counted here — decides §7.5.
+    /// ⚠️ <b>The hand is this seat's <i>after</i> the discard</b> on an ordinary turn, which is
+    /// what "the declared thirteen" means (§7.1: the discard comes first and the reveal follows
+    /// it); on the initial deal there is no discard and it is the thirteen dealt.
+    /// </remarks>
+    private RoundResult Settle(PlayerState seat, IReadOnlyList<Meld> melds, int turns, bool fromTheInitialDeal)
+    {
         _observer.PlayerDeclared(seat.Id, melds);
 
-        // The declared thirteen decide the §7.3 bonus, so the hand goes to settlement — and it
-        // is this seat's hand *after* the discard, which is what "the declared thirteen" means
-        // (§7.1: the discard comes first and the reveal follows it).
+        var win = Win.Declared(
+            seat.Hand,
+            fromTheInitialDeal,
+            _streak.BlamesTheSeatAboveIfWonBy(seat.Id));
+
         var payouts = Settlement.ForRound(
             Table.Players, seat.Id, Table.Stakes, Table.MoneyCards, Table.Ownership, Table.Shoe,
-            seat.Hand);
+            win);
 
-        var result = new RoundResult(_round, seat.Id, melds, payouts, turn);
+        var result = new RoundResult(_round, seat.Id, melds, payouts, turns, win);
         _observer.RoundSettled(result);
         return result;
     }

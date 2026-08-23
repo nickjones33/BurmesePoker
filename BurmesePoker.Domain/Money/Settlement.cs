@@ -12,10 +12,11 @@ namespace BurmesePoker.Domain.Money;
 /// Two independent payments, in this order:
 /// </para>
 /// <list type="number">
-///   <item>every player except the winner pays the <see cref="Stakes.RoundValue"/> to the
-///   winner — flat in what the loser <i>held</i>, with no per-card penalty for unmelded cards
-///   (RULES.md §7.2), but <b>multiplied when the declared thirteen hold no joker</b>: ×2 at
-///   two, three or four seats and ×3 at five or more (RULES.md §7.3);</item>
+///   <item>the <b>round payment</b>: flat in what the loser <i>held</i>, with no per-card
+///   penalty for unmelded cards (RULES.md §7.2), but multiplied by how and when the hand was
+///   won and — on a third consecutive win — owed by one seat rather than by everybody. All of
+///   that is <see cref="Win"/>, and the column it produces is
+///   <see cref="RoundPayments"/> (RULES.md §7.3, §7.4, §7.5);</item>
 ///   <item>for each <b>owned</b> money card, its owner collects
 ///   <see cref="Stakes.MoneyCardValue"/> times the card's multiplier from <b>every other
 ///   player</b>. This settles regardless of who won, and the winner takes part in it both
@@ -29,25 +30,29 @@ namespace BurmesePoker.Domain.Money;
 /// before the walk below starts.
 /// </para>
 /// <para>
-/// 🔥 <b>Since RULES.md rev 26 the round payment is not flat, and it is not seat-count
-/// independent either.</b> A <b>jokerless</b> declaration pays the winner
-/// <see cref="TableRules.JokerlessMultiplier"/> times the round value from every loser
-/// (RULES.md §7.3) — the first thing in this game that pays for <i>how</i> the winner won
-/// rather than <i>that</i> they won. ⚠️ <b>The predicate is a property of the cards, not of the
-/// partition</b> (<see cref="IsJokerless"/>): a jokerless hand is jokerless under every cover
-/// of it, so nothing here asks an evaluator anything and <c>Meld.IsClean</c> — which is
+/// 🔥 <b>Since RULES.md rev 26 the round payment is not flat, and since rev 27 it is not even a
+/// payment from everybody.</b> A <b>jokerless</b> declaration pays the winner
+/// <see cref="TableRules.JokerlessMultiplier"/> times the round value (§7.3); a win from the
+/// <b>initial deal</b> pays <see cref="Win.DealBonusMultiplier"/> times it (§7.4); and on a
+/// <b>third consecutive win</b> the seat immediately above the winner pays the whole thing and
+/// the rest pay nothing (§7.5). ⚠️ <b>The jokerless predicate is a property of the cards, not of
+/// the partition</b> (<see cref="IsJokerless"/>): a jokerless hand is jokerless under every
+/// cover of it, so nothing here asks an evaluator anything and <c>Meld.IsClean</c> — which is
 /// §7.1.1's <i>required clean series</i>, a different rule sharing a word — is not consulted.
-/// ⚠️ <b>The multiplier reaches step 1 only.</b> The money-card settlement is untouched, which
-/// is RULES.md §9 #36's recorded default: three separate sayings name <i>the winning prize</i>
-/// and none names the money.
+/// ⚠️ <b>All three reach step 1 only.</b> The money-card settlement is untouched by every one of
+/// them, which is RULES.md §9 #36, #40 and #44's shared recorded default: the sayings name
+/// <i>the winning prize</i> and none names the money.
 /// </para>
 /// <para>
-/// <b>Settlement walks ownership records and looks at exactly one hand.</b> Ownership is
-/// conferred only by the deck and never transfers (RULES.md §4.4), so where a card now sits
-/// is irrelevant: a money card its owner discarded still pays that owner, one an opponent
-/// picked up still pays the player who drew it, and one nobody ever drew pays nobody. There
-/// is deliberately no table or player-state parameter below — and the one hand that is passed
-/// is the <b>winner's declared thirteen</b>, which step 1 needs and step 2 never reads.
+/// <b>Settlement walks ownership records and holds no history.</b> Ownership is conferred only
+/// by the deck and never transfers (RULES.md §4.4), so where a card now sits is irrelevant: a
+/// money card its owner discarded still pays that owner, one an opponent picked up still pays
+/// the player who drew it, and one nobody ever drew pays nobody. There is deliberately no table
+/// or player-state parameter below. ⚠️ <b>And there is deliberately no <i>match</i> either</b>:
+/// §7.5's streak is a property of a sequence of rounds, so this is <b>told</b> whether the win
+/// was a third in a row rather than counting one — the same division P33 made when it passed the
+/// declared thirteen in rather than deriving jokerlessness here. Counting streaks belongs to
+/// whatever owns a sequence of rounds, which is <see cref="Play.MatchEngine"/>.
 /// </para>
 /// <para>
 /// There is no score. Money is the only ledger (RULES.md §7.2).
@@ -77,10 +82,10 @@ public static class Settlement
     /// <see cref="Deck.Cards"/> is <b>shuffled</b> and would otherwise settle the wrong cards
     /// in silence.
     /// </param>
-    /// <param name="declaredHand">
-    /// The winner's declared thirteen, which decides the §7.3 bonus and nothing else. Required
-    /// rather than optional on purpose: a default would pay flat in silence, which is precisely
-    /// the bug this packet exists to remove.
+    /// <param name="win">
+    /// What this win was — jokerless (§7.3), from the initial deal (§7.4), a third consecutive
+    /// win (§7.5). Required rather than optional on purpose: a default would pay flat, from
+    /// everybody, in silence.
     /// </param>
     public static IReadOnlyDictionary<PlayerId, int> ForRound(
         IReadOnlyList<PlayerId> players,
@@ -89,14 +94,14 @@ public static class Settlement
         MoneyCardRegistry moneyCards,
         CardOwnership ownership,
         IReadOnlyList<Card> shoe,
-        IReadOnlyList<Card> declaredHand)
+        Win win)
     {
         ArgumentNullException.ThrowIfNull(players);
         ArgumentNullException.ThrowIfNull(stakes);
         ArgumentNullException.ThrowIfNull(moneyCards);
         ArgumentNullException.ThrowIfNull(ownership);
         ArgumentNullException.ThrowIfNull(shoe);
-        ArgumentNullException.ThrowIfNull(declaredHand);
+        ArgumentNullException.ThrowIfNull(win);
         RequireIndexAligned(shoe);
 
         // The ownership configuration, once a round rather than once a card: what a value
@@ -124,16 +129,13 @@ public static class Settlement
             throw new ArgumentException($"The winner {winner} is not at the table.", nameof(winner));
         }
 
-        // 1. The round payment, from every loser to the winner: flat in what they held, and
-        //    doubled or tripled when the winner declared without a joker (RULES.md §7.2, §7.3).
-        var payment = RoundPayment(stakes, TableRules.For(players.Count), IsJokerless(declaredHand));
-
-        foreach (var player in players)
+        // 1. The round payment: flat in what the losers held, multiplied by how and when the
+        //    winner won, and — on a third consecutive win — owed by one seat rather than by
+        //    everybody (RULES.md §7.2, §7.3, §7.4, §7.5). Worked out where every consumer that
+        //    has to display the split can ask for it too.
+        foreach (var (player, amount) in RoundPayments(players, winner, stakes, win))
         {
-            if (player != winner)
-            {
-                Pay(deltas, from: player, to: winner, payment);
-            }
+            deltas[player] += amount;
         }
 
         // 2. The money cards: pairwise, by owner, independently of who won.
@@ -188,20 +190,113 @@ public static class Settlement
     }
 
     /// <summary>
-    /// What one loser pays the winner under RULES.md §7.2 step 1, as amended by §7.3 — the
-    /// round value, times <see cref="TableRules.JokerlessMultiplier"/> on a jokerless
-    /// declaration.
+    /// What <b>one</b> payer owes the winner under RULES.md §7.2 step 1, as amended by §7.3 and
+    /// §7.4 — the round value, times what <see cref="Win.Multiplier"/> makes of how and when the
+    /// hand was won.
     /// </summary>
     /// <remarks>
-    /// ⚠️ Exposed because a consumer that splits a net delta into <i>the round</i> and <i>the
-    /// side bet</i> — the console's settlement panel, the harness's per-seat CSV row — has to
-    /// split it at the same place the domain settled it, or the bonus silently lands in the
-    /// side-bet column.
+    /// ⚠️ <b>This is not what the winner collects, and since RULES.md rev 27 the difference is
+    /// not just the seat count.</b> On a third consecutive win one seat owes this and the rest
+    /// owe nothing (§7.5), so a consumer wanting the round column wants
+    /// <see cref="RoundPayments"/> and not this.
     /// </remarks>
-    public static int RoundPayment(Stakes stakes, TableRules rules, bool jokerless)
+    public static int RoundPayment(Stakes stakes, TableRules rules, Win win)
     {
         ArgumentNullException.ThrowIfNull(stakes);
-        return stakes.RoundValue * (jokerless ? rules.JokerlessMultiplier : 1);
+        ArgumentNullException.ThrowIfNull(win);
+        return stakes.RoundValue * win.Multiplier(rules);
+    }
+
+    /// <summary>
+    /// RULES.md §7.2 step 1 alone, per player: what the <b>round payment</b> moves, positive to
+    /// collect, before the money cards settle on top of it. Everyone appears and the values sum
+    /// to zero.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Exposed because two consumers outside the domain draw this column, and they used to
+    /// re-derive it.</b> The console's settlement panel and the harness's per-seat CSV row both
+    /// split a net delta into <i>the round</i> and <i>the side bet</i>, and both did it by
+    /// assuming every loser paid the same amount — which stopped being true the day §7.5 was
+    /// recorded. Splitting a net at the wrong place posts the difference to the side-bet column,
+    /// where every money measurement reads it (BUILD-PLAN P35 build item 4).
+    /// </para>
+    /// <para>
+    /// ⚠️ <b><paramref name="seating"/> is the round's turn order and not a set.</b> §7.5 names
+    /// <em>the seat immediately above the winner</em>, so the order is load-bearing here in a way
+    /// it never was before: the same players in a different order name a different payer.
+    /// </para>
+    /// </remarks>
+    /// <param name="seating">The table in turn order (RULES.md §3 step 2).</param>
+    /// <param name="winner">Who went out. Must be seated.</param>
+    /// <param name="stakes">What the round was played for.</param>
+    /// <param name="win">What the win was.</param>
+    public static IReadOnlyDictionary<PlayerId, int> RoundPayments(
+        IReadOnlyList<PlayerId> seating,
+        PlayerId winner,
+        Stakes stakes,
+        Win win)
+    {
+        ArgumentNullException.ThrowIfNull(seating);
+        ArgumentNullException.ThrowIfNull(stakes);
+        ArgumentNullException.ThrowIfNull(win);
+
+        var payment = RoundPayment(stakes, TableRules.For(seating.Count), win);
+        var payments = seating.ToDictionary(player => player, _ => 0);
+
+        if (!payments.ContainsKey(winner))
+        {
+            throw new ArgumentException($"The winner {winner} is not at the table.", nameof(winner));
+        }
+
+        // §7.5: on a third consecutive win the seat above pays the winner's WHOLE round payment
+        // and nobody else pays anything — blamed for feeding the streak. ⚠️ <b>The winner
+        // collects the same either way</b>: the rule substitutes who owes it, not how much is
+        // owed, so the one seat pays what all of them would have paid between them. (RULES.md
+        // §5.1 names the same edge of the table, and §4.5 a third time.)
+        if (win.PaidByTheSeatAboveAlone)
+        {
+            var blamed = SeatAbove(seating, winner);
+
+            payments[blamed] -= payment * (seating.Count - 1);
+            payments[winner] += payment * (seating.Count - 1);
+        }
+        else
+        {
+            foreach (var payer in seating.Where(player => player != winner))
+            {
+                payments[payer] -= payment;
+                payments[winner] += payment;
+            }
+        }
+
+        return payments;
+    }
+
+    /// <summary>
+    /// The seat immediately <b>above</b> <paramref name="player"/> in turn order — the one that
+    /// discards to them, and so the only one that can feed them (RULES.md §5, §5.1).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>The third rule to single out this edge of the table.</b> §5.1 bans you from feeding
+    /// the seat below you, §4.5 makes a claim need the permission of the seat above you, and §7.5
+    /// blames the seat above you for a streak — three sayings, from two people, all naming the
+    /// same relationship. ⚠️ <b>Two-handed it is the same seat both ways</b>, which is the rule
+    /// working rather than a case to special-case (§9 #25).
+    /// </remarks>
+    public static PlayerId SeatAbove(IReadOnlyList<PlayerId> seating, PlayerId player)
+    {
+        ArgumentNullException.ThrowIfNull(seating);
+
+        for (var seat = 0; seat < seating.Count; seat++)
+        {
+            if (seating[seat] == player)
+            {
+                return seating[(seat + seating.Count - 1) % seating.Count];
+            }
+        }
+
+        throw new ArgumentException($"{player} is not in this seating.", nameof(player));
     }
 
     private static void Pay(Dictionary<PlayerId, int> deltas, PlayerId from, PlayerId to, int amount)

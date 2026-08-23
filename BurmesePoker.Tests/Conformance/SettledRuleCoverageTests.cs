@@ -125,22 +125,54 @@ public class SettledRuleCoverageTests
             + "was missing rather than because no ordinary-play check could exist. P33 built "
             + "the rule and converted it, which is the alarm being answered rather than "
             + "silenced."),
-        ["7.4"] = Exempt(
-            "The deal bonus (RULES.md rev 27, EXPERT, Aung Aung): a win from the initial deal "
-            + "pays ×2. ⚠️ Recorded and NOT built — §10 #20, packet P35 — so there is nothing "
-            + "for an ordinary-play check to re-derive. 🔥 It also cannot arise in an ordinary "
-            + "round yet under §9 #38's recommended reading: the engine has no path that offers "
-            + "a declaration before the first turn, because a round begins by asking seat 0 to "
-            + "take a card. Converting this to Checked(...) is P35 acceptance 1, in exactly the "
-            + "way §7.3's entry was converted by P33."),
-        ["7.5"] = Exempt(
-            "The feeding blame (RULES.md rev 27, EXPERT, Aung Aung): a third consecutive win is "
-            + "paid entirely by the seat above the winner. ⚠️ Recorded and NOT built — §10 #21, "
-            + "packet P35. 🔥 And it is the first Settled rule in this document that CANNOT be "
-            + "audited by this harness even once it is built: RuleConformance watches ordinary "
-            + "rounds, and a three-round streak is not a property of a round. P35 owns the "
-            + "multi-round conformance case; this exemption names the reason rather than "
-            + "hiding it."),
+        ["7.4"] = Checked(
+            "The deal bonus, re-derived from the shape of the round: a declaration that follows "
+            + "no discard is a win from the initial deal and pays ×2 on top of §7.3, and the "
+            + "mutants that pay it flat, pay it to a winner who played a turn, or replace §7.3's "
+            + "multiplier instead of multiplying with it are all caught: "
+            + "RuleConformanceTests.MutantTheDealBonusIsCaughtBothWaysRound; the engine path "
+            + "itself: RoundEngineTests.AThirteenThatAlreadyWinsIsLaidDownBeforeAnybodyDrawsAnd"
+            + "PaysDouble; the arithmetic: SettlementTests.AWinFromTheInitialDealPaysDouble. "
+            + "🔥 This entry was an Exempt(...) between rev 27 and P35, because the engine had "
+            + "no path that could offer a declaration before the first turn — a round began by "
+            + "asking seat 0 to take a card. P35 built the path and converted it. ⚠️ Three "
+            + "details are open and all three proceed on their recorded defaults, each fenced by "
+            + "a test named for the question: §9 #38 (the dealt thirteen alone, not the winner's "
+            + "first turn) — RoundEngineTests.TheDealBonusIsTheDealtThirteenAloneUntilTheExpert"
+            + "SaysOtherwise; §9 #39 (the two bonuses multiply) — SettlementTests.TheTwoBonuses"
+            + "MultiplyUntilTheExpertSaysOtherwise; §9 #40 (round payment only, never the money "
+            + "cards) — SettlementTests.TheDealBonusDoesNotReachTheMoneyCards. ⚠️ And §9 #48, "
+            + "opened by P35: two seats dealt a winning thirteen at once, where the earlier in "
+            + "turn order takes it — RoundEngineTests.WhenTwoSeatsAreDealtAWinningThirteenThe"
+            + "EarlierInTurnOrderTakesIt."),
+        ["7.5"] = Checked(
+            "The feeding blame, re-derived over a SEQUENCE of rounds: "
+            + "RuleConformanceTests.AStreakOfWinsBreaksNoSettledRuleAndIsBilledToTheSeatAbove at "
+            + "4 and 5 seats keeps its own count of consecutive wins, hands it to a fresh audit "
+            + "each round, and asserts that a run really occurred — so a lucky run of 120 rounds "
+            + "containing no streak fails rather than passing vacuously. RuleConformance then "
+            + "re-derives the blamed seat from THAT round's seating and checks the engine's own "
+            + "account of the win agrees. The mutants that spread the payment over the table, "
+            + "bill the seat below instead of the seat above, or bill one loser's share instead "
+            + "of the winner's whole payment are caught: "
+            + "RuleConformanceTests.MutantTheFeedingBlameIsCaughtWhoeverIsBilled. The counting: "
+            + "MatchEngineTests.AThirdConsecutiveWinIsPaidEntirelyByTheSeatAboveTheWinner and "
+            + "TheStreakIsCountedHereBecauseARoundCannotKnowItAboutItself; the arithmetic: "
+            + "SettlementTests.AThirdConsecutiveWinIsPaidEntirelyByTheSeatAboveTheWinner. "
+            + "🔥 This entry was an Exempt(...) between rev 27 and P35 that said this rule could "
+            + "never be audited by this harness, because RuleConformance watches ordinary rounds "
+            + "and a three-round streak is not a property of a round. 🔥 That was half right: the "
+            + "audit still watches one round, but it can be TOLD what the rounds before it did — "
+            + "the count kept by the driver rather than by the engine — and re-derive the "
+            + "consequence. ⚠️ Two details are open on their recorded defaults, each fenced: §9 "
+            + "#41 (the streak keeps firing at a fourth win) — MatchEngineTests.TheStreakKeeps"
+            + "FiringUntilTheExpertSaysOtherwise; §9 #46 (the seating of the round being settled "
+            + "decides who is blamed, now that the seats can move mid-streak) — "
+            + "RoundEngineTests.TheSeatBlamedIsTakenFromTheSeatingOfTheRoundBeingSettled. §9 #44 "
+            + "(the substitution never reaches the money cards): "
+            + "SettlementTests.TheStreakSubstitutionDoesNotReachTheMoneyCards. ✅ Whether §7.5 is "
+            + "in the standing measurement set is answered in docs/STRATEGY.md §11: it is not, "
+            + "and cannot be — every experiment plays one round a game."),
     };
 
     // §9 (the question ledger) and §10 (the divergence ledger) are deliberately absent: they
@@ -200,9 +232,15 @@ public class SettledRuleCoverageTests
     /// test exists to prevent, and a bare number never caught that.
     /// </para>
     /// <para>
-    /// ✅ <b>What brings it back down</b>: P35 converts §7.4 and §7.5 to <c>Checked</c>, and P36
-    /// makes §3's entry true again. <b>If this ceiling has to move a second time, that is a
-    /// finding about the backlog and not a licence.</b>
+    /// ✅ <b>It came back down on 2026-08-22, and to 6 rather than to 5.</b> P36 made §3's entry
+    /// true again and P35 converted §7.4 and §7.5 — but each of those two arrived carrying open
+    /// §9 questions, so they moved from <b>whole</b> exemptions to <b>partial</b> ones and the
+    /// total did not budge. 🔥 <b>What did change is the kind: there are no whole exemptions at
+    /// all, for the first time since this test was written.</b> Every Settled rule in
+    /// <c>RULES.md</c> is checked by something; what is left is six sections with a corner
+    /// proceeding on a recorded default, each fenced by a test named for the question.
+    /// <b>If this ceiling has to move up again, that is a finding about the backlog and not a
+    /// licence.</b>
     /// </para>
     /// </remarks>
     [Fact]
@@ -217,7 +255,7 @@ public class SettledRuleCoverageTests
 
         var exemptions = whole.Concat(partial).ToList();
 
-        Assert.InRange(exemptions.Count, 1, 7);
+        Assert.InRange(exemptions.Count, 1, 6);
 
         Assert.All(exemptions, entry => Assert.True(
             entry.Value.Length > 60, $"§{entry.Key}'s exemption says nothing a reader can re-check."));

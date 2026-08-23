@@ -142,6 +142,26 @@ public sealed class MatchEngine
     public int RoundsPlayed { get; private set; }
 
     /// <summary>
+    /// How many rounds in a row the last winner has now won (RULES.md §7.5).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The only state in this project that reaches across rounds and is not money.</b> §7.5
+    /// pays a third consecutive win out of one seat's pocket, and a round cannot know that about
+    /// itself — so the count is kept here, where a sequence of rounds is owned, and handed
+    /// <em>down</em> to each round as it is dealt. <see cref="Money.Settlement"/> is told the
+    /// answer and never asks, exactly as it is told whether the declaration was jokerless.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>It is not reset by a re-seating.</b> The seats can move between the rounds of a
+    /// streak — by policy (P36) or because the table agreed (P37) — and the streak is about who
+    /// keeps winning rather than about where anybody sits. Who gets <em>blamed</em> is read off
+    /// the seating of the round being settled, which is RULES.md §9 #46's recorded default.
+    /// </para>
+    /// </remarks>
+    public WinStreak Streak { get; private set; } = WinStreak.None;
+
+    /// <summary>
     /// Plays the next round from a freshly shuffled shoe, and the seating this table is holding
     /// (RULES.md §3 steps 1 and 2).
     /// </summary>
@@ -177,10 +197,11 @@ public sealed class MatchEngine
     public RoundRecord PlayRound(IReadOnlyList<Card> drawOrder)
     {
         var engine = new RoundEngine(
-            Seating, _agents, Stakes, drawOrder, _random, RoundsPlayed + 1, _observer);
+            Seating, _agents, Stakes, drawOrder, _random, RoundsPlayed + 1, _observer, Streak);
 
         var result = engine.Play();
         RoundsPlayed++;
+        Streak = Streak.After(result.Winner);
 
         foreach (var (player, delta) in result.Payouts)
         {

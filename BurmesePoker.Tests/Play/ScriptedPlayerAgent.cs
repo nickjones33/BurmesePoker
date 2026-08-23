@@ -39,6 +39,19 @@ internal sealed class ScriptedPlayerAgent : IPlayerAgent
     /// <summary>Whether it refuses the seat after it the turned-up money card (RULES.md §4.5).</summary>
     public bool Objects { get; set; }
 
+    /// <summary>
+    /// Whether it lays down a <b>dealt</b> winning thirteen before anybody draws (RULES.md §7.4).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A standing answer rather than a scripted turn, because the initial deal is not a
+    /// turn</b> — it is <see cref="TurnContext.TurnNumber"/> 0, and the script advances by turn
+    /// number. <b>The default is no, and that is deliberate rather than incidental</b>: declaring
+    /// is a choice everywhere else in the game (§7.1), and a great many tests here deal a seat a
+    /// winning thirteen in order to script what it does with it on turn 1. A seat that grabbed
+    /// the deal bonus by default would end most of those rounds before they began.
+    /// </remarks>
+    public bool DeclaresOnTheDeal { get; set; }
+
     public bool ClaimTurnedUpMoneyCard(TurnContext context)
     {
         Sync(context);
@@ -90,6 +103,11 @@ internal sealed class ScriptedPlayerAgent : IPlayerAgent
 
     public bool Declare(TurnContext context)
     {
+        if (context.TurnNumber == 0)
+        {
+            return DeclaresOnTheDeal;
+        }
+
         Sync(context);
         return _current.Declare;
     }

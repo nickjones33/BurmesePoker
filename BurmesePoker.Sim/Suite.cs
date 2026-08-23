@@ -569,6 +569,24 @@ public static class Suite
                 string.Empty));
 
             measurements.Add(new SuiteMeasurement(
+                $"bonus.deal-rate.{scope}",
+                "Share of settled rounds won on the **initial deal** — the thirteen dealt "
+                + "already won and nobody drew a card — which RULES.md §7.4 pays a further ×2 "
+                + "for on top of §7.3. ⚠️ **Expected to be zero or near it, and published for "
+                + "that reason**: §7.4 is the one rule packet P35 built that a "
+                + "one-round-per-game harness can observe at all, so this is the row that would "
+                + "explain a money figure moving under it. §7.5, the feeding blame, needs three "
+                + "consecutive wins and cannot occur here — see docs/STRATEGY.md §11. ⚠️ It "
+                + "counts §9 #38's recorded default, the dealt thirteen alone; under the "
+                + "competing reading — the winner's first turn — it would be a commoner event "
+                + "entirely.",
+                command,
+                scope,
+                "deal-bonus rate",
+                new Measurement(cell.Rounds, cell.DealWinRate, 0),
+                string.Empty));
+
+            measurements.Add(new SuiteMeasurement(
                 $"claim.attempt-rate.{scope}",
                 "Share of rounds in which the opener asked for the turned-up money card at all "
                 + "— the denominator the refusal rate is out of.",

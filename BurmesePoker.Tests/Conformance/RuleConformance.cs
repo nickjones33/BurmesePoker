@@ -236,8 +236,20 @@ internal sealed class RuleConformance : IGameObserver
         // §7.1: the discard comes first and the reveal follows it — so the declarer is the seat
         // that has just completed its turn, holding thirteen again.
         Assert.Equal(_takes, _discards);
-        Assert.Equal(_seating[(_discards - 1) % _seating.Count], player);
         Assert.Null(_declaredBy);
+
+        if (_discards == 0)
+        {
+            // §7.4: the one declaration that follows no discard, because there is no fourteenth
+            // card to throw — the thirteen dealt already won. ⚠️ It may come from ANY seat, not
+            // from the one whose turn it would have been: nobody has had a turn.
+            Assert.Contains(player, _seating);
+        }
+        else
+        {
+            Assert.Equal(_seating[(_discards - 1) % _seating.Count], player);
+        }
+
         _declaredBy = player;
 
         ADeclaredHandSatisfiesTheTable(melds, Table.SeatOf(player).Hand, TableRules.For(_seating.Count));
@@ -251,11 +263,39 @@ internal sealed class RuleConformance : IGameObserver
         Assert.Equal(_discards, result.Turns);
         _settled = result;
 
+        // §7.4 and §7.5, re-derived rather than read off the result: a win from the initial
+        // deal is one that happened before any turn did, and a third consecutive win is one
+        // this audit was told about before the round started. ⚠️ The seat blamed is taken from
+        // THIS round's seating (§9 #46).
+        var fromTheInitialDeal = result.Turns == 0;
+        var blamed = Streak.Player == result.Winner && Streak.InARow + 1 >= 3
+            ? _seating[(_seating.ToList().IndexOf(result.Winner) + _seating.Count - 1) % _seating.Count]
+            : (PlayerId?)null;
+
+        // …and having derived them, the engine's own account of the win must agree. A round
+        // that settled correctly while describing itself wrongly would mislead every consumer
+        // that splits the net delta by it (BUILD-PLAN P35 build item 4).
+        Assert.Equal(fromTheInitialDeal, result.Win.FromTheInitialDeal);
+        Assert.Equal(blamed is not null, result.Win.ThirdConsecutiveWin);
+
         TheSettlementIsTheRules(
             result.Payouts, result.Winner, _seating, Table.Stakes, _turnedUp,
-            Table.Ownership.Records, Table.Shoe, result.Melds);
+            Table.Ownership.Records, Table.Shoe, result.Melds, fromTheInitialDeal, blamed);
         EverythingHolds(allowedNewOwnership: null);
     }
+
+    /// <summary>
+    /// What the winner had won going <b>into</b> this round (RULES.md §7.5) — set by whoever is
+    /// driving a sequence of rounds, and left alone for a standalone round.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>The first thing this audit has ever had to be told that is not in the round it is
+    /// watching.</b> §7.5 is the first Settled rule that cannot be settled from one round, so an
+    /// audit that watches one round cannot derive it — it can only re-derive the consequence
+    /// from a count somebody else kept. ⚠️ <b>The count is kept by the test, independently of
+    /// <c>MatchEngine</c></b>, which is what keeps this a check rather than a mirror.
+    /// </remarks>
+    public (PlayerId? Player, int InARow) Streak { get; set; }
 
     /// <summary>The audit's own end: the round really settled and nothing is left pending.</summary>
     public void RoundIsSettled()
@@ -487,24 +527,40 @@ internal sealed class RuleConformance : IGameObserver
         IReadOnlyList<Card> turnedUp,
         IReadOnlyDictionary<CardId, PlayerId> ownership,
         IReadOnlyList<Card> shoe,
-        IReadOnlyList<Meld> declared)
+        IReadOnlyList<Meld> declared,
+        bool fromTheInitialDeal = false,
+        PlayerId? blamed = null)
     {
         var expected = players.ToDictionary(player => player, _ => 0);
 
-        // §7.2 step 1, as amended by §7.3: the round payment. No per-card penalty exists, so
-        // this is the whole of what losing costs — but it is not flat any more. A declaration
-        // with no joker anywhere in the thirteen pays ×2 at two, three or four seats and ×3 at
-        // five or more, re-derived here from the seat count and the cards laid down rather than
-        // asked of TableRules or of Settlement.
+        // §7.2 step 1, as amended by §7.3 and §7.4: the round payment. No per-card penalty
+        // exists, so this is the whole of what losing costs — but it is not flat any more. A
+        // declaration with no joker anywhere in the thirteen pays ×2 at two, three or four seats
+        // and ×3 at five or more; a win from the initial deal pays ×2 on top of that (§9 #39:
+        // they multiply). Re-derived here from the seat count, the cards laid down and the shape
+        // of the round rather than asked of TableRules, Win or Settlement.
         var jokerless = declared.SelectMany(meld => meld.Cards).All(card => !card.IsJoker);
-        var payment = stakes.RoundValue * (jokerless ? players.Count >= 5 ? 3 : 2 : 1);
+        var payment = stakes.RoundValue
+            * (jokerless ? players.Count >= 5 ? 3 : 2 : 1)
+            * (fromTheInitialDeal ? 2 : 1);
 
-        foreach (var player in players)
+        if (blamed is { } payer)
         {
-            if (player != winner)
+            // §7.5: a third consecutive win is paid entirely by the seat above the winner — the
+            // whole of what the table would have paid between them, out of one pocket.
+            Assert.NotEqual(winner, payer);
+            expected[payer] -= payment * (players.Count - 1);
+            expected[winner] += payment * (players.Count - 1);
+        }
+        else
+        {
+            foreach (var player in players)
             {
-                expected[player] -= payment;
-                expected[winner] += payment;
+                if (player != winner)
+                {
+                    expected[player] -= payment;
+                    expected[winner] += payment;
+                }
             }
         }
 

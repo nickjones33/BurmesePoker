@@ -990,6 +990,43 @@ table that is heard in full by everybody, including the watcher who holds no sea
 
 ---
 
+### 3.14 What a win *was* is a record; settlement is told, never made to remember
+
+**Settled by P35, 2026-08-22**, building `RULES.md` §7.4 (a win from the initial deal pays ×2) and
+§7.5 (a third consecutive win is paid entirely by the seat above the winner).
+
+🔥 **The round payment has taken four qualifications in three days and a fifth should be expected.**
+§7.2 step 1 was *flat* for twenty-four revisions; it is now not flat in **how** the winner won
+(§7.3), not flat in **how many** are playing (§7.3), not flat in **when** they won (§7.4), and not
+even a payment from everybody (§7.5). ✅ **So `Settlement.RoundPayment` takes a `Win` record rather
+than a growing list of flags**, and `RoundResult` carries the same record — because two of the
+three facts on it are things no consumer can re-derive from the cards.
+
+🔥 **The division that made §7.5 buildable: `Settlement` is *told*, and never made to remember.**
+A streak is a property of a sequence of rounds and settlement is a pure function of one. The count
+lives on `MatchEngine.Streak`, where a sequence of rounds is owned, and is handed **down** to each
+round as it is dealt — exactly as P33 handed the declared thirteen down rather than deriving
+jokerlessness inside the settlement. ⚠️ **`Settlement` still takes no table, no player state, no
+match and no history**, which is a parameter-list guarantee asserted by a test.
+
+⚠️ **A round can now contain no turn at all, and that is the first change to the shape of a round
+since P0.** §9 #38's recorded default makes §7.4 about *the dealt thirteen alone*, so
+`RoundEngine.Play` offers the declaration before the first take. **`TurnNumber` 0 is now a real
+value** — a question asked outside any turn — which was already true of P37's seating question and
+is now true of a declaration too. Anything keying on `(Round, TurnNumber)` sees it: the journal
+(where both live at turn 0, in the order they are asked), the console's turn heading, the server's
+`TurnBegan`. ⚠️ **A rule that reaches a front end through a turn number is a rule that has to say
+what 0 means.**
+
+🔥 **And where a net delta is split, the split is asked for rather than re-derived.** The console's
+settlement panel and the harness's per-seat CSV row both cut a net into *the round* and *the side
+bet*, and both did it by assuming every loser paid the same amount — true from rev 1 until rev 27.
+`Settlement.RoundPayments` is that column, computed once in the domain and read by both. ⚠️ **The
+failure mode is silent by nature**: a split at the wrong place posts the difference into the
+side-bet column, where every money measurement reads it, and the totals still add up.
+
+---
+
 ## 4. Packet dependency graph
 
 ```
@@ -6144,7 +6181,7 @@ The prompt is a `SelectionPrompt<SeatingPolicy>` over `SeatingPolicy.Offered`, w
 
 ---
 
-### P35 — The two scoring rules that reach outside a round ☐ — **added 2026-08-22**
+### P35 — The two scoring rules that reach outside a round ☑ — **added and built 2026-08-22 (Opus 5)**
 
 **Goal.** Build `RULES.md` **§7.4** (a win from the initial deal pays ×2) and **§7.5** (a third
 consecutive win is paid entirely by the seat above the winner), and re-measure underneath them.
@@ -6259,6 +6296,65 @@ across rounds is either measured or explicitly and visibly not.
 
 ---
 
+#### ✅ Built 2026-08-22 (Opus 5) — what it turned out to be
+
+**`RULES.md` is rev 30 and §10 is empty: every rule the document records as Settled is
+implemented.** Six §9 defaults were built on, every one fenced by a test named for the question,
+and **one new question was opened (§9 #48)**.
+
+🔥 **(1) The costly half was §7.4, not §7.5, and this entry had it the other way round.** §9 #38's
+recorded default — *the dealt thirteen alone* — needed a whole new path through `RoundEngine`:
+every seat whose **dealt** hand already covers is offered the declaration, in turn order, before
+the first take. **A round can now run no turns at all** (`RoundResult.Turns` is 0), which is the
+first change to the shape of a round since P0, and it makes `TurnNumber` **0** a real value that
+reaches the journal, the console's turn heading and the server's `TurnBegan`. ⚠️ **It also opened
+§9 #48** — two seats dealt a winning thirteen at once — which no saying covers and which the engine
+answers *earlier in turn order*.
+
+🔥 **(2) §7.5 was cheap once the division was seen: settlement is *told*, never made to remember.**
+The count lives on `MatchEngine.Streak` and is handed down to each round as it is dealt.
+**`Settlement` still holds no history and takes no match** — asserted over the parameter list — and
+`Win` is the record it is told. ⚠️ **The reading matters, and the first implementation got it
+backwards**: *"pays your whole payout"* means the winner collects **exactly what they would have
+collected**, out of one pocket. Paying one loser's share instead would leave a player four fifths
+worse off for winning three in a row, and it took a test to notice.
+
+🔥 **(3) The consumer trap this entry predicted was real, and the fix was to delete the
+re-derivation rather than to extend it.** `Settlement.RoundPayments` is the round column, computed
+once in the domain; the console's settlement panel and `SeatRow.Flat` both read it. ⚠️ **Both had
+assumed every loser pays the same amount** — true from rev 1 until rev 27 — and a split at the
+wrong place posts the difference into the side-bet column, where every money measurement reads it,
+**with the totals still adding up**.
+
+⚠️ **(4) A scripted test agent was silently declining the new question, and that was luck rather
+than design.** `ScriptedPlayerAgent` advances its script by turn number and was constructed at turn
+0, so it answered *no* to the deal declaration without ever being asked to. **A great many tests
+deal a seat a winning thirteen in order to script what it does on turn 1**, and a default of *yes*
+would have ended most of those rounds before they began. It is now an explicit `DeclaresOnTheDeal`,
+defaulted to no and documented as a decision. **Exactly two tests really did change behaviour, and
+both for the right reason**: the three-round bank test's third round is now billed to one seat, and
+the round-number test now sees turn 0 before turn 1.
+
+🔥 **(5) The conformance harness gained its first multi-round case, and the exemption that said it
+could never have one was half wrong.** §7.5's `Exempt` reasoned that `RuleConformance` watches
+ordinary rounds and a streak is not a property of a round. **It still watches one round — but it
+can be *told* what the rounds before it did**, with the count kept by the driver rather than read
+off `MatchEngine`, and re-derive the consequence.
+`AStreakOfWinsBreaksNoSettledRuleAndIsBilledToTheSeatAbove` plays 120 rounds at four and five seats
+and **fails if no streak occurred**, so it cannot pass vacuously. ✅ **Both registry entries are
+`Checked`, and there are now no whole exemptions at all** — the first time since P30.2 wrote that
+test; the ceiling came down 7 → 6.
+
+✅ **(6) Acceptance 4, stated either way.** §7.5 is **not** in the standing measurement set and
+cannot be while `RoundsPerGame = 1` stands (§3.8) — `docs/STRATEGY.md` §11 says so, and says what
+is therefore unknown: **what §7.5 is worth, and whether asking to change seats before somebody's
+third win is a strategy.** §7.4 *is* observable in a one-round game, so `bonus.deal-rate.*` is in
+`measurements.csv` beside `bonus.jokerless-rate.*` — which is also the row that would explain a
+money figure moving.
+
+
+---
+
 ### P34 — A front door, and a documentation set that cannot go stale quietly ☐ — **added 2026-08-22**
 
 **Goal.** Somebody who has never seen this repository can arrive at it, understand what it is
@@ -6334,8 +6430,32 @@ job is a front door and a smoke alarm, not a rewrite.
 cannot go stale without something turning red.
 
 ⚠️ **This packet is independent of the rules work and of the measurement programme** — it needs no
-expert answer and regenerates nothing. 🔥 **So it is the packet to run while P33 is blocked on
-§9 #33–#36**, and it is the cheapest one on the plan.
+expert answer and regenerates nothing. ⚠️ **P33 has shipped and so has everything else, so it is no
+longer the packet to run *instead* of anything: it is the only packet left on the plan.**
+
+---
+
+#### Re-planned by P35, 2026-08-22 — a fifth check, and two more claims to watch
+
+🔥 **Add a fifth check, and it is the one this project has most earned: every recorded default in
+`RULES.md` §9 that says *"built on this default"* must name a test that exists.** P26, P33, P35,
+P36 and P37 have now all shipped rules built on open questions, and the discipline each time was
+*fence it with a test named for the question, so the day an answer arrives the failing test is the
+change list*. **P35 alone did it six times** (§9 #38, #39, #40, #41, #44, #46). ⚠️ **A fence that
+has been renamed or deleted is worse than no fence**, because the document goes on promising it —
+and nothing currently checks that the names in §9 resolve. The parse is the same shape as
+`SettledRuleCoverageTests`', which already reads `RULES.md` and matches against code.
+
+⚠️ **Two more claims for the staleness pass to know about.** **(1)** `docs/STRATEGY.md` §11 now
+carries a *negative* measurement claim — that §7.5 is **not** in the standing set and cannot be —
+which is prose that would go quietly wrong the day somebody builds a match-level harness. **(2)**
+The exemption ceiling in `SettledRuleCoverageTests` is a number in a test that a status file also
+quotes; P35 moved it 7 → 6.
+
+✅ **And the "was true when it was written" example in build item 4 can be retired.** *"Every rule
+this document records as Settled is implemented"* is **true again** as of P35 — §10 is empty — so
+the sentence to hunt is no longer that one. **It is a better example for having been false twice
+and true three times**; keep it as the illustration and stop using it as the bug.
 
 ---
 

@@ -24,24 +24,35 @@ namespace BurmesePoker.Domain.Play;
 /// How many turns the round ran, counting the winner's last one. Carried here because the
 /// engine has the number for free in the loop it already keeps; every other statistic is
 /// derived by the consumer from the observer stream or the table (BUILD-PLAN §3.8).
+/// ⚠️ <b>It is <c>0</c> on a win from the initial deal</b> (RULES.md §7.4): the thirteen dealt
+/// already won and nobody ever took a card, which is the first round shape this engine has had
+/// that contains no turn at all.
+/// </param>
+/// <param name="Win">
+/// What this win <b>was</b> — jokerless, from the initial deal, a third consecutive win
+/// (RULES.md §7.3, §7.4, §7.5). 🔥 <b>Carried because a consumer cannot re-derive it any more.</b>
+/// Two of the three are not properties of the cards: whether the round had turns, and what
+/// happened in the two rounds before it. A front end splitting a net delta into <i>the round</i>
+/// and <i>the side bet</i> needs all three, and asks <see cref="Settlement.RoundPayments"/> with
+/// this.
 /// </param>
 public sealed record RoundResult(
     int Round,
     PlayerId Winner,
     IReadOnlyList<Meld> Melds,
     IReadOnlyDictionary<PlayerId, int> Payouts,
-    int Turns)
+    int Turns,
+    Win Win)
 {
     /// <summary>
     /// Whether the winner declared without a joker anywhere in the thirteen, which is what
     /// RULES.md §7.3 pays ×2 or ×3 for.
     /// </summary>
     /// <remarks>
-    /// Read off <see cref="Melds"/> because the melds partition exactly the declared thirteen
-    /// (§6.3), so a consumer holding a result needs nothing else to know what the round was
-    /// worth. ⚠️ <b>It is a property of the cards and not of this particular cover</b> — every
-    /// cover of the same thirteen answers the same — so "a cover, not the tidiest one" above
-    /// costs this nothing.
+    /// ⚠️ <b>Read off <see cref="Win"/> since P35, and it used to be read off <see cref="Melds"/>.</b>
+    /// Both answer the same — the melds partition exactly the declared thirteen (§6.3), and
+    /// jokerlessness is a property of the cards rather than of a particular cover — but the win
+    /// is now carried whole, and one place is better than two.
     /// </remarks>
-    public bool Jokerless => Settlement.IsJokerless(Melds.SelectMany(meld => meld.Cards));
+    public bool Jokerless => Win.Jokerless;
 }

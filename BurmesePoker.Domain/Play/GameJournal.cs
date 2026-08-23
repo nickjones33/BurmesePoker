@@ -160,8 +160,14 @@ public sealed record JournalHeader(
     /// Rev 29 rules §9 #45: a re-seating happens when the players <em>agree</em>, not when one of
     /// them asks — <c>PLAYER</c>, and the work splits into P36 (hold the seating) and P37 (the
     /// agreeing).
+    /// Rev 30 changes play, and it is P35 landing rather than a new saying: §7.4 and §7.5 are
+    /// built. ⚠️ <b>Both matter to a replay.</b> §7.4 puts a sixth kind of moment in a journal —
+    /// a <c>Declare</c> at <b>turn 0</b>, before anybody has drawn — so a journal written before
+    /// this revision that happens to deal a winning thirteen will diverge <em>loudly</em> on
+    /// replay rather than quietly, which is the intended behaviour. §7.5 needs nothing written
+    /// down at all: a streak is derived from the results a replay reproduces anyway.
     /// </remarks>
-    public const int CurrentRulesRevision = 29;
+    public const int CurrentRulesRevision = 30;
 
     /// <summary>
     /// How long the seating held (RULES.md §3 step 2), as the policy this match played under.

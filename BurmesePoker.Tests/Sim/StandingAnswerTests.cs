@@ -316,6 +316,38 @@ public class StandingAnswerTests
     }
 
     /// <summary>
+    /// ✅ <b>P35 — the document says how often a hand wins before anybody plays it</b>
+    /// (<c>RULES.md</c> §7.4, <c>docs/STRATEGY.md</c> §15).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The row that would explain a money figure moving.</b> §7.4 is the one rule packet P35
+    /// built that a one-round-per-game harness can observe at all, so if a published dollar figure
+    /// shifts under it, this is the column that says why. ⚠️ <b>It is expected to be very small</b>
+    /// — about one deal in 3,700 at P35's run — and the assertion is that it is a rate and that it
+    /// is <b>published</b>, never that it is any particular number.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Its sibling §7.5 has no row and cannot have one</b>, which <c>docs/STRATEGY.md</c> §11
+    /// states out loud: a third consecutive win cannot occur while every experiment plays one
+    /// round a game (BUILD-PLAN §3.8). <b>An absent measurement with a written reason is a
+    /// different thing from an absent measurement.</b>
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheDocumentSaysHowOftenAHandWinsBeforeAnybodyPlaysIt()
+    {
+        foreach (var scope in new[] { "ladder", "difficulty", "claim-permission" })
+        {
+            var row = Row($"bonus.deal-rate.{scope}");
+            var rate = double.Parse(row[Column.Mean], CultureInfo.InvariantCulture);
+
+            Assert.InRange(rate, 0, 1);
+            Assert.Equal("deal-bonus rate", row[Column.Metric]);
+        }
+    }
+
+    /// <summary>
     /// ✅ <b>P32 — the document is about the table this game is actually played at.</b>
     /// </summary>
     /// <remarks>

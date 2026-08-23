@@ -30,7 +30,10 @@ namespace BurmesePoker.Server;
 /// <param name="Player">Whose seat is being asked.</param>
 /// <param name="Question">Which of the five questions this is.</param>
 /// <param name="Round">Which round of the match, counting from 1.</param>
-/// <param name="TurnNumber">Which turn of the round, counting from 1.</param>
+/// <param name="TurnNumber">
+/// Which turn of the round, counting from 1 — and <b>0</b> for the one question that is not asked
+/// during a turn: whether to lay down a thirteen that already won on the deal (RULES.md §7.4).
+/// </param>
 /// <param name="AvailableDiscard">The previous player's top discard, or null on the opening turn.</param>
 /// <param name="CanClaimTurnedUpMoneyCard">Whether the top money card may be claimed (RULES.md §4.5).</param>
 /// <param name="PermissionAsked">

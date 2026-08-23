@@ -218,7 +218,12 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
 
         if (HandEvaluator.TryFindCover(context.Hand, context.Rules, out var cover))
         {
-            _console.MarkupLine($"[{Palette.Good}]All thirteen melt.[/] {Who(context.Player)} can go out with:");
+            _console.MarkupLine(
+                context.TurnNumber == 0
+                    ? $"[{Palette.Good}]All thirteen melt, straight off the deal.[/] "
+                      + $"{Who(context.Player)} can go out before anybody draws — and RULES.md §7.4 "
+                      + "pays double for it:"
+                    : $"[{Palette.Good}]All thirteen melt.[/] {Who(context.Player)} can go out with:");
 
             foreach (var meld in CardFormatting.Cover(cover))
             {
@@ -311,7 +316,14 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
         _turnInProgress = (context.Round, context.TurnNumber);
 
         _console.Clear();
-        _console.Write(new Rule($"Turn {context.TurnNumber} — {Who(context.Player)}").LeftJustified());
+
+        // ⚠️ Turn 0 is not a turn: it is the one question asked before anybody draws, when the
+        // thirteen dealt already win (RULES.md §7.4). Calling it "Turn 0" would be a worse lie
+        // than calling it nothing.
+        _console.Write(new Rule(
+            context.TurnNumber == 0
+                ? $"The deal — {Who(context.Player)}"
+                : $"Turn {context.TurnNumber} — {Who(context.Player)}").LeftJustified());
         _console.MarkupLine($"[{Palette.Quiet}]Nobody else should be looking.[/]");
         _console.Confirm($"{Who(context.Player)}, are you at the keyboard?", defaultValue: true);
 

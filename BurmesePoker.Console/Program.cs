@@ -465,10 +465,12 @@ internal static class Program
         var players = table.Players;
         var owned = PayingCardsByOwner(table);
 
-        // §7.3: a jokerless declaration multiplies the round payment (×2 at 2–4 seats, ×3 at
-        // 5+). The Round column has to be split at the same place the domain settled it, or the
-        // bonus turns up in the Money cards column and the panel silently lies.
-        var payment = Settlement.RoundPayment(table.Stakes, table.Rules, result.Jokerless);
+        // The Round column has to be split at the same place the domain settled it, or a bonus
+        // turns up in the Money cards column and the panel silently lies. 🔥 Since RULES.md
+        // rev 27 that is not something a front end can work out for itself: §7.3 and §7.4
+        // multiply the payment and §7.5 makes one seat owe all of it, so the split is asked for
+        // rather than re-derived (BUILD-PLAN P35 build item 4).
+        var rounds = Settlement.RoundPayments(players, result.Winner, table.Stakes, result.Win);
 
         var grid = new Table().Border(TableBorder.Rounded);
         grid.AddColumn("Player");
@@ -480,9 +482,7 @@ internal static class Program
         foreach (var player in players)
         {
             var net = result.Payouts[player];
-            var round = player == result.Winner
-                ? payment * (players.Count - 1)
-                : -payment;
+            var round = rounds[player];
 
             grid.AddRow(
                 CardFormatting.Name(names, player) + (player == result.Winner ? $" [{Palette.Good}](out)[/]" : string.Empty),
@@ -501,6 +501,25 @@ internal static class Program
                 $"[{Palette.Good}]Jokerless — the round pays ×{table.Rules.JokerlessMultiplier} "
                 + $"({players.Count} playing).[/] "
                 + $"[{Palette.Quiet}]No joker anywhere in the declared thirteen (RULES.md §7.3).[/]");
+        }
+
+        if (result.Win.FromTheInitialDeal)
+        {
+            console.MarkupLine(
+                $"[{Palette.Good}]On the deal — the round pays ×{Win.DealBonusMultiplier}.[/] "
+                + $"[{Palette.Quiet}]The thirteen dealt already won, before anybody drew a card "
+                + "(RULES.md §7.4).[/]");
+        }
+
+        if (result.Win.PaidByTheSeatAboveAlone)
+        {
+            var blamed = Settlement.SeatAbove(players, result.Winner);
+
+            console.MarkupLine(
+                $"[{Palette.Good}]Three in a row — {CardFormatting.Name(names, blamed)} pays the "
+                + "whole round and nobody else pays anything.[/] "
+                + $"[{Palette.Quiet}]The seat above the winner is blamed for feeding the streak "
+                + "(RULES.md §7.5).[/]");
         }
 
         console.MarkupLine(

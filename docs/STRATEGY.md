@@ -838,7 +838,8 @@ and measured by nothing is the failure this whole section exists to make impossi
 
 ```bash
 # the standing set — writes docs/strategy/measurements.csv. ⚠️ About three and a half hours
-# (12,445 s at P32, five-handed). It is five seats by default since P32 — `--seats 4` regenerates
+# (12,445 s at P32; 13,257 s at P35, which was sharing the machine with a test run — the extra
+# 800 s is contention, not work, and P35 added one cheap row per cell). It is five seats by default since P32 — `--seats 4` regenerates
 # the four-handed set, which is kept frozen at docs/strategy/measurements-4-handed.csv.
 # No --strategies: the field is a filter of BotCatalog, and between the ladder tournament
 # and the money sweep every rung there is gets measured exactly once.
@@ -871,10 +872,35 @@ computed on every run since P22 and published nowhere the suite writes — and
 `claim.permission.money.refuse-over-allow` is **paired** now, which widened its interval from
 `±0.18` to **`±0.25`** exactly as predicted. ⚠️ **Neither was a regression and both change a
 published figure**: the money null in §12 was `+0.02 ± 0.25` rather than `+0.02 ± 0.18`, and the
-null survives. ⚠️ **That row has since moved again for an unrelated reason** — P33's clean bonus
-changed what a round pays, so it reads `+0.06 ± 0.29` now. **Still a null, and still the same
-null**; the two corrections are separate events and this file should not be read as though the R3
-pairing moved it twice.
+null survives. ⚠️ **That row has since moved twice more for reasons that have nothing to do with the pairing** —
+P33's clean bonus changed what a round pays, and P32 moved the whole standing set to five seats. It
+reads **`-0.11 ± 0.32`** now, which is what §12 quotes. **Still a null, and still the same null**;
+the three events are separate and this file should not be read as though the R3 pairing moved it
+three times. ⚠️ **The `+0.06 ± 0.29` that stood here until P35 was a four-handed figure left behind
+by P32** — the exact class of staleness build item 4 of packet P34 exists to catch, found by
+re-deriving the section from the CSV rather than by reading it.
+
+### 🔥 What this file does **not** measure, and why — RULES.md §7.5
+
+⚠️ **The feeding blame is built and is not in the standing set.** It cannot be: §7.5 pays a
+**third consecutive win** out of the pocket of the seat above the winner, and every experiment in
+this project runs `RoundsPerGame = 1` — a deliberate design decision (BUILD-PLAN §3.8), because the
+game is the unit of independence and a match of correlated rounds would break every interval above.
+**A three-round streak cannot occur in a one-round game, so no figure in this document is measured
+under §7.5 and none ever will be while that decision stands.**
+
+✅ **Stated rather than arrived at by silence**, which is this section's own rule (P35 acceptance 4).
+The rule is not unchecked — it is **audited** instead of measured: the conformance harness plays a
+sequence of 120 rounds at four and five seats, keeps its own count of consecutive wins, re-derives
+who owes what, and **fails if no streak occurred at all**, so the audit cannot pass vacuously.
+⚠️ **What that leaves genuinely unknown is what §7.5 is *worth*** — whether a table where somebody
+is on two in a row plays differently, and whether asking to change seats before somebody's third
+win is a strategy. **Nobody has measured it, no rung knows the rule exists, and this file should
+not be read as though somebody had.** Measuring it would need a harness whose unit of independence
+is a *match*, which is a different instrument from the one every figure above comes from.
+
+✅ **Its sibling is measured, because it can be.** §7.4's deal bonus fires inside a single round, so
+`bonus.deal-rate.*` is in `measurements.csv` beside `bonus.jokerless-rate.*` — see §14.
 
 ### The rule that keeps this file honest
 
@@ -1050,8 +1076,8 @@ nothing in the engine may call, ranking the *whole hand* beside the ranking of t
 
 | field | discards chosen | the lock was **live** | of those, the lock **bit** | share of every turn |
 |---|---:|---:|---:|---:|
-| the ladder, all seven rungs crossed | 502,830 | **26.1%** | **29.8%** | **7.8%** |
-| the difficulty dial, all four levels crossed | 260,976 | **23.0%** | **21.9%** | **5.0%** |
+| the ladder, all seven rungs crossed | 502,812 | **26.1%** | **29.8%** | **7.8%** |
+| the difficulty dial, all four levels crossed | 260,975 | **23.0%** | **21.9%** | **5.0%** |
 
 *Live* means the ban had removed at least one held card from the choice. *Bit* means the card the
 seat would have thrown over its whole hand is not the card it threw over its legal set.
@@ -1152,3 +1178,61 @@ dotnet run -c Release --project BurmesePoker.Sim -- tournament --games 8000 --se
 ⚠️ **`StandingAnswerTests.TheDocumentSaysHowOftenTheCleanBonusIsActuallyCollected` fails the build
 if this section's rate stops being published** — the same mechanism §11 describes for a rung, applied
 to a scoring rule. **A bonus nobody measured is a rule the document cannot price.**
+
+---
+
+## 15. How often a hand wins before anybody plays it
+
+**Added by P35, the packet that built `RULES.md` §7.4 and §7.5 — and it is the smallest published
+rate in this document by two orders of magnitude.**
+
+🔥 **The rule.** A winner whose **dealt** thirteen already melded pays **×2**, on top of §7.3's
+clean bonus if the thirteen hold no joker — so a jokerless deal at this five-handed table pays
+**×6**, $30 a head against a flat $5. ⚠️ **"On the initial deal" means the dealt thirteen alone**,
+which is `RULES.md` §9 #38's recorded default and not a confirmed answer; under the competing
+reading — *the winner's first turn* — this would be a completely different, and far commoner,
+number.
+
+| field | rounds settled | **won on the deal** | rounds |
+|---|---:|---:|---:|
+| the ladder, all seven rungs crossed | 16,806 | **0.042%** | 7 |
+| the difficulty dial, all four levels crossed | 8,192 | **0.012%** | 1 |
+| the two-arm claim-permission cell | 8,010 | **0.012%** | 1 |
+
+**Nine rounds in 33,008 — about one deal in 3,700.** ⚠️ **Read the interval off the counts, not
+off the rate**: nine events is nine events, and the difference between the three cells here is
+noise.
+
+🔥 **The finding is what it did *not* move, and it was worth the whole re-measurement to know.**
+This packet changed when a round can end, so a round that used to run turns now ends at turn 0 —
+and **not one win rate, margin, Holm verdict, ranking, pairing ratio, mistake rate or reference-table
+figure moved by so much as a millionth.** **107 of the 124 rows this suite shares with P32's came
+back byte-identical.** The seventeen that moved are exactly the ones that count *turns* or *money*:
+
+- **Turns fell by 18 across 16,806 ladder rounds** — 502,830 → 502,812, which is precisely the
+  turns those seven rounds used to take (2.6 each, about what a seat waits for its own first turn
+  at a five-handed table). ✅ **The feeding-ban denominator — a different column, computed a
+  different way — fell by the same 18.**
+- **Two claim attempts disappeared**, because a round that ends on the deal never offers the opener
+  the turned-up card. ✅ **Seven rounds × the 28.6% attempt rate is 2.0.**
+- **The money-sweep margins moved in the fourth decimal**, because nine payouts doubled.
+
+✅ **So §7.4 changed *when* those rounds ended and not *who won them*.** A thirteen dealt complete
+stays complete, every rung declares at its first opportunity, and in all nine rounds the seat that
+was going to win won — it simply stopped waiting for its turn.
+
+⚠️ **A prediction written down before the run was wrong, and usefully.** It said that if a deal win
+occurred, **a win rate and a money figure would move together**, and that money moving alone would
+mean the split had landed in the wrong column. **Money moved alone, and the split is fine.** The
+column that actually discriminates is the side bet: **all four `money.side-margin.*` rows are
+byte-identical**, which is the proof the doubled payment landed in the round column where it
+belongs (BUILD-PLAN P35 acceptance 3, and P33's precedent). **A falsifier has to name the column
+that could only move if the bug were real, not merely a column that would move if the rule fired.**
+
+### ⚠️ And §7.5 is not here, deliberately
+
+**`RULES.md` §7.5 — a third consecutive win paid entirely by the seat above the winner — has no
+row in this document and cannot have one.** Every experiment runs `RoundsPerGame = 1`, so a
+three-round streak never occurs. It is audited rather than measured; see §11 for what that leaves
+unknown, which is **what the rule is worth** and whether moving seats before somebody's third win
+is a strategy.

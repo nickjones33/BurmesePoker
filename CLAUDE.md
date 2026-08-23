@@ -11,7 +11,42 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **READ THIS FIRST — `P37` shipped 2026-08-22 on Opus 5: the table can agree to change seats,
+🔥 **READ THIS FIRST — `P35` shipped 2026-08-23 on Opus 5: the two scoring rules that reach
+outside a round are played, `RULES.md` §10 is empty, and every rule the document records as Settled
+is implemented.** `RULES.md` is **rev 30**, `JournalHeader.CurrentRulesRevision` is **30**, the tree
+is green at **819**, and **`P34` — the front door — is the only packet left on the plan.**
+
+**What P35 built, and the five things a cold session needs from it.**
+🔥 **(1) §7.4 changed the shape of a round, which nothing had done since P0.** §9 #38's recorded
+default is *the dealt thirteen alone*, so `RoundEngine.Play` offers the declaration to every seat
+whose **dealt** hand already covers, in turn order, **before the first take**. ⚠️ **A round can now
+run no turns at all** — `RoundResult.Turns` is 0 — and **`TurnNumber` 0 is a real value** reaching
+the journal, the console's turn heading and the server's `TurnBegan`. A seat may decline. ⚠️ **It
+opened §9 #48** (two seats dealt a winning thirteen at once), defaulted to the earlier in turn order.
+🔥 **(2) §7.5 works because settlement is *told*, never made to remember.** `MatchEngine.Streak` is
+**the only state in this project that reaches across rounds and is not money**; `Settlement` still
+holds no history and takes no match, asserted over its parameter list. ⚠️ **"Pays your whole
+payout" means the winner collects exactly what they would have collected**, out of one pocket — the
+first implementation had it backwards and a test caught it.
+🔥 **(3) Where a net delta is split, ask the domain — do not re-derive.** `Settlement.RoundPayments`
+is the round column; the console's panel and `SeatRow.Flat` both read it. **Both had assumed every
+loser pays the same amount**, true from rev 1 until rev 27, and a split at the wrong place posts
+the difference into the **side-bet** column with the totals still adding up.
+🔥 **(4) The re-measurement is the strongest reproduction this project has recorded, and it
+falsified its own prediction.** **107 of 124 shared rows byte-identical**; the seventeen that moved
+all count *turns* or *money*. **Nine rounds in 33,008 ended on the deal** (`docs/STRATEGY.md` §15)
+and **not one win rate, margin, Holm verdict, ranking, pairing ratio or ε moved at all** — §7.4
+changed *when* those rounds ended, not *who won them*. ⚠️ **The written prediction that a moved
+money figure without a moved win rate would mean a bug was wrong**: the column that discriminates
+is the side bet, and all four `money.side-margin.*` rows are byte-identical.
+⚠️ **(5) §7.5 is not measured and cannot be** while every experiment runs `RoundsPerGame = 1` —
+stated in `docs/STRATEGY.md` §11 with what it leaves unknown. **It is audited instead**: the
+conformance harness gained its first multi-round case, and there are now **no whole exemptions at
+all** in `SettledRuleCoverageTests` (ceiling 7 → 6).
+
+---
+
+**Before that, `P37` shipped 2026-08-22 on Opus 5: the table can agree to change seats,
 `RULES.md` §10 #23 is discharged, and §10 is empty — every rule the document records as Settled is
 implemented.** `RULES.md` is **rev 29** (unmoved — no rule changed), the tree is green at **795**,
 and **`P35` is the next packet** (then `P34`).
@@ -156,7 +191,7 @@ a bare number never caught that.
 ✅ **`P24.2` is done (2026-08-22)** — both of its re-plan's bets were right: P31 had already built
 half of build item 1 (**the keys were missing, not the ranking**), and P32's trap was real, so the
 sentence reads the same `TableRules` the evaluator does and is asserted at four seats and at five.
-**`P36` and `P37` are done too; `P35` is next, then `P34`.**
+**`P35`, `P36` and `P37` are done too; `P34` is the only packet left on the plan.**
 
 ⚠️ **One leftover, P32's: `BurmesePoker.Console` still deals four** — its seat prompt defaults to
 `MinimumPlayers`. **One line plus a `drive-console.py` re-capture.** ✅ **P36's leftover is taken**:
@@ -768,7 +803,7 @@ verified bug to show for it.
 | `docs/STATUS.md` | Cross-session progress. Read first, update last. |
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
-| `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration**, **§10 the side bet**, **§12 round length, abandoned rounds and what refusing a claim is worth** (P29), **§13 how often the feeding ban actually bites** (P31) and **§14 how often the clean bonus is actually collected** (P33). Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10, §12 and §13 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
+| `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration**, **§10 the side bet**, **§12 round length, abandoned rounds and what refusing a claim is worth** (P29), **§13 how often the feeding ban actually bites** (P31), **§14 how often the clean bonus is actually collected** (P33) and **§15 how often a hand wins before anybody plays it** (P35, and ⚠️ **§11 says why §7.5 has no section at all**). Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10, §12 and §13 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
 | `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it, **including what opening a "why?" now tells you** (P24.2). Written for a person at the keyboard, not for a build session. |
 | `docs/RULES-TECHNICAL.md` | What the **old** code does and where it diverges. Defect list. Historical reference. |

@@ -67,6 +67,83 @@ public class RuleConformanceTests
     }
 
     /// <summary>
+    /// ✅ <b>§7.5, the first Settled rule that cannot be audited from one round</b> — so this is
+    /// the first conformance case in the project that watches a <b>sequence</b> of them
+    /// (packet P35, build item 5).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The streak is counted here, by the test, and never read off the engine.</b> A round
+    /// is played, the winner is written down, and the count the next round is handed comes from
+    /// this loop's own arithmetic — so the audit is checking the rule rather than mirroring
+    /// <c>MatchEngine</c>. The seat blamed is likewise re-derived inside
+    /// <see cref="RuleConformance"/> from that round's seating (§9 #46).
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The non-vacuity assertion is the point of the count.</b> Ordinary bots produce
+    /// streaks by luck, so a run that happened to contain none would pass this test having
+    /// checked nothing at all — which is exactly the failure mode P30.2's mutants exist to
+    /// prevent. The seed is fixed, so the number below is a property of the run and not a hope.
+    /// </para>
+    /// </remarks>
+    [Theory]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void AStreakOfWinsBreaksNoSettledRuleAndIsBilledToTheSeatAbove(int seats)
+    {
+        var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, seats).Select(id => new PlayerId(id))];
+        var random = new Random(seats * 1_000 + 22);
+        var agents = players.ToDictionary(
+            player => player,
+            player => Field[player.Value % Field.Count](seats * 7 + player.Value));
+
+        PlayerId? last = null;
+        var inARow = 0;
+        var streaks = 0;
+
+        for (var round = 1; round <= 120; round++)
+        {
+            var audit = new RuleConformance { Streak = (last, inARow) };
+
+            // A held seating (§3 step 2, rev 28) — which is what makes "the seat above you" the
+            // same person for a whole streak, and §7.5 coherent at all.
+            var engine = RoundEngine.Shuffled(
+                players, agents, Stakes.Standard, random, round, audit,
+                streak: new WinStreak(last, inARow));
+
+            audit.Watch(engine.Table);
+            var result = engine.Play();
+            audit.RoundIsSettled();
+
+            if (result.Win.ThirdConsecutiveWin)
+            {
+                streaks++;
+
+                // The seat above the winner carried the whole round, and nobody else paid a
+                // penny towards it — asserted here as well as inside the audit, because this is
+                // the sentence the rule is written in.
+                var above = players[(players.ToList().IndexOf(result.Winner) + seats - 1) % seats];
+                var rounds = Settlement.RoundPayments(
+                    players, result.Winner, Stakes.Standard, result.Win);
+
+                Assert.True(rounds[above] < 0);
+                Assert.Equal(-rounds[above], rounds[result.Winner]);
+                Assert.All(
+                    players.Where(player => player != above && player != result.Winner),
+                    player => Assert.Equal(0, rounds[player]));
+            }
+
+            inARow = last == result.Winner ? inARow + 1 : 1;
+            last = result.Winner;
+        }
+
+        Assert.True(
+            streaks > 0,
+            $"120 rounds at {seats} seats produced no third consecutive win, so §7.5 was never "
+            + "exercised and this test checked nothing (RULES.md §7.5).");
+    }
+
+    /// <summary>
     /// ✅ <b>§3 step 2, as rev 28 corrects it: a seating is drawn once and held</b> (§10 #22,
     /// packet P36) — and it can still be changed, which is the half that keeps it from being a
     /// revert to the pre-P28 engine.
@@ -381,6 +458,105 @@ public class RuleConformanceTests
         Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
             RuleConformance.TheSettlementIsTheRules(
                 Nets(five, 40), five[0], five, Stakes.Standard, TurnUp(), Owned(), Shoe(), clean));
+    }
+
+    /// <summary>
+    /// The deal bonus (§7.4): a settlement that pays a win from the initial deal flat, or pays
+    /// the bonus to a winner who played a turn for it, is caught.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Half of what converts §7.4's registry entry from <c>Exempt</c> to <c>Checked</c>.</b>
+    /// The exemption said there was nothing for an ordinary-play check to re-derive, because the
+    /// engine had no path that could offer a declaration before the first turn. It has one now.
+    /// </remarks>
+    [Fact]
+    public void MutantTheDealBonusIsCaughtBothWaysRound()
+    {
+        var four = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, 4).Select(id => new PlayerId(id))];
+        var jokered = WithAJoker();
+
+        // Jokered, four-handed, won on the deal: $5 × 2 = $10 a loser.
+        RuleConformance.TheSettlementIsTheRules(
+            Nets(four, 30), four[0], four, Stakes.Standard, TurnUp(), Owned(), Shoe(), jokered,
+            fromTheInitialDeal: true);
+
+        // Paid flat although the round ended before anybody drew.
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.TheSettlementIsTheRules(
+                Nets(four, 15), four[0], four, Stakes.Standard, TurnUp(), Owned(), Shoe(), jokered,
+                fromTheInitialDeal: true));
+
+        // Paid the bonus although the round was played out.
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.TheSettlementIsTheRules(
+                Nets(four, 30), four[0], four, Stakes.Standard, TurnUp(), Owned(), Shoe(), jokered));
+
+        // ⚠️ And the two bonuses multiply rather than replacing one another (§9 #39): a
+        // jokerless win on the deal at four seats is ×2 × ×2 = $20 a loser, and $10 is wrong.
+        var clean = Declared(
+            Run("2H", "3H", "4H", "5H"), Run("7D", "8D", "9D"),
+            Run("4C", "5C", "6C"), Set("QS", "QD", "QC")).Melds;
+
+        RuleConformance.TheSettlementIsTheRules(
+            Nets(four, 60), four[0], four, Stakes.Standard, TurnUp(), Owned(), Shoe(), clean,
+            fromTheInitialDeal: true);
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.TheSettlementIsTheRules(
+                Nets(four, 30), four[0], four, Stakes.Standard, TurnUp(), Owned(), Shoe(), clean,
+                fromTheInitialDeal: true));
+    }
+
+    /// <summary>
+    /// The feeding blame (§7.5): a settlement that spreads a third consecutive win's payment
+    /// over the whole table, bills the wrong seat, or bills the right seat the wrong amount, is
+    /// caught.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Half of what converts §7.5's registry entry from <c>Exempt</c> to <c>Checked</c>.</b>
+    /// ⚠️ <b>The other half is the multi-round case</b>
+    /// (<see cref="AStreakOfWinsBreaksNoSettledRuleAndIsBilledToTheSeatAbove"/>): this mutant
+    /// shows the check can go red, and that one shows it is applied to a real sequence of rounds.
+    /// </remarks>
+    [Fact]
+    public void MutantTheFeedingBlameIsCaughtWhoeverIsBilled()
+    {
+        var four = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, 4).Select(id => new PlayerId(id))];
+        var jokered = WithAJoker();
+
+        // Seat 0 won its third in a row: seat 3 — the seat above it — owes the whole $15.
+        var billed = new Dictionary<PlayerId, int>
+        {
+            [four[0]] = 15, [four[1]] = 0, [four[2]] = 0, [four[3]] = -15
+        };
+
+        RuleConformance.TheSettlementIsTheRules(
+            billed, four[0], four, Stakes.Standard, TurnUp(), Owned(), Shoe(), jokered,
+            blamed: four[3]);
+
+        // Spread over the table, which is what an unbuilt §7.5 pays.
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.TheSettlementIsTheRules(
+                Nets(four, 15), four[0], four, Stakes.Standard, TurnUp(), Owned(), Shoe(), jokered,
+                blamed: four[3]));
+
+        // Billed to the seat BELOW the winner — the one it feeds rather than the one that feeds
+        // it. ⚠️ Three rules name this edge of the table and all three name the same side (§5.1,
+        // §4.5, §7.5), so getting it backwards is the plausible mistake.
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.TheSettlementIsTheRules(
+                billed, four[0], four, Stakes.Standard, TurnUp(), Owned(), Shoe(), jokered,
+                blamed: four[1]));
+
+        // Billed one loser's share rather than the winner's whole payment.
+        var short_ = new Dictionary<PlayerId, int>
+        {
+            [four[0]] = 5, [four[1]] = 0, [four[2]] = 0, [four[3]] = -5
+        };
+
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() =>
+            RuleConformance.TheSettlementIsTheRules(
+                short_, four[0], four, Stakes.Standard, TurnUp(), Owned(), Shoe(), jokered,
+                blamed: four[3]));
     }
 
     // ---- Plumbing. ----

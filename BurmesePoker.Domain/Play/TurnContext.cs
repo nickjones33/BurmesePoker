@@ -61,7 +61,10 @@ public sealed class TurnContext
     /// </summary>
     public int Round { get; }
 
-    /// <summary>Which turn of the round this is, counting from 1.</summary>
+    /// <summary>
+    /// Which turn of the round this is, counting from 1 — and <b>0</b> on the one question that
+    /// is not asked during a turn: whether to declare the thirteen just dealt (RULES.md §7.4).
+    /// </summary>
     public int TurnNumber { get; }
 
     /// <summary>
