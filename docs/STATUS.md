@@ -525,12 +525,20 @@ unasserted altogether.
 
 ## What is next
 
-🔥 **Nothing is on the plan. `P39` was the last packet, and every packet ever written into
-`BUILD-PLAN.md` §5 is done** — so the next piece of work has to be **chosen**, from the four
-candidates below, none of which is written up as a packet yet. Whoever takes one writes it up
-properly first (`BUILD-PLAN.md` §5 has the paragraphs). This file's recommendation is
-unchanged: **the expert session — the eleven §9 rows being played on a recorded default — is
-worth more than any code here**, and the failing tests would be its change list.
+🔥 **`P40` — the game in Burmese (`docs/RULEBOOK.my.md`, `docs/HOW-TO-PLAY-WELL.my.md`) —
+is next, added 2026-08-23 at Nick's direction, and it is blocked on input only Nick can
+produce.** The translations are made outside the repository: Nick attaches the English
+documents and runs the prompts in **`docs/translation/PROMPTS.md`** against Gemini and ChatGPT
+— translate with one, cross-check with the other (prompt C), repeat until clean — and the
+packet lands the vetted Markdown and builds the fences (`BUILD-PLAN.md` §5 P40). ⚠️ **Do not
+start P40 without the vetted Burmese text**; there is nothing for it to do until then.
+🔥 **It feeds candidate 2 below**: the experts are Burmese speakers, and a rulebook in their
+own language is the best instrument the project could hand them for the eleven defaulted §9
+rows.
+
+**Behind it, the four candidates stand** — and this file's recommendation is unchanged: **the
+expert session is worth more than any code here**, and the failing tests would be its change
+list.
 
 <details>
 <summary>What used to stand here, before P39 shipped</summary>

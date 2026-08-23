@@ -13,10 +13,14 @@ over ad-hoc changes.
 
 🔥 **READ THIS FIRST — `P39` shipped 2026-08-23 on Fable 5: there is a strategy guide, and the
 plan is empty.** `RULES.md` is **rev 30**, `JournalHeader.CurrentRulesRevision` is **30**, the
-tree is green at **832**, and **there is no next packet** — `BUILD-PLAN.md` §5 has nothing
-undone in it, so the next piece of work must be **chosen** from the four candidates at the end
-of `docs/STATUS.md`'s *What is next* (an expert session on the eleven defaulted §9 rows is the
-one this file would take).
+tree is green at **832**, and **`P40` — the game in Burmese — is the next packet, added at
+Nick's direction and blocked on input only Nick can produce**: the vetted Burmese translations
+of `RULEBOOK.md` and `HOW-TO-PLAY-WELL.md`, made outside the repo with
+`docs/translation/PROMPTS.md` against Gemini/ChatGPT (translate with one, cross-check with the
+other). **Do not start P40 without that text.** Behind it stand the four candidates at the end
+of `docs/STATUS.md`'s *What is next* (the expert session on the eleven defaulted §9 rows is the
+one this file would take — and P40's Burmese rulebook is the best instrument to hand those
+experts).
 
 **What P39 built, and the four things a cold session needs from it.**
 🔥 **(1) `docs/HOW-TO-PLAY-WELL.md` answers *how do I get better?* from what was measured, and
@@ -899,6 +903,7 @@ verified bug to show for it.
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
 | `docs/RULEBOOK.md` | **The game taught** — one document a stranger can learn to play from, in reading order, with a generated worked round and a house-readings appendix. Derived from `RULES.md` and decides nothing; stamps the rev it was derived from, bound by `RulebookTests`. |
 | `docs/HOW-TO-PLAY-WELL.md` | **How to get better** — the strategy guide for a player: what has actually been measured, organised by decision, with the nulls given as much room as the margins. Every figure it quotes is CSV-fenced by `PublishedFigureTests`, and it is the **only** home of the player-facing figures — `PLAYING.md` points here rather than quoting any. |
+| `docs/translation/PROMPTS.md` | **The translation workflow for P40** — three prompts (rulebook, strategy guide, cross-check) Nick runs against Gemini/ChatGPT outside the repo, and the rules they enforce (Latin digits, verbatim card notation, Unicode Burmese) that make the translations fence-able when the packet lands them. |
 | `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration**, **§10 the side bet**, **§12 round length, abandoned rounds and what refusing a claim is worth** (P29), **§13 how often the feeding ban actually bites** (P31), **§14 how often the clean bonus is actually collected** (P33) and **§15 how often a hand wins before anybody plays it** (P35, and ⚠️ **§11 says why §7.5 has no section at all**). Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10, §12 and §13 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
 | `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it, **including what opening a "why?" now tells you** (P24.2). Written for a person at the keyboard, not for a build session. |

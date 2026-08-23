@@ -1273,6 +1273,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P37** | **Asking the table to change seats** | **P36 ✅** | M — ☑ **done 2026-08-22 (Opus 5)** — §10 **#23 discharged**, and §9 #45 as Nick ruled it: a re-seating happens **when the players agree**. 🔥 **Consent is not desire** — `SeatingOpinion` is three answers, so an all-bot table never re-seats itself and *fail closed* fell out for free. ⚠️ **A public question is a standing answer, not a pending prompt** (§3.13); **six decorators had to forward the first default interface member this project has.** 🔥 **The first *public* question this project has ever asked** — `SeatPrompt` is seat-private by construction and this one is put to everybody at once — and the first asked **between** rounds. ✅ **A computer seat consents** (a design decision, recorded in §3, not a rule); ⚠️ **§9 #47 open — everybody or most?** |
 | **P38** | **The rulebook — the game taught, not reconstructed** | — | M — ☑ **done 2026-08-23 (Fable 5)** — `docs/RULEBOOK.md`: the game as a board game ships it, in reading order, for somebody who has never seen it. **One answer per rule, no provenance tags, no open questions, no packet numbers.** ⚠️ **`RULES.md` stays the sole authority** — the rulebook is *derived*, stamps the rev it was derived from, and a test binds the two, so a rules change makes it red rather than stale. 🔥 **The hard part is that eleven §9 rows are played on a recorded default**: a rulebook must state one, which silently promotes a default to a rule for the reader — so it carries a short *house readings* appendix in a player's language |
 | **P39** | **How to play well — the strategy guide a player can use** | — | S–M — ☑ **done 2026-08-23 (Fable 5)** — `docs/HOW-TO-PLAY-WELL.md`: what was actually measured, organised by decision, **the nulls given as much room as the margins** and the three bonuses stated as *unpriced rather than small*. ⚠️ **`STRATEGY.md` stays the measurement authority, untouched** — the guide quotes only `measurements.csv`-fenced figures, and the fence covers **verdicts** as well as numbers (a null that separates is a red build). 🔥 **A figure has one home, asserted as an absence**: `PLAYING.md` points at the guide and may contain no `±`, no reference-table quad, no headline pair. ⚠️ **Found on the way**: `PLAYING.md`'s difficulty prompt row still quoted the four-handed 36%/14% — unfenced because P34's regex targeted the other sentence |
+| **P40** | **The game in Burmese — translated rulebook and strategy guide** | P38 ✅, P39 ✅, **the vetted Burmese text (Nick, outside the repo)** | S–M — ☐ **new 2026-08-23, at Nick's direction** — `docs/RULEBOOK.my.md` and `docs/HOW-TO-PLAY-WELL.my.md`: the two player-facing documents in the language the game actually comes from. 🔥 **The translation itself happens outside this repository** — Nick runs `docs/translation/PROMPTS.md` against Gemini/ChatGPT, cross-checks each model's output with the other, and hands the packet vetted Markdown; **the packet cannot start until that text exists.** ⚠️ **The fences fence what survives translation**: the rev stamp in Latin digits bound to `JournalHeader.CurrentRulesRevision`, and every figure, `±` interval, dollar amount and card symbol of the English source asserted present byte-for-byte in the Burmese — which is why the prompts forbid Burmese numerals. ⚠️ **Acceptance is a human read, not a test** — no test can read Burmese |
 
 ⚠️ **P25–P29 are the only packets in this table that do not descend from §0.** They come from
 `RULES.md` — four sessions with Mya Lay and Aung Aung on 2026-08-20/21 that closed twenty-three
@@ -6659,6 +6660,84 @@ whole measurements before P34 fenced it, **because a figure with two homes has n
 
 **Done when.** The answer to *"which bot should I play, and what actually works?"* has a research
 document and a player's document, and neither is pretending to be the other.
+
+---
+
+### P40 — The game in Burmese: translated rulebook and strategy guide ☐ — **added 2026-08-23, at Nick's direction**
+
+**Goal.** `docs/RULEBOOK.md` and `docs/HOW-TO-PLAY-WELL.md` exist in Burmese — as
+`docs/RULEBOOK.my.md` and `docs/HOW-TO-PLAY-WELL.my.md` — so that the game's own tradition can
+read the two documents written for players. 🔥 **This is the first packet whose main input is
+produced outside the repository**: the translations are made by Nick with an LLM that is strong
+in Burmese (Gemini or ChatGPT — reportedly the two best at it), using the prompts in
+`docs/translation/PROMPTS.md`, cross-checking each model's output with the other model, and the
+packet lands the vetted text and builds the fences. **It cannot start until that text exists.**
+
+**Read first.** `docs/translation/PROMPTS.md` (the workflow and the three prompts),
+`BurmesePoker.Tests/Docs/RulebookTests.cs` (the rev-stamp binding to copy), and
+`BurmesePoker.Tests/Docs/PublishedFigureTests.cs` (what is already fenced in the English guide).
+
+⚠️ **Why these two documents and not `RULES.md`.** `RULES.md` is a provenance ledger written for
+the project — half of its value is the tags and the open-question tables, which are exactly what
+a reader-facing translation should not carry. The rulebook and the guide are the two documents
+written *for a player*, and they are already derived: translating them adds one more derivation
+step to documents built to be derived. **`RULES.md` stays English and stays the sole authority;
+a Burmese sentence decides nothing**, same as the English rulebook it is translated from.
+
+🔥 **The hard problem is staleness, and it is worse here than anywhere else in `docs/`.** A
+translation is the furthest document from the tree this project would own — no build breaks when
+it rots, and *nobody working in the repository necessarily reads the language it is written in.*
+No test can read Burmese, so the fences fence **what survives translation**, which is precisely
+what the prompts insist stays byte-for-byte:
+
+**Build.**
+
+1. **Land the vetted translations** as `docs/RULEBOOK.my.md` and `docs/HOW-TO-PLAY-WELL.my.md`,
+   each opening with a line naming the English source it was translated from and the rev it was
+   derived at — in Latin digits, so the fence below can read it.
+2. **The rev-stamp fence, same mechanism as `RulebookTests`**: the first `rev N` in each
+   translation equals `JournalHeader.CurrentRulesRevision`. A play-changing revision is then a
+   red build until somebody re-checks the Burmese against what changed — the maintenance,
+   compelled, exactly as it is for the English rulebook.
+3. **The figure fence, derived from the English source rather than written twice**: extract from
+   `RULEBOOK.md` every dollar figure and card form (7♦, A♠, ×2, ×3, ×5 …), and from
+   `HOW-TO-PLAY-WELL.md` every `x ± y` pair, percentage and dollar figure, and assert each
+   appears **verbatim** in the corresponding translation. A translation that drifts a number —
+   or converts one to Burmese numerals (၀–၉) — is a red build. ⚠️ **This is why the prompts
+   demand Latin digits**; the fence is what the demand is *for*.
+4. **The joins the documentation tests already enforce**: both files in `CLAUDE.md`'s map, no
+   historical banner, and `README.md`'s answers table gains the Burmese way in.
+5. **A structural sanity check**, cheap and worth having: the translation has the same number of
+   headings at each level as its source, so a silently dropped section is a red build even
+   though no test can read what the sections say.
+
+**Acceptance.**
+
+1. Both translations landed, each stamped with the rev it was derived from, bound by a test.
+2. Every figure, interval, dollar amount and card symbol of each English source appears
+   byte-for-byte in its translation, checked by a test proved able to fail.
+3. ⚠️ **A human read is the real acceptance and a test cannot substitute for it** — the
+   cross-check prompt (`PROMPTS.md` prompt C) has come back clean from the model that did not
+   produce the translation, and the packet's report says so per document.
+4. Green, with `STATUS.md`'s count matching.
+
+🔥 **What this buys beyond the documents: it feeds candidate 2.** The most valuable unstarted
+work in this project is an expert session on the eleven §9 rows played on recorded defaults —
+and the experts are Burmese speakers being asked about a Burmese game through an English
+reconstruction. **A Burmese rulebook is the best instrument this project could hand them**: a
+reading of the rulebook in their own language surfaces a mis-recorded rule the way no
+question-list can, and this project's own history says rules conversations answer past the
+question asked. ⚠️ **The worked round translates with the rulebook and is the most fragile part
+of it** — if a rules change re-derives the English worked round (P38's red-build-on-purpose),
+the Burmese one is stale with **no test to say so beyond the rev stamp**. That is what build
+item 2 exists to catch.
+
+⚠️ **Risks, named.** LLM Burmese is good and not native — the two-model cross-check is in the
+prompts because a single model reviewing itself is not a review; register matters (a card table,
+not a textbook) and the glossary-first instruction is what holds terminology consistent across
+two documents translated in different sessions. **If the cross-check keeps finding meaning-level
+errors after two rounds, stop and say so** — a wrong rulebook in the experts' own language is
+worse than none, because they will trust it.
 
 ---
 
