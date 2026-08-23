@@ -11,17 +11,28 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **READ THIS FIRST — `P42` shipped 2026-08-23 on Fable 5, the day it was written up:
-playtest readiness.** `RULES.md` stays **rev 31** (no rule changed), the tree is
-green at **850**, and **`P40` — the game in Burmese — is the only packet left, blocked on
-input only Nick can produce**: vetted translations of `RULEBOOK.md` and `HOW-TO-PLAY-WELL.md`, made
+🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
+`P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
+recommendation per packet). In order: **P43 `opportunist`** (the feeding ban at zero price),
+**P44 `purist`** (the clean bonus, money-ranked), **P45 `angler`** (a draw priced in cards),
+**P46 `sprinter`** (the endgame as a race), **P47** the blocked-rungs ledger (`jackpot`,
+`streaker` — each needs an instrument that does not exist), **P48** the full verification and
+measurement-hardening run, **P49** `docs/SIMULATIONS.md` (the measurement programme taught,
+digit-free), **P50** the documentation cleanup (⚠️ **`STRATEGY.md`'s prose is a run behind its
+own tables in seven verified places** — the day's statistical review, F10). ⚠️ **Rungs, then
+the run, then the documents** — every rung packet pays a ~3.5 h suite regeneration.
+
+**Before that, `P42` shipped 2026-08-23 on Fable 5, the day it was written up: playtest
+readiness.** `RULES.md` stays **rev 31** (no rule changed), the tree is green at **850**, and
+**`P40` — the game in Burmese — stands blocked on input only Nick can produce**: vetted
+translations of `RULEBOOK.md` and `HOW-TO-PLAY-WELL.md`, made
 outside the repo with `docs/translation/PROMPTS.md` against Gemini/ChatGPT (translate with
 one, cross-check with the other). **Do not start P40 without that text, and translate the
 rev-31 rulebook** — the first-round outputs under `docs/translation/` are rev-30-based and
 must be re-run. Behind it stand the candidates at the end of `docs/STATUS.md`'s *What is next*
 (candidate 3, the console's four-seat default, was absorbed by P42 and is done; the expert
-session on the defaulted §9 rows — **thirteen**, every one fenced — is the one this file
-would take next, and P40's Burmese rulebook is the best instrument to hand those experts).
+session on the defaulted §9 rows — **thirteen**, every one fenced — is worth more than any
+code here, and P40's Burmese rulebook is the best instrument to hand those experts).
 
 **What P42 built, and the four things a cold session needs from it.**
 🔥 **(1) The ×5 jackpot is said out loud, off a fact the domain carries once:

@@ -650,7 +650,23 @@ unasserted altogether.
 console deals five, the ×5 is said at both front ends, byte-identity held, and the browser
 round was actually played — see *Current state* at the top of this file.
 
-**`P40` — the game in Burmese — is the only packet left, blocked on input only Nick can produce.** ⚠️ **Its translations must be made from the rev-31 rulebook**
+🔥 **The plan grew eight entries on 2026-08-23, at Nick's direction: `P43`–`P50` — the strategy
+frontier and the writing-down** (`BUILD-PLAN.md` §5, with a model recommendation per packet).
+Four buildable rungs from the day's statistical review — **`P43` `opportunist`** (the feeding
+ban at zero price — closes `warden`'s open question; Opus 5), **`P44` `purist`** (plays for the
+clean bonus, money-ranked, needs the sweep generalised; Fable 5), **`P45` `angler`** (a draw
+priced in cards, §8's own named successor; Fable 5), **`P46` `sprinter`** (the endgame as a
+race; Opus 5) — then **`P47`**, the blocked-rungs ledger (`jackpot` needs a conditioned-deal
+harness, `streaker` needs a match-unit harness, and an anti-recommendation: no more
+defence-refinement rungs), **`P48`**, the full verification and measurement-hardening run
+(fresh-seed replication, composition-stratified margins, ladder money margins, the bootstrap;
+Fable 5), **`P49`**, `docs/SIMULATIONS.md` — the measurement programme taught, digit-free and
+fenced (Fable 5) — and **`P50`**, the documentation cleanup that fixes the seven stale prose
+figures the review found in `STRATEGY.md` and fences the class (Opus 5). ⚠️ **Order matters:
+rungs, then the run, then the documents** — each rung packet pays a full suite regeneration
+(~3.5 h), and the documents are written once, against hardened numbers.
+
+**`P40` — the game in Burmese — stands beside them, blocked on input only Nick can produce.** ⚠️ **Its translations must be made from the rev-31 rulebook**
 — attach the current `RULEBOOK.md`, which teaches the face-up rule; the first-round outputs
 under `docs/translation/` are rev-30-based and must be re-run. The translations are made
 outside the repository: Nick attaches the English documents and runs the prompts in

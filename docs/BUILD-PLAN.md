@@ -6973,10 +6973,266 @@ this plan would take them, and whoever takes one writes it up properly first.
    first rule a player can act on *between* rounds** (ask to change seats before somebody's third
    win), which no instrument here can measure at all while `RoundsPerGame = 1`. Either is a new
    rung and arrives measured; the second needs the harness to play matches first, which is a
-   packet of its own and would reopen §3.8.
+   packet of its own and would reopen §3.8. ✅ **Written up 2026-08-23**: the clean-bonus half is
+   **P44** (`purist`) below, and the match-unit half is recorded blocked as `streaker` in **P47**.
 
 ⚠️ **Whatever is chosen, `STATUS.md`'s *What is next* is the copy a session reads first** — keep
 the two in step.
+
+---
+
+### P43–P50 — The strategy frontier and the writing-down — **added 2026-08-23, at Nick's direction**
+
+**Where these came from.** A statistical review of the whole measurement programme ran on
+2026-08-23 (Fable 5; report at the session's artifact, findings F1–F10). Its verdict: the
+estimators are sound, and the risks sit one level up — the head-to-head margins are about half
+self-play by construction (F1), the ranking criterion is win rate in a game whose objective is
+money (F2), every published figure descends from one master seed with no fresh-seed replication
+(F5), and **`STRATEGY.md`'s prose quotes a different run than its own tables in at least seven
+places** (F10 — live today, unfenced). The same session hypothesised four buildable rungs and two
+blocked ones. **P43–P47 are the rungs, P48 is the verification-and-hardening run, P49 and P50 are
+the writing-down.** The order is deliberate: rungs first, then the consolidated run, then the
+documents — so the documents are written once, against final numbers.
+
+⚠️ **Wall clock is the planning constraint, as it was for P31/P32.** `StandingAnswerTests`
+demands a published row for every catalog rung, so **each rung packet pays a full suite
+regeneration (~3.5 h)** — the discipline stands (a rung cannot be added without being measured),
+and it is why the rungs are sequenced rather than batched. Every added matrix rung also grows the
+Holm family (seven rungs is 21 comparisons; eight is 28), making every existing verdict harder to
+reach — §1 rule 5's cost, paid knowingly.
+
+🔥 **Model recommendations, per packet** — the plan records which model shipped each packet and
+cannot choose it (`/model` before the session); these are recommendations with reasons:
+
+| packet | recommend | why |
+|---|---|---|
+| P43 `opportunist` | **Opus 5** | a small, sharply-specified delta off `warden`; the design is already done |
+| P44 `purist` | **Fable 5** | money-ranked, needs the sweep generalised, and the §9 #33 interaction takes judgment |
+| P45 `angler` | **Fable 5** | probability pricing inside the `outs` family's perf budget — the hardest design of the four |
+| P46 `sprinter` | **Opus 5** | one objective switch with a clear trigger condition |
+| P47 blocked ledger | — | landed by this planning edit; no session |
+| P48 verification run | **Fable 5** | new estimator readouts and statistical judgment on the results, not just orchestration |
+| P49 sims explained | **Fable 5** | the writing must carry the statistical subtleties faithfully (precedent: P38/P39) |
+| P50 docs cleanup | **Opus 5** | fence-extension and staleness triage — careful but well-specified; not Sonnet/Haiku, because deciding *which* figure generation is current takes judgment |
+
+---
+
+### P43 — `opportunist`: the feeding ban at zero price ☐
+
+**Goal.** One change off `outs`: lock a rank against the seat that fed you **only when the take
+is free** — the card already improves your own hand, so the lock costs nothing. 🔥 **This closes
+the question `warden` deliberately left open.** P31's autopsy showed the locks bite (9.4% of
+every turn) and the rung still lost, so the idea was overpriced rather than starved — but nothing
+yet separates *denial is worthless* from *`warden`'s pricing was wrong*. A rung that pays zero is
+the cleanest instrument for that question.
+
+**Prediction, written first** (P20's discipline): null to small positive. Either answer is the
+finding — a null says denial has no value even free, a positive says `warden` was a pricing
+failure and a successor with a *correct* price might exist.
+
+**Build.** The rung in `Domain/Agents` off `outs`' decision, `Strength: 3`, win-rate ranked; the
+catalog entry; suite regeneration; `STRATEGY.md` §8/§13 entries either way the answer comes out.
+⚠️ **Its verdict should be re-read under P48's composition-stratified margins** — `warden`'s own
+loss is partly self-play (F1), and a lock-playing rung inherits the same exposure.
+
+**Acceptance.** Prediction recorded before the run; measured row published; family cost stated;
+green with `STATUS.md`'s count matching.
+
+---
+
+### P44 — `purist`: a rung that plays for the clean bonus ☐
+
+**Goal.** One change off `outs`: where covers or discards are otherwise tied or nearly tied,
+prefer the line that keeps the declaration **jokerless**. 🔥 **§14 has already done the
+arithmetic**: the bonus is +$40 over flat at five seats, accidental cleans run one round in
+eight, and a rung that turned that into one in four would collect about half a round's prize
+every round — *"far inside what this apparatus resolves"*, the document's own words. This is the
+highest-expected-value unbuilt rung in the project.
+
+⚠️ **Three constraints, all known in advance.** **(1) It is ranked on money**, like `prospector`
+(`BotRung.Ranked`) — it will win the same or fewer rounds and bank more, so a win-rate reading
+would misjudge it by construction. **(2) It is the second money-ranked rung**, and the money
+sweep was built for one challenger against one reference — the sweep (and
+`SuiteOptions.MoneyReference`'s assumptions) must generalise, which is exactly the failure class
+§11's *"a rung cannot be added without being measured"* test exists to catch. **(3) Its ceiling
+is capped by §9 #33's built default** — the joker cannot be shed before the declaring discard —
+so its lever is cover choice, not joker disposal. **If the expert session flips #33, this rung
+must be re-measured**; say so in its `STRATEGY.md` entry.
+
+**Build.** The rung; the sweep generalised to a second challenger; the trade-off's exchange rate
+**stated rather than tuned** (`prospector`'s precedent — one modelling assumption, written down);
+suite regeneration; prediction recorded first.
+
+**Acceptance.** A published money margin against `outs` at standard stakes with a Holm verdict;
+the jokerless rate for a `purist` field published beside §14's accidental floor; green.
+
+---
+
+### P45 — `angler`: a draw priced in cards ☐
+
+**Goal.** One change off `outs`: when the offered discard's marginal improvement is small,
+compare it against the **expected improvement of a blind draw** — live outs over cards unseen —
+and draw blind when the shoe beats the pile. 🔥 **This is the successor `STRATEGY.md` §8
+explicitly calls for**: `warden` failed because nothing prices a draw in cards, *"`LiveOuts` is
+the obvious currency and is already in the file."* `outs` currently takes any discard that helps
+at all; this asks whether some takes are underpriced.
+
+⚠️ **Perf is the risk, and P21 is the precedent.** The `outs` family is the expensive family
+(7.0× a `greedy` round), and this rung asks a distributional question per take decision. **Budget
+it with `sim bench` before writing it** (P21's 10× budget), and expect the shortcut work to be
+the packet's real cost. **Prediction: small positive or null** — but it changes the question
+asked above the tie-break, which is the only class of idea that has ever measured (§7's lesson).
+
+**Build.** The rung, win-rate ranked, `Strength: 3` unless it wins its place; bench before and
+after; suite regeneration; prediction first.
+
+**Acceptance.** A published margin against `outs`; the bench cost published; green.
+
+---
+
+### P46 — `sprinter`: the endgame is a race ☐
+
+**Goal.** One change off `outs`: when within one card of covering, stop maximising expected outs
+and maximise the probability of **winning on the next turn** — accept a worse hand in expectation
+for a faster fuse. **Exactly one seat declares** (the fact behind §6's √2), so near the end the
+game is a race, and `outs`' objective — hand quality — diverges from the true objective, which is
+declaring first. ⚠️ **The trigger condition is the design**: too early and it is a worse `outs`,
+too late and it never fires. State the trigger, count how often it fires (a mechanism variable,
+P31's discipline), and publish the rate beside the margin so a null is attributable.
+
+**Prediction: modest positive or null.** 🔥 **It is also the first rung that would matter more
+under a match-unit harness** — §7.5 pays streaks, and a racer wins the rounds that start streaks
+— so if `streaker` (P47) is ever unblocked, this rung is the one to revisit.
+
+**Build.** The rung; the fire-rate counter; suite regeneration; prediction first.
+**Acceptance.** A published margin, the fire rate beside it, green.
+
+---
+
+### P47 — Blocked rungs, recorded: `jackpot` and `streaker` ☐ **blocked — each needs an instrument that does not exist**
+
+**Recorded so the ideas are owned, not planned — the P40 idiom.** Neither can be started until
+its instrument exists, and building either instrument is a packet of its own.
+
+1. **`jackpot` — chase both 7♦/A♠ partners when the ×5 pair is turned up.** Blocked on a
+   **conditioned-deal harness**: the pair turn-up is far too rare for any affordable run to
+   measure a strategy against it, so the experiment needs a harness that deals *only* jackpot
+   rounds — a new instrument that reopens what a seed means (§3.9) and what the null cell
+   checks. P42 made the *possibility* public at every table (`TableBoard.JackpotPairUp`), so the
+   rung's information is available the moment the instrument is.
+2. **`streaker` — play §7.5: protect a streak, or spend the seat-change agreement to break
+   somebody else's.** Blocked on a **match-unit harness** (`RoundsPerGame > 1`), which §11 and
+   §15 already name as the missing instrument and which **reopens §3.8** — the game is the unit
+   of independence, and a match of correlated rounds breaks every interval in `STRATEGY.md`
+   unless the match becomes the unit. That is a redesign, not a flag.
+
+⚠️ **An anti-recommendation, recorded with the same weight**: no more defence-refinement rungs
+below the tie-break. Three independent nulls point the same way — `cautious` (+0.1 ± 1.0),
+`counting` (+0.6 ± 0.8 the wrong way), and P16's neighbour result — and §7 says the residue they
+compete for is smaller than the instrument. **A packet proposing one must first say what changed.**
+
+---
+
+### P48 — The full verification and measurement-hardening run ☐ — **after P43–P46**
+
+**Goal.** One consolidated pass that (a) verifies the whole tree the way P42 verified the
+browser, and (b) discharges the statistical review's recommendations — so that the documents
+P49 and P50 write are written against numbers that have been hardened, not just regenerated.
+
+**Build.**
+
+1. **The full test pass**: `dotnet test` green; the conformance harness's audit rounds; journal
+   replays byte-identical (HEAD journal and a fresh seeded run); both `drive-console.py` scripts
+   re-captured; a browser round played to settlement with Claude in Chrome against P42's
+   checklist. **The report says what was actually exercised** (P11's rule).
+2. 🔥 **Composition-stratified margins** (review F1). Publish each head-to-head margin split by
+   seating mix — at minimum the 1-vs-4 and 4-vs-1 compositions beside the pooled figure. **A
+   readout over data the runner already has, not a re-run.** This is the packet that says whether
+   `warden`'s loss (and P43's answer) is denial failing or self-play compounding.
+3. 🔥 **Money margins for every ladder pair** (review F2). `CellPlayer.NetPerRoundByGame` is
+   computed and published nowhere; add `ladder.money-margin.*` rows so the §3 ordering is checked
+   in the game's actual currency. **If win rate and money disagree anywhere, that is a headline,
+   not a footnote.**
+4. 🔥 **A fresh-seed replication** (review F5): §3's matrix and the dial's adjacent steps at a
+   second master seed, published as a comparison — the first statement about reproducibility in
+   this project that is statistics rather than determinism. **Predict before running**: every
+   Holm verdict holds, every margin lands inside its own interval of the seed-20260819 value.
+5. **A bootstrap coverage check on the two separated money cells** (review F6) — the
+   heaviest-tailed verdicts in the document — and **intervals on the mechanism rates** the
+   document compares across fields (review F7), by the house game-level ratio method.
+6. **Re-time with `sim bench`** before and after — four new rungs have joined since the last
+   published timing, and the suite's wall clock is a planning input (this section's own header).
+
+**Acceptance.** Everything in item 1 green and reported; the new rows in `measurements.csv` with
+the tables that quote them; the fresh-seed comparison published with its prediction's outcome
+stated either way; `STATUS.md` updated.
+
+---
+
+### P49 — The sims explained: `docs/SIMULATIONS.md` ☐ — **after P48**
+
+**Goal.** One document a curious human can read to understand **how this project measures
+things and why the numbers can be trusted** — the measurement programme taught, the way P38
+taught the game. `RULEBOOK.md` teaches the rules and `HOW-TO-PLAY-WELL.md` teaches the
+decisions; **nothing teaches the instrument**, and the knowledge currently lives in
+`STRATEGY.md` §1's five rules (terse), XML doc comments (for maintainers), and session history
+(invisible).
+
+**What it covers, in reading order**: what a run is (a seeded, parallel, replayable deal of
+thousands of games); a seed against a journal (§3.9, in plain words); why the game is the trial
+and what would go wrong if the seat were; why a win rate is the totals divided and not the
+average of rates; what pairing is and why it *widens* within a cell and *narrows* across cells —
+the √2 story told for a person; why twenty-one comparisons need Holm and what "survives" buys;
+what the null cell is for; and **a tour of the experiment designs** — head-to-head, the crossed
+free-for-all, the neighbour experiment with its control arm, the money sweep, the dial's
+calibration — each with the question it answers and the question it deliberately cannot.
+
+⚠️ **The discipline it must obey is P39's one-home rule, applied in advance**: the document is
+**digit-free** — it explains the machinery and *points* at `STRATEGY.md` and
+`HOW-TO-PLAY-WELL.md` for every figure, so it can never go stale the way F10's prose did. A
+fence asserts the absence (no `±`, no percentage claims), the same shape as P39's `PLAYING.md`
+fence. Commands it prints resolve (`DocumentationTests` picks them up); it lands in the map with
+no banner; `README.md` gains the pointer.
+
+**Acceptance.** The document; the digit-free fence proved able to fail; the map and command
+fences green; a stranger-test read: someone who has never opened `BurmesePoker.Sim` can say what
+a cell, a margin, and a verdict are.
+
+---
+
+### P50 — Documentation cleanup: the prose catches up with the tables ☐ — **after P48 and P49**
+
+**Goal.** Discharge review finding **F10** — `STRATEGY.md`'s prose quotes a measurement
+generation behind its own tables in at least seven places — and sweep the rest of `docs/` for
+the same class. **This is the exact staleness class P34 and P39 built fences against, live in
+the measurement-authority document.**
+
+**The known list** (verified 2026-08-23 against `measurements.csv`): §3's `warden` paragraph
+(−9.3 ± 1.0 against the matrix's −7.3 ± 0.8) and `outs` paragraph (+3.0 ± 1.0 and "5 / 0 / 0"
+against +2.7 ± 0.8 and 6 / 0 / 0); §4's "`warden` at 25.6" against the table's 20.2; **§6's
+null-test table, wholly four-handed** (25.4 / 24.6, "a fair four-seat table", four seat counts)
+against the five-handed 20.3 / 19.7; §7's resolution floor (SE 0.52 / half-width 1.02 / ~34,000
+games, all four-handed); §8's map and bullets repeating the stale −9.3 / +3.0 / +0.4; and
+**§10's "The answer" disagreeing with its own table three paragraphs up** (+5.32 / +14.63 /
+−0.21 against +3.99 / +14.20 / −0.35).
+
+**Build.**
+
+1. **Fix the seven**, re-deriving each from the CSV — never patching a digit by eye (P29's
+   procedure: derive first, then replace).
+2. 🔥 **Then make the class impossible**: either extend `PublishedFigureTests` to every
+   `±`-bearing figure in `STRATEGY.md` prose, or apply P39's one-home rule internally — tables
+   carry digits, prose carries words. **Choose one and say why**; the fence-everything option
+   keeps the document's voice, the digit-free option is the stronger guarantee.
+3. **Sweep the rest of `docs/`** for four-handed leftovers and rev-lagged claims —
+   `RULES-PRIMER.md`, `PLAYING.md`'s prose, `README.md` — touching **only current-claim text**:
+   the narrative documents keep every superseded figure on purpose (P34's rule), and this packet
+   must not flatten history to fix staleness.
+4. **The map, banner and command fences stay green** throughout, which is what makes item 3
+   checkable.
+
+**Acceptance.** The seven fixed and re-derived; the chosen fence landed and proved able to fail;
+no historical block altered; green with `STATUS.md`'s count matching.
 
 ---
 
