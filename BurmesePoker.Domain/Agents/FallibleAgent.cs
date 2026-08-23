@@ -140,4 +140,11 @@ public sealed class FallibleAgent : IPlayerAgent, IRanksDiscards
     /// </remarks>
     public IReadOnlyList<Card> RankDiscards(TurnContext context, IReadOnlyList<Card> candidates) =>
         _ranks.RankDiscards(context, candidates);
+
+    /// <remarks>
+    /// <b>Forwarded, because a default interface method would answer in this wrapper's name</b>
+    /// and silently drop what it wraps (RULES.md §3 step 2, P37).
+    /// </remarks>
+    public SeatingOpinion AskAboutTheSeating(SeatingQuestion question) =>
+        _inner.AskAboutTheSeating(question);
 }

@@ -32,6 +32,22 @@ Seating is shuffled once, so you will not always open — but once it is drawn i
 after round, unless you asked for one of the other two settings. The seat that opens is
 announced, and so is the **seed**.
 
+### Changing the seats
+
+Between rounds you are asked **"change seats?"**, with three answers:
+
+| Answer | What it does |
+|---|---|
+| **leave them** | Nothing. It is the default, it is what return takes, and it is the rule — a seating holds. |
+| **yes, let's** | Asks the table. The seats are re-drawn before the next deal **unless somebody says no**. |
+| **no** | Stops it. One *no* holds the seats however many people asked. |
+
+**Everybody has to be happy, and somebody has to want it.** A table where everyone leaves it alone
+never moves; a table where one person asks and nobody objects moves once, and wanting it again
+means asking again. **The computer always goes along with it** — a bot has no opinion about
+furniture — so at a solo table your asking is enough. In the browser the same three answers are
+three buttons under your hand, and everybody at the table sees what you pressed.
+
 ### Flags
 
 ```bash
@@ -395,7 +411,7 @@ Useful options — all of them plain configuration, so `--` then the flag:
 | `--seats 5` | Four to six players (RULES.md §2.1). |
 | `--difficulty medium` | How hard the computer is at the table the site opens: `expert`, `hard`, `medium` or `easy`. A name nobody knows opens the table on `expert` rather than refusing to start. ⚠️ These are difficulty settings and not the *rungs* the simulator ranks — `--difficulty greedy` is a name this does not know. |
 | `--mixed true` | Give each computer seat a different setting instead of all of them the same. ⚠️ It takes a value, like `--hints`: a bare `--mixed` is silently ignored. |
-| `--seating held` | How long the seats hold: `held` (the default and the rule — drawn once and kept), `every-round`, or `every-5-rounds`. A name nobody knows opens the table on `held`. The lobby's *Open another table* form offers the same list. |
+| `--seating held` | How long the seats hold: `held` (the default and the rule — drawn once and kept), `every-round`, or `every-5-rounds`. A name nobody knows opens the table on `held`. The lobby's *Open another table* form offers the same list. ⚠️ It is a house arrangement, and separate from **asking the table to change seats**, which anybody at it can do at any time. |
 
 ⚠️ **If you walk away, the computer plays your seat** — the log says so and so does your seat, with
 a **⟳**. Come back and the next question is yours again.

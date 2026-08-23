@@ -129,4 +129,16 @@ public sealed class TableFanOut : IGameObserver
 
     public void RoundSettled(RoundResult result) =>
         Broadcast(new TableEvent.Settled(result));
+
+    /// <remarks>
+    /// ⚠️ <b>Broadcast, and it is meant to be.</b> Who asked and what the seating became are
+    /// public by the rule itself — the players agree in front of each other (RULES.md §3 step 2)
+    /// — so unlike every other event here there was never a filtered version to consider.
+    /// </remarks>
+    public void SeatingChanged(PlayerId asked, IReadOnlyList<PlayerId> seating) =>
+        // Copied, like every other list that comes off the engine's own state.
+        Broadcast(new TableEvent.SeatingChanged(asked, [.. seating]));
+
+    public void SeatingRefused(PlayerId asked, PlayerId refused) =>
+        Broadcast(new TableEvent.SeatingRefused(asked, refused));
 }

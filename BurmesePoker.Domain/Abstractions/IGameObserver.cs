@@ -66,4 +66,24 @@ public interface IGameObserver
 
     /// <summary>The money has been worked out.</summary>
     void RoundSettled(RoundResult result) { }
+
+    /// <summary>
+    /// The table agreed to change seats, and here is the new seating (RULES.md §3 step 2, §9 #45).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Public by construction.</b> Who asked and who refused are the whole of the account a
+    /// table gets, and neither says anything about a hand — this is the one conversation in the
+    /// game that happens in the open from end to end.
+    /// </remarks>
+    /// <param name="asked">Who asked for the change. The first seat to ask, in turn order.</param>
+    /// <param name="seating">The seating the next round will be dealt to.</param>
+    void SeatingChanged(PlayerId asked, IReadOnlyList<PlayerId> seating) { }
+
+    /// <summary>
+    /// Somebody asked to change seats and somebody would rather not, so the seating stands
+    /// (RULES.md §3 step 2; §9 #47's recorded default — agreement is unanimous).
+    /// </summary>
+    /// <param name="asked">Who asked.</param>
+    /// <param name="refused">Who would rather not. The first seat to refuse, in turn order.</param>
+    void SeatingRefused(PlayerId asked, PlayerId refused) { }
 }

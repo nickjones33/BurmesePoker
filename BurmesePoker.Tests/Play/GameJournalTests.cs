@@ -100,7 +100,16 @@ public class GameJournalTests
         var rich = Play(4242, () => new GreedyBotAgent(), journal: new GameJournalBuilder(JournalFidelity.Rich)).Journal!;
 
         Assert.Equal(JournalFidelity.Rich, rich.Header.Fidelity);
-        Assert.All(rich.Decisions, decision => Assert.NotNull(decision.Snapshot));
+
+        // ⚠️ Every decision about a turn carries a hand; the seating question does not and could
+        // not (P37). It is asked between rounds, when no seat is holding a turn's fourteen —
+        // so a snapshot there would be a photograph of nothing in particular.
+        var turns = rich.Decisions.Where(decision => decision.Question != JournalQuestion.Seating).ToList();
+
+        Assert.All(turns, decision => Assert.NotNull(decision.Snapshot));
+        Assert.All(
+            rich.Decisions.Where(decision => decision.Question == JournalQuestion.Seating),
+            decision => Assert.Null(decision.Snapshot));
 
         // Thirteen cards while the seat is still taking one, and fourteen once it has.
         Assert.All(
@@ -116,8 +125,10 @@ public class GameJournalTests
 
         Assert.Equal(JournalFormat.Lines(rich).ToList(), JournalFormat.Lines(read).ToList());
         Assert.Equal(
-            rich.Decisions.Select(decision => decision.Snapshot!.Hand),
-            read.Decisions.Select(decision => decision.Snapshot!.Hand));
+            turns.Select(decision => decision.Snapshot!.Hand),
+            read.Decisions
+                .Where(decision => decision.Question != JournalQuestion.Seating)
+                .Select(decision => decision.Snapshot!.Hand));
     }
 
     [Fact]
@@ -212,6 +223,47 @@ public class GameJournalTests
         Assert.Equal(4, read.TableSize);
         Assert.Equal(Table, read.Players);
         Assert.Equal(JournalHeader.CurrentRulesRevision, read.RulesRevision);
+    }
+
+    /// <summary>
+    /// ✅ <b>P37 — the sixth question round-trips through the file, and it is written before the
+    /// serializer is</b> (RULES.md §3 step 2, §9 #45).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>This test exists because <c>JournalFormat.Name</c>'s default arm is where P28's
+    /// mistranslation lived</b>: a fifth question was written to file as a <em>declaration</em>,
+    /// and only the file round-trip could see it. The packet's build item says write this one
+    /// first, so it is. ⚠️ <b>All three opinions, because a two-state answer is exactly what
+    /// would have been written by mistake</b> — <c>Consent</c> is neither yes nor no.
+    /// </remarks>
+    [Fact]
+    public void TheSeatingQuestionRoundTripsThroughTheFile()
+    {
+        var header = new JournalHeader(
+            Seed: 9,
+            Seats: [.. Table.Select(player => new JournalSeat(player, "greedy"))],
+            Stakes: Stakes.Standard,
+            Rounds: 2);
+
+        var opinions = new[] { SeatingOpinion.Consent, SeatingOpinion.Ask, SeatingOpinion.Refuse };
+
+        var journal = new GameJournal(
+            header,
+            [.. opinions.Select((opinion, seat) =>
+                JournalDecision.Of(round: 2, turn: 0, Table[seat], opinion))]);
+
+        var read = JournalFormat.Read(JournalFormat.Lines(journal).ToList());
+
+        Assert.Equal(opinions, read.Decisions.Select(decision => decision.AsSeatingOpinion()));
+        Assert.All(read.Decisions, decision => Assert.Equal(JournalQuestion.Seating, decision.Question));
+
+        // ⚠️ Round 2 turn 0: the question belongs to the gap before a round, and there is no turn
+        // it could belong to. A replay looks it up by exactly that pair.
+        Assert.All(read.Decisions, decision => Assert.Equal(0, decision.Turn));
+        Assert.All(read.Decisions, decision => Assert.Equal(2, decision.Round));
+
+        // The tokens are their own words, not yes/no with a third state smuggled in.
+        Assert.Equal(["consent", "ask", "refuse"], read.Decisions.Select(decision => decision.Answer));
     }
 
     /// <summary>

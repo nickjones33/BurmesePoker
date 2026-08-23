@@ -23,6 +23,15 @@
         dealt on top of the banks (§7.2).
     </p>
 
+    @*
+        🔥 What the seats are doing, which no view said until now (RULES.md §3 step 2). P36 held
+        the seating and left this a leftover; P37 made it a thing a person can change, so it is
+        also a thing they have to be able to find out.
+    *@
+    <p class="seats">
+        @Seating
+    </p>
+
     <p class="seed">
         Seed <strong>@Seed</strong> — every card in this match comes out of it, and
         <code>--seed @Seed</code> deals it again.
@@ -37,4 +46,23 @@
     /// <summary>The one seed this whole table is reproducible from.</summary>
     [Parameter, EditorRequired]
     public int Seed { get; set; }
+
+    /// <summary>How long this table's seating holds (RULES.md §3 step 2).</summary>
+    /// <remarks>
+    /// ⚠️ <b>A policy and not the rule about changing seats.</b> Held is the rule; a table may
+    /// also have been opened with a house arrangement, and a person looking at the felt cannot
+    /// otherwise tell which (P36, P37).
+    /// </remarks>
+    [Parameter]
+    public SeatingPolicy? Seats { get; set; }
+
+    private string Seating => (Seats ?? SeatingPolicy.Default) switch
+    {
+        { RoundsBetweenSeatings: 0 } =>
+            "The seats were drawn once and stay as they are — until everybody at the table agrees to "
+            + "change them, which is what the buttons under your hand are for.",
+        var policy =>
+            $"The seats are {policy.Description}, and the table can also agree to change them between "
+            + "deals."
+    };
 }

@@ -126,4 +126,11 @@ public sealed class SeatRecorder(IPlayerAgent inner, int turnCap, bool countLock
             throw new RoundAbandonedException(context.Round, context.TurnNumber, turnCap);
         }
     }
+
+    /// <remarks>
+    /// <b>Forwarded, because a default interface method would answer in this wrapper's name</b>
+    /// and silently drop what it wraps (RULES.md §3 step 2, P37).
+    /// </remarks>
+    public SeatingOpinion AskAboutTheSeating(SeatingQuestion question) =>
+        _inner.AskAboutTheSeating(question);
 }

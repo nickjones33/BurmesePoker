@@ -103,6 +103,31 @@ public sealed class RemotePlayerAgent : IPlayerAgent
             ? answer.Declared
             : _standIn.Declare(context);
 
+    /// <summary>
+    /// What this seat says about changing the seating (RULES.md §3 step 2, §9 #45).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Read rather than asked, and that is what makes a public question affordable.</b> The
+    /// other five put a <see cref="SeatPrompt"/> to one seat and block the table on it; this one
+    /// is put to every seat at once, so blocking would cost one patience per seat to settle a
+    /// single question. A person says what they think whenever they like — the control is on the
+    /// table, not in a prompt — and it stands on the seat's channel until the engine asks here.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The stand-in is not consulted and there is nothing for it to do.</b> A seat nobody is
+    /// answering has said nothing, and saying nothing is <see cref="SeatingOpinion.Consent"/>,
+    /// which changes no seating on its own — so an unattended table fails closed by construction
+    /// rather than by a timeout.
+    /// </para>
+    /// </remarks>
+    public SeatingOpinion AskAboutTheSeating(SeatingQuestion question)
+    {
+        ArgumentNullException.ThrowIfNull(question);
+
+        return _connection.TakeSeatingOpinion();
+    }
+
     private SeatAnswer? Ask(TurnContext context, SeatQuestion question)
     {
         ArgumentNullException.ThrowIfNull(context);

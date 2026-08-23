@@ -503,6 +503,15 @@ public class TableSessionTests
         Assert.Equal(sizeBefore, first.Events.Count);
         Assert.Null(first.Pending);
         Assert.False(first.Answer(new SeatAnswer.Take(TurnAction.DrawFromDeck)));
+
+        // ⚠️ And it cannot ask the table to change seats either (P37). The sixth question is
+        // public, which makes it the one thing a dead connection could otherwise have said out
+        // loud in somebody else's name — so it follows Answer's rule and not the fan-out's.
+        Assert.False(first.SaysAboutTheSeating(SeatingOpinion.Ask));
+        Assert.Equal(SeatingOpinion.Consent, first.Seating);
+        Assert.Empty(second!.Events.OfType<TableEvent.SeatingOpinionGiven>());
+        Assert.True(second.SaysAboutTheSeating(SeatingOpinion.Ask));
+        Assert.Equal(SeatingOpinion.Ask, second.Seating);
         Assert.True(succeeded.Answered > 0);
         Assert.Contains(
             second!.Events.OfType<TableEvent.Drew>(),

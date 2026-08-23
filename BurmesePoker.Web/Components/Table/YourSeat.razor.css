@@ -58,3 +58,59 @@ h2 {
     height: 24px;
     accent-color: var(--accent);
 }
+
+/*
+    The seats (P37). Quiet by construction: it is not a question the table is waiting on, so it
+    must not compete with the prompt above it.
+*/
+.seats {
+    margin-top: 0.9rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--edge-raised);
+}
+
+.seats h3 {
+    margin: 0 0 0.3rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--on-raised-muted);
+}
+
+.seats .said {
+    margin: 0 0 0.5rem;
+    color: var(--on-raised-muted);
+    font-size: 0.9rem;
+}
+
+.seats .asking {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+/* 44px of target, exactly as every other control on this page (§3.11 A3). */
+.seats button {
+    min-height: 44px;
+    padding: 0 0.9rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 8px;
+    background: var(--raised);
+    color: var(--on-raised);
+    font: inherit;
+    cursor: pointer;
+}
+
+.seats button:hover:not(:disabled) {
+    border-color: var(--accent);
+}
+
+/* The one that is already your answer, which is said with aria-pressed as well as with paint. */
+.seats button:disabled {
+    border-color: var(--accent);
+    color: var(--on-raised);
+    cursor: default;
+    opacity: 1;
+}

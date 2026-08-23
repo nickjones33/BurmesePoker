@@ -359,3 +359,100 @@ public class SeatBoardRefusalTests
         ],
         TableSessionTests.Options(20260819));
 }
+
+/// <summary>
+/// ✅ <b>P37 — the seating question from a browser seat</b> (RULES.md §3 step 2, §9 #45).
+/// </summary>
+/// <remarks>
+/// 🔥 <b>A control on the table rather than an answer to a prompt.</b> Every other question the
+/// page answers is a <c>SeatPrompt</c> put to one seat; this one is public and stands until the
+/// table is asked between deals, so the board carries it beside <see cref="SeatBoard.Asking"/>
+/// and never inside it. ⚠️ <b>And the page needs no route to the table session to say it</b>
+/// (P13.4 acceptance 3) — the connection broadcasts it.
+/// </remarks>
+[Collection(WallClockBudgets.Collection)]
+public class SeatingFromTheBrowserTests
+{
+    private static readonly PlayerId One = new(1);
+    private static readonly PlayerId Three = new(3);
+
+    [Fact]
+    public void PressingAskSaysItToTheWholeTableAndMovesTheSeatsOnce()
+    {
+        var table = TableSession.Open(
+            TableSessionTests.TwoPeopleAndTwoBots(), TableSessionTests.Options(20260822));
+
+        using var seat = new SeatBoard(table.ConnectionFor(One));
+        using var other = new SeatBoard(table.ConnectionFor(Three));
+
+        _ = new ScriptedSeat(table.ConnectionFor(One));
+        _ = new ScriptedSeat(table.ConnectionFor(Three));
+
+        Assert.Equal(SeatingOpinion.Consent, seat.Seating);
+
+        var first = table.PlayRound();
+
+        Assert.True(seat.Says(SeatingOpinion.Ask));
+        Assert.Equal(SeatingOpinion.Ask, seat.Seating);
+
+        // The other seat heard it, which is what makes it a public question.
+        Assert.Contains(
+            table.ConnectionFor(Three).Events.OfType<TableEvent.SeatingOpinionGiven>(),
+            said => said.Player == One && said.Opinion == SeatingOpinion.Ask);
+
+        var second = table.PlayRound();
+
+        static string Order(RoundRecord round) => string.Join(",", round.Table.Seats.Select(place => place.Id));
+
+        Assert.NotEqual(Order(first), Order(second));
+
+        // ⚠️ Asking is consumed: the button goes back to "don't mind" once the table has been
+        // asked, so one press moves the seats once.
+        Assert.Equal(SeatingOpinion.Consent, seat.Seating);
+    }
+
+    /// <summary>
+    /// ⚠️ <b>A refusal from the other person stops it</b> (§9 #47's recorded default), and the
+    /// table is told who by.
+    /// </summary>
+    [Fact]
+    public void OnePersonRefusingStopsAnother()
+    {
+        var table = TableSession.Open(
+            TableSessionTests.TwoPeopleAndTwoBots(), TableSessionTests.Options(20260822));
+
+        using var asking = new SeatBoard(table.ConnectionFor(One));
+        using var refusing = new SeatBoard(table.ConnectionFor(Three));
+
+        _ = new ScriptedSeat(table.ConnectionFor(One));
+        _ = new ScriptedSeat(table.ConnectionFor(Three));
+
+        var first = table.PlayRound();
+
+        Assert.True(asking.Says(SeatingOpinion.Ask));
+        Assert.True(refusing.Says(SeatingOpinion.Refuse));
+
+        var second = table.PlayRound();
+
+        static string Order(RoundRecord round) => string.Join(",", round.Table.Seats.Select(place => place.Id));
+
+        Assert.Equal(Order(first), Order(second));
+        Assert.Contains(
+            table.ConnectionFor(One).Events.OfType<TableEvent.SeatingRefused>(),
+            stopped => stopped.Asked == One && stopped.Refused == Three);
+    }
+
+    /// <summary>A watcher holds no seat, so it has nothing to say about the seating.</summary>
+    [Fact]
+    public void AWatcherSaysNothingAboutTheSeats()
+    {
+        var table = TableSession.Open(
+            TableSessionTests.TwoPeopleAndTwoBots(), TableSessionTests.Options(3));
+
+        var watcher = table.Watch("The room");
+
+        Assert.False(watcher.SaysAboutTheSeating(SeatingOpinion.Ask));
+        Assert.Equal(SeatingOpinion.Consent, watcher.Seating);
+        Assert.Empty(watcher.Events.OfType<TableEvent.SeatingOpinionGiven>());
+    }
+}

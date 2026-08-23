@@ -66,6 +66,26 @@ internal sealed class RecordingObserver : IGameObserver
     /// </summary>
     public List<IReadOnlyList<PlayerId>> Seatings { get; } = [];
 
+    /// <summary>Every agreed change of seats, as who asked (RULES.md §3 step 2, §9 #45).</summary>
+    public List<string> SeatingChanges { get; } = [];
+
+    /// <summary>Every asking somebody stopped — who asked, and who would rather not.</summary>
+    public List<string> SeatingRefusals { get; } = [];
+
+    public void SeatingChanged(PlayerId asked, IReadOnlyList<PlayerId> seating)
+    {
+        SeatingChanges.Add($"{asked} asked");
+        Events.Add($"seating changed to {string.Join(",", seating)}, {asked} asked");
+        Check();
+    }
+
+    public void SeatingRefused(PlayerId asked, PlayerId refused)
+    {
+        SeatingRefusals.Add($"{asked} asked, {refused} refused");
+        Events.Add($"seating stands, {asked} asked and {refused} refused");
+        Check();
+    }
+
     public void ClaimRefused(PlayerId objector, PlayerId claimant, Card card)
     {
         Refusals.Add((objector, claimant, card));

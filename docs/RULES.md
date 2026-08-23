@@ -327,6 +327,11 @@ copy of a card that is about to become a money card. That appears to be the poin
 > once and held**, and re-drawing is an **event somebody asks for** rather than a step of the deal.
 > **§9 #14's answer was about what *may* happen between games, not about what happens every time.**
 >
+> ✅ **Both halves are built: P36 held the seating on 2026-08-22 and P37 built the agreeing the
+> same day — §10 #22 and #23 are both discharged.** A seating is drawn once and kept, every seat is
+> asked *shall we change seats* between rounds, and the seats move when **one seat asks and none
+> refuses**. ⚠️ **A computer seat consents** — `BUILD-PLAN` §3.13, a design decision and not a rule.
+>
 > ✅ **Built by P36 on 2026-08-22, and §10 #22 is discharged.** Between P28 and P36 the engine
 > contradicted this document again and in the opposite direction to before: P28 built the
 > every-round reading, so what was §10 #16's fix became §10 #22's defect. **This is the second
@@ -1765,8 +1770,8 @@ of a whole that included the seating. 🔥 **The general lesson, now earned twic
 
 | # | Question | § | Status | Blocks |
 |---:|---|---|---|---|
-| 45 | 🔥 **What does "when people ask for it" mean — a request, or an agreement?** Does **one** player asking move the seats, or must the others want it too? *"Somebody says let's change seats. Does that just happen, or do the rest of you have to want it too?"* | 3 | ✅ **Ruled by Nick, 2026-08-22: *"when people agree to do it."*** `PLAYER`, so it stands until the expert says otherwise (`EXPERT` outranks it) — **the question stays in this table for that reason and is not struck through.** ⚠️ **It reverses this row's own recommendation**, which was *one player asking is enough* on the grounds that it invents no machinery: **agreement is the more expensive reading and it is the one taken.** ⚠️ **What "agree" means is #47** | **P37's whole user interaction.** ✅ **P36's seam held** — *when* a re-draw happens is a policy either way, and P36 shipped it with `SeatingPolicyTests.NobodyIsAskedWhetherToChangeSeats` fencing this row so a round-counting policy cannot quietly answer it |
-| 47 | **Does agreement mean everybody, or most of them?** §9 #45 is ruled as *when people agree*; a table of five with one objector either re-seats or does not. *"Three of us want to change seats and two don't. Do we change?"* | 3 | Unknown — recommend **unanimous among the people at the table**, because *agree* reads as consent rather than as a count, and because the losing side of a majority vote is made to move seats against their will in a game with money on it | **P37 only.** ✅ **Safe default** — unanimity is the reading that never moves somebody who objected, so no player is worse off under it than under the alternative. ✅ **P36 fenced it**: `SeatingPolicyTests.WhatAgreementMeansIsNotDecidedByCountingRounds` asserts the shipped policy counts rounds and nothing else |
+| 45 | 🔥 **What does "when people ask for it" mean — a request, or an agreement?** Does **one** player asking move the seats, or must the others want it too? *"Somebody says let's change seats. Does that just happen, or do the rest of you have to want it too?"* | 3 | ✅ **Ruled by Nick, 2026-08-22: *"when people agree to do it."*** `PLAYER`, so it stands until the expert says otherwise (`EXPERT` outranks it) — **the question stays in this table for that reason and is not struck through.** ⚠️ **It reverses this row's own recommendation**, which was *one player asking is enough* on the grounds that it invents no machinery: **agreement is the more expensive reading and it is the one taken.** ⚠️ **What "agree" means is #47** | ✅ **Built by P37, 2026-08-22, as an agreement and not a request**: every seat is asked between rounds and the seats move on **one asking and no refusal** (`SeatingAgreementTests`). ✅ **P36's seam held** — *when* a re-draw happens is a policy either way, and the policy still decides on a round count and nothing else |
+| 47 | **Does agreement mean everybody, or most of them?** §9 #45 is ruled as *when people agree*; a table of five with one objector either re-seats or does not. *"Three of us want to change seats and two don't. Do we change?"* | 3 | Unknown — recommend **unanimous among the people at the table**, because *agree* reads as consent rather than as a count, and because the losing side of a majority vote is made to move seats against their will in a game with money on it | ⚠️ **Built on this default by P37, 2026-08-22, and still open.** ✅ **Safe default** — unanimity is the reading that never moves somebody who objected, so no player is worse off under it than under the alternative. **Fenced by `SeatingAgreementTests.AgreementIsUnanimousUntilTheExpertSaysOtherwise`**, which plays three seats asking and one refusing — the case that separates the two readings — and is the test that fails the day an expert overturns this |
 | 46 | **What if the seats change mid-streak?** Somebody has won two in a row, the table re-seats, and they win a third. Is the seat above them at that moment blamed, even though they were somewhere else for the first two? *"I've won two, we re-shuffle, I win a third. Who pays?"* | 7.5, 3 | Unknown — recommend **the third round's seating** (the round being settled), which is old #42's recommendation surviving into the one case that can still produce it. ✅ **Safe default** — it is what settling a round from its own state already means | Nothing, until a re-seating exists to happen mid-streak |
 
 ⚠️ **#36 and #37 still block nothing**, and #40 and #44 both inherit #36's recommendation, so the
@@ -2396,12 +2401,16 @@ See `RULES-TECHNICAL.md` §7 for defects not driven by rules decisions, and
     M.** ⚠️ **Blocked in part on §9 #43**, which asks whether §7.5 contradicts §3's per-round
     re-seating.
 
-23. **A held seating can be re-drawn when the players agree to it** (§3 step 2, §9 #45).
-    `EXPERT` for the holding, `PLAYER` for *agree*, and **the agreeing is unimplemented**. ⚠️ P36
-    built the *mechanism* — a policy the engine consults, which a table may set to re-seat every
-    *N* rounds — but **a number chosen when the table opens is not people agreeing**, and P36's
-    own tests fence that: `SeatingPolicyTests.NobodyIsAskedWhetherToChangeSeats` (#45) and
-    `WhatAgreementMeansIsNotDecidedByCountingRounds` (#47). ⚠️ **It needs a kind of question this project has never asked**: `SeatPrompt` is
+23. ~~**A held seating can be re-drawn when the players agree to it**~~ (§3 step 2, §9 #45).
+    ✅ **Discharged by P37 on 2026-08-22.** `EXPERT` for the holding, `PLAYER` for *agree*.
+    🔥 **Every seat is asked between rounds and the seats move on one asking and no refusal** —
+    `IPlayerAgent.AskAboutTheSeating` is a sixth question and `SeatingOpinion` is three answers,
+    because **consent is not desire**: a yes-or-no question would have re-seated a table of
+    consenting computer seats every deal. ⚠️ **A computer seat consents, and that is a design
+    decision rather than a rule** — §3 says *the players* agree and a bot is not a player in the
+    sense the rule is about, so it is recorded in `BUILD-PLAN` **§3.13** and nothing was invented
+    here. ⚠️ **§9 #47 is still open** (everybody or most?) and P37 built its recorded default,
+    fenced by a test named for it. ⚠️ **It needs a kind of question this project has never asked**: `SeatPrompt` is
     seat-private by construction (P13.2), and this one is **public and put to everybody at once**.
     ⚠️ **Blocked in part on §9 #47** (everybody, or most of them). See packet **P37**.
 

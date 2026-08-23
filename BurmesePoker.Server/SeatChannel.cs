@@ -38,6 +38,7 @@ internal sealed class SeatChannel
     private SeatPrompt? _pending;
     private SeatAnswer? _answer;
     private SeatConnection? _current;
+    private SeatingOpinion _seating = SeatingOpinion.Consent;
 
     /// <summary>The connection currently occupying the seat.</summary>
     internal SeatConnection Current
@@ -100,6 +101,72 @@ internal sealed class SeatChannel
 
         _answered.Set();
         return true;
+    }
+
+    /// <summary>
+    /// What this seat has said about changing the seating, until it is asked (RULES.md §3 step 2).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>A standing answer rather than a pending question, and that is the packet's shape.</b>
+    /// The other five questions block one seat while the table waits; this one is put to
+    /// <em>everybody</em>, so a table that blocked on it would wait five patiences to settle one
+    /// question. What a seat says instead stands here until the engine asks between rounds.
+    /// ⚠️ <b>It lives on the channel and not on a connection</b> for the same reason a pending
+    /// prompt does (review R8): a seat's opinion is the seat's, and a person who takes the seat
+    /// over inherits it exactly as they inherit a standing question.
+    /// </remarks>
+    internal SeatingOpinion Seating
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _seating;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Says something about changing the seating — accepted only from the seat's occupant.
+    /// </summary>
+    internal bool Say(SeatConnection handle, SeatingOpinion opinion)
+    {
+        lock (_gate)
+        {
+            if (!ReferenceEquals(handle, _current))
+            {
+                return false;
+            }
+
+            _seating = opinion;
+        }
+
+        handle.NotifyUpdated();
+        return true;
+    }
+
+    /// <summary>
+    /// Reads this seat's opinion and puts it back to <see cref="SeatingOpinion.Consent"/>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Asking consumes the answer, so a table is never asked to agree twice to one
+    /// request.</b> Wanting the seats changed again means asking again — which is what stops a
+    /// single press re-seating the table every round for the rest of the evening.
+    /// </remarks>
+    internal SeatingOpinion TakeSeatingOpinion()
+    {
+        SeatingOpinion opinion;
+        SeatConnection? current;
+
+        lock (_gate)
+        {
+            opinion = _seating;
+            _seating = SeatingOpinion.Consent;
+            current = opinion == SeatingOpinion.Consent ? null : _current;
+        }
+
+        current?.NotifyUpdated();
+        return opinion;
     }
 
     /// <summary>

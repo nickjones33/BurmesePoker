@@ -80,7 +80,7 @@ public sealed class TableSession
                 // The agent holds this first connection for ever and asks through it, which
                 // reaches the channel whoever occupies the seat by then.
                 var channel = new SeatChannel();
-                var connection = new SeatConnection(seat.Player, seat.Name, channel);
+                var connection = new SeatConnection(seat.Player, seat.Name, channel, _fanOut);
                 channel.Occupy(connection);
                 _channels[seat.Player] = channel;
                 _seats[seat.Player] = connection;
@@ -278,7 +278,7 @@ public sealed class TableSession
             // to the new connection rather than away (P13.6).
             _names[player] = name;
             superseded = seat;
-            connection = new SeatConnection(player, name, _channels[player]);
+            connection = new SeatConnection(player, name, _channels[player], _fanOut);
             _channels[player].Occupy(connection);
             _seats[player] = connection;
 
@@ -320,6 +320,33 @@ public sealed class TableSession
 
         _fanOut.Broadcast(new TableEvent.SeatLeft(player, name));
         return true;
+    }
+
+    /// <summary>
+    /// Says, on behalf of one seat, what it thinks about changing the seating
+    /// (RULES.md §3 step 2, §9 #45) — and tells the whole table it said so.
+    /// </summary>
+    /// <returns>
+    /// False for a watcher and for a connection that no longer occupies its seat (review R8).
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The broadcast is the point.</b> Agreeing to change seats is something people do in
+    /// front of each other, so a seat's opinion goes to every connection the moment it is given —
+    /// the first thing this server has ever asked in the open. ⚠️ <b>Nothing is settled here</b>:
+    /// the engine puts the question to every seat between rounds, and this is a seat saying in
+    /// advance what it will answer.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>An opinion nobody gives is <see cref="SeatingOpinion.Consent"/></b>, and consent moves
+    /// no seats. A table nobody is at therefore never re-seats itself, with no clock involved.
+    /// </para>
+    /// </remarks>
+    public bool SaysAboutTheSeating(SeatConnection connection, SeatingOpinion opinion)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+
+        return connection.SaysAboutTheSeating(opinion);
     }
 
     /// <summary>

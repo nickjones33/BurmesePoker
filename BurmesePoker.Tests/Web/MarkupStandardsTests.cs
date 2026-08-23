@@ -107,6 +107,37 @@ public class MarkupStandardsTests
     /// And the other half of it, stated positively: the seat's own components draw the hand from
     /// the prompt they were handed and from the view model in it.
     /// </remarks>
+    /// <summary>
+    /// ✅ <b>P37 — the public question is a set of real controls beside the turn, not inside
+    /// it</b> (RULES.md §3 step 2, §9 #45).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Where it is drawn is the packet's whole shape.</b> Every other question is a
+    /// <c>SeatPrompt</c> put to one seat and drawn by <c>TurnPrompt</c>; this one is put to the
+    /// whole table and is not an answer to anything, so a control for it inside the turn's
+    /// prompt would say it was — and would disappear the moment it was not your turn, which is
+    /// most of the time. ⚠️ <b>Its state is on the controls</b> (§3.11 A4): the one that is
+    /// already your answer is disabled and says so with <c>aria-pressed</c>.
+    /// </remarks>
+    [Fact]
+    public void TheSeatingQuestionIsAskedBesideTheTurnAndNotInsideIt()
+    {
+        var seat = Sources.Read("Components/Table/YourSeat.razor");
+        var prompt = Sources.Read("Components/Table/TurnPrompt.razor");
+
+        Assert.Contains("SeatingOpinion.Ask", seat, StringComparison.Ordinal);
+        Assert.Contains("aria-pressed", seat, StringComparison.Ordinal);
+
+        // Real controls, and every one of them a <button> with a handler on it: three answers,
+        // three buttons, three handlers, and no <div onclick> anywhere near it (§3.11 A4).
+        Assert.Equal(3, Regex.Matches(seat, @"Say\(SeatingOpinion\.").Count);
+        Assert.Equal(3, Regex.Matches(seat, @"<button type=""button"" aria-pressed=").Count);
+
+        // ⚠️ Not in the turn's prompt, and there is nothing there to widen: TurnPrompt draws the
+        // five questions a seat is asked privately and knows nothing about the sixth.
+        Assert.DoesNotContain("Seating", prompt, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void TheSeatDrawsTheHandItWasSent()
     {

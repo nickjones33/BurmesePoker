@@ -75,7 +75,14 @@ public enum JournalQuestion
     Objection,
 
     /// <summary>Lay all thirteen down and end the round (RULES.md §7.1).</summary>
-    Declare
+    Declare,
+
+    /// <summary>
+    /// Shall we change seats (RULES.md §3 step 2, §9 #45)? 🔥 <b>The one decision recorded
+    /// <em>between</em> rounds</b> — its turn is 0, because there is no turn it belongs to — and
+    /// the only one whose answer is neither a card nor a yes-or-no.
+    /// </summary>
+    Seating
 }
 
 /// <summary>One seat of the table this game was played at.</summary>
@@ -231,6 +238,33 @@ public sealed record JournalDecision(
     /// <summary>Writes down a yes-or-no answer.</summary>
     public static JournalDecision Of(int round, int turn, PlayerId player, JournalQuestion question, bool answer, DecisionSnapshot? snapshot = null) =>
         new(round, turn, player, question, answer ? "yes" : "no", snapshot);
+
+    /// <summary>
+    /// Writes down what a seat thought about changing the seating (RULES.md §3 step 2).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Three tokens and never <c>yes</c>/<c>no</c>.</b> Consent is neither: a table of
+    /// consenting seats changes nothing, and a two-state record would lose exactly the state that
+    /// makes that true. ⚠️ <b>No snapshot</b> — the question is asked between rounds, when no seat
+    /// is holding a turn's fourteen and there is nothing a hand could mean.
+    /// </remarks>
+    public static JournalDecision Of(int round, int turn, PlayerId player, SeatingOpinion opinion) =>
+        new(round, turn, player, JournalQuestion.Seating, opinion switch
+        {
+            SeatingOpinion.Ask => "ask",
+            SeatingOpinion.Refuse => "refuse",
+            SeatingOpinion.Consent => "consent",
+            _ => throw new ArgumentOutOfRangeException(nameof(opinion), opinion, "Not an opinion about the seating.")
+        });
+
+    /// <summary>Reads the answer as an opinion about the seating (RULES.md §3 step 2).</summary>
+    public SeatingOpinion AsSeatingOpinion() => Answer switch
+    {
+        "consent" => SeatingOpinion.Consent,
+        "ask" => SeatingOpinion.Ask,
+        "refuse" => SeatingOpinion.Refuse,
+        _ => throw Unreadable("consent, ask or refuse")
+    };
 
     /// <summary>Reads the answer as a way of taking a card.</summary>
     public TurnAction AsAction() => Answer switch

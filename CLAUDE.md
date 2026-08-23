@@ -11,9 +11,34 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **READ THIS FIRST — `P36` shipped 2026-08-22 on Opus 5: a seating is drawn once and held, and
-`RULES.md` §10 #22 is discharged.** `RULES.md` is **rev 29** (unmoved — no rule changed), the tree
-is green at **778**, and **`P37` is the next packet** (then `P35`, `P34`).
+🔥 **READ THIS FIRST — `P37` shipped 2026-08-22 on Opus 5: the table can agree to change seats,
+`RULES.md` §10 #23 is discharged, and §10 is empty — every rule the document records as Settled is
+implemented.** `RULES.md` is **rev 29** (unmoved — no rule changed), the tree is green at **795**,
+and **`P35` is the next packet** (then `P34`).
+
+**What P37 built, and the four things a cold session needs from it.**
+🔥 **(1) `IPlayerAgent.AskAboutTheSeating` is a sixth question and the first that is not about
+cards.** Every seat is asked in the gap before a round; the seats move on **one `Ask` and no
+`Refuse`**. Asked in `MatchEngine.NextSeating`, **beside** P36's policy — the agreement first, and
+the policy not asked on top of it.
+🔥 **(2) Consent is not desire, and a yes-or-no question could not have carried the rule.** A
+computer seat consents (a *design* decision, `BUILD-PLAN` **§3.13**, not a rule) — but a consenting
+bot answering *yes* would re-seat an all-bot table every deal. **`SeatingOpinion` is three
+answers**, `Consent` the default and a no-op, so *fail closed* fell out for free: silence, an
+unattended seat and every bot all consent, and consent moves nothing.
+🔥 **(3) A default interface method is a silent trap and this is the project's first.** A decorator
+that does not override it answers *consent* **in its own name** and drops what it wraps — a
+re-seating that never reaches the journal, a replay that deals to different seats. **Six decorators
+needed forwarding**, found by type. ⚠️ **Any future default member on that interface inherits this.**
+⚠️ **(4) A public question is a standing answer, not a pending prompt** — blocking would cost one
+patience per seat. It stands on the `SeatChannel` and the engine **consumes** it: one press moves
+the seats once. ✅ **Replay was free** (`JournalingAgent` at turn 0, and `JournalPlayerAgent` peeks
+so pre-P37 journals still replay). ✅ **No published measurement can move.**
+
+---
+
+**Before that, `P36` shipped the same day: a seating is drawn once and held, and `RULES.md` §10
+#22 is discharged.**
 
 **What P36 built, and the four things a cold session needs from it.**
 🔥 **(1) `Domain/Play/SeatingPolicy.cs` is *when a re-draw happens*, and it is one condition in one
@@ -37,8 +62,8 @@ byte-identical**.
 
 ---
 
-**Before that, `P24.2` shipped the same day: the hint arrow grows a sentence, and the journal
-records where a person disagreed with the computer.**
+**And before that, `P24.2`: the hint arrow grows a sentence, and the journal records where a person
+disagreed with the computer.**
 
 **What P24.2 built, and the three things a cold session needs from it.**
 🔥 **(1) `CoverScore.Ranking` is now a projection of `CoverScore.Scored`** — the keys the sort
@@ -131,13 +156,12 @@ a bare number never caught that.
 ✅ **`P24.2` is done (2026-08-22)** — both of its re-plan's bets were right: P31 had already built
 half of build item 1 (**the keys were missing, not the ranking**), and P32's trap was real, so the
 sentence reads the same `TableRules` the evaluator does and is asserted at four seats and at five.
-**`P36` is done too; `P37` is next, then `P35`, `P34`.**
+**`P36` and `P37` are done too; `P35` is next, then `P34`.**
 
-⚠️ **Two leftovers. (1) P32's: `BurmesePoker.Console` still deals four** — its seat prompt
-defaults to `MinimumPlayers`. **One line plus a `drive-console.py` re-capture.**
-⚠️ **(2) P36's: no view says what the seats are doing** — `AboutTable` does not carry the setting,
-so a person at a browser table cannot find out whether the seats hold. **One line, and P37's
-natural neighbour.**
+⚠️ **One leftover, P32's: `BurmesePoker.Console` still deals four** — its seat prompt defaults to
+`MinimumPlayers`. **One line plus a `drive-console.py` re-capture.** ✅ **P36's leftover is taken**:
+`AboutTable` says what the seats are doing, and the console's round-start line stopped claiming
+*"the seats are re-drawn every round"* — **false for a day after P36**.
 
 ---
 

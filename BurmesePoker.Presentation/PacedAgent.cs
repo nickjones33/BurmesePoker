@@ -104,4 +104,11 @@ public sealed class PacedAgent : IPlayerAgent
         _paused = (context.Round, context.TurnNumber);
         Thread.Sleep(_pause);
     }
+
+    /// <remarks>
+    /// <b>Forwarded, because a default interface method would answer in this wrapper's name</b>
+    /// and silently drop what it wraps (RULES.md §3 step 2, P37).
+    /// </remarks>
+    public SeatingOpinion AskAboutTheSeating(SeatingQuestion question) =>
+        _inner.AskAboutTheSeating(question);
 }

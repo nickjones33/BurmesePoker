@@ -63,4 +63,33 @@ public interface IPlayerAgent
     /// hand actually wins (RULES.md §7.1).
     /// </summary>
     bool Declare(TurnContext context);
+
+    /// <summary>
+    /// Shall we change seats? Asked of every seat between rounds (RULES.md §3 step 2, §9 #45).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The sixth question, and the first that is not about cards.</b> The other five are put
+    /// to one seat about its own move; this one is put to <em>everybody</em>, its answers are
+    /// public, and the seats move only if somebody <see cref="SeatingOpinion.Ask"/>ed and nobody
+    /// <see cref="SeatingOpinion.Refuse"/>d.
+    /// </para>
+    /// <para>
+    /// 🔥 <b>The default answer is <see cref="SeatingOpinion.Consent"/>, it lives here rather than
+    /// on any rung, and that is a design decision rather than a rule</b> (BUILD-PLAN §3.13).
+    /// A rung decides about cards, and <em>"shall we move seats"</em> is not a card decision — so
+    /// a rung answering it on some invented basis would be a strategy claim nobody measured
+    /// (P15's discipline), and a rung that <em>abstained</em> would make §3's rule dead at every
+    /// table with a computer at it, which at a solo table is every table. ⚠️ <b>No rung overrides
+    /// this</b>, and <c>SeatingAgreementTests</c> fails the build if one does.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>A decorator must forward it.</b> This is the first member of this interface with an
+    /// implementation, so a wrapper that does not override it answers <em>consent</em> in its own
+    /// name and silently drops what it wraps — which for a journalling wrapper would mean a
+    /// re-seating that never reached the file. <c>SeatingAgreementTests.EveryDecoratorForwards
+    /// TheSeatingQuestion</c> is the guard.
+    /// </para>
+    /// </remarks>
+    SeatingOpinion AskAboutTheSeating(SeatingQuestion question) => SeatingOpinion.Consent;
 }

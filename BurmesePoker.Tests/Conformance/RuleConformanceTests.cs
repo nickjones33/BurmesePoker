@@ -104,6 +104,78 @@ public class RuleConformanceTests
                 players.OrderBy(player => player.Value), seating.OrderBy(player => player.Value)));
     }
 
+    /// <summary>
+    /// ✅ <b>§3 step 2's other half: a held seating is re-drawn when the players agree to it</b>
+    /// (§9 #45, §10 #23, packet P37) — <b>and only then</b>.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Both halves, because either alone is a different rule.</b> A table that never moved
+    /// its seats would be more rigid than the game is, and one that moved them whenever anybody
+    /// consented would move them every deal — the check above is <em>held</em> and this one is
+    /// <em>changed only by agreement</em>. ⚠️ <b>The bots are what make this an ordinary-play
+    /// check</b>: they consent, every round, and the seating still stands until a seat asks.
+    /// </remarks>
+    [Theory]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    public void TheSeatingChangesWhenTheTableAgreesAndNotOtherwise(int seats)
+    {
+        var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, seats).Select(id => new PlayerId(id))];
+        var asked = false;
+
+        var observer = new RecordingObserver();
+
+        var match = new MatchEngine(
+            players,
+            players.ToDictionary(
+                player => player,
+                IPlayerAgent (player) => player == players[0]
+                    // Asks once, in the gap before the third round, and consents every other time.
+                    ? new AsksWhenTold(() => asked)
+                    : new GreedyBotAgent()),
+            Stakes.Standard,
+            new Random(20260822),
+            observer);
+
+        for (var round = 0; round < 4; round++)
+        {
+            asked = round == 2;
+            match.PlayRound();
+        }
+
+        // Consent everywhere until the asking, and the asking moves them exactly once.
+        Assert.Equal(players, observer.Seatings[0]);
+        Assert.Equal(players, observer.Seatings[1]);
+        Assert.NotEqual(players, observer.Seatings[2]);
+        Assert.Equal(observer.Seatings[2], observer.Seatings[3]);
+
+        // Everybody is still at the table: an agreement is a permutation and nothing else.
+        Assert.All(observer.Seatings, seating => Assert.Equal(
+            players.OrderBy(player => player.Value), seating.OrderBy(player => player.Value)));
+
+        Assert.Equal([$"{players[0]} asked"], observer.SeatingChanges);
+    }
+
+    /// <summary>A seat that asks for a change of seats when it is told to, and consents otherwise.</summary>
+    private sealed class AsksWhenTold(Func<bool> asking) : IPlayerAgent
+    {
+        private readonly GreedyBotAgent _plays = new();
+
+        public TurnAction ChooseAction(TurnContext context) => _plays.ChooseAction(context);
+
+        public Card ChooseDiscard(TurnContext context) => _plays.ChooseDiscard(context);
+
+        public bool ClaimTurnedUpMoneyCard(TurnContext context) => _plays.ClaimTurnedUpMoneyCard(context);
+
+        public bool ObjectToClaim(TurnContext context) => _plays.ObjectToClaim(context);
+
+        public bool Declare(TurnContext context) => _plays.Declare(context);
+
+        public SeatingOpinion AskAboutTheSeating(SeatingQuestion question) =>
+            asking() ? SeatingOpinion.Ask : SeatingOpinion.Consent;
+    }
+
     /// <summary>Eight rounds' seatings, in order, under one policy.</summary>
     private static IReadOnlyList<IReadOnlyList<PlayerId>> Dealt(
         IReadOnlyList<PlayerId> players, SeatingPolicy policy)

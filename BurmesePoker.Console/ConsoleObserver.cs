@@ -50,9 +50,11 @@ public sealed class ConsoleObserver : IGameObserver
     }
 
     /// <remarks>
-    /// ⚠️ <b>The seating is said every round because it changes every round</b> (RULES.md §3
+    /// ⚠️ <b>The seating is said every round because it <em>may</em> change</b> (RULES.md §3
     /// step 2). It used to be printed once at setup, which was true of a match that kept its
-    /// seats and is a lie about one that re-draws them.
+    /// seats and a lie about one that re-draws them; P28 made it a lie, P36 made it true again,
+    /// and P37 made it a thing the table can change on purpose — so it is still said every
+    /// round, and it no longer says <em>why</em>, because the reason is now the table's.
     /// </remarks>
     public void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp)
     {
@@ -62,12 +64,28 @@ public sealed class ConsoleObserver : IGameObserver
         Say(
             $"[{Palette.Quiet}]Seats drawn:[/] "
             + string.Join(" → ", seating.Select(Who))
-            + $"  [{Palette.Quiet}]— {Who(seating[0])} opens; the seats are re-drawn every round[/]");
+            + $"  [{Palette.Quiet}]— {Who(seating[0])} opens[/]");
         Say(
             "Turned up: " + string.Join("  ", turnedUp.Select(CardFormatting.Of))
             + $"  [{Palette.Quiet}]— the partner copy of each pays its owner; 7♦, A♠ and the jokers always do[/]");
         _console.WriteLine();
     }
+
+    /// <summary>
+    /// The table agreed to change seats (RULES.md §3 step 2, §9 #45).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Said before the round it changes, because that is when it happens</b> — the new
+    /// order is printed by <see cref="RoundStarted"/> a moment later, so this says who asked and
+    /// leaves the seating itself to the line that always carries it.
+    /// </remarks>
+    public void SeatingChanged(PlayerId asked, IReadOnlyList<PlayerId> seating) =>
+        Say($"[{Palette.Quiet}]{Who(asked)} asked to change seats, and nobody minded.[/]");
+
+    public void SeatingRefused(PlayerId asked, PlayerId refused) =>
+        Say(
+            $"[{Palette.Quiet}]{Who(asked)} asked to change seats and {Who(refused)} would rather not, "
+            + "so they stay as they are.[/]");
 
     /// <remarks>
     /// <b>The card is not printed.</b> A blind draw is private — the whole table is told that

@@ -191,34 +191,115 @@ public sealed class MatchEngine
     }
 
     /// <summary>
-    /// The seats for the round about to be dealt: the seating being held, unless
-    /// <see cref="SeatingPolicy"/> says this is a round to draw again before (RULES.md §3 step 2).
+    /// The seats for the round about to be dealt: the table's own agreement first, then the
+    /// standing policy, and otherwise the seating being held (RULES.md §3 step 2, §9 #45).
     /// </summary>
     /// <remarks>
     /// <para>
-    /// 🔥 <b>The condition is the policy's and is asked here and nowhere else.</b> A held seating
-    /// is returned as it stands rather than reset to <see cref="Players"/> — the members are the
-    /// membership, and the order is whatever the last draw left.
+    /// 🔥 <b>The agreement is asked first and the policy is not asked on top of it.</b> A table
+    /// that has just agreed to move has moved; drawing again in the same gap would make the
+    /// agreement look as though it had done nothing.
     /// </para>
     /// <para>
-    /// ⚠️ <b>A draw may come out the same, and that is not a bug.</b> The rule is that the seats
-    /// are randomised, not that they must move; forcing a derangement would make the seating less
-    /// random rather than more.
+    /// 🔥 <b>The policy's condition is asked here and nowhere else.</b> A held seating is returned
+    /// as it stands rather than reset to <see cref="Players"/> — the members are the membership,
+    /// and the order is whatever the last draw left.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Neither happens before the first round.</b> Whoever opened the table has already
+    /// seated it, and there is nobody to have agreed with yet.
     /// </para>
     /// <para>
     /// ⚠️ <b>A held seating draws no numbers at all</b>, which is a seed story (BUILD-PLAN §3.9
     /// point 2): a seed or a journal from between P28 and P36 no longer plays the same match,
     /// because the draw it used to take out of this generator is not taken any more. The journal
-    /// header records the policy for exactly that reason.
+    /// header records the policy for exactly that reason, and an agreement is written down as a
+    /// decision.
     /// </para>
     /// </remarks>
     private IReadOnlyList<PlayerId> NextSeating()
     {
-        if (!SeatingPolicy.ReseatsBefore(RoundsPlayed))
+        if (RoundsPlayed > 0 && WhoAskedForAChange() is { } asker)
         {
-            return Seating;
+            var agreed = Drawn();
+
+            // Narrated after the draw, because what a table is told is the seating it is getting.
+            _observer?.SeatingChanged(asker, agreed);
+            return agreed;
         }
 
+        return SeatingPolicy.ReseatsBefore(RoundsPlayed) ? Drawn() : Seating;
+    }
+
+    /// <summary>
+    /// Puts <em>shall we change seats</em> to every seat and reads the table's answer — the seat
+    /// that asked, or null if the seating stands (RULES.md §3 step 2, §9 #45).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Somebody asked and nobody refused</b> — that is the whole rule, and §9 #47's recorded
+    /// default (unanimous among the people at the table) is the <em>nobody</em> in it. ⚠️ <b>A
+    /// table of consenting seats changes nothing</b>: consent is not desire, which is what lets a
+    /// computer seat consent without making every all-bot table shuffle itself every deal.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Every seat is asked, even once a refusal has been heard.</b> The question is public
+    /// and so is every answer; a table that stopped asking would leave one seat's client waiting
+    /// for a question that never came, and would make the order seats are asked in a thing worth
+    /// knowing.
+    /// </para>
+    /// <para>
+    /// <b>Asked in seating order</b>, so <em>who asked</em> and <em>who refused</em> are the first
+    /// of each in turn order and a replay names the same pair.
+    /// </para>
+    /// </remarks>
+    private PlayerId? WhoAskedForAChange()
+    {
+        PlayerId? asked = null;
+        PlayerId? refused = null;
+
+        foreach (var player in Seating)
+        {
+            switch (_agents[player].AskAboutTheSeating(new SeatingQuestion(RoundsPlayed + 1, player, Seating)))
+            {
+                case SeatingOpinion.Ask:
+                    asked ??= player;
+                    break;
+
+                case SeatingOpinion.Refuse:
+                    refused ??= player;
+                    break;
+
+                case SeatingOpinion.Consent:
+                default:
+                    break;
+            }
+        }
+
+        if (asked is not { } asker)
+        {
+            return null;
+        }
+
+        if (refused is { } objector)
+        {
+            _observer?.SeatingRefused(asker, objector);
+            return null;
+        }
+
+        return asker;
+    }
+
+    /// <summary>
+    /// A fresh draw of the members, out of the match's own generator.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>A draw may come out the same, and that is not a bug.</b> The rule is that the seats
+    /// are randomised, not that they must move; forcing a derangement would make the seating less
+    /// random rather than more.
+    /// </remarks>
+    private IReadOnlyList<PlayerId> Drawn()
+    {
         var drawn = Players.ToArray();
         _random.Shuffle(drawn);
         return drawn;

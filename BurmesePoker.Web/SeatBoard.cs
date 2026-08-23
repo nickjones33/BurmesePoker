@@ -115,6 +115,38 @@ public sealed class SeatBoard : IDisposable
     public bool Declare(bool declared) => Answer(new SeatAnswer.Declaration(declared));
 
     /// <summary>
+    /// What this seat has said about changing the seating (RULES.md §3 step 2, §9 #45).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>It is not an answer to <see cref="Asking"/></b> and it never will be: the seating
+    /// question is public and is put to every seat at once, so it lives beside the turn rather
+    /// than inside it. A seat that has said nothing consents, and consent moves nothing.
+    /// </remarks>
+    public SeatingOpinion Seating => _left ? SeatingOpinion.Consent : _connection.Seating;
+
+    /// <summary>
+    /// Say something about changing the seats — asked of the table, not of the turn.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>No route to the table session, exactly as with every other control on the page</b>
+    /// (P13.4 acceptance 3): the connection broadcasts it, because saying it is a public act
+    /// (<c>TableEvent.SeatingOpinionGiven</c>). ⚠️ <b>A seat that has stood up says nothing</b>,
+    /// the same rule <see cref="Answer"/> follows.
+    /// </remarks>
+    public bool Says(SeatingOpinion opinion)
+    {
+        lock (_gate)
+        {
+            if (_left)
+            {
+                return false;
+            }
+        }
+
+        return _connection.SaysAboutTheSeating(opinion);
+    }
+
+    /// <summary>
     /// Answer the question standing. <b>False means it was refused, and the question stands</b> —
     /// never that the round is over.
     /// </summary>

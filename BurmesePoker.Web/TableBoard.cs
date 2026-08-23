@@ -446,6 +446,35 @@ public sealed record TableBoard
                 [],
                 LogTone.Bad),
 
+            // 🔥 The one conversation at this table that is public from end to end (RULES.md §3
+            // step 2, §9 #45). Nothing here touches the ring: an opinion is not a seating.
+            TableEvent.SeatingOpinionGiven said => Say(
+                Round,
+                said.Opinion switch
+                {
+                    SeatingOpinion.Ask => $"{Who(said.Player)} asks the table to change seats.",
+                    SeatingOpinion.Refuse => $"{Who(said.Player)} would rather the seats stayed as they are.",
+                    _ => $"{Who(said.Player)} does not mind either way about the seats."
+                },
+                [],
+                LogTone.Quiet),
+
+            // ⚠️ The ring itself is not moved here — the next RoundStarted carries the seating the
+            // round is actually dealt to, and that is the one this board follows (RULES.md §3).
+            TableEvent.SeatingChanged agreed => Say(
+                Round,
+                $"The table agreed to change seats — {Who(agreed.Asked)} asked. The next deal is to "
+                + "a new order.",
+                [],
+                LogTone.Good),
+
+            TableEvent.SeatingRefused refused => Say(
+                Round,
+                $"{Who(refused.Asked)} asked to change seats and {Who(refused.Refused)} would rather "
+                + "not, so the seating stands.",
+                [],
+                LogTone.Quiet),
+
             _ => this
         };
     }

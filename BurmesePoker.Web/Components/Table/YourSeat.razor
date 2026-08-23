@@ -43,6 +43,39 @@
                    OnThrow="Throw" />
 
         <TurnPrompt @ref="_prompt" Asking="_seat.Asking" Hints="_hints" Names="Names" OnAnswer="Answer" />
+
+        @*
+            🔥 The sixth question, and the only one that is not about your hand (RULES.md §3
+            step 2, §9 #45). It sits BESIDE the turn rather than inside TurnPrompt on purpose:
+            every other question is put to one seat and answered privately, and this one is put
+            to the whole table and every answer is said out loud.
+
+            ⚠️ It is a standing answer, not a prompt. Somebody has to want the change and nobody
+            may refuse it, so saying nothing is consent — which is why walking away never moves
+            anybody's seat. The table is asked between deals, and asking clears what was said.
+
+            ⚠️ Real controls, and the state is on the buttons rather than in prose (§3.11 A4):
+            the one that is already your answer is disabled and says so with aria-pressed.
+        *@
+        <section class="seats" aria-labelledby="seats-heading">
+            <h3 id="seats-heading">The seats</h3>
+
+            <p class="said">@Said</p>
+
+            <p class="asking">
+                <button type="button" aria-pressed="@(_seat.Seating == SeatingOpinion.Ask)"
+                        disabled="@(_seat.Seating == SeatingOpinion.Ask)"
+                        @onclick="() => Say(SeatingOpinion.Ask)">Ask to change seats</button>
+
+                <button type="button" aria-pressed="@(_seat.Seating == SeatingOpinion.Refuse)"
+                        disabled="@(_seat.Seating == SeatingOpinion.Refuse)"
+                        @onclick="() => Say(SeatingOpinion.Refuse)">Rather not</button>
+
+                <button type="button" aria-pressed="@(_seat.Seating == SeatingOpinion.Consent)"
+                        disabled="@(_seat.Seating == SeatingOpinion.Consent)"
+                        @onclick="() => Say(SeatingOpinion.Consent)">Don't mind</button>
+            </p>
+        </section>
     </section>
 }
 
@@ -148,6 +181,27 @@
     private void Answer(SeatAnswer answer) => _seat?.Answer(answer);
 
     private void Throw(Card card) => _seat?.Throw(card);
+
+    /// <remarks>
+    /// A refusal is not an error here either: a seat that has stood up says nothing, and the
+    /// next render draws what it really said.
+    /// </remarks>
+    private void Say(SeatingOpinion opinion) => _seat?.Says(opinion);
+
+    /// <summary>
+    /// What this seat has said about the seating, in a sentence.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>It says what happens next and not only what was pressed</b> (§3.11 C13): a control
+    /// with a reason is the standard, and <em>consent</em> is the one answer whose meaning is not
+    /// obvious from its own name — it is not a yes.
+    /// </remarks>
+    private string Said => _seat?.Seating switch
+    {
+        SeatingOpinion.Ask => "You have asked the table to change seats. It happens before the next deal unless somebody would rather not.",
+        SeatingOpinion.Refuse => "You would rather the seats stayed as they are. Nobody else's asking can move them.",
+        _ => "The seats stay as they are until somebody asks and nobody minds."
+    };
 
     /// <remarks>
     /// ⚠️ Unhooking, and nothing else — <c>StateHasChanged</c> must never be called from here,

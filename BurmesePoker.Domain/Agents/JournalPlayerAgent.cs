@@ -78,25 +78,66 @@ public sealed class JournalPlayerAgent : IPlayerAgent
 
     public bool Declare(TurnContext context) => Next(context, JournalQuestion.Declare).AsBoolean();
 
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>This is what makes a re-seating replayable.</b> The seating a round is dealt to is a
+    /// consequence of what every seat said in the gap before it, so a replay that consented on
+    /// everybody's behalf would deal the same cards to different people from the next round on.
+    /// ⚠️ <b>Looked up at turn 0</b>, which is where <c>JournalingAgent</c> writes it.
+    /// </para>
+    /// <para>
+    /// 🔥 <b>The one question that peeks rather than consuming, and absence means
+    /// <see cref="SeatingOpinion.Consent"/>.</b> Every journal written before P37 has no seating
+    /// decisions at all, and the rule those games were played under is the rule consent gives
+    /// back: the seats did not move. ⚠️ <b>So this is deliberately quieter than the other five</b>,
+    /// which is a narrowing of <em>divergence is loud, always</em> and not a repeal of it —
+    /// consent changes nothing on its own, so the only journal this can answer silently is one
+    /// where nothing happened to record.
+    /// </para>
+    /// </remarks>
+    public SeatingOpinion AskAboutTheSeating(SeatingQuestion question)
+    {
+        ArgumentNullException.ThrowIfNull(question);
+
+        if (_next >= _decisions.Count)
+        {
+            return SeatingOpinion.Consent;
+        }
+
+        var next = _decisions[_next];
+
+        if (next.Question != JournalQuestion.Seating)
+        {
+            return SeatingOpinion.Consent;
+        }
+
+        return Next(question.Round, turn: 0, JournalQuestion.Seating).AsSeatingOpinion();
+    }
+
     private JournalDecision Next(TurnContext context, JournalQuestion question)
     {
         ArgumentNullException.ThrowIfNull(context);
 
+        return Next(context.Round, context.TurnNumber, question);
+    }
+
+    private JournalDecision Next(int round, int turn, JournalQuestion question)
+    {
         if (_next >= _decisions.Count)
         {
             throw new JournalException(
-                $"The journal runs out at round {context.Round} turn {context.TurnNumber}: {_player} was asked "
+                $"The journal runs out at round {round} turn {turn}: {_player} was asked "
                 + $"{question} and there is nothing left to answer with. The journal is short or truncated.");
         }
 
         var decision = _decisions[_next++];
 
-        return decision.Round == context.Round
-            && decision.Turn == context.TurnNumber
+        return decision.Round == round
+            && decision.Turn == turn
             && decision.Question == question
                 ? decision
                 : throw new JournalException(
-                    $"The journal disagrees with the game at round {context.Round} turn {context.TurnNumber}: "
+                    $"The journal disagrees with the game at round {round} turn {turn}: "
                     + $"{_player} was asked {question}, but the next thing written down is {decision.Question} "
                     + $"at round {decision.Round} turn {decision.Turn}. The replay has diverged.");
     }

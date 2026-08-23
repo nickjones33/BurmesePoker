@@ -143,27 +143,42 @@ public class SeatingPolicyTests
     }
 
     /// <summary>
-    /// ⚠️ <b>§9 #45 — a re-seating happens when the players <em>agree</em>, and nothing here asks
-    /// them.</b>
+    /// ⚠️ <b>§9 #45 — the policy is still not where the agreeing lives</b>, and P37 did not put
+    /// it there.
     /// </summary>
     /// <remarks>
-    /// <b>A fence, so P37's rule cannot be quietly assumed by a policy that only counts rounds.</b>
-    /// The decision is a pure function of how many rounds have been played: it takes no player, no
-    /// request and no answer, and <see cref="IPlayerAgent"/> still asks the five questions it asked
-    /// before this packet. A sixth — <em>shall we change seats</em> — is packet P37's, and it is
-    /// public rather than seat-private, which is why it is not smuggled in here.
+    /// <para>
+    /// <b>P36's fence, kept and re-pointed.</b> It read <em>nobody is asked</em> until P37, which
+    /// is the packet that asks — <see cref="IPlayerAgent"/> has a sixth question now. What the
+    /// fence protects is the seam: <em>when a re-draw happens</em> is a policy, <em>whether the
+    /// table agreed</em> is a question, and the two must not become one thing.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The policy still takes nothing but a round count.</b> A policy that could be told
+    /// about an agreement would let a house arrangement answer a rule, which is the confusion
+    /// P36 was written to avoid and P37 had every opportunity to introduce.
+    /// </para>
     /// </remarks>
     [Fact]
-    public void NobodyIsAskedWhetherToChangeSeats()
+    public void ThePolicyStillDecidesOnARoundCountAndNothingElse()
     {
         var asked = typeof(IPlayerAgent).GetMethods().Select(method => method.Name).ToArray();
 
-        Assert.Equal(5, asked.Length);
-        Assert.DoesNotContain(asked, name => name.Contains("Seat", StringComparison.OrdinalIgnoreCase));
+        // Six questions since P37, and exactly one of them is about the furniture.
+        Assert.Equal(6, asked.Length);
+        Assert.Single(asked, name => name.Contains("Seating", StringComparison.OrdinalIgnoreCase));
 
         var decide = typeof(SeatingPolicy).GetMethod(nameof(SeatingPolicy.ReseatsBefore))!;
 
         Assert.Equal([typeof(int)], decide.GetParameters().Select(parameter => parameter.ParameterType));
+
+        // …and nothing on the policy knows a seat, an opinion or a question exists.
+        Assert.DoesNotContain(
+            typeof(SeatingPolicy).GetMethods(),
+            method => method.GetParameters().Any(parameter =>
+                parameter.ParameterType == typeof(SeatingQuestion)
+                || parameter.ParameterType == typeof(SeatingOpinion)
+                || parameter.ParameterType == typeof(PlayerId)));
     }
 
     /// <summary>
@@ -172,10 +187,11 @@ public class SeatingPolicyTests
     /// </summary>
     /// <remarks>
     /// <b>The second fence.</b> A policy that counted votes would have answered #47 by accident;
-    /// this one cannot count anything but rounds, so the recommendation standing in <c>RULES.md</c>
-    /// (unanimous among the people at the table) is still P37's to take or to overturn. What is
-    /// asserted is that two tables agree on when to re-seat whenever they agree on the number —
-    /// no seat, no majority and no table size is anywhere in the answer.
+    /// this one cannot count anything but rounds. ✅ <b>P37 took the recommendation</b> — unanimous
+    /// among the people at the table — <b>in the engine and not here</b>, and named a test for it:
+    /// <c>SeatingAgreementTests.AgreementIsUnanimousUntilTheExpertSaysOtherwise</c>. What is
+    /// asserted below is that two tables agree on when to re-seat whenever they agree on the
+    /// number — no seat, no majority and no table size is anywhere in the answer.
     /// </remarks>
     [Fact]
     public void WhatAgreementMeansIsNotDecidedByCountingRounds()

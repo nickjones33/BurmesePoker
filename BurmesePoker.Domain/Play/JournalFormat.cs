@@ -252,7 +252,8 @@ public static class JournalFormat
             "claim" => JournalQuestion.Claim,
             "objection" => JournalQuestion.Objection,
             "declare" => JournalQuestion.Declare,
-            var unknown => throw new JournalException($"Line {number}: '{unknown}' is not one of the five questions.")
+            "seating" => JournalQuestion.Seating,
+            var unknown => throw new JournalException($"Line {number}: '{unknown}' is not one of the six questions.")
         };
 
         DecisionSnapshot? snapshot = null;
@@ -298,6 +299,7 @@ public static class JournalFormat
         JournalQuestion.Claim => "claim",
         JournalQuestion.Objection => "objection",
         JournalQuestion.Declare => "declare",
+        JournalQuestion.Seating => "seating",
         _ => throw new JournalException($"There is no name for the {question} question.")
     };
 

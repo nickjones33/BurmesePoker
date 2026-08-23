@@ -108,6 +108,67 @@ public class ConcealmentTests(WatchedRound round) : IClassFixture<WatchedRound>
     }
 
     /// <summary>
+    /// ✅ <b>P37 acceptance 3 — the seating conversation is public, and it is asserted to be
+    /// rather than passed over in silence</b> (RULES.md §3 step 2, §9 #45).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The first public question this table has ever asked.</b> Every other question is put
+    /// to one seat through a seat-private <c>SeatPrompt</c>; this one is put to everybody, so the
+    /// thing worth asserting is the opposite of the usual one — <b>that nothing is filtered</b>,
+    /// and that there is nothing on the events that <em>could</em> be.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Asserted over the type, like the rationale above</b>: a seating event carries no
+    /// card, no hand and no rationale, so a later change cannot smuggle a hand onto the one
+    /// conversation the table hears in full.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheSeatingConversationIsPublicAndCarriesNoHand()
+    {
+        var seating = typeof(TableEvent).Assembly
+            .GetTypes()
+            .Where(type => typeof(TableEvent).IsAssignableFrom(type))
+            .Where(type => type.Name.Contains("Seating", StringComparison.Ordinal))
+            .ToArray();
+
+        // Three: what a seat said, the agreement, and the refusal.
+        Assert.Equal(3, seating.Length);
+
+        foreach (var kind in seating)
+        {
+            Assert.DoesNotContain(
+                kind.GetProperties(),
+                property => property.PropertyType == typeof(Card)
+                    || property.PropertyType == typeof(Card?)
+                    || property.PropertyType == typeof(AdviceRationale)
+                    || property.PropertyType == typeof(HandView)
+                    || property.PropertyType == typeof(IReadOnlyList<Card>));
+        }
+
+        // And it really is broadcast: every connection at a table hears every word of it, the
+        // watcher who holds no seat included.
+        var table = TableSession.Open(
+            TableSessionTests.TwoPeopleAndTwoBots(), TableSessionTests.Options(20260822));
+
+        var watcher = table.Watch("The room");
+        var nick = table.ConnectionFor(new PlayerId(1));
+        var myaLay = table.ConnectionFor(new PlayerId(3));
+
+        Assert.True(nick.SaysAboutTheSeating(SeatingOpinion.Ask));
+        Assert.True(myaLay.SaysAboutTheSeating(SeatingOpinion.Refuse));
+
+        foreach (var heard in (IReadOnlyList<SeatConnection>)[watcher, nick, myaLay])
+        {
+            Assert.Equal(
+                [(new PlayerId(1), SeatingOpinion.Ask), (new PlayerId(3), SeatingOpinion.Refuse)],
+                heard.Events.OfType<TableEvent.SeatingOpinionGiven>()
+                    .Select(said => (said.Player, said.Opinion)));
+        }
+    }
+
+    /// <summary>
     /// The form P13.1 made writable: build the seat's own view for every seat of a round and
     /// assert that no card reached two hands <b>except by way of the table</b>.
     /// </summary>

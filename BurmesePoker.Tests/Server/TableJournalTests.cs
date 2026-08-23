@@ -144,6 +144,70 @@ public class TableJournalTests
         Assert.Equal(SeatingPolicy.EveryRound, table.Journal()!.Header.Seating);
     }
 
+    /// <summary>
+    /// ✅ <b>P37 acceptance 1, 4 and 5 — a person asks, the bots consent, the next deal is to a
+    /// new seating, and the journal replays all of it</b> (RULES.md §3 step 2, §9 #45).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Acceptance 5 is the case the consent decision exists for</b> (BUILD-PLAN §3.13): the
+    /// only person at this table asks, and three computer seats consent, so the rule is alive at
+    /// a table where every other seat is the computer's — which at a solo table is every table.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>And the asking is consumed.</b> One press moves the seats once; the third round is
+    /// dealt to the seating the second round left, because wanting it again means asking again.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void APersonAsksTheBotsConsentAndTheJournalReplaysTheNewSeating()
+    {
+        var table = TableSession.Open(
+            [
+                TableSeat.Person(One, "Nick"),
+                TableSeat.Computer(Two, "Ruby (bot)", new GreedyBotAgent(), "greedy"),
+                TableSeat.Computer(Three, "Sable (bot)", new GreedyBotAgent(), "greedy"),
+                TableSeat.Computer(Four, "Onyx (bot)", new GreedyBotAgent(), "greedy")
+            ],
+            Options(20260822));
+
+        _ = new ScriptedSeat(table.ConnectionFor(One));
+
+        var first = table.PlayRound();
+
+        Assert.True(table.ConnectionFor(One).SaysAboutTheSeating(SeatingOpinion.Ask));
+
+        var second = table.PlayRound();
+        var third = table.PlayRound();
+
+        static string Order(RoundRecord round) =>
+            string.Join(",", round.Table.Seats.Select(seat => seat.Id));
+
+        Assert.NotEqual(Order(first), Order(second));
+        Assert.Equal(Order(second), Order(third));
+
+        // The table heard it, and heard the agreement it led to.
+        var heard = table.ConnectionFor(One).Events;
+
+        Assert.Contains(heard.OfType<TableEvent.SeatingOpinionGiven>(),
+            said => said is { Player.Value: 1, Opinion: SeatingOpinion.Ask });
+        Assert.Equal([One], heard.OfType<TableEvent.SeatingChanged>().Select(agreed => agreed.Asked));
+
+        // ✅ Acceptance 4: through the file, and the replay deals the same seats.
+        var read = JournalFormat.Read(JournalFormat.Lines(table.Journal()!).ToList());
+
+        Assert.Equal(
+            [SeatingOpinion.Ask],
+            read.Decisions
+                .Where(decision => decision.Question == JournalQuestion.Seating && decision.Player == One)
+                .Select(decision => decision.AsSeatingOpinion())
+                .Where(opinion => opinion != SeatingOpinion.Consent));
+
+        Assert.Equal(
+            Summarise([first.Result, second.Result, third.Result]),
+            Summarise(Replay(read)));
+    }
+
     /// <summary>A table not asked to keep a journal keeps none, and says so with a null.</summary>
     [Fact]
     public void ATableNotAskedToKeepAJournalHasNone()

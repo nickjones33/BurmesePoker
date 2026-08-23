@@ -230,6 +230,40 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
     }
 
     /// <summary>
+    /// Shall we change seats (RULES.md §3 step 2, §9 #45)?
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The sixth question, and the only one asked between rounds rather than on a turn.</b>
+    /// Every seat is asked, and the seats move only if somebody asked and nobody refused — so the
+    /// three answers are three answers here too. ⚠️ <b>Leaving them alone is first and is what
+    /// return takes</b>, because that is the rule: a seating is held.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>At a hotseat console every person is asked in turn, which is the point.</b> One
+    /// player asking is not agreement (§9 #45, ruled by Nick), so the second person's chance to
+    /// say <em>no</em> has to be a question they are actually put.
+    /// </para>
+    /// </remarks>
+    public SeatingOpinion AskAboutTheSeating(SeatingQuestion question)
+    {
+        ArgumentNullException.ThrowIfNull(question);
+
+        _console.WriteLine();
+
+        return _console.Prompt(
+            new SelectionPrompt<SeatingOpinion>()
+                .Title($"{Who(question.Player)} — before round {question.Round}, change seats?")
+                .UseConverter(opinion => opinion switch
+                {
+                    SeatingOpinion.Ask => $"yes, let's [{Palette.Quiet}](ask the table to change seats)[/]",
+                    SeatingOpinion.Refuse => $"no [{Palette.Quiet}](and nobody else's asking can move them)[/]",
+                    _ => $"leave them [{Palette.Quiet}](happy either way — the seating holds)[/]"
+                })
+                .AddChoices(SeatingOpinion.Consent, SeatingOpinion.Ask, SeatingOpinion.Refuse));
+    }
+
+    /// <summary>
     /// One card as it appears in the discard list: the card, what throwing it costs, and
     /// whether the computer would throw it.
     /// </summary>

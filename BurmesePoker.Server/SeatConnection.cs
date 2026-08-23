@@ -39,12 +39,15 @@ public sealed class SeatConnection
     private readonly Lock _gate = new();
     private readonly List<TableEvent> _events = [];
     private readonly SeatChannel? _channel;
+    private readonly TableFanOut? _table;
 
-    internal SeatConnection(PlayerId? player, string name, SeatChannel? channel = null)
+    internal SeatConnection(
+        PlayerId? player, string name, SeatChannel? channel = null, TableFanOut? table = null)
     {
         Player = player;
         Name = name;
         _channel = channel;
+        _table = table;
     }
 
     /// <summary>The seat this connection plays, or null for a watcher.</summary>
@@ -109,6 +112,46 @@ public sealed class SeatConnection
     }
 
     /// <summary>
+    /// What this seat has said about changing the seating, and has not yet been asked for
+    /// (RULES.md §3 step 2, §9 #45). <see cref="SeatingOpinion.Consent"/> when it has said
+    /// nothing, and always that once another connection has taken the seat over.
+    /// </summary>
+    public SeatingOpinion Seating =>
+        _channel is not null && ReferenceEquals(_channel.Current, this)
+            ? _channel.Seating
+            : SeatingOpinion.Consent;
+
+    /// <summary>
+    /// Says something about changing the seating.
+    /// </summary>
+    /// <returns>
+    /// False for a watcher, and for a connection that no longer occupies its seat (review R8) —
+    /// the same rule <see cref="Answer"/> follows, for the same reason.
+    /// </returns>
+    /// <remarks>
+    /// ⚠️ <b>It answers nothing and blocks nothing.</b> The seating question is public and is put
+    /// to every seat between rounds; this is a seat saying what it will say when it is asked, and
+    /// saying it again replaces it. <b>Saying nothing is consent</b>, which is why a table nobody
+    /// is at never moves its own seats.
+    /// <para>
+    /// 🔥 <b>And saying it tells the whole table, from here.</b> Agreeing to change seats is
+    /// something people do in front of each other, so this is the one thing a connection does
+    /// that every other connection hears — which is what lets a page say it without holding a
+    /// route to the table session (BUILD-PLAN P13.4 acceptance 3).
+    /// </para>
+    /// </remarks>
+    public bool SaysAboutTheSeating(SeatingOpinion opinion)
+    {
+        if (_channel is null || !_channel.Say(this, opinion))
+        {
+            return false;
+        }
+
+        _table?.Broadcast(new TableEvent.SeatingOpinionGiven(Player!.Value, opinion));
+        return true;
+    }
+
+    /// <summary>
     /// Puts a question and blocks until it is answered or the patience runs out.
     /// </summary>
     /// <returns>The answer, or null if nobody answered in time.</returns>
@@ -133,6 +176,10 @@ public sealed class SeatConnection
             ? throw new InvalidOperationException("A watcher holds no seat and is never asked anything.")
             : _channel.Ask(prompt, patience);
     }
+
+    /// <summary>Reads this seat's standing opinion and clears it — the engine's half.</summary>
+    internal SeatingOpinion TakeSeatingOpinion() =>
+        _channel?.TakeSeatingOpinion() ?? SeatingOpinion.Consent;
 
     internal void Post(TableEvent moment)
     {

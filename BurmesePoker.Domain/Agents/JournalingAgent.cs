@@ -137,4 +137,18 @@ public sealed class JournalingAgent(IPlayerAgent inner, GameJournalBuilder journ
 
         return declared;
     }
+
+    /// <remarks>
+    /// ⚠️ <b>Turn 0, and no snapshot.</b> The seating is settled in the gap before a round is
+    /// dealt (RULES.md §3 step 2), so there is no turn to record and no fourteen to photograph —
+    /// and a replay looks the answer up by <c>(round, 0)</c>.
+    /// </remarks>
+    public SeatingOpinion AskAboutTheSeating(SeatingQuestion question)
+    {
+        ArgumentNullException.ThrowIfNull(question);
+
+        var opinion = _inner.AskAboutTheSeating(question);
+        _journal.Append(JournalDecision.Of(question.Round, 0, question.Player, opinion));
+        return opinion;
+    }
 }

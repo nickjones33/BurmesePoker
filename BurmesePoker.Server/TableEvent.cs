@@ -176,4 +176,28 @@ public abstract record TableEvent
     /// round by turn count and reports it, and a host wants the same bounded by the clock.
     /// </remarks>
     public sealed record TableAbandoned(int Round, TimeSpan Limit) : TableEvent;
+
+    /// <summary>
+    /// A seat said something about changing the seating (RULES.md §3 step 2, §9 #45).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>The first public question this table has ever asked, and this is what makes it
+    /// public.</b> Every other question is put to one seat and answered privately; a seat's
+    /// opinion about the seating is put to the whole table the moment it is given, because
+    /// agreeing is something people do in front of each other. ⚠️ <b>It carries no card and no
+    /// hand and could not carry one</b> — <c>ConcealmentTests</c> asserts exactly that, so a
+    /// later hand cannot be smuggled onto the one event that goes to everybody by design.
+    /// </remarks>
+    public sealed record SeatingOpinionGiven(PlayerId Player, SeatingOpinion Opinion) : TableEvent;
+
+    /// <summary>
+    /// The table agreed, and the next round is dealt to a new seating (RULES.md §3 step 2).
+    /// </summary>
+    public sealed record SeatingChanged(PlayerId Asked, IReadOnlyList<PlayerId> Seating) : TableEvent;
+
+    /// <summary>
+    /// Somebody asked, somebody would rather not, and the seating stands (§9 #47's recorded
+    /// default — agreement is unanimous).
+    /// </summary>
+    public sealed record SeatingRefused(PlayerId Asked, PlayerId Refused) : TableEvent;
 }

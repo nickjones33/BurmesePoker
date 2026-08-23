@@ -130,4 +130,11 @@ internal sealed class BoundedAgent(IPlayerAgent inner, TableClock clock, TableFa
         _announced = (context.Round, context.TurnNumber);
         table.Broadcast(new TableEvent.TurnBegan(context.Player, context.Round, context.TurnNumber));
     }
+
+    /// <remarks>
+    /// <b>Forwarded, because a default interface method would answer in this wrapper's name</b>
+    /// and silently drop what it wraps (RULES.md §3 step 2, P37).
+    /// </remarks>
+    public SeatingOpinion AskAboutTheSeating(SeatingQuestion question) =>
+        inner.AskAboutTheSeating(question);
 }

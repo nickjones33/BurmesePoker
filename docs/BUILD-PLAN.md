@@ -949,6 +949,47 @@ transcribed**, and P23 makes that a test rather than a habit.
 
 ---
 
+### 3.13 A computer seat consents; consent is not desire
+
+**Settled by P37, 2026-08-22.** `RULES.md` §3 step 2 says a seating is re-drawn *when the players
+agree to it* (§9 #45). Building that raised one question the rules cannot answer and one the
+architecture had to: **what does a computer seat do**, and **what shape is a question put to
+everybody at once**.
+
+🔥 **A computer seat consents, and that is a design decision rather than a rule.** A rung decides
+about cards; *"shall we move seats"* is not a card decision. **A rung that answered it on some
+invented basis would be a strategy claim nobody measured** (P15's discipline — two of the first
+three research rungs returned nothing, and the discipline is what made that publishable), and **a
+rung that abstained or refused would make §3's rule dead at every table with a computer at it** —
+which at a solo table is every table. ✅ **§3 says *the players* agree, and a bot is not a player
+in the sense the rule is about**, so this is recorded here rather than invented in `RULES.md`.
+⚠️ **It lives on `IPlayerAgent` as a default implementation and on no rung at all**, so a rung
+written next year is covered without anybody remembering it exists.
+
+🔥 **Three answers, not two, because consent is not desire.** *Agreement* is somebody wanting a
+thing and nobody objecting, and a yes-or-no question cannot express it: if a consenting bot
+answers *yes*, an all-bot table re-seats itself every deal, which is the opposite of the rule.
+`SeatingOpinion` is therefore `Consent` (the default), `Ask` and `Refuse`, and the engine's rule is
+**one Ask and no Refuse**. ✅ **Silence is safe by construction**: a seat nobody is answering, a
+table nobody is at and every bot in the game all consent, and consent moves nothing on its own —
+so *fail closed* needed no clock and no timeout.
+
+⚠️ **A public question is a standing answer, not a pending prompt.** Every other question blocks
+one seat while the table waits (§3.6). This one is put to **every** seat, so a table that blocked
+on it would spend one patience per seat settling a single question. A person says what they think
+whenever they like — the control sits on the table beside the hand — and it stands on the seat's
+`SeatChannel` until the engine asks between rounds, which **consumes** it. **One press moves the
+seats once.**
+
+🔥 **And it is public in the strong sense: every answer is broadcast the moment it is given.** A
+`SeatPrompt` is seat-private by construction and a `TableEvent` is public by construction (P13.2,
+P24.2), so a public question could not wear either type without breaking what the other one means.
+It wears its own: `TableEvent.SeatingOpinionGiven`, `SeatingChanged` and `SeatingRefused`, asserted
+by `ConcealmentTests` to carry no card, no hand and no rationale — **the one conversation at this
+table that is heard in full by everybody, including the watcher who holds no seat.**
+
+---
+
 ## 4. Packet dependency graph
 
 ```
@@ -1192,7 +1233,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P34** | **A front door, and docs that cannot go stale quietly** | — | S — ☐ **new 2026-08-22** — `README.md`, staleness banners, and the anti-staleness habit as tests. **Needs no expert answer.** ⚠️ **P24.2 added one thing for it to watch**: `AdviceRationale.ForObjection` ships P29's §12 null as prose in the product. It carries **no number on purpose** so it cannot rot into a wrong figure — but if that measurement ever separates, the sentence is wrong |
 | **P35** | **The two scoring rules that reach outside a round** | P33 ✅, P32 ✅, **P36 ✅** | L — ☐ **new 2026-08-22** — `RULES.md` **§7.4** (a win on the initial deal pays ×2) and **§7.5** (a third consecutive win is paid **entirely by the seat above you**), both `EXPERT` from Aung Aung. 🔥 **§7.5 is the first rule that cannot be settled from one round**, and **no measurement in this project can see it** (`Sim` plays `RoundsPerGame = 1`). ✅ **Unblocked 2026-08-22**: §9 #43 was asked and closed — the seats do **not** re-draw every round — ⚠️ **but that makes it depend on P36**, since the blame needs a seating that survives three rounds |
 | **P36** | **How long a seating holds** | — | S–M — ☑ **done 2026-08-22 (Opus 5)** — `Domain/Play/SeatingPolicy.cs`: **held by default**, `RoundsBetweenSeatings` of *N* re-draws every *N* rounds, and **0 is never**. §10 **#22 discharged**; `RuleConformance`'s seating check inverted; two fences named for §9 #45 and #47. ✅ **No measurement moved** and it is asserted (`AOneRoundGameIsTheSameGameUnderEveryPolicy`). ⚠️ **A seed or journal from between P28 and P36 replays differently**; the journal header records the policy so a front end's does not |
-| **P37** | **Asking the table to change seats** | **P36 ✅** | M — ☐ **new 2026-08-22** — §10 **#23**, and §9 #45 as Nick ruled it: a re-seating happens **when the players agree**. 🔥 **The first *public* question this project has ever asked** — `SeatPrompt` is seat-private by construction and this one is put to everybody at once — and the first asked **between** rounds. ✅ **A computer seat consents** (a design decision, recorded in §3, not a rule); ⚠️ **§9 #47 open — everybody or most?** |
+| **P37** | **Asking the table to change seats** | **P36 ✅** | M — ☑ **done 2026-08-22 (Opus 5)** — §10 **#23 discharged**, and §9 #45 as Nick ruled it: a re-seating happens **when the players agree**. 🔥 **Consent is not desire** — `SeatingOpinion` is three answers, so an all-bot table never re-seats itself and *fail closed* fell out for free. ⚠️ **A public question is a standing answer, not a pending prompt** (§3.13); **six decorators had to forward the first default interface member this project has.** 🔥 **The first *public* question this project has ever asked** — `SeatPrompt` is seat-private by construction and this one is put to everybody at once — and the first asked **between** rounds. ✅ **A computer seat consents** (a design decision, recorded in §3, not a rule); ⚠️ **§9 #47 open — everybody or most?** |
 
 ⚠️ **P25–P29 are the only packets in this table that do not descend from §0.** They come from
 `RULES.md` — four sessions with Mya Lay and Aung Aung on 2026-08-20/21 that closed twenty-three
@@ -5780,7 +5821,7 @@ figures are kept beside it as the different game they measure.
 
 ---
 
-### P37 — Asking the table to change seats ☐ — **added 2026-08-22**
+### P37 — Asking the table to change seats ☑ — **added and built 2026-08-22 (Opus 5)**
 
 **Goal.** `RULES.md` §3 step 2's other half, and §10 **#23**: a held seating can be **re-drawn when
 the players agree to it** (§9 #45, `PLAYER`, Nick 2026-08-22).
@@ -5894,6 +5935,63 @@ on it. **Build the default, fence it with a test named for the question**, and s
 
 **Done when.** The table stays as it is until the people at it decide otherwise, and the deciding
 is something they do together.
+
+---
+
+#### ✅ What it built (2026-08-22, Opus 5)
+
+**The sixth question is `IPlayerAgent.AskAboutTheSeating`, it returns a `SeatingOpinion`, and the
+rule is one `Ask` and no `Refuse`.** The three shapes this entry offered are all declined in
+favour of a fourth: **the engine asks every seat between rounds**, in `MatchEngine.NextSeating`,
+beside the policy P36 put there — so the agreement is asked first and the policy is not asked on
+top of it. ✅ **That is what makes it replayable**: `JournalingAgent` records it, `JournalPlayerAgent`
+answers it, and `GameRunner.Replay` needed no new driving path at all. **`Reseat()` was not built**
+— an explicit method the host calls would have left the harness and the replay unable to see the
+agreement, which is acceptance 4.
+
+🔥 **Consent is not desire, and that is the finding.** The entry's own framing — *a computer seat
+consents* — is only half a design until you notice that a **yes-or-no** question cannot carry it:
+a consenting bot answering *yes* re-seats an all-bot table every deal. **Three answers**, with
+`Consent` the default and a no-op, is what makes the packet's build item 5 (*fail closed*)
+disappear as a problem: silence, an unattended seat and every bot in the game all consent, and
+consent moves nothing. **No clock, no timeout, no special case.**
+
+⚠️ **A public question is a standing answer, not a pending prompt** — recorded as a design decision
+in §3.13. Blocking would have cost one patience per seat to settle one question, so a person says
+what they think whenever they like and it stands on the seat's `SeatChannel` until the engine asks,
+which **consumes** it. One press moves the seats once, asserted at the browser and at the server.
+
+✅ **Acceptance 3 is a type assertion and a broadcast assertion**, not a silence:
+`ConcealmentTests.TheSeatingConversationIsPublicAndCarriesNoHand` shows the three seating events
+carry no card, hand or rationale, and that a watcher who holds no seat hears every word of the
+conversation. ⚠️ **A superseded connection may not say anything either** (review R8) — the public
+question is the one thing a dead connection could otherwise have said out loud in somebody else's
+name, so it follows `Answer`'s rule and not the fan-out's.
+
+🔥 **The trap the packet did not name, and it is the one that would have shipped quietly.** This is
+the **first member of `IPlayerAgent` with a default implementation**, so a decorator that does not
+override it does not fail to compile and does not throw — it answers *consent* in its own name and
+drops what it wraps. For `JournalingAgent` that is a re-seating that never reaches the file; for
+`JournalPlayerAgent` a replay that quietly deals to different seats. Six decorators needed it, and
+`SeatingAgreementTests.EveryDecoratorForwardsTheSeatingQuestion` finds them **by type** — anything
+taking an `IPlayerAgent` in its constructor — so the next one is covered without anybody
+remembering.
+
+⚠️ **`JournalPlayerAgent` peeks rather than consuming, and that is a deliberate narrowing of
+*divergence is loud, always*.** Every journal written before P37 has no seating decisions, and
+absence has to mean `Consent` or no old journal replays. The narrowing is safe precisely because
+consent changes nothing: the only journal this can answer silently is one where nothing happened
+to record.
+
+✅ **Two leftovers were taken with it, both in this packet's own subject.** The console's
+round-start line still said *"the seats are re-drawn every round"* — **P36 missed it**, and it was
+a false sentence in the product for a day. And `AboutTable` now says what the seats are doing,
+which no view had ever said (P36's recorded leftover).
+
+⚠️ **The console capture changed**, and the driver did not: a new `SelectionPrompt<SeatingOpinion>`
+between rounds is answered by `drive-console.py`'s generic ENTER arm, which takes the highlighted
+first option — *leave them*, which is the rule. ⚠️ **It is only visible in a two-round capture**;
+the standing one-round capture never reaches the question at all.
 
 ---
 
