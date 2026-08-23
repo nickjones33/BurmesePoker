@@ -11,10 +11,40 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **READ THIS FIRST — `P38` shipped 2026-08-23 on Fable 5: there is a rulebook, and it cannot
-fall behind the rules without a red build.** `RULES.md` is **rev 30**,
-`JournalHeader.CurrentRulesRevision` is **30**, the tree is green at **831**, and **`P39` — the
-strategy guide — is the next packet.**
+🔥 **READ THIS FIRST — `P39` shipped 2026-08-23 on Fable 5: there is a strategy guide, and the
+plan is empty.** `RULES.md` is **rev 30**, `JournalHeader.CurrentRulesRevision` is **30**, the
+tree is green at **832**, and **there is no next packet** — `BUILD-PLAN.md` §5 has nothing
+undone in it, so the next piece of work must be **chosen** from the four candidates at the end
+of `docs/STATUS.md`'s *What is next* (an expert session on the eleven defaulted §9 rows is the
+one this file would take).
+
+**What P39 built, and the four things a cold session needs from it.**
+🔥 **(1) `docs/HOW-TO-PLAY-WELL.md` answers *how do I get better?* from what was measured, and
+nothing else.** Organised by decision rather than by experiment — the whole game in one
+sentence, the tie-break, the one refinement that ever worked (`outs`), the money (settle it,
+never chase it), **the nulls given as much room as the margins**, the three unpriced bonuses
+said to be *unknown rather than small*, and the difficulty dial. `STRATEGY.md` stays the
+measurement authority; the guide quotes **only** `measurements.csv`-fenced figures and states
+everything else in words — the P16 seat-side null carries **no digits at all** because its
+figures are not CSV rows.
+🔥 **(2) The fence moved home with the figures, and it now fences *verdicts* too.**
+`PublishedFigureTests.TheFiguresThePlayersGuideQuotes…` reads the guide: the dial quad, the
+headline pair, nine anchored margins (**the printed sign is part of the anchor and the scale
+carries it**, so a flipped margin fails rather than reading as its own opposite), two
+interval-free rates — and the eight verdicts the prose asserts, because **a margin can drift
+back inside its interval without the number moving much at all**.
+⚠️ **(3) A figure has one home, asserted as an absence.** New test: `PLAYING.md` must point at
+the guide and may contain **no `±`, no reference-table quad, no headline pair** — a figure
+pasted back into `PLAYING.md` is a red build whatever it says. Its *Playing better* section is
+a pointer now; both new fences were proved able to fail by mutating the documents.
+⚠️ **(4) Found on the way: `PLAYING.md`'s difficulty prompt row still said *expert* wins ~36%
+and *easy* ~14%** — the **four-handed** figures, unfenced because P34's regex targeted the
+other sentence in the file. It is digit-free with a pointer now, which is the fix the one-home
+rule prescribes: **a number P34's fence cannot see is a number the guide must own or the prose
+must not say.**
+
+**Before P39, the same day: `P38` shipped on Fable 5 — there is a rulebook, and it cannot fall
+behind the rules without a red build.**
 
 **What P38 built, and the four things a cold session needs from it.**
 🔥 **(1) `docs/RULEBOOK.md` is the game taught, and it decides nothing.** One document a stranger
@@ -868,6 +898,7 @@ verified bug to show for it.
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
 | `docs/RULEBOOK.md` | **The game taught** — one document a stranger can learn to play from, in reading order, with a generated worked round and a house-readings appendix. Derived from `RULES.md` and decides nothing; stamps the rev it was derived from, bound by `RulebookTests`. |
+| `docs/HOW-TO-PLAY-WELL.md` | **How to get better** — the strategy guide for a player: what has actually been measured, organised by decision, with the nulls given as much room as the margins. Every figure it quotes is CSV-fenced by `PublishedFigureTests`, and it is the **only** home of the player-facing figures — `PLAYING.md` points here rather than quoting any. |
 | `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration**, **§10 the side bet**, **§12 round length, abandoned rounds and what refusing a claim is worth** (P29), **§13 how often the feeding ban actually bites** (P31), **§14 how often the clean bonus is actually collected** (P33) and **§15 how often a hand wins before anybody plays it** (P35, and ⚠️ **§11 says why §7.5 has no section at all**). Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10, §12 and §13 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
 | `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it, **including what opening a "why?" now tells you** (P24.2). Written for a person at the keyboard, not for a build session. |

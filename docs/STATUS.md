@@ -10,7 +10,53 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-🔥 **`P38` shipped 2026-08-23 on Fable 5: there is a rulebook — `docs/RULEBOOK.md` — and it
+🔥 **`P39` shipped 2026-08-23 on Fable 5: there is a strategy guide — `docs/HOW-TO-PLAY-WELL.md`
+— and the plan is empty again.** One document that answers *how do I get better?* from what this
+project has actually measured, organised by decision rather than by experiment: what you are
+optimising → the discard tie-break → the one refinement that has ever worked → the money (settle
+it, never chase it) → **the things that sound clever and measurably are not** → the three
+unpriced bonuses → which difficulty setting to sit with. **The nulls get as much room as the
+margins**, because a null is where a player would otherwise spend attention for free — and the
+bonuses are stated as *unknown rather than small*, since no measured player knows they exist.
+`STRATEGY.md` stays the measurement authority and is untouched.
+
+🔥 **(1) Every figure the guide quotes is CSV-fenced, and the fence now covers *verdicts* as
+well as numbers.** `PublishedFigureTests.TheFiguresThePlayersGuideQuotesAreTheFiguresInTheCsv`
+was rewritten onto the new document: the dial quad and the headline pair (moved from
+`PLAYING.md` with their regexes, exactly as the re-plan required), nine anchored margins —
+⚠️ **the printed sign is part of each anchor and the scale carries it**, so a margin that flips
+direction fails rather than silently reading as its own opposite — two interval-free rates
+(what chasing the money costs in rounds; the accidental jokerless rate), and **the eight
+verdicts the prose asserts**: the four nulls must still read `inside the interval` and the four
+separations `separated (Holm)`, because a margin can drift back inside its interval without the
+number moving much at all.
+
+🔥 **(2) A figure has one home, and it is asserted as an absence.**
+`TheFiguresHaveOneHomeAndThePlayingGuidePointsAtIt` requires `PLAYING.md` to point at the guide
+and to contain **no `±` anywhere, no reference-table quad, no headline pair** — so a figure
+pasted back into `PLAYING.md` is a red build whatever the figure says. Its *Playing better*
+section is one pointer paragraph now. ✅ **Both new fences were proved able to fail by mutating
+the documents** (a moved headline figure; a `±` reinserted into `PLAYING.md`).
+
+⚠️ **(3) Found on the way, and it is exactly the staleness class P34 named: `PLAYING.md`'s
+difficulty prompt row still said *expert* wins about 36% and *easy* about 14%** — the
+**four-handed** reference figures, on the five-handed page, unfenced because P34's regex
+targeted the *other* dial sentence in the file. The row is digit-free with a pointer now.
+**A number the fence cannot see is a number the guide must own or the prose must not say.**
+
+⚠️ **(4) The guide quotes only `measurements.csv` rows and says everything else in words.**
+"One round in seven", "four rounds", "twice in five" are word-figures for rule arithmetic and
+fenced constants; the P16 seat-side null ("which side of you a weaker player sits is worth
+nothing") is stated with **no digits at all**, because P16's figures are not CSV rows and a
+number without a fence is the defect this packet exists to end. The rulebook's worked round is
+pointed at rather than duplicated — its dollars are engine-replayed, not CSV rows.
+
+✅ **No rules question arose; `RULES.md` stays rev 30 and `JournalHeader.CurrentRulesRevision`
+is unmoved.** ⚠️ **The tree is green at 832 tests**, from 831.
+
+---
+
+🔥 **Before that, `P38` shipped 2026-08-23 on Fable 5: there is a rulebook — `docs/RULEBOOK.md` — and it
 cannot fall behind the rules without a red build.** One document a stranger can play a correct
 round from, in reading order: the game → what you need → setup → a turn → the feeding rule
 (taught as table manners, which is what it is) → the opening claim and its permission → melds →
@@ -479,7 +525,17 @@ unasserted altogether.
 
 ## What is next
 
-🔥 **`P39` — the strategy guide (`docs/HOW-TO-PLAY-WELL.md`) — is next, and it is the last packet
+🔥 **Nothing is on the plan. `P39` was the last packet, and every packet ever written into
+`BUILD-PLAN.md` §5 is done** — so the next piece of work has to be **chosen**, from the four
+candidates below, none of which is written up as a packet yet. Whoever takes one writes it up
+properly first (`BUILD-PLAN.md` §5 has the paragraphs). This file's recommendation is
+unchanged: **the expert session — the eleven §9 rows being played on a recorded default — is
+worth more than any code here**, and the failing tests would be its change list.
+
+<details>
+<summary>What used to stand here, before P39 shipped</summary>
+
+🔥 **`P39` — the strategy guide (`docs/HOW-TO-PLAY-WELL.md`) — was next, and it was the last packet
 on the plan.** ✅ **`P38` is done**, so the reader P39 writes for now exists: somebody who has a
 rulebook to be strategic about. ⚠️ **Three things P38 settled that P39 should copy rather than
 re-invent**: figures are fenced by extending `PublishedFigureTests.TheFiguresThePlayersGuideQuotes`
@@ -490,6 +546,8 @@ not leave them asserting a section that no longer quotes anything. ⚠️ **P38 
 `RULEBOOK.md`'s worked round quotes real dollar figures. Those are *engine-replayed*, not
 `measurements.csv` rows — P39's guide must quote **only** CSV-fenced figures, and if it wants a
 worked example it should point at the rulebook's rather than grow a second one.
+
+</details>
 
 <details>
 <summary>What used to stand here, before P38 shipped</summary>
@@ -3813,6 +3871,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 ## Session log
 
 | Date | Packet | Outcome |
+| 2026-08-23 | P39 | **Done — the strategy guide, on Fable 5: `docs/HOW-TO-PLAY-WELL.md` answers *how do I get better?* from what was measured, and every figure it quotes is fenced.** Organised by decision rather than by experiment — the whole game in one sentence, the discard tie-break (the headline pair), the one refinement that has ever worked (`outs`, +2.7 ± 0.8), the money (settle it, never chase it — the $5/$1 cell is a null and the crossover is a money card worth four rounds), **the nulls given as much room as the margins** (refusing the claim, counting cards, feeding-aware discards, `warden`'s loss, the seat-side question stated with no digits at all because P16's figures are not CSV rows), the three **unpriced** bonuses stated as unknown-rather-than-small, and the difficulty dial with its reference table. 🔥 **The fence moved home with the figures and now fences verdicts too**: `TheFiguresThePlayersGuideQuotesAreTheFiguresInTheCsv` reads the guide — dial quad, headline pair, nine anchored margins with **the printed sign in the anchor and the scale carrying it**, two interval-free rates, and the eight verdicts the prose asserts (nulls must stay `inside the interval`, separations `separated (Holm)`). 🔥 **A figure has one home, asserted as an absence**: `TheFiguresHaveOneHomeAndThePlayingGuidePointsAtIt` requires `PLAYING.md` to point at the guide and contain no `±`, no reference-table quad, no headline pair — its *Playing better* section is one pointer paragraph. Both fences proved able to fail by mutation. ⚠️ **Found on the way**: `PLAYING.md`'s difficulty prompt row still quoted the four-handed 36%/14%, unfenced because P34's regex targeted the other sentence — digit-free with a pointer now. `README.md` and the documentation map carry the guide. ✅ **No rules question; `RULES.md` stays rev 30.** 🔥 **Green at 832 / 0**, from 831. |
 | 2026-08-23 | P38 | **Done — the rulebook, on Fable 5: `docs/RULEBOOK.md` teaches the game front to back and cannot fall behind the rules without a red build.** The whole game in reading order for somebody who has never seen it — setup, the turn, the feeding rule taught as table manners, the opening claim and its permission, melds, the win condition by table size, the three settlement bonuses, the money layer, a one-page table reference — **no provenance tags, no open questions, no packet numbers**, and `RULES.md` stays the sole authority. 🔥 **Four tests in `Tests/Docs/RulebookTests.cs`, each proved able to fail by mutating the document.** **(1) The rev stamp** equals `JournalHeader.CurrentRulesRevision`, which `GameJournalTests` already binds to `RULES.md`'s own header — so a play-changing revision is a red build until the rulebook is re-read, **which is the maintenance, compelled**. **(2) The worked round is replayed, not proofread**: `TheWorkedRoundIsTheRoundItsSeedActuallyPlays` re-runs the printed construction (seed **15**, five seats of `outs`, seat seed `seed × 100 + seat`) and asserts all five dealt hands, the turn-up, all seven owned money cards with multipliers, the 24 turns, the winner, the declared melds and all fifteen settlement cells with the round/money/net split asked of `Settlement.RoundPayments`. Seed 15 came from a 60-seed scan and earns its place twice: the winner declares **jokerless**, so the ×3 bonus appears in a real settlement ($60 against $15 a head), and **had discarded an owned A♠ mid-round and is still paid for it** — permanent ownership demonstrated by the engine. **(3) The house readings are fenced two ways with the citation set derived from `RULES.md` itself**: open §9 rows recognised by table shape (numbered, un-struck, five columns), and the appendix must cite exactly that set — #33, #36–#41, #44–#48 today. A question closing or opening moves the set and fails the build, which is the packet's hard problem — a rulebook silently promotes defaults to rules — made checkable. **(4) The voice is fenced**: no provenance tags, no confidence words, no packet ids, not the word *reconstruction*. `README.md` points at it as the way in; the documentation map carries it. ✅ **No rules question arose; `RULES.md` stays rev 30.** 🔥 **Green at 831 / 0**, from 827. |
 | 2026-08-23 | P34 | **Done — a front door, and a documentation set that cannot go stale quietly, on Opus 5. Every packet in `BUILD-PLAN.md` §5 is now done.** `README.md` is the only current-only document in the repository — what the game is, the seven projects, how to run it, where the answers live, **no packet numbers and no history** — and the three wholly historical documents (`RULES-TECHNICAL.md`, `REVIEW-2026-08.md`, `RECONCILIATION-PLAN.md`) carry a banner in their first three lines saying what they were for and what replaced them. 🔥 **The habit is a test now, for the third time in this project's life** (a rung cannot be added without being measured, P18→P20→P23; a Settled rule cannot be recorded without being checked, P30.2): **eight tests in `BurmesePoker.Tests/Docs/`**, each **proved able to fail by mutating the document rather than the code** — the map complete both ways, banners asserted **both** ways (a current document flagged historical is the same lie the other way round), every command in a fenced `bash` block resolved against the source that parses it, every test `RULES.md` names as a fence existing, every figure `STRATEGY.md` tabulates and every figure `PLAYING.md` quotes agreeing with `measurements.csv`, and the product's one spoken measurement still a null. 🔥 **The test count is discovered rather than trusted** — `[Fact]`s plus theory rows by reflection, which is the number a run reports — **so a packet that adds a test and leaves the prose alone is a red build**. ⚠️ **Only the *first* count and *first* rev in each document are checked**: these files are newest-first and the log records 677, 697, 715 and 795, every one true when written — **a check demanding they all agree would ask the project to delete its own history**. ⚠️ **The staleness that was actually there was in the two documents written for people, and nothing else in the tree depends on either.** `PLAYING.md` told a player the four settings win **13.8 / 21.7 / 28.4 / 36.1%** — the **four-handed** reference table on a five-handed page — quoted a `headline.balanced.*` pair matching no row in either CSV, and said *"your neighbours change every round"*, false since P36; `RULES-PRIMER.md` carried **four `[⚠ code disagrees]` tags for divergences closed at P25–P28**, a settlement section that stopped at *flat*, and an open question answered a revision later. **Prose has no column to disagree with**, which is why both were fixed *and* fenced. ⚠️ **One documentation-accuracy finding in `RULES.md`**: §10 says *empty* and has a standing exception — **#7**, `RoundEngine.MinimumPlayers` is 4 against §2's Settled 2-to-6 — now said out loud above the list. **No rule changed, no play changed, `RULES.md` stays rev 30** and `JournalHeader.CurrentRulesRevision` is unmoved. ✅ **No new rules question arose.** 🔥 **Green at 827 / 0**, from 819. |
 | 2026-08-23 | P35 | **Done — the two scoring rules that reach outside a round are played, on Opus 5, and `RULES.md` §10 #20 and #21 are discharged. §10 is empty: every rule the document records as Settled is implemented.** 🔥 **§7.4 changed the shape of a round, which nothing had done since P0.** §9 #38's recorded default is *the dealt thirteen alone*, so `RoundEngine.Play` offers the declaration to every seat whose **dealt** hand already covers, in turn order, **before the first take**; a seat may decline (§7.1) and there is no §5.1 exception in play, because nothing has been discarded. ⚠️ **A round can now run no turns at all** — `RoundResult.Turns` is 0 — and **`TurnNumber` 0 is a real value** reaching the journal, the console's turn heading and the server's `TurnBegan`. ⚠️ **It opened §9 #48** (two seats dealt a winning thirteen at once), defaulted to the earlier in turn order. 🔥 **§7.5 was cheap once the division was seen: settlement is *told*, never made to remember.** `MatchEngine.Streak` is **the only state in this project that reaches across rounds and is not money**; `Settlement` still holds no history and takes no match, asserted over its parameter list, and `Win` is the record it is told. ⚠️ **The reading matters and the first implementation had it backwards**: *"pays your whole payout"* means the winner collects **exactly what they would have collected**, out of one pocket — a test caught it, not a reading. 🔥 **The predicted consumer trap was real and the fix was to delete the re-derivation**: `Settlement.RoundPayments` is the round column, computed once in the domain, and the console's panel and `SeatRow.Flat` both read it — **both had assumed every loser pays the same amount**, true from rev 1 until rev 27, and a split at the wrong place posts the difference into the **side-bet** column with the totals still adding up. ⚠️ **`ScriptedPlayerAgent` was silently declining the new question by accident** — its script advances by turn number and starts at 0 — which is why 795 tests stayed green the moment the path went in; it is an explicit `DeclaresOnTheDeal` now, defaulted to no **as a decision**, and exactly two tests really changed behaviour. 🔥 **Conformance gained its first multi-round case**: the audit still watches one round but can be **told** what the rounds before it did, with the count kept by the driver rather than read off `MatchEngine`, and **fails if 120 rounds contain no streak at all**. ✅ **Both registry entries are `Checked` and there are now no whole exemptions at all** — a first since P30.2 — ceiling **7 → 6**. 🔥 **The re-measurement (13,257 s, 126 rows) is the strongest reproduction this project has recorded: 107 of 124 shared rows byte-identical, and the seventeen that moved all count turns or money.** **Nine rounds in 33,008 ended on the deal** (§15, about one in 3,700) and **not one win rate, margin, Holm verdict, ranking, pairing ratio or ε moved by a millionth** — §7.4 changed *when* those rounds ended, not *who won them*. ✅ **Three columns corroborate**: turns fell **502,830 → 502,812**, the feeding-ban denominator fell by the same 18, and two claim attempts disappeared against 7 × 28.6% = 2.0. ❌ **The written prediction that money moving without a win rate would mean a bug was wrong**; ✅ **the column that discriminates is the side bet, and all four `money.side-margin.*` rows are byte-identical** (acceptance 3). ⚠️ **§7.5 is not in the standing set and cannot be** while every experiment plays one round a game — `STRATEGY.md` §11 says so and says what it leaves unknown. ✅ **The console capture is byte-identical to `HEAD`.** ⚠️ **Two stale product sentences and two stale documents fixed on the way past**, including a **four-handed** figure left in §11 by P32. **`RULES.md` rev 30**, `JournalHeader.CurrentRulesRevision` **30**. 🔥 **Green at 819 / 0**, from 795. |

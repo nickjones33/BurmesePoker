@@ -1272,7 +1272,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P36** | **How long a seating holds** | — | S–M — ☑ **done 2026-08-22 (Opus 5)** — `Domain/Play/SeatingPolicy.cs`: **held by default**, `RoundsBetweenSeatings` of *N* re-draws every *N* rounds, and **0 is never**. §10 **#22 discharged**; `RuleConformance`'s seating check inverted; two fences named for §9 #45 and #47. ✅ **No measurement moved** and it is asserted (`AOneRoundGameIsTheSameGameUnderEveryPolicy`). ⚠️ **A seed or journal from between P28 and P36 replays differently**; the journal header records the policy so a front end's does not |
 | **P37** | **Asking the table to change seats** | **P36 ✅** | M — ☑ **done 2026-08-22 (Opus 5)** — §10 **#23 discharged**, and §9 #45 as Nick ruled it: a re-seating happens **when the players agree**. 🔥 **Consent is not desire** — `SeatingOpinion` is three answers, so an all-bot table never re-seats itself and *fail closed* fell out for free. ⚠️ **A public question is a standing answer, not a pending prompt** (§3.13); **six decorators had to forward the first default interface member this project has.** 🔥 **The first *public* question this project has ever asked** — `SeatPrompt` is seat-private by construction and this one is put to everybody at once — and the first asked **between** rounds. ✅ **A computer seat consents** (a design decision, recorded in §3, not a rule); ⚠️ **§9 #47 open — everybody or most?** |
 | **P38** | **The rulebook — the game taught, not reconstructed** | — | M — ☑ **done 2026-08-23 (Fable 5)** — `docs/RULEBOOK.md`: the game as a board game ships it, in reading order, for somebody who has never seen it. **One answer per rule, no provenance tags, no open questions, no packet numbers.** ⚠️ **`RULES.md` stays the sole authority** — the rulebook is *derived*, stamps the rev it was derived from, and a test binds the two, so a rules change makes it red rather than stale. 🔥 **The hard part is that eleven §9 rows are played on a recorded default**: a rulebook must state one, which silently promotes a default to a rule for the reader — so it carries a short *house readings* appendix in a player's language |
-| **P39** | **How to play well — the strategy guide a player can use** | — | S–M — ☐ **new 2026-08-23** — `docs/HOW-TO-PLAY-WELL.md`: what this project has actually measured, in plain language, with the handful of figures that change a decision and none of the apparatus. ⚠️ **`STRATEGY.md` stays the measurement authority** and every figure quoted is fenced by P34's CSV check. ⚠️ **It takes ownership of `PLAYING.md`'s *Playing better* section**, so a figure has one home rather than three |
+| **P39** | **How to play well — the strategy guide a player can use** | — | S–M — ☑ **done 2026-08-23 (Fable 5)** — `docs/HOW-TO-PLAY-WELL.md`: what was actually measured, organised by decision, **the nulls given as much room as the margins** and the three bonuses stated as *unpriced rather than small*. ⚠️ **`STRATEGY.md` stays the measurement authority, untouched** — the guide quotes only `measurements.csv`-fenced figures, and the fence covers **verdicts** as well as numbers (a null that separates is a red build). 🔥 **A figure has one home, asserted as an absence**: `PLAYING.md` points at the guide and may contain no `±`, no reference-table quad, no headline pair. ⚠️ **Found on the way**: `PLAYING.md`'s difficulty prompt row still quoted the four-handed 36%/14% — unfenced because P34's regex targeted the other sentence |
 
 ⚠️ **P25–P29 are the only packets in this table that do not descend from §0.** They come from
 `RULES.md` — four sessions with Mya Lay and Aung Aung on 2026-08-20/21 that closed twenty-three
@@ -6597,7 +6597,7 @@ fall behind the rules without something turning red.
 
 ---
 
-### P39 — How to play well: the strategy guide a player can use ☐ — **added 2026-08-23, re-planned by P38**
+### P39 — How to play well: the strategy guide a player can use ☑ — **added 2026-08-23, re-planned by P38, done 2026-08-23 (Fable 5)**
 
 ⚠️ **Three amendments from P38, written while the reasoning is fresh.** **(1) Moving `PLAYING.md`'s
 *Playing better* figures moves their fences**: `PublishedFigureTests.TheFiguresThePlayersGuideQuotes`
@@ -6674,9 +6674,10 @@ a gap of *audience*, not of content**: everything a rulebook needs is in `RULES.
 a strategy guide needs is in `STRATEGY.md`, but both are written for the project rather than for a
 player. **`P38` is the rulebook and `P39` is the strategy guide**, specified below.
 
-⚠️ **P38 first — ✅ done 2026-08-23, so P39 is next and last.** It was the one that was asked
-for, it needed nothing, and P39's guide is worth
-more once a reader has a rulebook to be strategic about.
+✅ **Both are done, on 2026-08-23 — P38 first and P39 behind it, as planned.** P38 was the one
+that was asked for and needed nothing; P39's guide was worth more once a reader had a rulebook to
+be strategic about, and that is the reader it was written for. **The plan is empty: everything
+below this line is a candidate, not a packet.**
 
 **Four candidates behind them.** Nothing below is a packet yet — each is a paragraph, in the order
 this plan would take them, and whoever takes one writes it up properly first.

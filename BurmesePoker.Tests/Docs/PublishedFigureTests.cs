@@ -121,32 +121,34 @@ public class PublishedFigureTests
     }
 
     /// <summary>
-    /// ✅ <b>The guide written for a person at the keyboard quotes the same file the strategy
-    /// document does.</b>
+    /// ✅ <b>The guide written for a player quotes the same file the strategy document does.</b>
     /// </summary>
     /// <remarks>
     /// <para>
-    /// 🔥 <b>This is the document the staleness actually happened in.</b> <c>docs/PLAYING.md</c>
-    /// tells a player how far apart the four difficulty settings are and what the computer's
-    /// tie-break is worth — and it went on quoting a <b>four-handed</b> reference table and a
-    /// headline pair from a run two measurements old, while the table it describes deals
-    /// <b>five</b>. Nothing noticed, because prose does not have a column to disagree with.
+    /// 🔥 <b>This fence moved home with the figures it holds</b> (P39). It was written against
+    /// <c>docs/PLAYING.md</c>, whose <em>Playing better</em> section carried four transcribed
+    /// figures — and went on quoting a <b>four-handed</b> reference table and a headline pair
+    /// from a run two measurements old, while the table it describes deals <b>five</b>. Nothing
+    /// noticed, because prose does not have a column to disagree with. Those figures live in
+    /// <c>docs/HOW-TO-PLAY-WELL.md</c> now, with every other number a player is given.
     /// </para>
     /// <para>
-    /// ⚠️ <b>Only the transcribed figures are fenced, never the prose around them.</b> What is
-    /// checked is the two sets that exist in <c>measurements.csv</c> under an id — the dial's
-    /// reference table and the balanced headline — because those are the numbers that can be
-    /// re-derived. The rest of the page is explanation and is not this test's business.
+    /// ⚠️ <b>Only the transcribed figures are fenced, never the prose around them</b> — each
+    /// against the row of <c>measurements.csv</c> it was printed from, at the scale it is
+    /// printed at (points of win rate, or dollars a round). And where the guide's sentence is a
+    /// <em>verdict</em> — this is a null, that separates — the verdict is fenced too, because a
+    /// margin can drift back inside its interval without the number moving much at all.
     /// </para>
     /// </remarks>
     [Fact]
     public void TheFiguresThePlayersGuideQuotesAreTheFiguresInTheCsv()
     {
-        var guide = Documentation.Text("docs/PLAYING.md");
+        var guide = Documentation.Text("docs/HOW-TO-PLAY-WELL.md");
 
+        // The difficulty dial's reference table, weakest first.
         var dial = Regex.Match(guide, @"win\s+\*\*([\d.]+)% / ([\d.]+)% / ([\d.]+)% / ([\d.]+)%\*\*");
 
-        Assert.True(dial.Success, "docs/PLAYING.md no longer says what the four settings win.");
+        Assert.True(dial.Success, "docs/HOW-TO-PLAY-WELL.md no longer says what the four settings win.");
 
         foreach (var (level, printed) in new[] { "easy", "medium", "hard", "expert" }
             .Zip(dial.Groups.Values.Skip(1).Select(group => group.Value)))
@@ -154,12 +156,112 @@ public class PublishedFigureTests
             Compare(printed, Published[$"difficulty.reference-table.{level}"].Mean * 100, $"{level}'s share");
         }
 
+        // The headline: what the tie-break is worth.
         var headline = Regex.Match(guide, @"\*\*([\d.]+)% of rounds against ([\d.]+)%\*\*");
 
-        Assert.True(headline.Success, "docs/PLAYING.md no longer says what a tie-break is worth.");
+        Assert.True(headline.Success, "docs/HOW-TO-PLAY-WELL.md no longer says what a tie-break is worth.");
 
         Compare(headline.Groups[1].Value, Published["headline.balanced.5-handed.greedy"].Mean * 100, "the thinking bot");
         Compare(headline.Groups[2].Value, Published["headline.balanced.5-handed.simple"].Mean * 100, "the simple bot");
+
+        // Every margin the guide quotes: the sentence's anchor, the row it must agree with,
+        // and the scale the fraction is printed at. ⚠️ The sign the sentence prints is part of
+        // the anchor and the scale carries it, so a margin that flips direction fails here
+        // rather than reading as its own opposite.
+        (string Anchor, string Id, double Scale)[] margins =
+        [
+            (@"worth \*\*\+([\d.]+) ± ([\d.]+) points\*\*", "ladder.head-to-head.greedy-over-outs", -100),
+            (@"measures\s+\*\*-\$([\d.]+) ± \$([\d.]+) a round\*\*", "money.net-per-round.5-1", -1),
+            (@"banks \*\*\+\$([\d.]+) ± \$([\d.]+)\*\* a round", "money.net-per-round.5-20", 1),
+            (@"\$5/\$40 \*\*\+\$([\d.]+) ± \$([\d.]+)\*\*", "money.net-per-round.5-40", 1),
+            (@"\*\*-([\d.]+) ± ([\d.]+) points\*\* of win rate", "claim.permission.refuse-over-allow", -100),
+            (@"\*\*-\$([\d.]+) ± \$([\d.]+)\*\* a round between", "claim.permission.money.refuse-over-allow", -1),
+            (@"\*\*\+([\d.]+) ± ([\d.]+) points\*\* \*behind\*", "ladder.head-to-head.greedy-over-counting", 100),
+            (@"measures \*\*\+([\d.]+) ± ([\d.]+) points\*\*", "ladder.head-to-head.greedy-over-cautious", 100),
+            (@"gives up \*\*([\d.]+) ± ([\d.]+) points\*\*", "ladder.head-to-head.outs-over-warden", 100),
+        ];
+
+        foreach (var (anchor, id, scale) in margins)
+        {
+            var quoted = Regex.Match(guide, anchor);
+
+            Assert.True(quoted.Success, $"docs/HOW-TO-PLAY-WELL.md no longer quotes {id}.");
+
+            Compare(quoted.Groups[1].Value, Published[id].Mean * scale, $"{id}'s margin");
+            Compare(quoted.Groups[2].Value, Published[id].Interval * Math.Abs(scale), $"{id}'s interval");
+        }
+
+        // Two figures printed without an interval: what chasing the money costs in rounds, and
+        // how often the clean bonus is collected by players who are not trying.
+        var slower = Regex.Match(guide, @"winning \*\*([\d.]+) points\*\* fewer rounds");
+
+        Assert.True(slower.Success, "docs/HOW-TO-PLAY-WELL.md no longer says what chasing the money costs.");
+
+        Compare(slower.Groups[1].Value, Published["money.win-rate.5-20"].Mean * -100, "what chasing costs in rounds");
+
+        var jokerless = Regex.Match(guide, @"\*\*([\d.]+)%\*\* of rounds, purely by");
+
+        Assert.True(jokerless.Success, "docs/HOW-TO-PLAY-WELL.md no longer says the accidental jokerless rate.");
+
+        Compare(jokerless.Groups[1].Value, Published["bonus.jokerless-rate.ladder"].Mean * 100, "the accidental clean rate");
+
+        // The verdicts the prose asserts: what the guide calls nothing must still be inside its
+        // interval, and what it calls the one thing that works must still be separated.
+        foreach (var (id, verdict) in new[]
+        {
+            ("ladder.head-to-head.greedy-over-cautious", "inside the interval"),
+            ("ladder.head-to-head.greedy-over-counting", "inside the interval"),
+            ("money.net-per-round.5-1", "inside the interval"),
+            ("claim.permission.refuse-over-allow", "inside the interval"),
+            ("ladder.head-to-head.greedy-over-outs", "separated (Holm)"),
+            ("ladder.head-to-head.outs-over-warden", "separated (Holm)"),
+            ("money.net-per-round.5-20", "separated (Holm)"),
+            ("money.net-per-round.5-40", "separated (Holm)"),
+        })
+        {
+            Assert.True(
+                Published[id].Verdict == verdict,
+                $"{id} is `{Published[id].Verdict}` and docs/HOW-TO-PLAY-WELL.md tells a player it is `{verdict}`.");
+        }
+    }
+
+    /// <summary>
+    /// ✅ <b>P39 acceptance 4 — a figure has one home.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b><c>docs/PLAYING.md</c>'s <em>Playing better</em> figures went two whole
+    /// measurements stale before P34 fenced them, because a figure with two homes has none</b> —
+    /// the suite was re-run, <c>docs/STRATEGY.md</c> was regenerated, and nobody thought of the
+    /// second copy. The section is a pointer now and the figures live in
+    /// <c>docs/HOW-TO-PLAY-WELL.md</c> alone.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Asserted as an absence, which is the only shape this fence can have</b>: the
+    /// player-facing page carries the pointer, and carries no margin, no interval and no
+    /// reference-table row of its own. A figure added back to <c>PLAYING.md</c> is this test
+    /// red, whatever the figure says.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheFiguresHaveOneHomeAndThePlayingGuidePointsAtIt()
+    {
+        var playing = Documentation.Text("docs/PLAYING.md");
+
+        Assert.Contains("HOW-TO-PLAY-WELL.md", playing, StringComparison.Ordinal);
+
+        Assert.True(
+            !playing.Contains('±'),
+            "docs/PLAYING.md quotes a measured margin again. Those figures have one home now — "
+            + "docs/HOW-TO-PLAY-WELL.md — and a second copy is how they went stale last time.");
+
+        Assert.False(
+            Regex.IsMatch(playing, @"\*\*[\d.]+% / [\d.]+% / [\d.]+% / [\d.]+%\*\*"),
+            "docs/PLAYING.md quotes the difficulty reference table again; it lives in docs/HOW-TO-PLAY-WELL.md.");
+
+        Assert.False(
+            Regex.IsMatch(playing, @"% of rounds against"),
+            "docs/PLAYING.md quotes the tie-break headline again; it lives in docs/HOW-TO-PLAY-WELL.md.");
     }
 
     /// <summary>

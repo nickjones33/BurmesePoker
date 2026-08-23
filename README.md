@@ -105,6 +105,7 @@ browser client is sent only what its own seat is entitled to know.
 | What are the rules, and how sure is anybody? | `docs/RULES.md` — the only rules authority, provenance on every rule, open questions in §9 |
 | I just want to remember how to play | `docs/RULES-PRIMER.md` |
 | How do I actually play the thing? | `docs/PLAYING.md` |
+| How do I get better at it? | `docs/HOW-TO-PLAY-WELL.md` — what has been measured about playing well, written for a player |
 | Which way of playing is better, and by how much? | `docs/STRATEGY.md` — every figure generated from `docs/strategy/measurements.csv`, with an interval |
 | What is still unanswered about the rules? | `docs/RULES.md` §9, and `docs/QUESTIONS-FOR-MYA-LAY.md` |
 | How is it built, and what is being built next? | `docs/BUILD-PLAN.md` and `docs/STATUS.md` |

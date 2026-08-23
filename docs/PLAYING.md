@@ -24,7 +24,7 @@ Then it asks five things:
 |---|---|
 | **How many at the table?** | 4 to 6. A round is not played with fewer or more (`RULES.md` §2.1). |
 | **How many of you are people?** | **1**, for solo play. The rest of the seats are filled by named bots — *Ruby (bot)*, *Sable (bot)*, … **0 is allowed**, and leaves the computer playing itself, which is worth watching once. |
-| **How hard should the computer be?** | Four settings, **hardest first**: *expert*, *hard*, *medium*, *easy*. They are the same player throughout — the best one there is — differing only in how often it slips and throws the wrong one of two good cards. At a table of all four, *expert* wins about **36%** of rounds and *easy* about **14%**, with *hard* and *medium* spread between them five to nine points apart (`STRATEGY.md` §9). Pressing return takes the top of the list, which is *expert*. |
+| **How hard should the computer be?** | Four settings, **hardest first**: *expert*, *hard*, *medium*, *easy*. They are the same player throughout — the best one there is — differing only in how often it slips and throws the wrong one of two good cards. How far apart they are — measured, and it is far enough to feel — and which one to sit with is `HOW-TO-PLAY-WELL.md`'s job. Pressing return takes the top of the list, which is *expert*. |
 | **How long do the seats hold?** | **held** (the default), *every-round*, or *every-5-rounds*. Held is the rule: the seats are drawn once, at the start, and kept — so the player before you and the player after you are the same people all evening, which is what the feeding ban (§5.1) and the money-card permission (§4.5) are about. The other two are house arrangements; in a real game the seats change **when everybody agrees to change them**, which the computer cannot yet be asked. |
 | **What do the stakes pay?** | A **round value** and a **money card value**, defaulting to $5 and $1. Both matter; the second is the whole side bet. |
 
@@ -226,60 +226,14 @@ Settlement has two independent halves, and the console shows them as two columns
 
 ## Playing better
 
-The computer's whole strategy is one question asked three ways: *of the thirteen I would be
-left holding, how many meld?* Take the discard if it raises that number, claim the turned-up
-card if it raises that number, throw whichever card leaves it highest.
-
-**What separates a thinking bot from a simple one is only the tie-break** — and it is worth
-half again as many wins: **23.9% of rounds against 16.1%**, at five seats over every way of
-seating the two (`docs/strategy/measurements.csv`, `headline.balanced.5-handed.*`). Early in a round
-almost every discard costs you nothing, so the count alone cannot choose. It then keeps:
-
-- cards with **partners** — another suit of the same rank, or a neighbour in the same suit;
-- **jokers over everything**, since a joker fits anywhere.
-
-**And the one thing that beats that is looking one card further ahead.** Where two discards
-leave the hand equally melded, the strongest player the computer has keeps the thirteen that
-**more of the pack would improve** — it counts, for each card still out there, whether drawing
-it would help. That is worth **2.7 ± 0.8 points** of win rate over the partner rule alone, and
-it is the only idea in this project that has ever beaten it. Three others were tried and
-measured nothing (`docs/STRATEGY.md`).
-
-**What separates the four difficulty settings is only how often it gets the choice wrong.**
-Every setting is that same strongest player; *easy* throws the wrong one of two good cards nine
-times in ten, *medium* seven, *hard* two in five, and *expert* never. That is why a weaker
-setting still plays a game you recognise instead of a stranger's — it plays the right idea and
-slips, which is what a weaker person does.
-
-### Which one should you play?
-
-**Start at *hard* and move.** The four are spaced by measurement rather than by taste, about
-**seven points of win rate apart** at a table of all four — far enough that a step is something
-you feel within a session, close enough that *"a bit easier"* is a real request. At a five-handed
-table a fair share is 20% of the rounds, and at a table holding all four settings these win
-**10.3% / 16.2% / 23.0% / 30.6%** of them, weakest first.
-
-- ***easy*** feeds you cards. It knows what to keep and throws the wrong one nearly every turn,
-  so the discard beside you is often the one you wanted.
-- ***medium*** is the one to sit at while the melds are still unfamiliar. It gets the close
-  choices wrong more often than not, and you will win more rounds than it does.
-- ***hard*** is a real game. It slips about twice in five on the cards it is choosing between,
-  which is roughly what a good player does when they are not concentrating.
-- ***expert*** never slips at all, and beats the other three every way this has been measured.
-  It is what a hint is asked of, and what takes over your seat if you stop answering — a hint
-  that got worse as you lowered the difficulty would be absurd.
-
-⚠️ **The setting is the *computer's*, not yours.** Nothing about your own hand, your hint or the
-deal changes with it. And **a mixed table is a browser thing** — the console asks once for the
-whole table; the lobby's *mixed* checkbox gives each computer seat a different setting, and names
-each seat for how it plays so you can see who the easy one is.
-
-Two things worth knowing at the table:
-
-- **A fresh hand melds about 4 of its 13**, and about one hand in five melds nothing at all.
-  Do not read a bad-looking deal as a lost round.
-- **Most progress comes from taking discards**, not from drawing. With two decks, the card
-  somebody throws away is very often somebody else's third of a rank.
+That question has a whole document now: **`HOW-TO-PLAY-WELL.md`** — what this project has
+actually measured about playing this game, written for a player rather than for the
+programme. What you are actually optimising, how the strongest computer player breaks ties,
+the one refinement that has ever beaten it, what the money is worth and when to chase it
+(never, at these stakes), which difficulty setting to sit with — and, most usefully, the
+list of things that sound clever and measurably are not, so you can stop spending attention
+on them. Every figure in it is checked against `docs/strategy/measurements.csv` by a build
+test; the research behind them is `STRATEGY.md`.
 
 ---
 
