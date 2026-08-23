@@ -598,8 +598,20 @@ unasserted altogether.
 
 ## What is next
 
-🔥 **`P40` — the game in Burmese — is the only packet left on the plan, and it stands blocked
-on input only Nick can produce.** ⚠️ **Its translations must be made from the rev-31 rulebook**
+🔥 **`P42` — playtest readiness — is next** (added 2026-08-23 at Nick's direction;
+`BUILD-PLAN.md` §5 P42). Three non-rules gaps before real people sit down: **(1)** the
+console's seat prompt defaults `MinimumPlayers` → `DefaultPlayers` plus a `drive-console.py`
+re-capture (P32's leftover — it absorbs candidate 3 below); **(2)** the ×5 jackpot display —
+the domain carries the jackpot fact on the result (⚠️ a watcher cannot compute it: ownership
+is partly private until settlement), both settlement panels say it, the table centre notes the
+7♦/A♠ pair when it is up, `CardDisplayState` stays ×5-free on purpose, **§9 #32 is not
+generalised**, and because Domain is touched **P41's byte-identity procedure is repeated**;
+**(3)** 🔥 **the session itself plays a browser round to settlement with Claude in Chrome** —
+⚠️ the real browser via the extension, never headless; if the browser tools are off, report
+that item blocked rather than routing around it — against the checklist in the packet, and
+**the report says what was actually exercised** (P11's rule).
+
+**Behind it, `P40` — the game in Burmese — stands blocked on input only Nick can produce.** ⚠️ **Its translations must be made from the rev-31 rulebook**
 — attach the current `RULEBOOK.md`, which teaches the face-up rule; the first-round outputs
 under `docs/translation/` are rev-30-based and must be re-run. The translations are made
 outside the repository: Nick attaches the English documents and runs the prompts in

@@ -13,14 +13,23 @@ over ad-hoc changes.
 
 🔥 **READ THIS FIRST — `P41` shipped 2026-08-23 on Fable 5: the table shows what the rules make
 public, and §10 is empty again.** `RULES.md` stays **rev 31** (no rule changed), the tree is
-green at **845**, and **`P40` — the game in Burmese — is the only packet left on the plan,
-blocked on input only Nick can produce**: vetted translations of `RULEBOOK.md` and
-`HOW-TO-PLAY-WELL.md`, made outside the repo with `docs/translation/PROMPTS.md` against
-Gemini/ChatGPT (translate with one, cross-check with the other). **Do not start P40 without
-that text, and translate the rev-31 rulebook** — the first-round outputs under
-`docs/translation/` are rev-30-based and must be re-run. Behind it stand the four candidates at
-the end of `docs/STATUS.md`'s *What is next* (the expert session on the defaulted §9 rows —
-**thirteen** now, every one fenced — is the one this file would take, and P40's Burmese
+green at **845**, and **`P42` — playtest readiness — is the next packet** (added the same
+evening at Nick's direction; `BUILD-PLAN.md` §5 P42): the console's four-seat default becomes
+`DefaultPlayers`, the ×5 jackpot finally gets *said* at settlement (the domain carries the fact
+on the result — a watcher cannot compute it — both panels speak it, **§9 #32 is not
+generalised**, and the Domain touch repeats P41's byte-identity procedure), and 🔥 **the
+session itself plays a browser round to settlement with Claude in Chrome** — the real browser
+via the extension, never headless — against the packet's checklist, reporting what was
+actually exercised.
+
+**Behind P42: `P40` — the game in Burmese — stands blocked on input only Nick can produce**:
+vetted translations of `RULEBOOK.md` and `HOW-TO-PLAY-WELL.md`, made outside the repo with
+`docs/translation/PROMPTS.md` against Gemini/ChatGPT (translate with one, cross-check with the
+other). **Do not start P40 without that text, and translate the rev-31 rulebook** — the
+first-round outputs under `docs/translation/` are rev-30-based and must be re-run. Behind both
+stand the four candidates at the end of `docs/STATUS.md`'s *What is next* (candidate 3, the
+console's four-seat default, is absorbed by P42; the expert session on the defaulted §9 rows —
+**thirteen** now, every one fenced — is the one this file would take next, and P40's Burmese
 rulebook is the best instrument to hand those experts).
 
 **What P41 built, and the four things a cold session needs from it.**

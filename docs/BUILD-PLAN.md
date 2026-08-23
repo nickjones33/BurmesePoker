@@ -1275,6 +1275,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P39** | **How to play well — the strategy guide a player can use** | — | S–M — ☑ **done 2026-08-23 (Fable 5)** — `docs/HOW-TO-PLAY-WELL.md`: what was actually measured, organised by decision, **the nulls given as much room as the margins** and the three bonuses stated as *unpriced rather than small*. ⚠️ **`STRATEGY.md` stays the measurement authority, untouched** — the guide quotes only `measurements.csv`-fenced figures, and the fence covers **verdicts** as well as numbers (a null that separates is a red build). 🔥 **A figure has one home, asserted as an absence**: `PLAYING.md` points at the guide and may contain no `±`, no reference-table quad, no headline pair. ⚠️ **Found on the way**: `PLAYING.md`'s difficulty prompt row still quoted the four-handed 36%/14% — unfenced because P34's regex targeted the other sentence |
 | **P40** | **The game in Burmese — translated rulebook and strategy guide** | P38 ✅, P39 ✅, **the vetted Burmese text (Nick, outside the repo)** | S–M — ☐ **new 2026-08-23, at Nick's direction** — `docs/RULEBOOK.my.md` and `docs/HOW-TO-PLAY-WELL.my.md`: the two player-facing documents in the language the game actually comes from. 🔥 **The translation itself happens outside this repository** — Nick runs `docs/translation/PROMPTS.md` against Gemini/ChatGPT, cross-checks each model's output with the other, and hands the packet vetted Markdown; **the packet cannot start until that text exists.** ⚠️ **The fences fence what survives translation**: the rev stamp in Latin digits bound to `JournalHeader.CurrentRulesRevision`, and every figure, `±` interval, dollar amount and card symbol of the English source asserted present byte-for-byte in the Burmese — which is why the prompts forbid Burmese numerals. ⚠️ **Acceptance is a human read, not a test** — no test can read Burmese |
 | **P41** | **The table shows what the rules make public** | rev 31 ✅ | M — ☑ **done 2026-08-23, same day it was added** — §5's browsable piles and §5.2's face-up taken cards reach every place a player sits. 🔥 **The engine needs no rule**: open takes and discards are public events by `CardId`, so the face-up set and every pile are folds over the event stream — no engine state, no journal change, **journals and a seeded CSV byte-identical, asserted not argued**. ⚠️ **Concealment is the constraint** — a blind-drawn card must never acquire the mark, mutation-proved beside `ConcealmentTests`. ⚠️ **`TurnContext` is deliberately not widened**: no bot changes, no measurement moves; a rung that reads the piles is a new rung and arrives measured. Discharges §10 #24; fences §9 #49 and #50; registry §5.2 → Checked, ceiling back to 6 |
+| **P42** | **Playtest readiness: the console's fifth seat, the ×5 said out loud, a played round in a real browser** | P41 ✅ | S–M — ☐ **new 2026-08-23, at Nick's direction** — three non-rules gaps before real people sit down. **(1)** The console seat prompt defaults `MinimumPlayers` → `DefaultPlayers` (P32's leftover, absorbed from candidate 3) with a `drive-console.py` re-capture. **(2)** The ×5 jackpot is settled and never shown: the domain carries the jackpot fact on the result (it is not watcher-computable — ownership is partly private), both settlement panels say it, the table centre notes the pair when it is up, `CardDisplayState` deliberately stays ×5-free, **§9 #32 not generalised**. Domain is touched, so **P41's byte-identity procedure is repeated**. **(3)** The session itself plays a browser round to settlement with Claude in Chrome (real browser, never headless) against a checklist and reports what was exercised |
 
 ⚠️ **P25–P29 are the only packets in this table that do not descend from §0.** They come from
 `RULES.md` — four sessions with Mya Lay and Aung Aung on 2026-08-20/21 that closed twenty-three
@@ -6826,6 +6827,95 @@ seeded `Sim` CSV identical before and after.
 
 ---
 
+### P42 — Playtest readiness: the console's fifth seat, the ×5 said out loud, and a played round in a real browser ☐ — **added 2026-08-23, at Nick's direction**
+
+**Goal.** Three things standing between the tree and a playtest with real people, none of them a
+rule: **(1)** the console still deals four (P32's leftover, candidate 3 below — this packet
+absorbs it); **(2)** the ×5 jackpot settles correctly and **no screen ever explains it** (P26's
+leftover, which until now no packet owned); **(3)** nobody — human or agent — has ever verified
+the browser table end-to-end *by playing it in a browser*, so this packet has the session do
+exactly that with the Claude-in-Chrome tools before a person is asked to.
+
+**Read first.** `RULES.md` §4.1 (the ×5: 7♦/A♠ turn-up, one owner of both partners, $40 a head
+at standard stakes) and **§9 #32 (open — do not generalise past the 7♦/A♠ pair; two tests fence
+it)**; `MoneyCardRegistry.ConfigurationOf` / `Multiplier(card, owner, ownership)` and
+`MoneyOwnership` (the domain already answers everything — this packet only *says* it);
+`Settlement.Settle`'s configuration comment; P41's byte-identity procedure in `STATUS.md`'s
+session log (this packet repeats it, because build item 2 touches Domain).
+
+**Build.**
+
+1. **The console deals five.** `Console/Program.cs` ~line 339: the seat prompt's
+   `.DefaultValue(RoundEngine.MinimumPlayers)` becomes `RoundEngine.DefaultPlayers` — the range
+   text and the validator keep the floor (⚠️ candidate 1's interaction: if the floor ever moves,
+   the default must not follow it, which is exactly why the two constants exist). A
+   `drive-console.py` re-capture of both scripts — ⚠️ **the captures change**: the scripts take
+   the seat prompt's default, so every capture becomes a five-seat table. That is the fix
+   working, not a regression; the settlement checks in the script are adaptive.
+2. **The jackpot fact is carried by the domain, once, and both settlements say it.**
+   `RoundEngine.Settle` already stands next to everything it needs; `Settlement` already
+   computes `moneyCards.ConfigurationOf(ownership, shoe)` internally. Surface the fact rather
+   than re-deriving it anywhere (P35 build item 3's lesson — *ask the domain, do not re-derive*):
+   recommended shape is a nullable jackpot owner on `RoundResult` (or on `Win`, whichever reads
+   better beside `Jokerless`), filled from the same configuration `Settlement` reads.
+   ⚠️ **A watcher cannot compute this** — ownership is partly private until settlement — which
+   is exactly why it must ride the result to the browser's `TableEvent.Settled` rather than be
+   folded client-side. Then:
+   - **Console `ReportSettlement`**: a bonus line in the idiom of the jokerless/deal/streak
+     lines — who owned both partners, ×5 apiece, the per-head dollars — and the owned-cards
+     column may decorate the pair via `Multiplier(card, owner, ownership)`.
+   - **Web `SettlementPanel`**: the same sentence, from the result alone.
+   - **The possibility is public from the deal**: when the turn-up *is* the 7♦/A♠ pair, that
+     fact is on the table for everybody — a quiet line at the table centre (web) and in the
+     round-start narration (console): *the jackpot pair is up; one player owning both partners
+     is paid ×5 apiece*. No concealment question arises; it reads off the turned-up cards.
+   - ⚠️ **`CardDisplayState` deliberately stays without a ×5 state** (P26's design decision
+     holds: no view that draws one card at a time can compute it, and this packet does not make
+     one try — the settlement and the table centre are not per-card views).
+   - ⚠️ **Do not generalise §9 #32**: the fact is the 7♦/A♠ pair's and no other; the two
+     existing fences must still pass untouched.
+3. **Fences for item 2.** A settlement test that constructs the jackpot round (the ×5 cases in
+   `SettlementTests` are the template — the pair does not turn up by accident at any usable
+   rate) and asserts the carried fact; the console line and the web sentence asserted at the
+   highest layer the harness reaches for each.
+4. 🔥 **Byte-identity re-asserted, because item 2 touches Domain.** Exactly P41's procedure: a
+   seeded `Sim` run (journal + CSV) from a HEAD worktree against the changed tree, `cmp` both,
+   and replay the HEAD journal under the new tree. The carrier is additive and read by nothing
+   in `Sim`, so the assertion should come back byte-identical — if it does not, the packet is
+   wrong, not the assertion.
+5. 🔥 **A round of UI tests, played by the session itself in a real browser** (Claude in
+   Chrome — ⚠️ Nick's standing direction: **the real browser via the extension, never headless;
+   if the browser tools are unavailable, say so and report the item blocked rather than routing
+   around it**). Launch `dotnet run --project BurmesePoker.Web -- --people 1 --seed 20260823
+   --pace 300`, open the lobby, sit down, and **play at least one full round to settlement by
+   clicking**, exercising and verifying as a checklist:
+   - sit-down and the deal; the turn prompt and taking a card both ways (discard and blind);
+   - throwing a card, including that a `closed` card is not a control (§5.1) and a `▲` face-up
+     card reads as one (P41);
+   - **P41's two features from the other side of the glass**: another seat's face-up chips on
+     the felt, and a pile opened through the ▾ disclosure;
+   - the *why?* disclosure with hints on; the legend; the settlement panel (and item 2's
+     sentence if the seed offers it — it will not; verify that panel by its test instead);
+   - the round log, and the reconnect overlay if it happens to show.
+   Screenshot the key states (a GIF of the round is welcome but not owed). 🔥 **The deliverable
+   is P11's rule: the report says what was actually exercised**, item by item. A defect found
+   is fixed in-packet when it is small and written into `STATUS.md`'s notes with a repro when
+   it is not — the packet does not grow to swallow it.
+
+**Acceptance.**
+
+1. The console's seat prompt defaults to **five** and still offers 4–6; both `drive-console.py`
+   scripts re-captured clean at five seats.
+2. A round in which one player owns both partners of a 7♦/A♠ turn-up **says the ×5 out loud at
+   both front ends**, fenced by tests that construct that round; §9 #32's fences pass untouched.
+3. **Byte-identity asserted across the Domain change**: seeded journal and CSV byte-identical,
+   HEAD journal replays.
+4. The browser round was **actually played to settlement by the session through the real
+   browser**, and the report lists what the checklist exercised, with screenshots.
+5. Green, `STATUS.md`'s count matching.
+
+---
+
 ### Where the plan stands, 2026-08-23
 
 🔥 **Every packet built from §0 is done, and P34 was the last of them.** What is left is written
@@ -6833,8 +6923,10 @@ up as two packets and four candidates, and the split is deliberate.
 
 ✅ **Later the same day: P41 is done too** — rev 31's two visibility rules reached both front
 ends, §10 #24 is discharged, §10 is empty again (the standing #7 exception aside) and the
-registry's exemption ceiling is back at 6. **The only packet left on the plan is P40, and it is
-blocked on input only Nick can produce**: vetted Burmese text made with
+registry's exemption ceiling is back at 6. 🔥 **`P42` — playtest readiness — was added the same
+evening at Nick's direction and is the next packet**: the console's four-seat default, the ×5
+jackpot display, and a browser round played by the session itself (§5 P42; it absorbs candidate
+3 below). **Behind it, P40 is blocked on input only Nick can produce**: vetted Burmese text made with
 `docs/translation/PROMPTS.md` against the **rev-31** rulebook — the first-round translations
 under `docs/translation/` are rev-30-based and must be re-run. Behind P40 stand the four
 candidates below, unchanged; the expert-session candidate now carries **thirteen** §9 rows
@@ -6872,7 +6964,8 @@ this plan would take them, and whoever takes one writes it up properly first.
 3. ⚠️ **The console still deals four.** `Console/Program.cs`'s seat prompt defaults to
    `RoundEngine.MinimumPlayers` rather than `DefaultPlayers`. **One line and a `drive-console.py`
    re-capture**, outstanding since P32 and through five packets. ⚠️ It interacts with candidate 1:
-   if the floor moves, the default must not follow it.
+   if the floor moves, the default must not follow it. ✅ **Absorbed into P42 (2026-08-23)** —
+   it stops being a candidate the moment that packet ships.
 4. ⚠️ **A rung that knows the scoring rules exist.** No rung reads §7.3, §7.4 or §7.5 —
    deliberately, under P15's discipline — so **nothing in this project prices a joker thrown for
    the clean bonus**, and §14's rate is published as a floor for that reason. 🔥 **And §7.5 is the
