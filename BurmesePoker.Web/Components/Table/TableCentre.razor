@@ -45,6 +45,16 @@
                     </li>
                 }
             </ul>
+            @*
+                §4.1's jackpot, live: the pair lies face up, so this reads off the turned-up
+                cards and asks nothing private. Who collects it stays unknown until the
+                settlement says (BUILD-PLAN P42).
+            *@
+            @if (Board.JackpotPairUp)
+            {
+                <p class="jackpot">The jackpot pair is up — one player owning both partners
+                    is paid ×@MoneyCardRegistry.Jackpot apiece.</p>
+            }
         }
     </div>
 

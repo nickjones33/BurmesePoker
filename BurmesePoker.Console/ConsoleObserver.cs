@@ -1,6 +1,7 @@
 using BurmesePoker.Domain.Abstractions;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
+using BurmesePoker.Domain.Money;
 using BurmesePoker.Domain.Play;
 using BurmesePoker.Presentation;
 
@@ -87,6 +88,16 @@ public sealed class ConsoleObserver : IGameObserver
         Say(
             "Turned up: " + string.Join("  ", turnedUp.Select(CardFormatting.Of))
             + $"  [{Palette.Quiet}]— the partner copy of each pays its owner; 7♦, A♠ and the jokers always do[/]");
+
+        // The possibility is public from the deal: the pair lies face up, so saying the
+        // jackpot is live reads off the table and asks nothing private (RULES.md §4.1).
+        if (MoneyCardRegistry.IsTheJackpotPair(turnedUp))
+        {
+            Say(
+                $"[{Palette.Quiet}]The jackpot pair is up — one player owning both partners is paid "
+                + $"×{MoneyCardRegistry.Jackpot} apiece (RULES.md §4.1).[/]");
+        }
+
         _console.WriteLine();
     }
 

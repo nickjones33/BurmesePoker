@@ -358,7 +358,12 @@ public sealed class RoundEngine
             Table.Players, seat.Id, Table.Stakes, Table.MoneyCards, Table.Ownership, Table.Shoe,
             win);
 
-        var result = new RoundResult(_round, seat.Id, melds, payouts, turns, win);
+        // The same configuration Settlement reads, asked of the same registry over the same
+        // ownership — carried on the result because a watcher cannot compute it: ownership is
+        // partly private until here (RULES.md §4.1; BUILD-PLAN P42 build item 2).
+        var jackpot = Table.MoneyCards.ConfigurationOf(Table.Ownership, Table.Shoe).OwnsBothPartners;
+
+        var result = new RoundResult(_round, seat.Id, melds, payouts, turns, win, jackpot);
         _observer.RoundSettled(result);
         return result;
     }

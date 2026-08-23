@@ -202,9 +202,32 @@ public sealed class MoneyCardRegistry
         return new MoneyOwnership(holder);
     }
 
-    private bool TurnUpIsTheJackpotPair() =>
-        _turnedUp.Length == 2
-        && Array.TrueForAll(
-            JackpotPair,
-            designator => Array.Exists(_turnedUp, up => up.SameValueAs(designator)));
+    /// <summary>
+    /// Whether a turn-up is the 7♦/A♠ pair — the only turn-up under which the ×5 can be paid
+    /// at all (RULES.md §4.1).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Public and static because the possibility is public from the deal</b>: the pair lies
+    /// face up on the table, so a front end telling its players the jackpot is live is reading
+    /// the turned-up cards and nothing else — no ownership, no concealment question. Who
+    /// <i>collects</i> it stays partly private until settlement, which is why that fact rides
+    /// <see cref="Play.RoundResult"/> instead of being computed by a watcher.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The pair is the 7♦ and the A♠ and nothing else</b> (RULES.md §9 #32 — open). Two
+    /// tripled values reached any other way are deliberately not recognised.
+    /// </para>
+    /// </remarks>
+    /// <param name="turnedUp">The cards turned up at setup, as a watcher was shown them.</param>
+    public static bool IsTheJackpotPair(IReadOnlyList<Card> turnedUp)
+    {
+        ArgumentNullException.ThrowIfNull(turnedUp);
+        return turnedUp.Count == 2
+            && Array.TrueForAll(
+                JackpotPair,
+                designator => turnedUp.Any(up => up.SameValueAs(designator)));
+    }
+
+    private bool TurnUpIsTheJackpotPair() => IsTheJackpotPair(_turnedUp);
 }

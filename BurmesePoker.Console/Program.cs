@@ -336,7 +336,9 @@ internal static class Program
     {
         var count = console.Prompt(
             new TextPrompt<int>($"How many at the table? [{Palette.Quiet}]({RoundEngine.MinimumPlayers}–{RoundEngine.MaximumPlayers})[/]")
-                .DefaultValue(RoundEngine.MinimumPlayers)
+                // The default table, not the smallest legal one — conflating the two is what
+                // P32 existed to fix, and the floor below deliberately does not move with it.
+                .DefaultValue(RoundEngine.DefaultPlayers)
                 .Validate(value => value is >= RoundEngine.MinimumPlayers and <= RoundEngine.MaximumPlayers
                     ? ValidationResult.Success()
                     : ValidationResult.Error(
@@ -514,6 +516,19 @@ internal static class Program
                 $"[{Palette.Good}]On the deal — the round pays ×{Win.DealBonusMultiplier}.[/] "
                 + $"[{Palette.Quiet}]The thirteen dealt already won, before anybody drew a card "
                 + "(RULES.md §7.4).[/]");
+        }
+
+        if (result.JackpotOwner is { } jackpotOwner)
+        {
+            // 2 partners × ×5 × the money card value, from every other player (RULES.md §4.1).
+            var aHead = 2 * MoneyCardRegistry.Jackpot * table.Stakes.MoneyCardValue;
+
+            console.MarkupLine(
+                $"[{Palette.Good}]Jackpot — {CardFormatting.Name(names, jackpotOwner)} owns both "
+                + $"partners of the 7♦/A♠ turn-up and is paid ×{MoneyCardRegistry.Jackpot} apiece: "
+                + $"${aHead} a head.[/] "
+                + $"[{Palette.Quiet}]One player owning both partners turns the two ×{MoneyCardRegistry.Tripled}s "
+                + $"into ×{MoneyCardRegistry.Jackpot}s (RULES.md §4.1).[/]");
         }
 
         if (result.Win.PaidByTheSeatAboveAlone)

@@ -168,6 +168,56 @@ public class RoundEngineTests
     }
 
     [Fact]
+    public void AJackpotRoundCarriesItsOwnerOnTheResult()
+    {
+        // RULES.md §4.1's ×5, played out rather than settled by hand: the turn-up is the
+        // 7♦/A♠ pair and the deck gave Bob both partners. The pair does not turn up by
+        // accident at any usable rate (about one round in 1,444), which is why the round is
+        // constructed — and the fact is asserted off the result, because a watcher cannot
+        // compute it: ownership is partly private until settlement (BUILD-PLAN P42).
+        var order = DealBuilder.ForPlayers(4)
+            .Give(0, WinningHand)
+            // Both partners and all four jokers, so every paying card is Bob's and the
+            // arithmetic below has no filler joker hiding in it.
+            .Give(1, "7D", "AS", "RJ", "RJ", "BJ", "BJ")
+            .TurnUpFromTop("7D")
+            .TurnUpFromBottom("AS")
+            .Build();
+        var engine = Engine(order, Agents(new ScriptedPlayerAgent(new ScriptedTurn { Declare = true })));
+
+        var result = engine.Play();
+
+        Assert.Equal(Bob, result.JackpotOwner);
+
+        // The round: WinningHand is jokerless, ×2 at four seats, $10 a loser. The side bet:
+        // Bob's partners pay ×5 apiece instead of ×3 — (5 + 5 + 4 jokers) × $1 = $14 a head.
+        Assert.Equal(
+            new Dictionary<PlayerId, int>
+            {
+                [Alice] = 30 - 14, [Bob] = -10 + 42, [Carol] = -24, [Dan] = -24
+            },
+            result.Payouts);
+    }
+
+    [Fact]
+    public void TheSamePairSplitBetweenTwoPlayersCarriesNoJackpotOwner()
+    {
+        // The same turn-up with the partners split is two ×3s and no jackpot (RULES.md §4.1),
+        // and the result says so by carrying nothing — the ordinary case for every round that
+        // ever settles at a real table.
+        var order = DealBuilder.ForPlayers(4)
+            .Give(0, WinningHand)
+            .Give(1, "7D")
+            .Give(2, "AS")
+            .TurnUpFromTop("7D")
+            .TurnUpFromBottom("AS")
+            .Build();
+        var engine = Engine(order, Agents(new ScriptedPlayerAgent(new ScriptedTurn { Declare = true })));
+
+        Assert.Null(engine.Play().JackpotOwner);
+    }
+
+    [Fact]
     public void HandsAreThirteenBetweenTurnsAndFourteenDuringOne()
     {
         var alice = new ScriptedPlayerAgent(new ScriptedTurn(), Declaring("2C"));

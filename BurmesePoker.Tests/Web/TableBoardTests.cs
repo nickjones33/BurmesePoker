@@ -459,7 +459,8 @@ public class TableBoardTests
         Turns: 7,
         Melds: [],
         Payouts: new Dictionary<PlayerId, int> { [One] = 0, [Two] = 0, [Three] = 0, [Four] = 0 },
-        Win: Win.Ordinary);
+        Win: Win.Ordinary,
+        JackpotOwner: null);
 
     /// <summary>
     /// ✅ <b>P13.6 — who is at the table is folded, like everything else.</b>
@@ -620,5 +621,6 @@ public class TableBoardTests
             [],
             new Dictionary<PlayerId, int> { [One] = one, [Two] = two, [Three] = three, [Four] = four },
             Turns: 20,
-            Win: Win.Ordinary);
+            Win: Win.Ordinary,
+            JackpotOwner: null);
 }

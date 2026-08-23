@@ -1,5 +1,6 @@
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
+using BurmesePoker.Domain.Money;
 using BurmesePoker.Domain.Play;
 using BurmesePoker.Presentation;
 using BurmesePoker.Server;
@@ -112,6 +113,19 @@ public sealed record TableBoard
 
     /// <summary>The turned-up money cards still on the table (RULES.md §4.2, §4.5).</summary>
     public IReadOnlyList<Card> TurnedUp { get; private init; }
+
+    /// <summary>
+    /// Whether this round's turn-up was the 7♦/A♠ pair, under which one player owning both
+    /// partners is paid ×5 apiece (RULES.md §4.1).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Folded at the deal and not read off <see cref="TurnedUp"/></b>, which loses a
+    /// card if the top one is claimed — the claim takes the shown copy off the table, but the
+    /// designation it made at setup stands, so the jackpot stays live. Who <em>collects</em> it
+    /// is not on this board at all: ownership is partly private until settlement, which is why
+    /// that fact arrives on <c>RoundResult</c> rather than being folded here (BUILD-PLAN P42).
+    /// </remarks>
+    public bool JackpotPairUp { get; private init; }
 
     /// <summary>Each seat's running total, accumulated from the settlements the table was told about.</summary>
     public IReadOnlyDictionary<PlayerId, int> Banks { get; private init; }
@@ -294,6 +308,7 @@ public sealed record TableBoard
                 // event rather than kept from the lobby, which knew only the first one.
                 Seating = [.. started.Seating],
                 TurnedUp = [.. started.TurnedUp],
+                JackpotPairUp = MoneyCardRegistry.IsTheJackpotPair(started.TurnedUp),
                 Look = Look.RoundStarted(),
                 // The shoe, less thirteen to every seat and the cards turned up off it
                 // (RULES.md §2, §3). Everything after this is one card at a time.

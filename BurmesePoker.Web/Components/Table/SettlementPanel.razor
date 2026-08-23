@@ -30,6 +30,20 @@
         }
     </h2>
 
+    @*
+        §4.1's jackpot, said from the result alone: a watcher cannot compute who owned both
+        partners — ownership is partly private until settlement — so the fact rides
+        RoundResult.JackpotOwner rather than being folded from the events (BUILD-PLAN P42).
+    *@
+    @if (Result.JackpotOwner is { } jackpotOwner)
+    {
+        <p class="jackpot">
+            <span class="glyph" aria-hidden="true">@DisplayTokens.For(CardDisplayState.PaysTriple)</span>
+            <span>@OwnerName(jackpotOwner) owned both partners of the 7♦/A♠ turn-up — paid
+                ×@MoneyCardRegistry.Jackpot apiece, from every other player (the jackpot).</span>
+        </p>
+    }
+
     <ol class="melds">
         @foreach (var meld in Result.Melds)
         {
@@ -75,8 +89,10 @@
     [Parameter, EditorRequired]
     public IReadOnlyList<SeatLine> Seats { get; set; } = [];
 
-    private string Winner => Seats.FirstOrDefault(seat => seat.Player == Result.Winner)?.Name
-        ?? $"Seat {Result.Winner.Value}";
+    private string Winner => OwnerName(Result.Winner);
+
+    private string OwnerName(PlayerId player) =>
+        Seats.FirstOrDefault(seat => seat.Player == player)?.Name ?? $"Seat {player.Value}";
 
     private int Net(SeatLine seat) => Result.Payouts.TryGetValue(seat.Player, out var money) ? money : 0;
 

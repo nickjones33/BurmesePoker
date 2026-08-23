@@ -36,13 +36,24 @@ namespace BurmesePoker.Domain.Play;
 /// and <i>the side bet</i> needs all three, and asks <see cref="Settlement.RoundPayments"/> with
 /// this.
 /// </param>
+/// <param name="JackpotOwner">
+/// The player paid ×5 apiece for owning <b>both</b> partners of a 7♦/A♠ turn-up, or
+/// <c>null</c> — the ordinary case, and every turn-up that is not that pair (RULES.md §4.1).
+/// 🔥 <b>Carried because a watcher cannot compute it</b>: ownership is conferred by the deck
+/// and stays partly private until settlement — a blind draw is the one event whose card the
+/// table is not shown — so the only honest source is the same
+/// <see cref="MoneyCardRegistry.ConfigurationOf"/> the settlement itself reads. Required
+/// rather than defaulted for <see cref="Win"/>'s reason: a defaulted null would settle a
+/// jackpot round as an ordinary one in silence.
+/// </param>
 public sealed record RoundResult(
     int Round,
     PlayerId Winner,
     IReadOnlyList<Meld> Melds,
     IReadOnlyDictionary<PlayerId, int> Payouts,
     int Turns,
-    Win Win)
+    Win Win,
+    PlayerId? JackpotOwner)
 {
     /// <summary>
     /// Whether the winner declared without a joker anywhere in the thirteen, which is what

@@ -11,26 +11,47 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **READ THIS FIRST — `P41` shipped 2026-08-23 on Fable 5: the table shows what the rules make
-public, and §10 is empty again.** `RULES.md` stays **rev 31** (no rule changed), the tree is
-green at **845**, and **`P42` — playtest readiness — is the next packet** (added the same
-evening at Nick's direction; `BUILD-PLAN.md` §5 P42): the console's four-seat default becomes
-`DefaultPlayers`, the ×5 jackpot finally gets *said* at settlement (the domain carries the fact
-on the result — a watcher cannot compute it — both panels speak it, **§9 #32 is not
-generalised**, and the Domain touch repeats P41's byte-identity procedure), and 🔥 **the
-session itself plays a browser round to settlement with Claude in Chrome** — the real browser
-via the extension, never headless — against the packet's checklist, reporting what was
-actually exercised.
+🔥 **READ THIS FIRST — `P42` shipped 2026-08-23 on Fable 5, the day it was written up:
+playtest readiness.** `RULES.md` stays **rev 31** (no rule changed), the tree is
+green at **850**, and **`P40` — the game in Burmese — is the only packet left, blocked on
+input only Nick can produce**: vetted translations of `RULEBOOK.md` and `HOW-TO-PLAY-WELL.md`, made
+outside the repo with `docs/translation/PROMPTS.md` against Gemini/ChatGPT (translate with
+one, cross-check with the other). **Do not start P40 without that text, and translate the
+rev-31 rulebook** — the first-round outputs under `docs/translation/` are rev-30-based and
+must be re-run. Behind it stand the candidates at the end of `docs/STATUS.md`'s *What is next*
+(candidate 3, the console's four-seat default, was absorbed by P42 and is done; the expert
+session on the defaulted §9 rows — **thirteen**, every one fenced — is the one this file
+would take next, and P40's Burmese rulebook is the best instrument to hand those experts).
 
-**Behind P42: `P40` — the game in Burmese — stands blocked on input only Nick can produce**:
-vetted translations of `RULEBOOK.md` and `HOW-TO-PLAY-WELL.md`, made outside the repo with
-`docs/translation/PROMPTS.md` against Gemini/ChatGPT (translate with one, cross-check with the
-other). **Do not start P40 without that text, and translate the rev-31 rulebook** — the
-first-round outputs under `docs/translation/` are rev-30-based and must be re-run. Behind both
-stand the four candidates at the end of `docs/STATUS.md`'s *What is next* (candidate 3, the
-console's four-seat default, is absorbed by P42; the expert session on the defaulted §9 rows —
-**thirteen** now, every one fenced — is the one this file would take next, and P40's Burmese
-rulebook is the best instrument to hand those experts).
+**What P42 built, and the four things a cold session needs from it.**
+🔥 **(1) The ×5 jackpot is said out loud, off a fact the domain carries once:
+`RoundResult.JackpotOwner`** — `PlayerId?`, **required rather than defaulted** (`Win`'s
+lesson), filled in `RoundEngine.Settle` from the same `ConfigurationOf` the settlement reads.
+⚠️ **A watcher cannot compute it** (ownership is partly private until settlement), so it rides
+`TableEvent.Settled` to the browser; the *possibility* is public from the deal, so that half is
+a fold — `MoneyCardRegistry.IsTheJackpotPair` (public static) and `TableBoard.JackpotPairUp`,
+folded **at `RoundStarted` and deliberately not off the live turn-up list** (a claimed top card
+leaves that list while its designation stands). Console settlement line + round-start
+narration; web `SettlementPanel` sentence + table-centre note. **`CardDisplayState` stays
+×5-free, §9 #32 is not generalised, both its fences untouched.**
+🔥 **(2) Three fences, all mutation-proved**: `RoundEngineTests.AJackpotRoundCarriesItsOwner…`
+constructs the round (pair turned up, one seat given both partners **and all four jokers** so
+the hand-computed payouts have no filler joker in them; a split-pair twin asserts null), and
+`JackpotSpokenTests` holds each front end to **reading** the fact by source scan — the console
+is outside the test project's reference graph on purpose, and it is deliberately not a wording
+fence. ✅ **Byte-identity held, P41's exact procedure** (seeded 300-game journal + CSV
+byte-identical, HEAD journal replays byte-identically).
+⚠️ **(3) The console deals five** — the seat prompt defaults `RoundEngine.DefaultPlayers`, the
+floor untouched; both `drive-console.py` scripts re-captured clean at five seats. ⚠️ **The
+driver's default script IS `human`** — "both scripts" means `--script bots` and the default.
+🔥 **(4) The browser round was actually played** — Claude in Chrome, `--people 1 --seed
+20260823 --pace 300`, four settlements clicked through: the claim **refused twice and granted
+once** (§4.5's holder-only disclosure seen working), §5.1 closing a rank so its card stopped
+being a control, **§9 #50 live** (the concealed duplicate of a face-up 3♦ thrown, the ▲
+stayed), P41's chips and piles from both sides of the glass, why?, legend, log, timeout
+stand-in. ⚠️ **UX observation for the playtest, not a defect**: at pace 300 the settlement
+panel is replaced by the next deal after ~one pace beat — fenced by `BrowserRoundTests`, but a
+human may want the round to linger.
 
 **What P41 built, and the four things a cold session needs from it.**
 🔥 **(1) The whole packet is one fold, written once: `Presentation/TableLook.cs`** — every
@@ -884,8 +905,8 @@ dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv — five seats by default since P32 (⚠️ ~3h27, 12,445 s measured)
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seats 4     # …the four-handed game, kept frozen at docs/strategy/measurements-4-handed.csv
 
-python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0   # capture a scripted match (0 expert, 1 hard, 2 medium, 3 easy)
-python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0 --script human   # …the longer one, with a person in it
+python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0   # capture a scripted match with a person in it (0 expert, 1 hard, 2 medium, 3 easy; --script human is the default)
+python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0 --script bots   # …the all-bot one, shorter
 python3 scripts/drive-console.py --out after.raw  --seed 20260819 --pick 0   # …after a front-end change
 cmp before.raw after.raw                                                    # prove it was a refactor
 ```

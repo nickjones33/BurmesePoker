@@ -101,3 +101,11 @@ td {
 }
 
 
+
+/* §4.1's jackpot sentence — prose, not a pill: it names a player and a payment, and it is
+   the one settlement fact the felt never showed while the round ran. */
+.jackpot {
+    margin: 0 0 0.7rem;
+    color: var(--on-raised-money);
+    font-size: 0.9rem;
+}

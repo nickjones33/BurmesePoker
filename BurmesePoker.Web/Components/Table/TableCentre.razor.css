@@ -98,3 +98,13 @@
     white-space: nowrap;
     border: 0;
 }
+
+/* The jackpot-pair note: quiet, because it is a standing fact about the round rather than
+   an event — the felt says it once and leaves it there. */
+.jackpot {
+    margin: 0.3rem 0 0;
+    max-width: 12rem;
+    color: var(--on-felt-muted);
+    font-size: 0.75rem;
+    text-align: center;
+}
