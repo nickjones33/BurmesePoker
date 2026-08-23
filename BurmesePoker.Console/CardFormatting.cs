@@ -75,6 +75,9 @@ public static class CardFormatting
     /// </remarks>
     public static string Of(CardView card) =>
         Decorated(card.Card, card.Multiplier, card.IsOwned)
+        // Face up where the whole table can see it (RULES.md §5.2) — a rule like the closed
+        // rank below it, not a hint, so it survives the hints being turned off.
+        + (card.IsFaceUp ? $" {Palette.FaceUpMark}" : string.Empty)
         + (card.CanBeThrown ? string.Empty : $" [{Palette.Quiet}]{DisplayTokens.Closed}[/]");
 
     /// <summary>A hand in display order, with markers. Ownership is marked from the player's own view.</summary>

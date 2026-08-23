@@ -2,6 +2,7 @@ using BurmesePoker.Domain.Abstractions;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
 using BurmesePoker.Domain.Play;
+using BurmesePoker.Presentation;
 
 namespace BurmesePoker.Server;
 
@@ -35,6 +36,26 @@ public sealed class TableFanOut : IGameObserver
 {
     private readonly Lock _gate = new();
     private readonly List<SeatConnection> _connections = [];
+
+    /// <summary>
+    /// What the rules make public at this table: every pile and every face-up card, folded
+    /// from the same narration the connections hear (RULES.md §5, §5.2).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Kept here so a seat's prompt can mark its own face-up cards</b> (P41):
+    /// <c>RemotePlayerAgent</c> reads it when it photographs a turn, and the fold is written
+    /// once, in <see cref="TableLook"/>, rather than once per consumer. Written and read on the
+    /// round's own thread only — narration and questions are both the engine's.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b><see cref="PlayerDrew"/> never touches it</b>, which is the concealment rule as an
+    /// absence: a blind-drawn card is not face up and there is no call below that could make
+    /// it so. <c>ConcealmentTests</c> holds this from the outside, and proved it can fail by
+    /// mutating exactly that method.
+    /// </para>
+    /// </remarks>
+    public TableLook Look { get; private set; } = TableLook.Empty;
 
     /// <summary>Every connection currently attached, seated or watching.</summary>
     public IReadOnlyList<SeatConnection> Connections
@@ -82,10 +103,14 @@ public sealed class TableFanOut : IGameObserver
         }
     }
 
-    public void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp) =>
+    public void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp)
+    {
+        Look = Look.RoundStarted();
+
         // Both copied: these are the table's own lists, and a claim takes a card out of one of
         // them. The seating is this round's and no other (RULES.md §3 step 2).
         Broadcast(new TableEvent.RoundStarted(round, [.. seating], [.. turnedUp]));
+    }
 
     /// <remarks>
     /// <b>The one filtered event.</b> The drawer is told the card; everyone else is told that a
@@ -103,11 +128,17 @@ public sealed class TableFanOut : IGameObserver
         }
     }
 
-    public void PlayerTookDiscard(PlayerId player, Card card) =>
+    public void PlayerTookDiscard(PlayerId player, Card card)
+    {
+        Look = Look.TookDiscard(player, card);
         Broadcast(new TableEvent.TookDiscard(player, card));
+    }
 
-    public void MoneyCardClaimed(PlayerId player, Card card) =>
+    public void MoneyCardClaimed(PlayerId player, Card card)
+    {
+        Look = Look.MoneyCardClaimed(player, card);
         Broadcast(new TableEvent.MoneyCardClaimed(player, card));
+    }
 
     /// <remarks>
     /// ⚠️ <b>Broadcast, and it is the one place a hand reaches the table before the declaration.</b>
@@ -118,11 +149,17 @@ public sealed class TableFanOut : IGameObserver
     public void ClaimRefused(PlayerId objector, PlayerId claimant, Card card) =>
         Broadcast(new TableEvent.ClaimRefused(objector, claimant, card));
 
-    public void PlayerDiscarded(PlayerId player, Card card) =>
+    public void PlayerDiscarded(PlayerId player, Card card)
+    {
+        Look = Look.Discarded(player, card);
         Broadcast(new TableEvent.Discarded(player, card));
+    }
 
-    public void DiscardsReshuffled(int cards) =>
+    public void DiscardsReshuffled(int cards)
+    {
+        Look = Look.DiscardsReshuffled();
         Broadcast(new TableEvent.DiscardsReshuffled(cards));
+    }
 
     public void PlayerDeclared(PlayerId player, IReadOnlyList<Meld> melds) =>
         Broadcast(new TableEvent.Declared(player, [.. melds]));

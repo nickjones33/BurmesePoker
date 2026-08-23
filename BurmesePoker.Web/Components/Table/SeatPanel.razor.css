@@ -192,3 +192,57 @@
     font-size: 0.72rem;
     color: var(--on-raised-muted);
 }
+
+/*
+    The cards this seat holds face up (RULES.md §5.2, P41). Flat on the panel, not behind a
+    control: the rule makes them visible, so the panel shows them. The ▲ is the same token the
+    hand panel puts on your own copy, so the two views of one card agree (§3.11 A2).
+*/
+.faceup {
+    position: relative;
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0;
+}
+
+/*
+    The whole pile, opened on demand (RULES.md §5, P41). The summary is the top card — the one
+    the seat after them may take — and the count beside it says there is more to look through.
+*/
+.pile summary {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.pile summary::-webkit-details-marker {
+    display: none;
+}
+
+.pile .count {
+    color: var(--on-raised-muted);
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.pile .count::before {
+    content: "▾ ";
+}
+
+.pile[open] .count::before {
+    content: "▴ ";
+}
+
+.thrown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin: 0.35rem 0 0;
+    padding: 0;
+    list-style: none;
+}

@@ -866,9 +866,12 @@ You are therefore always at 13 cards between turns, and 14 during your turn.
 
 > ✅ **Corroborated independently in rev 31 (Nick, 2026-08-23, `PLAYER`)**: *players need to be
 > able to see all of the cards in every other player's discard pile, not just the most recent
-> one.* A second source, arrived at unprompted, for a rule rev 17 recorded from one expert —
-> and ⚠️ **the rule is still not built where it matters**: no front end lets a player look
-> through a pile, and `TurnContext` shows a seat less than §5 makes public (§10 #24, P41).
+> one.* A second source, arrived at unprompted, for a rule rev 17 recorded from one expert.
+> ✅ **And built where it matters by P41 the same day**: both front ends now show every card of
+> every pile — the browser opens a seat's pile from its panel, the console lists them in the
+> table view — folded from the public discard events (`TableLook`). ⚠️ **`TurnContext` still
+> shows a seat less than §5 makes public, on purpose**: no rung reads the piles today, and a
+> rung that does is a new rung and arrives measured (§10 #14 stands as written).
 
 > ✅ **Throwing back what you just took is legal — closed in rev 19 (§9 #13), and the answer came
 > with a rider that is the interesting half.** Asked flat, and answered **yes — *"as long as you
@@ -1201,9 +1204,12 @@ Nick, 2026-08-23 (rev 31).
 > and discards are recorded by `CardId`, so the face-up set is a pure fold over public events —
 > no engine change, no journal change, and every journal ever written replays identically.
 
-> ⚠️ **Neither this rule nor §5's public piles is visible anywhere a player sits** — both
-> front ends draw one takeable discard and no pile, and no view model carries a face-up mark.
-> **§10 #24 records the debt and P41 owns it.**
+> ✅ **Built by P41, 2026-08-23.** The face-up set is one fold over the public events
+> (`TableLook`), held by the console's observer, the server's fan-out and the browser's board;
+> both front ends show every seat's face-up cards and mark your own in your hand (`▲`), and a
+> blind-drawn card can never acquire the mark — asserted by `ConcealmentTests` and proved able
+> to fail by mutation. §9 #49 and #50's recorded defaults are each fenced by a test named for
+> the row (`TableLookTests`). **§10 #24 is discharged.**
 
 ## 6. Melds
 
@@ -1857,13 +1863,15 @@ single addition this section has ever taken — and one of them has no safe defa
 document already had.** Nick, unprompted: players must be able to see **every** card in every
 player's discard pile — §5's rev-17 rule, corroborated — and **a card picked up from a discard
 pile is laid face up in front of the taker, visible to all players, for the entire time it is
-in their hand** — new, §5.2. ⚠️ **Both are Settled and neither is visible anywhere a player
-sits** (§10 #24, P41). The two rows below are the details the statement did not reach.
+in their hand** — new, §5.2. ✅ **Both are Settled, and both are visible at both front ends
+since P41 the same day** (§10 #24, discharged). The two rows below are the details the
+statement did not reach — each now built on its recorded default and fenced by a test named
+for the row.
 
 | # | Question | § | Status | Blocks |
 |---:|---|---|---|---|
-| 49 | **Does the claimed turned-up money card lie face up too?** §5.2 was stated about a card picked up from a discard pile; the opening claim (§4.5) is the one other way a card reaches a hand in the open. *"I claimed the turned-up card at the start of the round. Does it sit face up in front of me like a card I took off your pile, or does it go into my hand hidden like a drawn card?"* | 5.2, 4.5 | Unknown — recommend **yes, face up**: the claim is the most public take there is, it already arms §5.1 exactly as an open take does (§9 #17), and a rule about open takes that excluded it would be the stranger rule | Nothing — P41 builds the default and fences it with a test named for this row |
-| 50 | **When you hold two copies and one is face up, which copy leaves when you throw one?** Two decks mean a player can hold the Q♣ they took in the open and a second Q♣ drawn blind. *"I've got the Q♣ I took from you sitting face up, and the other Q♣ hidden in my hand. I throw a Q♣ — can I throw the hidden one and keep the face-up one on the table?"* | 5.2 | Unknown — recommend **the player chooses which physical copy to throw** — it is what the physical table does (the face-up card visibly stays or visibly goes), and the engine already discards by exact card (`CardId`), so the choice exists without inventing a rule | Nothing — P41 builds the default and fences it with a test named for this row |
+| 49 | **Does the claimed turned-up money card lie face up too?** §5.2 was stated about a card picked up from a discard pile; the opening claim (§4.5) is the one other way a card reaches a hand in the open. *"I claimed the turned-up card at the start of the round. Does it sit face up in front of me like a card I took off your pile, or does it go into my hand hidden like a drawn card?"* | 5.2, 4.5 | Unknown — recommend **yes, face up**: the claim is the most public take there is, it already arms §5.1 exactly as an open take does (§9 #17), and a rule about open takes that excluded it would be the stranger rule | ⚠️ **Built on the recommended default by P41, 2026-08-23, and still open.** ✅ Presentation only — the engine plays identically either way. Fenced by `TableLookTests.TheClaimedTurnUpLiesFaceUpUntilTheExpertSaysOtherwise` |
+| 50 | **When you hold two copies and one is face up, which copy leaves when you throw one?** Two decks mean a player can hold the Q♣ they took in the open and a second Q♣ drawn blind. *"I've got the Q♣ I took from you sitting face up, and the other Q♣ hidden in my hand. I throw a Q♣ — can I throw the hidden one and keep the face-up one on the table?"* | 5.2 | Unknown — recommend **the player chooses which physical copy to throw** — it is what the physical table does (the face-up card visibly stays or visibly goes), and the engine already discards by exact card (`CardId`), so the choice exists without inventing a rule | ⚠️ **Built on the recommended default by P41, 2026-08-23, and still open.** ✅ It is what discard-by-`CardId` already did; the fence keeps it true on purpose rather than by accident: `TableLookTests.TheFaceUpCopyStaysWhenTheConcealedDuplicateIsThrownUntilTheExpertSaysOtherwise` |
 
 ### Opened in rev 27 — §7.4 and §7.5, from Aung Aung, 2026-08-22
 
@@ -2292,6 +2300,12 @@ not a question.**
 
 Decisions here that the implementation contradicts or lacks.
 
+✅ **Empty again as of 2026-08-23 (P41), the same day it reopened.** Rev 31's #24 — §5's public
+piles and §5.2's face-up taken cards, Settled and shown nowhere — was discharged by P41 within
+the day: one fold over the public events (`TableLook`), both front ends, the concealment
+discriminator, and fences on §9 #49 and #50's defaults. The registry's §5.2 exemption is
+converted to `Checked` and the ceiling is back at 6.
+
 ⚠️ **Reopened 2026-08-23 (rev 31): #24.** §5's public piles and §5.2's face-up taken cards are
 Settled and **no front end and no view model shows either** — a player at either front end
 cannot exercise a rule this document has recorded since rev 17. **P41 owns it**, and the
@@ -2549,15 +2563,21 @@ See `RULES-TECHNICAL.md` §7 for defects not driven by rules decisions, and
     (BUILD-PLAN §3.8), so a three-round run cannot occur. **It is audited instead** — the first
     conformance case in the project that watches a sequence of rounds rather than one.
 
-24. **Show what the rules make public** (§5, §5.2). Every player may look through every
-    discard pile, and a card taken in the open lies face up in front of its taker until that
-    copy leaves their hand — and **nothing shows either**: both front ends draw one takeable
-    discard and no pile, no view model carries a face-up mark, and `TurnContext` shows a seat
-    less than §5 makes public. ⚠️ **The engine needs no rule** — open takes and discards are
-    public events by `CardId`, so the face-up set and every pile's contents are folds over the
-    event stream: no engine state, no journal change, replays identical, and no measurement
-    should move. The work is Presentation, the Server fan-out and both front ends, plus fences
-    for §9 #49 and #50's recorded defaults. **P41.**
+24. ~~**Show what the rules make public**~~ (§5, §5.2). ✅ **Discharged by P41 on 2026-08-23,
+    the day it opened.** Every player may look through every discard pile, and a card taken in
+    the open lies face up in front of its taker until that copy leaves their hand — and both
+    front ends now show both: the browser opens each seat's pile from its panel and draws its
+    face-up cards on the felt, the console lists every pile and every face-up card in its
+    table view, and your own face-up cards are marked `▲` in your hand. ⚠️ **The engine needed
+    no rule, and that was asserted rather than argued** — the face-up set and every pile are
+    one fold over the public events (`TableLook`, held by the console's observer, the server's
+    fan-out and the browser's board), and a seeded 300-game `Sim` run wrote a byte-identical
+    CSV and a byte-identical journal either side of the change, with the old journal replaying
+    under the new tree. A blind-drawn card can never acquire the mark
+    (`ConcealmentTests.ABlindDrawnCardIsNeverShownFaceUp`, proved able to fail by mutating the
+    fan-out), §9 #49 and #50's defaults are fenced in `TableLookTests`, and `TurnContext` was
+    deliberately not widened — no rung sees any of this, so no measurement could move and none
+    did.
 
 23. ~~**A held seating can be re-drawn when the players agree to it**~~ (§3 step 2, §9 #45).
     ✅ **Discharged by P37 on 2026-08-22.** `EXPERT` for the holding, `PLAYER` for *agree*.

@@ -81,6 +81,10 @@
         CardDisplayState.Unthrowable => "You may not throw that card: the player after you took that rank "
             + "in the open, and you may not feed them another one until they throw one back — or unless you "
             + "are going out on it (RULES.md §5.1).",
+        // ⚠️ A rule, not a hint, like the closed rank above it: a card taken in the open lies
+        // face up in front of its taker for as long as it stays in their hand (RULES.md §5.2).
+        CardDisplayState.FaceUp => "That card lies face up: it was taken in the open, so it sits in front "
+            + "of its holder where every player can see it, until that very copy leaves their hand.",
         _ => throw new ArgumentOutOfRangeException(nameof(state), state, "No display state means nothing.")
     };
 }

@@ -293,6 +293,12 @@ public sealed class SeatBoard : IDisposable
 
         return kept.Length == view.Hand.Count
             ? view
-            : HandView.Of(kept, money, card => view.Of(card).IsOwned);
+            : HandView.Of(
+                kept,
+                money,
+                card => view.Of(card).IsOwned,
+                // A card stays face up for as long as it stays in the hand (RULES.md §5.2), so
+                // the marks carry over from the view you were sent — less the card just thrown.
+                faceUp: [.. view.Cards.Where(card => card.IsFaceUp && card.Card.Id != thrown.Id).Select(card => card.Card)]);
     }
 }

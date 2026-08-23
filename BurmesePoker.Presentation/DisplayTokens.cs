@@ -38,6 +38,12 @@ public static class DisplayTokens
     public const string Closed = "closed";
 
     /// <summary>
+    /// Marks a card lying face up: taken in the open, visible to every player for as long as
+    /// it stays in the hand (RULES.md §5.2).
+    /// </summary>
+    public const string FaceUp = "▲";
+
+    /// <summary>
     /// The token for a single display state.
     /// </summary>
     /// <exception cref="ArgumentException">
@@ -53,6 +59,7 @@ public static class DisplayTokens
         CardDisplayState.Owned => Owned,
         CardDisplayState.SuggestedThrow => SuggestedThrow,
         CardDisplayState.Unthrowable => Closed,
+        CardDisplayState.FaceUp => FaceUp,
         _ => throw new ArgumentException(
             $"{state} is not a single display state, so it has no one token.", nameof(state))
     };

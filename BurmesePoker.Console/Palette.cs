@@ -52,10 +52,14 @@ public static class Palette
     /// <summary>Marks the card the computer would throw away, when hints are on.</summary>
     public const string AdviceMark = DisplayTokens.SuggestedThrow;
 
+    /// <summary>Marks a card lying face up, where every player can see it (RULES.md §5.2).</summary>
+    public const string FaceUpMark = DisplayTokens.FaceUp;
+
     /// <summary>What the markers mean, for a footer under a hand.</summary>
     public const string Legend =
         $"[{Quiet}]($) pays once · ($$$) pays triple ·[/] [{Good}]{OwnedMark}[/][{Quiet}] the deck gave it "
-        + "to you, so it pays you even after you throw it[/]";
+        + "to you, so it pays you even after you throw it ·[/] "
+        + $"{FaceUpMark}[{Quiet}] face up — the whole table can see you hold it[/]";
 
     /// <summary>An amount of money, signed and coloured from the point of view of whoever holds it.</summary>
     public static string Amount(int money) => money switch

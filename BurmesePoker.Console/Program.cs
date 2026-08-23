@@ -121,6 +121,11 @@ internal static class Program
 
         var log = new RoundLog();
 
+        // Built before the agents because the human seats read what it has heard (P41): the
+        // observer folds every public event into its TableLook, and that is how a person at
+        // the keyboard gets §5's piles and §5.2's face-up cards drawn in front of them.
+        var observer = new ConsoleObserver(console, names, log);
+
         // ⚠️ A bot's seed comes from the *setup* generator and is drawn here, after the seating
         // (BUILD-PLAN P14, P18). The match's own generator deals every round and nothing else
         // may touch it; the setup generator has already done its two jobs by this line, so a
@@ -131,7 +136,7 @@ internal static class Program
             player => player,
             IPlayerAgent (player) => bots.Contains(player)
                 ? PacedAgent.Wrap(difficulty.Create(setup.Next()), options.Pace)
-                : new SpectrePlayerAgent(console, names, log, options.Hints));
+                : new SpectrePlayerAgent(console, names, log, observer, options.Hints));
 
         // The one kind of game a seed cannot recover is the one with a person in it
         // (BUILD-PLAN §3.9), so this is the only way a human match becomes reproducible.
@@ -142,7 +147,7 @@ internal static class Program
             journal is null ? seats : JournalingAgent.Wrap(seats, journal),
             stakes,
             new Random(matchSeed),
-            new ConsoleObserver(console, names, log),
+            observer,
             policy);
 
         var history = new List<RoundResult>();

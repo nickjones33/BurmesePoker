@@ -277,6 +277,13 @@ else
             said.Add("you may not throw it: the player after you took that rank in the open");
         }
 
+        // A rule too (RULES.md §5.2): you took it in the open, so it lies face up in front of
+        // you and the whole table can see you are still holding it.
+        if (held.Card.IsFaceUp)
+        {
+            said.Add("face up on the table — every player can see you hold it");
+        }
+
         // ⚠️ The same gate as Mark, and for the same reason: a hint nobody asked for must not
         // survive in the words just because it stopped being drawn.
         if (Hints)

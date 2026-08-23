@@ -115,6 +115,49 @@ public class TableBoardTests
         Assert.Equal(2, board.RoundsPlayed);
     }
 
+    /// <summary>
+    /// ✅ <b>P41 — the board shows what the rules make public.</b> A card taken in the open lies
+    /// face up in front of its taker (RULES.md §5.2), the whole pile is on the seat line for
+    /// looking through (§5), and the face-up card leaves when that very copy is thrown.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>By instance</b> (§9 #50's recorded default): when the taker throws the <em>other</em>
+    /// king, the face-up one visibly stays — which is the one fact the event log alone could
+    /// not carry, and the reason the rule earns a mark at all.
+    /// </remarks>
+    [Fact]
+    public void ACardTakenInTheOpenLiesFaceUpUntilThatVeryCopyIsThrown()
+    {
+        var taken = Empty()
+            .After(Dealt(1, []))
+            .After(new TableEvent.Discarded(Two, KingOfDiamonds))
+            .After(new TableEvent.TookDiscard(Three, KingOfDiamonds));
+
+        Assert.Equal([KingOfDiamonds], taken.SeatOf(Three).FaceUp);
+        Assert.Empty(taken.SeatOf(Three).Pile);
+        Assert.Empty(taken.SeatOf(Two).Pile);
+
+        // Throwing the other copy of the same value leaves the face-up card where it lies…
+        var threwTheOther = taken.After(new TableEvent.Discarded(Three, OtherKingOfDiamonds));
+        Assert.Equal([KingOfDiamonds], threwTheOther.SeatOf(Three).FaceUp);
+        Assert.Equal([OtherKingOfDiamonds], threwTheOther.SeatOf(Three).Pile);
+
+        // …and throwing the face-up copy itself takes it off the table.
+        var threwItBack = taken.After(new TableEvent.Discarded(Three, KingOfDiamonds));
+        Assert.Empty(threwItBack.SeatOf(Three).FaceUp);
+    }
+
+    /// <remarks>The claim is an open take too (RULES.md §5.2, §9 #49's recorded default).</remarks>
+    [Fact]
+    public void AClaimedTurnUpLiesFaceUpInFrontOfItsClaimant()
+    {
+        var board = Empty()
+            .After(Dealt(1, [KingOfDiamonds, SevenOfSpades]))
+            .After(new TableEvent.MoneyCardClaimed(One, SevenOfSpades));
+
+        Assert.Equal([SevenOfSpades], board.SeatOf(One).FaceUp);
+    }
+
     [Fact]
     public void ANewDealClearsTheDiscardPiles()
     {

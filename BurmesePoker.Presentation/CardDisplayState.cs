@@ -69,5 +69,18 @@ public enum CardDisplayState
     /// card as something that is not a control, and this is what tells it which. It survives the
     /// hints being turned off, because it is a rule and not advice.
     /// </remarks>
-    Unthrowable = 1 << 6
+    Unthrowable = 1 << 6,
+
+    /// <summary>
+    /// A card taken in the open, lying face up in front of its holder where every player can
+    /// see it, for as long as this copy stays in the hand (RULES.md §5.2).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>The first per-card public fact about a concealed hand</b> (P41) — which is why it
+    /// is a rule and not a hint, and why a blind-drawn card must never wear it:
+    /// <c>TableLook</c> has no way to mark one, and <c>ConcealmentTests</c> holds the fan-out
+    /// to that. Instance identity, like everything else here: the other copy of the same value
+    /// stays concealed (§9 #50).
+    /// </remarks>
+    FaceUp = 1 << 7
 }

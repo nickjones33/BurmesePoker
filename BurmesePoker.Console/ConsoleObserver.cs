@@ -2,6 +2,7 @@ using BurmesePoker.Domain.Abstractions;
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
 using BurmesePoker.Domain.Play;
+using BurmesePoker.Presentation;
 
 using Spectre.Console;
 
@@ -39,6 +40,22 @@ public sealed class ConsoleObserver : IGameObserver
     private readonly IReadOnlyDictionary<PlayerId, string> _names;
     private readonly RoundLog _log;
 
+    /// <summary>
+    /// What the rules make public at this table — every pile and every face-up card — folded
+    /// from the same narration this observer prints (RULES.md §5, §5.2).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Kept here for the same reason the server keeps it on <c>TableFanOut</c></b> (P41):
+    /// the observer hears every public event, and <c>SpectrePlayerAgent</c> reads this when it
+    /// draws the table so a person at the keyboard can exercise §5 and see §5.2. The fold is
+    /// <see cref="TableLook"/>'s, written once. ⚠️ <b><see cref="PlayerDrew"/> never touches
+    /// it</b> — a blind draw is private, and there is no call that could mark one face up.
+    /// </remarks>
+    public TableLook Look { get; private set; } = TableLook.Empty;
+
+    /// <summary>This round's seating, so a panel can list the seats in turn order.</summary>
+    public IReadOnlyList<PlayerId> Seating { get; private set; } = [];
+
     /// <param name="console">
     /// The terminal to narrate to. Taken rather than reached for (BUILD-PLAN P13.1).
     /// </param>
@@ -58,6 +75,8 @@ public sealed class ConsoleObserver : IGameObserver
     /// </remarks>
     public void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp)
     {
+        Look = Look.RoundStarted();
+        Seating = [.. seating];
         _log.StartRound(round);
 
         _console.Write(new Rule($"Round {round}").LeftJustified());
@@ -94,23 +113,32 @@ public sealed class ConsoleObserver : IGameObserver
     public void PlayerDrew(PlayerId player, Card card) =>
         Say($"{Who(player)} drew from the deck.");
 
-    public void PlayerTookDiscard(PlayerId player, Card card) =>
+    public void PlayerTookDiscard(PlayerId player, Card card)
+    {
+        Look = Look.TookDiscard(player, card);
         Say($"{Who(player)} took the discard {CardFormatting.Of(card)}.");
+    }
 
-    public void MoneyCardClaimed(PlayerId player, Card card) =>
+    public void MoneyCardClaimed(PlayerId player, Card card)
+    {
+        Look = Look.MoneyCardClaimed(player, card);
         Say(
             $"{Who(player)} claimed the turned-up {CardFormatting.Of(card)} off the table "
             + $"[{Palette.Quiet}](held, but owned by nobody)[/].");
+    }
 
     /// <remarks>
     /// Public and worth saying out loud: the pile everybody has been throwing into is now the
     /// deck, so a card somebody discarded ten turns ago can come back (RULES.md §5).
     /// </remarks>
-    public void DiscardsReshuffled(int cards) =>
+    public void DiscardsReshuffled(int cards)
+    {
+        Look = Look.DiscardsReshuffled();
         Say(
             $"[{Palette.Money}]The draw pile ran out.[/] All {cards} discards were gathered and "
             + $"shuffled into a new one [{Palette.Quiet}](a money card still pays whoever the deck "
             + "gave it to first)[/].");
+    }
 
     /// <remarks>
     /// ⚠️ <b>Worth saying plainly, because it is the one thing a player tells the table about
@@ -122,8 +150,11 @@ public sealed class ConsoleObserver : IGameObserver
             $"{Who(objector)} refused {Who(claimant)} the turned-up {CardFormatting.Of(card)} "
             + $"[{Palette.Quiet}](which they may only by holding one — RULES.md §4.5)[/].");
 
-    public void PlayerDiscarded(PlayerId player, Card card) =>
+    public void PlayerDiscarded(PlayerId player, Card card)
+    {
+        Look = Look.Discarded(player, card);
         Say($"{Who(player)} discarded {CardFormatting.Of(card)}.");
+    }
 
     public void PlayerDeclared(PlayerId player, IReadOnlyList<Meld> melds)
     {

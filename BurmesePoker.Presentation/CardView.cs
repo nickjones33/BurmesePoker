@@ -53,6 +53,12 @@ public readonly record struct CardView(
     /// </summary>
     public bool CanBeThrown => !State.HasFlag(CardDisplayState.Unthrowable);
 
+    /// <summary>
+    /// Whether this card lies face up in front of its holder, where every player can see it —
+    /// taken in the open and still in the hand (RULES.md §5.2).
+    /// </summary>
+    public bool IsFaceUp => State.HasFlag(CardDisplayState.FaceUp);
+
     /// <summary>Every non-colour token this card carries, in flag order (§3.11 A2).</summary>
     public IEnumerable<string> Tokens => DisplayTokens.All(State);
 }

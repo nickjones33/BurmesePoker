@@ -1,6 +1,7 @@
 using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
 using BurmesePoker.Domain.Play;
+using BurmesePoker.Presentation;
 using BurmesePoker.Server;
 
 namespace BurmesePoker.Web;
@@ -40,7 +41,7 @@ public sealed record TableBoard
         Seating = seating;
         Names = names;
         Banks = seating.ToDictionary(player => player, _ => 0);
-        DiscardPiles = new Dictionary<PlayerId, IReadOnlyList<Card>>();
+        Look = TableLook.Empty;
         TurnedUp = [];
         Log = [];
         Declaration = [];
@@ -116,16 +117,29 @@ public sealed record TableBoard
     public IReadOnlyDictionary<PlayerId, int> Banks { get; private init; }
 
     /// <summary>
+    /// What the rules make public at this table: every seat's discard pile and every seat's
+    /// face-up cards (RULES.md §5, §5.2), folded from the events like everything else here.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>The fold itself is <see cref="TableLook"/>'s and written once</b> (P41): the
+    /// console's observer and the server's fan-out hold the same one, so what "face up" means
+    /// cannot drift between the front ends. This board folds it from
+    /// <see cref="TableEvent.Discarded"/>, <see cref="TableEvent.TookDiscard"/>,
+    /// <see cref="TableEvent.MoneyCardClaimed"/> and
+    /// <see cref="TableEvent.DiscardsReshuffled"/> — the public takes and throws, and nothing
+    /// a watcher was not sent.
+    /// </remarks>
+    public TableLook Look { get; private init; }
+
+    /// <summary>
     /// Each seat's discard pile, oldest first, as far as a watcher has seen it.
     /// </summary>
     /// <remarks>
     /// ⚠️ <b>A pile, not a top card, because a card leaves it again.</b> The seat after you may
     /// take your discard (RULES.md §5), which uncovers the one under it — so a board that kept
-    /// only the top card went on showing a card that was in somebody else's hand. Folded from
-    /// <see cref="TableEvent.Discarded"/> and <see cref="TableEvent.TookDiscard"/>, and emptied
-    /// by <see cref="TableEvent.DiscardsReshuffled"/>, which gathers every pile into the deck.
+    /// only the top card went on showing a card that was in somebody else's hand.
     /// </remarks>
-    public IReadOnlyDictionary<PlayerId, IReadOnlyList<Card>> DiscardPiles { get; private init; }
+    public IReadOnlyDictionary<PlayerId, IReadOnlyList<Card>> DiscardPiles => Look.Piles;
 
     /// <summary>The top of each seat's discard pile, as far as a watcher has seen.</summary>
     public IReadOnlyDictionary<PlayerId, Card?> LastDiscards =>
@@ -197,6 +211,10 @@ public sealed record TableBoard
         Names.TryGetValue(player, out var name) ? name : $"Seat {player.Value}",
         Banks.TryGetValue(player, out var bank) ? bank : 0,
         Pile(player) is { Count: > 0 } pile ? pile[^1] : null,
+        Pile(player),
+        // Face up only while a round is live: a declared hand is on the table whole, and a
+        // settled round's face-up cards are nobody's hand any more (RULES.md §5.2).
+        InPlay ? Look.FaceUpOf(player) : [],
         IsActing: Acting == player && InPlay,
         IsTheirTurn: Turn == player && InPlay,
         HasDeclared: Declarer == player,
@@ -243,8 +261,7 @@ public sealed record TableBoard
     }
 
     /// <summary>One seat's discard pile, oldest first. Empty when it has thrown nothing yet.</summary>
-    public IReadOnlyList<Card> Pile(PlayerId player) =>
-        DiscardPiles.TryGetValue(player, out var pile) ? pile : [];
+    public IReadOnlyList<Card> Pile(PlayerId player) => Look.PileOf(player);
 
     /// <summary>What one seat took home this round, or null before it is settled.</summary>
     public int? PayoutOf(PlayerId player) =>
@@ -277,7 +294,7 @@ public sealed record TableBoard
                 // event rather than kept from the lobby, which knew only the first one.
                 Seating = [.. started.Seating],
                 TurnedUp = [.. started.TurnedUp],
-                DiscardPiles = new Dictionary<PlayerId, IReadOnlyList<Card>>(),
+                Look = Look.RoundStarted(),
                 // The shoe, less thirteen to every seat and the cards turned up off it
                 // (RULES.md §2, §3). Everything after this is one card at a time.
                 DrawPileCount = DeckBuilder.TotalCards
@@ -325,11 +342,11 @@ public sealed record TableBoard
                 LogTone.Normal),
 
             // ⚠️ The card leaves whichever pile it was on top of, which is what stops a
-            // watcher being shown a card that is now in somebody's hand. Found by the pile,
-            // not by turn order: instance identity is exact and an assumption is not (§3.1).
+            // watcher being shown a card that is now in somebody's hand — and it lies face up
+            // in front of its taker from this moment (RULES.md §5.2).
             TableEvent.TookDiscard took => (Moved(took.Player) with
             {
-                DiscardPiles = Taken(DiscardPiles, took.Card)
+                Look = Look.TookDiscard(took.Player, took.Card)
             }).Say(
                 Round,
                 $"{Who(took.Player)} took the discard",
@@ -337,10 +354,12 @@ public sealed record TableBoard
                 LogTone.Normal),
 
             // RULES.md §4.5: the opening player may take the top turned-up card, which leaves
-            // the table. Held, but owned by nobody.
+            // the table. Held, but owned by nobody — and face up, the most public take there
+            // is (RULES.md §5.2, §9 #49's recorded default).
             TableEvent.MoneyCardClaimed claimed => (Moved(claimed.Player) with
             {
-                TurnedUp = Without(TurnedUp, claimed.Card)
+                TurnedUp = Without(TurnedUp, claimed.Card),
+                Look = Look.MoneyCardClaimed(claimed.Player, claimed.Card)
             }).Say(
                 Round,
                 $"{Who(claimed.Player)} claimed the turned-up card off the table — held, but owned by nobody:",
@@ -359,7 +378,7 @@ public sealed record TableBoard
 
             TableEvent.Discarded discarded => (Moved(discarded.Player) with
             {
-                DiscardPiles = Thrown(DiscardPiles, discarded.Player, discarded.Card)
+                Look = Look.Discarded(discarded.Player, discarded.Card)
             }).Say(
                 Round,
                 $"{Who(discarded.Player)} discarded",
@@ -370,7 +389,7 @@ public sealed record TableBoard
             // ago can come back. Worth saying out loud.
             TableEvent.DiscardsReshuffled reshuffled => (this with
             {
-                DiscardPiles = new Dictionary<PlayerId, IReadOnlyList<Card>>(),
+                Look = Look.DiscardsReshuffled(),
                 DrawPileCount = reshuffled.Cards
             }).Say(
                 Round,
@@ -524,35 +543,6 @@ public sealed record TableBoard
         // Instance identity: the other copy of the same value stays on the table (§3.1).
         [.. cards.Where(card => card.Id != gone.Id)];
 
-    private static IReadOnlyDictionary<PlayerId, IReadOnlyList<Card>> Thrown(
-        IReadOnlyDictionary<PlayerId, IReadOnlyList<Card>> piles,
-        PlayerId player,
-        Card card)
-    {
-        var copy = new Dictionary<PlayerId, IReadOnlyList<Card>>(piles);
-        copy[player] = piles.TryGetValue(player, out var pile) ? [.. pile, card] : [card];
-        return copy;
-    }
-
-    /// <summary>The piles with one card lifted off whichever of them was holding it.</summary>
-    private static IReadOnlyDictionary<PlayerId, IReadOnlyList<Card>> Taken(
-        IReadOnlyDictionary<PlayerId, IReadOnlyList<Card>> piles,
-        Card taken)
-    {
-        var copy = new Dictionary<PlayerId, IReadOnlyList<Card>>(piles);
-
-        foreach (var (player, pile) in piles)
-        {
-            if (pile.Count > 0 && pile[^1].Id == taken.Id)
-            {
-                copy[player] = [.. pile.Take(pile.Count - 1)];
-                break;
-            }
-        }
-
-        return copy;
-    }
-
     private static IReadOnlyDictionary<PlayerId, int> Banked(
         IReadOnlyDictionary<PlayerId, int> banks,
         RoundResult result)
@@ -573,6 +563,14 @@ public sealed record TableBoard
 /// <param name="Name">What to call whoever is in it.</param>
 /// <param name="Bank">Their running total across the rounds this page has watched.</param>
 /// <param name="LastDiscard">The top of their discard pile, or null before they have thrown one.</param>
+/// <param name="Pile">
+/// The whole of their discard pile, oldest first — every card of it may be looked through
+/// (RULES.md §5), so the panel that draws this seat can open it on demand.
+/// </param>
+/// <param name="FaceUp">
+/// The cards lying face up in front of them: taken in the open and still in their hand,
+/// visible to every player (RULES.md §5.2). Empty between rounds.
+/// </param>
 /// <param name="IsActing">Whether theirs was the last move. <b>Not whose turn it is</b> — see <paramref name="IsTheirTurn"/>.</param>
 /// <param name="IsTheirTurn">Whether the table is waiting on them right now (BUILD-PLAN P13.5).</param>
 /// <param name="HasDeclared">Whether they laid down all thirteen and ended the round.</param>
@@ -587,6 +585,8 @@ public sealed record SeatLine(
     string Name,
     int Bank,
     Card? LastDiscard,
+    IReadOnlyList<Card> Pile,
+    IReadOnlyList<Card> FaceUp,
     bool IsActing,
     bool IsTheirTurn,
     bool HasDeclared,

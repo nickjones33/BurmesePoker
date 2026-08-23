@@ -1274,7 +1274,7 @@ moving it is his call. **P24** still hangs off **P13.6, P14, P18 and P21**.
 | **P38** | **The rulebook — the game taught, not reconstructed** | — | M — ☑ **done 2026-08-23 (Fable 5)** — `docs/RULEBOOK.md`: the game as a board game ships it, in reading order, for somebody who has never seen it. **One answer per rule, no provenance tags, no open questions, no packet numbers.** ⚠️ **`RULES.md` stays the sole authority** — the rulebook is *derived*, stamps the rev it was derived from, and a test binds the two, so a rules change makes it red rather than stale. 🔥 **The hard part is that eleven §9 rows are played on a recorded default**: a rulebook must state one, which silently promotes a default to a rule for the reader — so it carries a short *house readings* appendix in a player's language |
 | **P39** | **How to play well — the strategy guide a player can use** | — | S–M — ☑ **done 2026-08-23 (Fable 5)** — `docs/HOW-TO-PLAY-WELL.md`: what was actually measured, organised by decision, **the nulls given as much room as the margins** and the three bonuses stated as *unpriced rather than small*. ⚠️ **`STRATEGY.md` stays the measurement authority, untouched** — the guide quotes only `measurements.csv`-fenced figures, and the fence covers **verdicts** as well as numbers (a null that separates is a red build). 🔥 **A figure has one home, asserted as an absence**: `PLAYING.md` points at the guide and may contain no `±`, no reference-table quad, no headline pair. ⚠️ **Found on the way**: `PLAYING.md`'s difficulty prompt row still quoted the four-handed 36%/14% — unfenced because P34's regex targeted the other sentence |
 | **P40** | **The game in Burmese — translated rulebook and strategy guide** | P38 ✅, P39 ✅, **the vetted Burmese text (Nick, outside the repo)** | S–M — ☐ **new 2026-08-23, at Nick's direction** — `docs/RULEBOOK.my.md` and `docs/HOW-TO-PLAY-WELL.my.md`: the two player-facing documents in the language the game actually comes from. 🔥 **The translation itself happens outside this repository** — Nick runs `docs/translation/PROMPTS.md` against Gemini/ChatGPT, cross-checks each model's output with the other, and hands the packet vetted Markdown; **the packet cannot start until that text exists.** ⚠️ **The fences fence what survives translation**: the rev stamp in Latin digits bound to `JournalHeader.CurrentRulesRevision`, and every figure, `±` interval, dollar amount and card symbol of the English source asserted present byte-for-byte in the Burmese — which is why the prompts forbid Burmese numerals. ⚠️ **Acceptance is a human read, not a test** — no test can read Burmese |
-| **P41** | **The table shows what the rules make public** | rev 31 ✅ | M — ☐ **new 2026-08-23, from rev 31** — §5's browsable piles and §5.2's face-up taken cards reach every place a player sits. 🔥 **The engine needs no rule**: open takes and discards are public events by `CardId`, so the face-up set and every pile are folds over the event stream — no engine state, no journal change, **journals and a seeded CSV byte-identical, asserted not argued**. ⚠️ **Concealment is the constraint** — a blind-drawn card must never acquire the mark, mutation-proved beside `ConcealmentTests`. ⚠️ **`TurnContext` is deliberately not widened**: no bot changes, no measurement moves; a rung that reads the piles is a new rung and arrives measured. Discharges §10 #24; fences §9 #49 and #50; registry §5.2 → Checked, ceiling back to 6 |
+| **P41** | **The table shows what the rules make public** | rev 31 ✅ | M — ☑ **done 2026-08-23, same day it was added** — §5's browsable piles and §5.2's face-up taken cards reach every place a player sits. 🔥 **The engine needs no rule**: open takes and discards are public events by `CardId`, so the face-up set and every pile are folds over the event stream — no engine state, no journal change, **journals and a seeded CSV byte-identical, asserted not argued**. ⚠️ **Concealment is the constraint** — a blind-drawn card must never acquire the mark, mutation-proved beside `ConcealmentTests`. ⚠️ **`TurnContext` is deliberately not widened**: no bot changes, no measurement moves; a rung that reads the piles is a new rung and arrives measured. Discharges §10 #24; fences §9 #49 and #50; registry §5.2 → Checked, ceiling back to 6 |
 
 ⚠️ **P25–P29 are the only packets in this table that do not descend from §0.** They come from
 `RULES.md` — four sessions with Mya Lay and Aung Aung on 2026-08-20/21 that closed twenty-three
@@ -6752,7 +6752,21 @@ worse than none, because they will trust it.
 
 ---
 
-### P41 — The table shows what the rules make public ☐ — **added 2026-08-23, from rev 31**
+### P41 — The table shows what the rules make public ☑ — **added 2026-08-23, from rev 31; done the same day**
+
+✅ **Shipped 2026-08-23 exactly as specified, and the load-bearing bet held: the whole packet is
+one fold.** `Presentation/TableLook.cs` is the single implementation of what the rules make
+public — every seat's pile and every seat's face-up cards — and the console's `ConsoleObserver`,
+the server's `TableFanOut` and the browser's `TableBoard` all hold one and feed it the same
+events they were already narrating (the browser's own pile fold moved *into* it, so the pile
+logic that existed since P13.3 is now written once). Acceptance 4 was asserted, not argued: a
+seeded 300-game `Sim` run wrote a **byte-identical CSV and byte-identical journal** either side
+of the change, and the HEAD journal replays under the new tree. The concealment discriminator
+and both §9 fences were each proved able to fail by mutation. ⚠️ **One deviation worth a line:
+the §5.2 registry entry is `Checked` with no ⚠**, because both of its recorded defaults (#49,
+#50) are presentation-only — the engine plays identically whichever way the expert answers — so
+unlike §7.4's defaults there is no engine behaviour standing on them; the fences alone carry it.
+The original packet text follows.
 
 **Goal.** `RULES.md` §5 has said since rev 17 that every discard pile may be looked through, and
 rev 31 added §5.2 — a card taken in the open lies face up in front of its taker for as long as
@@ -6816,6 +6830,15 @@ seeded `Sim` CSV identical before and after.
 
 🔥 **Every packet built from §0 is done, and P34 was the last of them.** What is left is written
 up as two packets and four candidates, and the split is deliberate.
+
+✅ **Later the same day: P41 is done too** — rev 31's two visibility rules reached both front
+ends, §10 #24 is discharged, §10 is empty again (the standing #7 exception aside) and the
+registry's exemption ceiling is back at 6. **The only packet left on the plan is P40, and it is
+blocked on input only Nick can produce**: vetted Burmese text made with
+`docs/translation/PROMPTS.md` against the **rev-31** rulebook — the first-round translations
+under `docs/translation/` are rev-30-based and must be re-run. Behind P40 stand the four
+candidates below, unchanged; the expert-session candidate now carries **thirteen** §9 rows
+played on recorded defaults (#33, #36–#41, #44, #46–#48 and rev 31's #49–#50, all fenced).
 
 **Two packets, both new on 2026-08-23 and neither descended from §0.** They come from a question
 Nick asked after P34 shipped — *do we have a rules onboarding document for a new player, and a

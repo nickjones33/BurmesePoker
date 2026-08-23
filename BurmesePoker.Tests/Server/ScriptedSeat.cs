@@ -62,6 +62,20 @@ public sealed class ScriptedSeat
     public Func<SeatPrompt, bool>? Away { get; set; }
 
     /// <summary>
+    /// Whether it takes the previous seat's discard the first time one is offered, instead of
+    /// drawing. Once, so the round still converges the way a hint-following table does.
+    /// </summary>
+    /// <remarks>
+    /// For P41: an open take is the one thing that puts a card face up (RULES.md §5.2), and the
+    /// default script never makes one — every draw is blind, which is exactly what the
+    /// concealment tests want from the fixture round and exactly what a face-up test cannot
+    /// use.
+    /// </remarks>
+    public bool TakesTheDiscardOnce { get; set; }
+
+    private bool _tookTheDiscard;
+
+    /// <summary>
     /// Whether it deliberately throws something <em>other</em> than the card the computer marked.
     /// </summary>
     /// <remarks>
@@ -86,11 +100,22 @@ public sealed class ScriptedSeat
             return;
         }
 
-        var reply = prompt.Question == SeatQuestion.ObjectToClaim
-            ? new SeatAnswer.Objection(Objects)
-            : Contrarian && prompt.Question == SeatQuestion.Discard
-                ? new SeatAnswer.Discard(SomethingElse(prompt))
-                : Reply(prompt);
+        SeatAnswer reply;
+
+        if (TakesTheDiscardOnce && !_tookTheDiscard
+            && prompt.Question == SeatQuestion.Take && prompt.AvailableDiscard is not null)
+        {
+            _tookTheDiscard = true;
+            reply = new SeatAnswer.Take(TurnAction.TakeDiscard);
+        }
+        else
+        {
+            reply = prompt.Question == SeatQuestion.ObjectToClaim
+                ? new SeatAnswer.Objection(Objects)
+                : Contrarian && prompt.Question == SeatQuestion.Discard
+                    ? new SeatAnswer.Discard(SomethingElse(prompt))
+                    : Reply(prompt);
+        }
 
         if (connection.Answer(reply))
         {

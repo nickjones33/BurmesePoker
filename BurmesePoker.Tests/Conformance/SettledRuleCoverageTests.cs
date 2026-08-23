@@ -84,13 +84,13 @@ public class SettledRuleCoverageTests
             + "the floor applied or the round ended on it (exception 2 bound to the declaration "
             + "— review R1): RuleConformance.PlayerDiscarded/ResolvePendingClosedDiscard; the "
             + "§7.1.1-sensitive edge: FeedingBanTests.TheDeclaringDiscardExceptionAsksTheTablesOwnWinCondition."),
-        ["5.2"] = Exempt(
-            "A card taken in the open stays face up in front of its taker (rev 31) — a rule "
-            + "about what the table SHOWS, not what it knows: open takes and discards are "
-            + "already public events by CardId, so the engine plays identically and there is "
-            + "nothing for a round audit to re-derive until a view exists to check. The "
-            + "face-up fold, the browsable piles, and the fences for §9 #49/#50's defaults "
-            + "are P41, which converts this entry to Checked."),
+        ["5.2"] = Checked(
+            "A card taken in the open stays face up in front of its taker, for as long as that "
+            + "copy stays in the hand — a pure fold over the public events (TableLook, P41): "
+            + "TableLookTests for the fold and both §9 fences (#49 the claimed turn-up, #50 "
+            + "the concealed duplicate thrown); the concealment discriminator — a blind-drawn "
+            + "card never acquires the mark, proved able to fail by mutating the fan-out: "
+            + "ConcealmentTests.ABlindDrawnCardIsNeverShownFaceUp and its positive twin."),
         ["6.1"] = Checked(
             "Runs one suit, consecutive, ace never wrapping: RuleConformance.AValidRun on every "
             + "declared hand; the wrap mutant: MutantAnIllegalDeclarationIsCaughtEachWayItCanBeIllegal."),
@@ -255,8 +255,13 @@ public class SettledRuleCoverageTests
     /// show it, so a whole exemption naming <b>P41</b> joined the six partials. The rule is
     /// pure presentation — the engine already plays it, in the sense that nothing it would
     /// require is absent from the event stream — which is exactly why no conformance audit can
-    /// check it yet: there is no view to audit. P41 discharges it and the ceiling comes back
-    /// to 6.
+    /// check it yet: there is no view to audit.
+    /// </para>
+    /// <para>
+    /// ✅ <b>And back to 6 the same day: P41 built the view.</b> §5.2's entry is Checked — the
+    /// fold, both §9 fences and the concealment discriminator — and there are again no whole
+    /// exemptions at all: six partials, each a recorded default fenced by a test named for its
+    /// question.
     /// </para>
     /// </remarks>
     [Fact]
@@ -271,7 +276,7 @@ public class SettledRuleCoverageTests
 
         var exemptions = whole.Concat(partial).ToList();
 
-        Assert.InRange(exemptions.Count, 1, 7);
+        Assert.InRange(exemptions.Count, 1, 6);
 
         Assert.All(exemptions, entry => Assert.True(
             entry.Value.Length > 60, $"§{entry.Key}'s exemption says nothing a reader can re-check."));

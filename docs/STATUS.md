@@ -10,8 +10,51 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-🔥 **`RULES.md` went to rev 31 on 2026-08-23 — two visibility rules from Nick — and none of it
-is built.** `JournalHeader.CurrentRulesRevision` is **31**; the tree is green at **832**.
+🔥 **`P41` shipped 2026-08-23 on Fable 5, the day it was written up: the table shows what the
+rules make public, and §10 is empty again.** `RULES.md` stays rev 31 (no rule changed), the
+tree is green at **845**, and **`P40` is the only packet left on the plan — blocked on Nick's
+vetted Burmese text, made against the rev-31 rulebook.**
+
+**What P41 built, and the four things a cold session needs from it.**
+
+- 🔥 **(1) The whole packet is one fold, written once: `Presentation/TableLook.cs`.** Every
+  seat's discard pile (§5) and every seat's face-up cards (§5.2) are a pure fold over the
+  public events — the console's `ConsoleObserver`, the server's `TableFanOut` and the
+  browser's `TableBoard` each hold one and feed it the events they were already narrating, and
+  **the browser's pile fold moved *into* it**, so pile logic that had lived in `TableBoard`
+  since P13.3 has one home too. The blind draw has **no method on the type** — concealment as
+  an absence — and `ConcealmentTests.ABlindDrawnCardIsNeverShownFaceUp` holds the fan-out to
+  it from outside, **proved able to fail by mutating `PlayerDrew`**.
+- 🔥 **(2) Byte-identity was asserted, not argued** (acceptance 4): a seeded 300-game `Sim` run
+  (`--seed 20260823`, journal + CSV) came back **byte-identical** either side of the change,
+  and the HEAD journal replays under the new tree. No Domain or Sim file moved at all —
+  `git diff` on those directories is empty — so no measurement could move and none did.
+- ⚠️ **(3) §9 #49 and #50 are built on their recommended defaults and still open**, each fenced
+  by a test named for the row (`TableLookTests.TheClaimedTurnUpLiesFaceUp…` and
+  `…TheFaceUpCopyStaysWhenTheConcealedDuplicateIsThrown…`, both proved able to fail by
+  mutation). **The face-up mark is by `CardId` throughout** — the concealed duplicate of a
+  face-up value stays concealed, which is the one fact the event log alone could not carry.
+  ⚠️ **`TurnContext` was deliberately not widened**: no rung sees the piles or the marks; a
+  rung that reads them is a new rung and arrives measured (`STRATEGY.md` §11's rule, §10 #14
+  unchanged).
+- ⚠️ **(4) What a player actually sees now.** Browser: each seat's face-up cards lie flat on
+  its panel (`▲`), its pile opens from the ▾ summary (a real `<details>` — §3.11 A4), and your
+  own face-up cards carry the same `▲` in your hand with the sentence in the accessible name.
+  Console: a fourth panel — *Everyone can see this* — lists every seat's face-up cards and
+  whole pile, and `▲` marks your own hand; `Palette.Legend` grew the token, and
+  `drive-console.py` re-captured clean (both scripts settle; the capture differs, which is the
+  point — byte-identity lives in the journal and the CSV, not the screen). `CardDisplayState`
+  gained `FaceUp = 1 << 7` with a `DisplayTokens` entry, so the legend fences picked it up
+  without a new test. The registry's §5.2 entry is **`Checked`** — deliberately with no ⚠,
+  because both defaults are presentation-only — and the **exemption ceiling is back at 6**,
+  with no whole exemptions at all.
+
+---
+
+🔥 **Before P41, the same day: `RULES.md` went to rev 31 — two visibility rules from Nick.**
+`JournalHeader.CurrentRulesRevision` is **31**; the tree was green at **832**. *(The block
+below was written before P41 shipped; where it says nothing shows either rule, P41 is the
+answer.)*
 
 - **(1) The public discard piles, corroborated**: every card in every player's pile may be
   looked through, not merely the top card — §5's rev-17 `EXPERT` rule, now independently
@@ -555,22 +598,31 @@ unasserted altogether.
 
 ## What is next
 
-🔥 **`P41` — the table shows what the rules make public — is next** (rev 31's two visibility
-rules, buildable now; `BUILD-PLAN.md` §5 P41). **`P40` — the game in Burmese — stands beside it,
-blocked on input only Nick can produce**, and ⚠️ **its translations must be made from the
-rev-31 rulebook** — attach the current `RULEBOOK.md`, which now teaches the face-up rule.
- The translations are made outside the repository: Nick attaches the English
-documents and runs the prompts in **`docs/translation/PROMPTS.md`** against Gemini and ChatGPT
-— translate with one, cross-check with the other (prompt C), repeat until clean — and the
-packet lands the vetted Markdown and builds the fences (`BUILD-PLAN.md` §5 P40). ⚠️ **Do not
-start P40 without the vetted Burmese text**; there is nothing for it to do until then.
-🔥 **It feeds candidate 2 below**: the experts are Burmese speakers, and a rulebook in their
-own language is the best instrument the project could hand them for the eleven defaulted §9
-rows.
+🔥 **`P40` — the game in Burmese — is the only packet left on the plan, and it stands blocked
+on input only Nick can produce.** ⚠️ **Its translations must be made from the rev-31 rulebook**
+— attach the current `RULEBOOK.md`, which teaches the face-up rule; the first-round outputs
+under `docs/translation/` are rev-30-based and must be re-run. The translations are made
+outside the repository: Nick attaches the English documents and runs the prompts in
+**`docs/translation/PROMPTS.md`** against Gemini and ChatGPT — translate with one, cross-check
+with the other (prompt C), repeat until clean — and the packet lands the vetted Markdown and
+builds the fences (`BUILD-PLAN.md` §5 P40). ⚠️ **Do not start P40 without the vetted Burmese
+text**; there is nothing for it to do until then. 🔥 **It feeds candidate 2 below**: the
+experts are Burmese speakers, and a rulebook in their own language is the best instrument the
+project could hand them for the **thirteen** defaulted §9 rows.
 
 **Behind it, the four candidates stand** — and this file's recommendation is unchanged: **the
 expert session is worth more than any code here**, and the failing tests would be its change
-list.
+list (now thirteen fences: the eleven below plus rev 31's #49 and #50, fenced by P41 in
+`TableLookTests`).
+
+<details>
+<summary>What used to stand here, before P41 shipped</summary>
+
+🔥 **`P41` — the table shows what the rules make public — is next** (rev 31's two visibility
+rules, buildable now; `BUILD-PLAN.md` §5 P41). **`P40` — the game in Burmese — stands beside
+it, blocked on input only Nick can produce.**
+
+</details>
 
 <details>
 <summary>What used to stand here, before P39 shipped</summary>
@@ -3911,6 +3963,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 ## Session log
 
 | Date | Packet | Outcome |
+| 2026-08-23 | P41 | **The table shows what the rules make public — done, the day it was written up.** One fold, written once: `Presentation/TableLook.cs` holds every seat's pile (§5) and every seat's face-up cards (§5.2), and the console's observer, the server's fan-out and the browser's board each hold one — the browser's pile fold moved *into* it, so pile logic has one home too. The blind draw has **no method on the type**; `ConcealmentTests.ABlindDrawnCardIsNeverShownFaceUp` holds the fan-out to it, **proved able to fail by mutating `PlayerDrew`**, with a positive twin that plays a real open take through a connection. §9 **#49** and **#50** built on their recommended defaults, each fenced in `TableLookTests` by a test named for the row, both mutation-proved; **the mark is by `CardId` throughout**, so the concealed duplicate stays concealed. Browser: face-up chips flat on each seat panel (`▲`), the whole pile behind the ▾ `<details>`, your own `▲` in your hand; console: a fourth panel *Everyone can see this*, `▲` in the hand and legend; `drive-console.py` re-captured clean (capture differs — presentation). ⚠️ **`TurnContext` deliberately not widened** — no rung sees any of it. ✅ **Byte-identity asserted**: seeded 300-game `Sim` journal + CSV **byte-identical** either side, HEAD journal replays; `git diff` empty on Domain and Sim. **§10 #24 discharged, §10 empty again (#7 standing); registry §5.2 → `Checked` (no ⚠ — both defaults are presentation-only), ceiling 7 → 6, no whole exemptions at all.** Green at **845 / 0**, from 832 — 13 new tests. |
 | 2026-08-23 | rev 31 | **Two visibility rules recorded from Nick, and the whole cascade taken in one session.** **(1)** §5's public piles corroborated `PLAYER` (every card in every pile, rev 17's rule) — still exercisable in no front end. **(2)** §5.2 new: a card taken in the open lies **face up in front of its taker until that copy leaves their hand** — Settled, amends §6.3, and **changes what the table shows rather than what it knows** (open takes and discards are public events by `CardId`; the face-up set is a fold; journals replay identically; no measurement should move — with the one instance-level exception §5.2's notes record: the event log cannot pin *which copy* of a duplicate is still held, and the face-up card can). Opens **#49** (claimed turn-up face up too? recommend yes) and **#50** (which copy leaves? recommend the thrower chooses — what discard-by-`CardId` already does); `QUESTIONS-FOR-MYA-LAY.md` Q13. **§10 reopens with #24** (fourth reopening); registry gains §5.2 as a whole exemption naming **P41**, ceiling 6 → 7 with the finding recorded. `JournalHeader.CurrentRulesRevision` 30 → 31; **the rulebook moved in the same session** (stamp 31, the face-up rule taught, appendix rows 13–14) — the first time the rev fence's compelled maintenance was paid the same hour it was incurred. ⚠️ **P40 must translate the rev-31 rulebook.** 🔥 **P41 written up and next.** Green at **832 / 0** — no test count moved: the revision is rules text, one constant, and registry data. |
 | 2026-08-23 | P39 | **Done — the strategy guide, on Fable 5: `docs/HOW-TO-PLAY-WELL.md` answers *how do I get better?* from what was measured, and every figure it quotes is fenced.** Organised by decision rather than by experiment — the whole game in one sentence, the discard tie-break (the headline pair), the one refinement that has ever worked (`outs`, +2.7 ± 0.8), the money (settle it, never chase it — the $5/$1 cell is a null and the crossover is a money card worth four rounds), **the nulls given as much room as the margins** (refusing the claim, counting cards, feeding-aware discards, `warden`'s loss, the seat-side question stated with no digits at all because P16's figures are not CSV rows), the three **unpriced** bonuses stated as unknown-rather-than-small, and the difficulty dial with its reference table. 🔥 **The fence moved home with the figures and now fences verdicts too**: `TheFiguresThePlayersGuideQuotesAreTheFiguresInTheCsv` reads the guide — dial quad, headline pair, nine anchored margins with **the printed sign in the anchor and the scale carrying it**, two interval-free rates, and the eight verdicts the prose asserts (nulls must stay `inside the interval`, separations `separated (Holm)`). 🔥 **A figure has one home, asserted as an absence**: `TheFiguresHaveOneHomeAndThePlayingGuidePointsAtIt` requires `PLAYING.md` to point at the guide and contain no `±`, no reference-table quad, no headline pair — its *Playing better* section is one pointer paragraph. Both fences proved able to fail by mutation. ⚠️ **Found on the way**: `PLAYING.md`'s difficulty prompt row still quoted the four-handed 36%/14%, unfenced because P34's regex targeted the other sentence — digit-free with a pointer now. `README.md` and the documentation map carry the guide. ✅ **No rules question; `RULES.md` stays rev 30.** 🔥 **Green at 832 / 0**, from 831. |
 | 2026-08-23 | P38 | **Done — the rulebook, on Fable 5: `docs/RULEBOOK.md` teaches the game front to back and cannot fall behind the rules without a red build.** The whole game in reading order for somebody who has never seen it — setup, the turn, the feeding rule taught as table manners, the opening claim and its permission, melds, the win condition by table size, the three settlement bonuses, the money layer, a one-page table reference — **no provenance tags, no open questions, no packet numbers**, and `RULES.md` stays the sole authority. 🔥 **Four tests in `Tests/Docs/RulebookTests.cs`, each proved able to fail by mutating the document.** **(1) The rev stamp** equals `JournalHeader.CurrentRulesRevision`, which `GameJournalTests` already binds to `RULES.md`'s own header — so a play-changing revision is a red build until the rulebook is re-read, **which is the maintenance, compelled**. **(2) The worked round is replayed, not proofread**: `TheWorkedRoundIsTheRoundItsSeedActuallyPlays` re-runs the printed construction (seed **15**, five seats of `outs`, seat seed `seed × 100 + seat`) and asserts all five dealt hands, the turn-up, all seven owned money cards with multipliers, the 24 turns, the winner, the declared melds and all fifteen settlement cells with the round/money/net split asked of `Settlement.RoundPayments`. Seed 15 came from a 60-seed scan and earns its place twice: the winner declares **jokerless**, so the ×3 bonus appears in a real settlement ($60 against $15 a head), and **had discarded an owned A♠ mid-round and is still paid for it** — permanent ownership demonstrated by the engine. **(3) The house readings are fenced two ways with the citation set derived from `RULES.md` itself**: open §9 rows recognised by table shape (numbered, un-struck, five columns), and the appendix must cite exactly that set — #33, #36–#41, #44–#48 today. A question closing or opening moves the set and fails the build, which is the packet's hard problem — a rulebook silently promotes defaults to rules — made checkable. **(4) The voice is fenced**: no provenance tags, no confidence words, no packet ids, not the word *reconstruction*. `README.md` points at it as the way in; the documentation map carries it. ✅ **No rules question arose; `RULES.md` stays rev 30.** 🔥 **Green at 831 / 0**, from 827. |

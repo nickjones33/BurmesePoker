@@ -358,6 +358,100 @@ public class ConcealmentTests(WatchedRound round) : IClassFixture<WatchedRound>
         Assert.Empty(round.Watcher.Events.OfType<TableEvent.SeatPlayedByTheComputer>());
     }
 
+    /// <summary>
+    /// ✅ <b>P41 acceptance 2 — the discriminating case for the face-up mark.</b> A blind-drawn
+    /// card never lies face up (RULES.md §5.2, §6.3), and this fixture is the perfect
+    /// instrument for saying so: every take in the scripted round is a blind draw, so if any
+    /// card in any prompt ever wears the mark, the fan-out marked something the deck gave
+    /// unseen.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Proved able to fail by mutation</b>, exactly as P13.2 proved the blind draw's
+    /// filter: making <c>TableFanOut.PlayerDrew</c> feed its <c>TableLook</c> the drawn card
+    /// turns this red. Its positive twin is
+    /// <see cref="ACardTakenInTheOpenIsShownFaceUpInItsTakersOwnHand"/>, which keeps this one
+    /// from passing by nothing ever being marked at all.
+    /// </remarks>
+    [Fact]
+    public void ABlindDrawnCardIsNeverShownFaceUp()
+    {
+        // Non-vacuous: cards were drawn blind, and prompts showed hands.
+        Assert.Contains(round.Watcher.Events, moment => moment is TableEvent.Drew);
+        Assert.All(round.Scripts.Values, seat => Assert.NotEmpty(seat.Prompts));
+
+        // The scripted round contains no open take of any kind…
+        Assert.DoesNotContain(
+            round.Watcher.Events,
+            moment => moment is TableEvent.TookDiscard or TableEvent.MoneyCardClaimed);
+
+        // …so nothing anywhere may be face up.
+        foreach (var seat in round.Scripts.Values)
+        {
+            Assert.All(
+                seat.Prompts.SelectMany(prompt => prompt.Hand.Cards),
+                card => Assert.False(card.IsFaceUp, $"{card.Card} was marked face up in a round with no open take."));
+        }
+    }
+
+    /// <summary>
+    /// ✅ <b>P41 acceptance 1's server half, and the positive twin of
+    /// <see cref="ABlindDrawnCardIsNeverShownFaceUp"/>.</b> A card taken in the open lies face
+    /// up in its taker's own hand view (RULES.md §5.2), and only cards taken in the open ever do.
+    /// </summary>
+    [Fact]
+    public void ACardTakenInTheOpenIsShownFaceUpInItsTakersOwnHand()
+    {
+        var table = TableSession.Open(
+            [
+                TableSeat.Person(new PlayerId(1), "Nick"),
+                TableSeat.Person(new PlayerId(2), "Mya Lay"),
+                TableSeat.Person(new PlayerId(3), "Cobra"),
+                TableSeat.Person(new PlayerId(4), "Su Htwe")
+            ],
+            TableSessionTests.Options(20260823));
+
+        var watcher = table.Watch();
+        var scripts = table.Players.ToDictionary(
+            player => player,
+            player => new ScriptedSeat(table.ConnectionFor(player)) { TakesTheDiscardOnce = true });
+
+        table.PlayRound();
+
+        var taken = watcher.Events.OfType<TableEvent.TookDiscard>().ToList();
+        Assert.NotEmpty(taken);
+
+        foreach (var took in taken)
+        {
+            // The very next thing that seat is asked is what to throw, and the hand it is shown
+            // marks the card it just took — visible to the whole table, so said to its holder.
+            var asked = scripts[took.Player].Prompts
+                .First(prompt => prompt.Question == SeatQuestion.Discard && prompt.Taken?.Id == took.Card.Id);
+
+            Assert.True(asked.Hand.Of(took.Card).IsFaceUp);
+        }
+
+        // And the sweep: every card ever marked face up in any prompt is one that seat took in
+        // the open — by CardId, which is §9 #50's recorded default at work.
+        foreach (var (player, script) in scripts)
+        {
+            var tookInTheOpen = watcher.Events
+                .Where(moment =>
+                    moment is TableEvent.TookDiscard { } t && t.Player == player
+                    || moment is TableEvent.MoneyCardClaimed { } c && c.Player == player)
+                .Select(moment => moment switch
+                {
+                    TableEvent.TookDiscard t => t.Card.Id,
+                    TableEvent.MoneyCardClaimed c => c.Card.Id,
+                    _ => throw new InvalidOperationException()
+                })
+                .ToHashSet();
+
+            Assert.All(
+                script.Prompts.SelectMany(prompt => prompt.Hand.Cards).Where(card => card.IsFaceUp),
+                card => Assert.Contains(card.Card.Id, tookInTheOpen));
+        }
+    }
+
     /// <summary>Every card this seat was shown in a prompt of its own.</summary>
     private static HashSet<CardId> Shown(ScriptedSeat seat) =>
         [.. seat.Prompts.SelectMany(prompt => prompt.Hand.Hand).Select(card => card.Id)];

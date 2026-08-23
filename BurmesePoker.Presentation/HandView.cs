@@ -73,14 +73,22 @@ public sealed class HandView
     /// the computer's own answer, and a second implementation of it would be a different
     /// strategy wearing the first one's name. <see cref="ComputerAdvice"/> is where to get it.
     /// </param>
-    public static HandView Of(TurnContext context, Card? suggestedThrow = null)
+    /// <param name="faceUp">
+    /// The player's own face-up cards — taken in the open and still held (RULES.md §5.2) — or
+    /// null when nothing is. ⚠️ <b>Passed in rather than worked out here, and deliberately not
+    /// on the <see cref="TurnContext"/></b> (P41): the face-up set is a fold over the public
+    /// events, kept by whoever is narrating them (<c>TableLook</c>), and widening the context
+    /// would hand every rung a fact no rung has been measured with.
+    /// </param>
+    public static HandView Of(
+        TurnContext context, Card? suggestedThrow = null, IReadOnlyList<Card>? faceUp = null)
     {
         ArgumentNullException.ThrowIfNull(context);
 
         // The turn's own answer about which cards may be thrown (RULES.md §5.1), asked once and
         // never re-derived here: the ban is a rule, and a view that worked it out for itself would
         // be a second implementation of one.
-        return Of(context.Hand, context.MoneyCards, context.YouOwn, suggestedThrow, context.LegalDiscards);
+        return Of(context.Hand, context.MoneyCards, context.YouOwn, suggestedThrow, context.LegalDiscards, faceUp);
     }
 
     /// <summary>
@@ -99,12 +107,17 @@ public sealed class HandView
     /// rather than worked out here</b>, for the same reason the hint is: the feeding ban is a rule,
     /// and <see cref="TurnContext.LegalDiscards"/> is the only place it is decided.
     /// </param>
+    /// <param name="faceUp">
+    /// The player's own face-up cards (RULES.md §5.2), or null when nothing is. Only ever this
+    /// player's own — the other seats' face-up cards are the table's to draw, not the hand's.
+    /// </param>
     public static HandView Of(
         IReadOnlyList<Card> hand,
         MoneyCardRegistry money,
         Func<Card, bool> owned,
         Card? suggestedThrow = null,
-        IReadOnlyList<Card>? legalDiscards = null)
+        IReadOnlyList<Card>? legalDiscards = null,
+        IReadOnlyList<Card>? faceUp = null)
     {
         ArgumentNullException.ThrowIfNull(hand);
         ArgumentNullException.ThrowIfNull(money);
@@ -115,6 +128,11 @@ public sealed class HandView
         var throwable = legalDiscards is null
             ? null
             : legalDiscards.Select(card => card.Id).ToHashSet();
+
+        // By CardId again (§9 #50): the concealed copy of the same value stays concealed.
+        var shown = faceUp is null || faceUp.Count == 0
+            ? null
+            : faceUp.Select(card => card.Id).ToHashSet();
 
         // ⚠️ Copied, not aliased. TurnContext.Hand is the seat's own live list and the engine
         // discards from it the moment this decision is answered (RoundEngine step 2), so a
@@ -130,7 +148,7 @@ public sealed class HandView
             card => card.Id,
             card => new CardView(
                 card,
-                State(card, money, owned, melded, suggestedThrow, throwable),
+                State(card, money, owned, melded, suggestedThrow, throwable, shown),
                 money.Multiplier(card),
                 CostOfThrowing(card, hand, cover)));
 
@@ -194,7 +212,8 @@ public sealed class HandView
         Func<Card, bool> owned,
         HashSet<CardId> melded,
         Card? suggestedThrow,
-        HashSet<CardId>? throwable)
+        HashSet<CardId>? throwable,
+        HashSet<CardId>? faceUp)
     {
         var state = melded.Contains(card.Id) ? CardDisplayState.Melded : CardDisplayState.Loose;
 
@@ -223,6 +242,13 @@ public sealed class HandView
         if (throwable is not null && !throwable.Contains(card.Id))
         {
             state |= CardDisplayState.Unthrowable;
+        }
+
+        // Taken in the open and still held, so it lies face up where the whole table can see
+        // it (RULES.md §5.2). Instance identity: the other copy of the value stays concealed.
+        if (faceUp is not null && faceUp.Contains(card.Id))
+        {
+            state |= CardDisplayState.FaceUp;
         }
 
         return state;

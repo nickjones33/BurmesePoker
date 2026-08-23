@@ -45,6 +45,7 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
     private readonly IAnsiConsole _console;
     private readonly IReadOnlyDictionary<PlayerId, string> _names;
     private readonly RoundLog _log;
+    private readonly ConsoleObserver _table;
     private readonly bool _hints;
     private readonly ComputerAdvice _adviser = new();
     private (int Round, int Turn) _turnInProgress;
@@ -53,15 +54,23 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
     /// The terminal to talk to. Taken rather than reached for, so the front end can be driven
     /// by something other than a real screen (BUILD-PLAN P13.1).
     /// </param>
+    /// <param name="table">
+    /// The observer narrating this match, read for what the rules make public (P41): every
+    /// seat's pile and face-up cards live on its <c>TableLook</c>, folded from the very events
+    /// it prints. ⚠️ <b>Read rather than kept</b> — the context deliberately does not carry
+    /// any of it, so a bot cannot see it either (BUILD-PLAN P41 build item 6).
+    /// </param>
     public SpectrePlayerAgent(
         IAnsiConsole console,
         IReadOnlyDictionary<PlayerId, string> names,
         RoundLog log,
+        ConsoleObserver table,
         bool hints = true)
     {
         _console = console ?? throw new ArgumentNullException(nameof(console));
         _names = names ?? throw new ArgumentNullException(nameof(names));
         _log = log ?? throw new ArgumentNullException(nameof(log));
+        _table = table ?? throw new ArgumentNullException(nameof(table));
         _hints = hints;
     }
 
@@ -351,6 +360,45 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
         table.AddRow($"[{Palette.Quiet}]Stakes[/]", $"${context.Stakes.RoundValue} a round · ${context.Stakes.MoneyCardValue} a money card");
 
         _console.Write(new Panel(table).Header("The table").BorderColor(Palette.Frame));
+        ShowWhatEverybodyCanSee(context);
+    }
+
+    /// <summary>
+    /// What the rules make public at every seat (P41): the cards each player holds face up —
+    /// taken in the open and visible to all for as long as they are held (RULES.md §5.2) — and
+    /// each player's whole discard pile, every card of which may be looked through (§5).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Read off the observer's fold, never off the context</b>: <c>TurnContext</c>
+    /// deliberately shows a seat less than §5 makes public, so that no rung sees any of this
+    /// without arriving as a new, measured rung (BUILD-PLAN P41 build item 6).
+    /// </remarks>
+    private void ShowWhatEverybodyCanSee(TurnContext context)
+    {
+        var look = _table.Look;
+        var seats = new Grid().AddColumn().AddColumn();
+
+        foreach (var player in _table.Seating)
+        {
+            var faceUp = look.FaceUpOf(player);
+            var pile = look.PileOf(player);
+
+            var shown = faceUp.Count == 0
+                ? $"[{Palette.Quiet}]nothing face up[/]"
+                : $"{Palette.FaceUpMark} " + string.Join("  ", faceUp.Select(card => CardFormatting.Of(card, context.MoneyCards)));
+
+            var thrown = pile.Count == 0
+                ? $"[{Palette.Quiet}]pile empty[/]"
+                : $"[{Palette.Quiet}]pile:[/] " + string.Join("  ", pile.Select(card => CardFormatting.Of(card, context.MoneyCards)));
+
+            seats.AddRow(
+                player == context.Player ? $"[bold]{Who(player)}[/]" : Who(player),
+                $"{shown}  ·  {thrown}");
+        }
+
+        _console.Write(new Panel(seats)
+            .Header($"Everyone can see this — {Palette.FaceUpMark} is face up in a hand")
+            .BorderColor(Palette.Frame));
     }
 
     /// <summary>
@@ -359,7 +407,9 @@ public sealed class SpectrePlayerAgent : IPlayerAgent
     /// </summary>
     private HandView ShowHand(TurnContext context, Card? advised = null)
     {
-        var view = HandView.Of(context, advised);
+        // Your own face-up cards, marked in your hand exactly as the table shows them to
+        // everybody else (RULES.md §5.2) — read off the observer's fold, like the panel above.
+        var view = HandView.Of(context, advised, _table.Look.FaceUpOf(context.Player));
 
         _console.Write(HandPanel.Of(view));
         _console.MarkupLine(Palette.Legend);

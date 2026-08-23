@@ -88,7 +88,7 @@ when they threw what they threw.
 
 A turn begins by clearing the screen and asking whether you are the one at the keyboard —
 play is **fully concealed** (`RULES.md` §6.3), and the game assumes anybody might be sitting
-there. Then three panels:
+there. Then four panels:
 
 **Round N so far** — everything public that happened while you were not looking: who drew,
 who took whose discard, what was thrown. The bots move in milliseconds, so this panel is the
@@ -97,6 +97,11 @@ against.
 
 **The table** — the turned-up money cards, how many cards are left to draw, the one discard
 you may take, and the stakes.
+
+**Everyone can see this** — one row per seat, yours in bold: the cards each player holds
+**face up** (marked `▲` — taken in the open, visible to everybody for as long as they hold
+them, `RULES.md` §5.2) and each player's **whole discard pile**, every card of which you may
+look through (`RULES.md` §5).
 
 **Your hand** — not thirteen sorted cards, but the melds you nearly have:
 
@@ -123,6 +128,7 @@ not a judgement about your hand.
 | `($$$)` | A triple — a designation that landed on a card that always pays, so it pays three times. |
 | `★` | **You own it.** The deck gave you this card, so it pays *you*. |
 | `closed` | **You may not throw it this turn.** The player after you took that rank in the open, so it is not among the cards you are offered (`RULES.md` §5.1). |
+| `▲` | **Face up.** You took this card in the open, so it lies on the table in front of you where every player can see it, until that very copy leaves your hand (`RULES.md` §5.2). |
 
 **A money card with no star pays somebody else**, and you are holding it for them.
 
@@ -304,15 +310,17 @@ table empty and six fills it.
 the money cards turned up this round, and **the one discard you may take**. If the middle offers
 you a card, the button at the bottom offers you the same card — they are the same fact.
 
-**Each seat around you is small on purpose**: a name, a bank, and the top of its discard pile.
-That is everything the rules let you know about somebody else (RULES.md §7.1).
+**Each seat around you is small on purpose**: a name, a bank, its discard pile, and the cards
+it holds face up. That is everything the rules let you know about somebody else (RULES.md §7.1,
+§5, §5.2).
 
 | On a seat | Means |
 |---|---|
 | **▶** | The table is waiting on them. **It is their turn**, not "they moved last". |
 | **✓** | They have laid all thirteen down. |
 | **♛** | They won the round. |
-| **▾** | The top of their discard pile. |
+| **▾** | The top of their discard pile. **Press it to look through the whole pile** — every card anybody has thrown is public (RULES.md §5). |
+| **▲** | Cards they hold **face up**: taken in the open, still in their hand, visible to everybody (RULES.md §5.2). Yours carry the same mark in your hand. |
 | **⟳** | **The computer is playing this seat** — they ran out of time, or they left. It clears when they play a turn themselves. |
 
 ### Your hand, and the bar under it

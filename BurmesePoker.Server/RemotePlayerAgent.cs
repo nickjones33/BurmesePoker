@@ -139,7 +139,13 @@ public sealed class RemotePlayerAgent : IPlayerAgent
         // bought once and the hint comes off it (P24.2 acceptance 2).
         var rationale = _advice is null ? null : Why(context, question);
         var suggested = question == SeatQuestion.Discard ? rationale?.Advised : null;
-        var answer = _connection.Ask(SeatPrompt.For(context, question, suggested, rationale), _patience);
+
+        // The seat's own face-up cards, so the hand it is shown marks what the whole table can
+        // already see (RULES.md §5.2). The fan-out narrated the take before this question was
+        // put, so the fold is current — and it is only ever this seat's own cards (P41).
+        var faceUp = _table.Look.FaceUpOf(context.Player);
+        var answer = _connection.Ask(
+            SeatPrompt.For(context, question, suggested, rationale, faceUp), _patience);
 
         if (answer is null)
         {

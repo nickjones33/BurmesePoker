@@ -11,26 +11,43 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **READ THIS FIRST — `RULES.md` is at rev 31 (2026-08-23) and none of it is built: two
-visibility rules from Nick.** `JournalHeader.CurrentRulesRevision` is **31**, the tree is green at **832**, and **`P41` — the table shows what the rules make public — is the next packet.**
-**(1)** Every card in **every player's discard pile** may be looked through (§5, rev-17 `EXPERT`
-now corroborated `PLAYER`) — exercisable in no front end. **(2) §5.2, new**: a card taken in
-the open lies **face up in front of its taker, visible to all, for as long as it stays in their
-hand**. 🔥 **Both change what the table *shows*, not what it *knows*** — open takes and
-discards are public events by `CardId`, so the face-up set is a fold over the event stream: no
-engine change, journals replay identically, **no measurement should move, and P41 asserts that
-as byte-identity rather than arguing it**. ⚠️ §9 opens **#49** (claimed turn-up face up too?)
-and **#50** (which copy of a duplicate leaves?); §10 reopens with **#24**; the registry carries
-§5.2 as a whole exemption naming P41, **ceiling 6 → 7**. ✅ **The rulebook already moved** —
-stamp rev 31, the rule taught, appendix rows 13–14.
+🔥 **READ THIS FIRST — `P41` shipped 2026-08-23 on Fable 5: the table shows what the rules make
+public, and §10 is empty again.** `RULES.md` stays **rev 31** (no rule changed), the tree is
+green at **845**, and **`P40` — the game in Burmese — is the only packet left on the plan,
+blocked on input only Nick can produce**: vetted translations of `RULEBOOK.md` and
+`HOW-TO-PLAY-WELL.md`, made outside the repo with `docs/translation/PROMPTS.md` against
+Gemini/ChatGPT (translate with one, cross-check with the other). **Do not start P40 without
+that text, and translate the rev-31 rulebook** — the first-round outputs under
+`docs/translation/` are rev-30-based and must be re-run. Behind it stand the four candidates at
+the end of `docs/STATUS.md`'s *What is next* (the expert session on the defaulted §9 rows —
+**thirteen** now, every one fenced — is the one this file would take, and P40's Burmese
+rulebook is the best instrument to hand those experts).
 
-**Beside P41: `P40` — the game in Burmese — stands blocked on input only Nick can produce**:
-vetted translations of `RULEBOOK.md` and `HOW-TO-PLAY-WELL.md`, made outside the repo with
-`docs/translation/PROMPTS.md` against Gemini/ChatGPT (translate with one, cross-check with the
-other). **Do not start P40 without that text, and translate the rev-31 rulebook, not an older
-one.** Behind both stand the four candidates at the end of `docs/STATUS.md`'s *What is next*
-(the expert session on the defaulted §9 rows — thirteen rows now — is the one this file would
-take, and P40's Burmese rulebook is the best instrument to hand those experts).
+**What P41 built, and the four things a cold session needs from it.**
+🔥 **(1) The whole packet is one fold, written once: `Presentation/TableLook.cs`** — every
+seat's discard pile (§5) and every seat's face-up cards (§5.2) as a pure fold over the public
+events. The console's `ConsoleObserver`, the server's `TableFanOut` and the browser's
+`TableBoard` each hold one and feed it the events they already narrated; **the browser's pile
+fold moved *into* it**, so pile logic has one home. ⚠️ **The blind draw has no method on the
+type** — concealment as an absence — and
+`ConcealmentTests.ABlindDrawnCardIsNeverShownFaceUp` holds the fan-out to it from outside,
+**proved able to fail by mutating `PlayerDrew`**, with a positive twin that plays a real open
+take over a connection.
+🔥 **(2) Byte-identity was asserted, not argued** (acceptance 4): a seeded 300-game `Sim` run
+wrote a **byte-identical journal and CSV** either side of the change, the HEAD journal replays
+under the new tree, and `git diff` is empty on Domain and Sim. No measurement could move and
+none did.
+⚠️ **(3) §9 #49 and #50 are built on their recommended defaults and still open**, each fenced
+by a `TableLookTests` test named for the row, both mutation-proved. **The face-up mark is by
+`CardId` throughout**, so the concealed duplicate of a face-up value stays concealed — the one
+fact the event log alone could not carry. ⚠️ **`TurnContext` was deliberately not widened**: no
+rung sees the piles or the marks; a rung that reads them is a new rung and arrives measured.
+⚠️ **(4) What a player sees now**: browser seats show face-up chips (`▲`) flat on the panel and
+open their whole pile from the ▾ `<details>`; the console gained a fourth panel — *Everyone can
+see this* — and `▲` in your hand and legend. `CardDisplayState.FaceUp = 1 << 7` with a
+`DisplayTokens` entry, so the legend fences picked it up without a new test. **§10 #24 is
+discharged; the registry's §5.2 entry is `Checked` (deliberately no ⚠ — both defaults are
+presentation-only) and the exemption ceiling is back at 6, with no whole exemptions at all.**
 
 **What P39 built, and the four things a cold session needs from it.**
 🔥 **(1) `docs/HOW-TO-PLAY-WELL.md` answers *how do I get better?* from what was measured, and

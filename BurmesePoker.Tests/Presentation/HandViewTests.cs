@@ -277,6 +277,38 @@ public class HandViewTests
         Assert.All(View(TwelveAndADeadQueen).Cards, card => Assert.True(card.CanBeThrown));
     }
 
+    /// <remarks>
+    /// RULES.md §5.2, as a front end sees it (P41). ⚠️ <b>The view does not decide it</b> — the
+    /// face-up set is a fold over public events kept by whoever narrates them
+    /// (<c>TableLook</c>), and it is passed in here exactly as the legal discards are: a rule,
+    /// never re-derived. By instance, so a concealed duplicate of the same value stays unmarked
+    /// (§9 #50).
+    /// </remarks>
+    [Fact]
+    public void ACardTakenInTheOpenIsMarkedFaceUpAndNoOtherIs()
+    {
+        var hand = Hands.Of(TwelveAndADeadQueen);
+        var taken = hand.First(card => card.Rank == Rank.Queen);
+
+        var view = HandView.Of(hand, NoMoney, _ => false, faceUp: [taken]);
+
+        var queen = view.Of(taken);
+        Assert.True(queen.IsFaceUp);
+        Assert.True(queen.State.HasFlag(CardDisplayState.FaceUp));
+        Assert.Contains(DisplayTokens.FaceUp, queen.Tokens);
+
+        Assert.All(
+            view.Cards.Where(card => card.Card.Id != taken.Id),
+            card => Assert.False(card.IsFaceUp));
+    }
+
+    /// <remarks>A hand with no face-up cards told to it marks none — nothing is inferred.</remarks>
+    [Fact]
+    public void AHandToldNothingIsFaceUpMarksNothingFaceUp()
+    {
+        Assert.All(View(TwelveAndADeadQueen).Cards, card => Assert.False(card.IsFaceUp));
+    }
+
     private static HandView View(string[] codes) => HandView.Of(Hands.Of(codes), NoMoney, _ => false);
 
     /// <summary>The one card of this hand with the named value.</summary>

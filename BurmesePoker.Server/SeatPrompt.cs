@@ -82,11 +82,18 @@ public sealed record SeatPrompt(
     /// reasoning on the bus is precisely the leak <c>ConcealmentTests</c> exists to catch
     /// (BUILD-PLAN §3.11 A1).
     /// </param>
+    /// <param name="faceUp">
+    /// This seat's own face-up cards — taken in the open and still held, visible to the whole
+    /// table (RULES.md §5.2) — or null when nothing is. ⚠️ <b>Read off the fan-out's
+    /// <c>TableLook</c> rather than off the context</b> (P41): the face-up set is a fold over
+    /// public events, and <c>TurnContext</c> is deliberately not widened to carry it.
+    /// </param>
     public static SeatPrompt For(
         TurnContext context,
         SeatQuestion question,
         Card? suggestedThrow = null,
-        AdviceRationale? rationale = null)
+        AdviceRationale? rationale = null,
+        IReadOnlyList<Card>? faceUp = null)
     {
         ArgumentNullException.ThrowIfNull(context);
 
@@ -107,7 +114,7 @@ public sealed record SeatPrompt(
             [.. context.TurnedUpMoneyCards],
             context.MoneyCards,
             context.Stakes,
-            HandView.Of(context, suggestedThrow),
+            HandView.Of(context, suggestedThrow, faceUp),
             rationale);
     }
 
