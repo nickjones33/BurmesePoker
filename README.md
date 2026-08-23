@@ -101,6 +101,7 @@ browser client is sent only what its own seat is entitled to know.
 
 | Question | Read |
 |---|---|
+| I've never played — teach me the game | `docs/RULEBOOK.md` — the whole game in reading order, with a worked round |
 | What are the rules, and how sure is anybody? | `docs/RULES.md` — the only rules authority, provenance on every rule, open questions in §9 |
 | I just want to remember how to play | `docs/RULES-PRIMER.md` |
 | How do I actually play the thing? | `docs/PLAYING.md` |

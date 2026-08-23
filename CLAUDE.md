@@ -11,14 +11,38 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **READ THIS FIRST — `P34` shipped 2026-08-23 on Opus 5: there is a `README.md`, and the
-documentation set cannot go stale quietly any more.** `RULES.md` is **rev 30**,
-`JournalHeader.CurrentRulesRevision` is **30**, the tree is green at **827**, and **every packet
-built from §0 is done.** 🔥 **`P38` — the rulebook — is next, with `P39` — the strategy guide —
-behind it**: both were added the same day, after Nick asked whether this project has a rules
-onboarding document for a new player or a usable strategy guide, and **it has neither**. ⚠️ **The
-gap is one of audience rather than content** — `RULES.md` is a reconstruction and `STRATEGY.md` is
-a research report, both written for the project rather than for a player.
+🔥 **READ THIS FIRST — `P38` shipped 2026-08-23 on Fable 5: there is a rulebook, and it cannot
+fall behind the rules without a red build.** `RULES.md` is **rev 30**,
+`JournalHeader.CurrentRulesRevision` is **30**, the tree is green at **831**, and **`P39` — the
+strategy guide — is the next packet.**
+
+**What P38 built, and the four things a cold session needs from it.**
+🔥 **(1) `docs/RULEBOOK.md` is the game taught, and it decides nothing.** One document a stranger
+can play a correct round from — reading order, no provenance, no open questions, no packet
+numbers — while `RULES.md` stays the sole authority. **Four tests in `RulebookTests` hold it to
+the tree, each proved able to fail by mutating the document**: the rev stamp is bound to
+`JournalHeader.CurrentRulesRevision` (so a play-changing rev is a red build until the rulebook is
+re-read), the worked round is **replayed by the test** — seed 15, five `outs` seats, every hand,
+turn-up, meld and settlement cell asserted — the house-readings appendix must cite **exactly**
+the §9 rows still open (derived from `RULES.md` itself by table shape: numbered un-struck rows
+with five columns), and the voice test bans the tags, the packet ids and the word *reconstruction*.
+⚠️ **(2) The appendix's citation set is two-way**: a §9 row opening or closing fails the build
+until the rulebook's house readings move with it — twelve rows today (#33, #36–#41, #44–#48 less
+the struck ones). **That is how the rulebook finds out an expert answered.**
+🔥 **(3) The worked round is a teaching gift found by scanning seeds**: at seed 15 the winner
+declares **jokerless** (so the ×3 bonus appears in a real settlement) and **had discarded an owned
+A♠** — permanent ownership demonstrated by the engine rather than asserted. ⚠️ **The example's
+construction (five `outs` seats, seat seed `seed × 100 + seat`) is defined in the test**, which is
+what makes "generated rather than invented" checkable.
+⚠️ **(4) A rules change that moves the worked round's numbers is a *desirable* red**: re-derive
+the section by re-running the test's construction, don't patch a cell.
+
+**Before P38, the same day: `P34` shipped — there is a `README.md`, and the documentation set
+cannot go stale quietly any more.** Every packet built from §0 is done. `P39` was added with P38,
+after Nick asked whether this project has a rules onboarding document for a new player or a usable
+strategy guide, and **it had neither**. ⚠️ **The gap is one of audience rather than content** —
+`RULES.md` is a reconstruction and `STRATEGY.md` is a research report, both written for the
+project rather than for a player. **P38 closed the first half; P39 is the second.**
 
 **What P34 built, and the five things a cold session needs from it.**
 🔥 **(1) `README.md` is the front door and the only current-only document in the repository.**
@@ -843,6 +867,7 @@ verified bug to show for it.
 | `docs/STATUS.md` | Cross-session progress. Read first, update last. |
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
+| `docs/RULEBOOK.md` | **The game taught** — one document a stranger can learn to play from, in reading order, with a generated worked round and a house-readings appendix. Derived from `RULES.md` and decides nothing; stamps the rev it was derived from, bound by `RulebookTests`. |
 | `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration**, **§10 the side bet**, **§12 round length, abandoned rounds and what refusing a claim is worth** (P29), **§13 how often the feeding ban actually bites** (P31), **§14 how often the clean bonus is actually collected** (P33) and **§15 how often a hand wins before anybody plays it** (P35, and ⚠️ **§11 says why §7.5 has no section at all**). Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10, §12 and §13 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
 | `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it, **including what opening a "why?" now tells you** (P24.2). Written for a person at the keyboard, not for a build session. |
