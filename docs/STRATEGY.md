@@ -11,8 +11,8 @@ transcribed, out of `docs/strategy/measurements.csv`, which is written by one co
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seed 20260819
 ```
 
-Last generated **2026-08-22** (BUILD-PLAN P32). **123 measurements in 12,445 s — three and a half
-hours** — the ladder ranked, the difficulty dial calibrated beside it, the money sweep, P12's
+Last generated **2026-08-23** (BUILD-PLAN P43). **143 measurements in about 15,200 s — four and a
+quarter hours** — the ladder ranked, the difficulty dial calibrated beside it, the money sweep, P12's
 headline at **two** table sizes under both seatings, how long a round runs, what the claim's
 permission is worth, how often the feeding ban bites and how often the clean bonus is collected.
 
@@ -103,8 +103,8 @@ this project at least once.**
 4. 🔥 **A margin between two strategies at the same table is computed game by game.** Exactly
    one seat declares a round, so the two players' results are strongly *negatively* correlated
    and the usual add-the-variances formula **understates** the interval — by 41% here (§6).
-5. ⚠️ **A round-robin manufactures findings, so the family is corrected.** Seven rungs is
-   **twenty-one** comparisons, and twenty-one 95% intervals means it is more likely than not that
+5. ⚠️ **A round-robin manufactures findings, so the family is corrected.** Eight rungs is
+   **twenty-eight** comparisons, and twenty-eight 95% intervals means it is more likely than not that
    some pair clears zero by luck. Every margin below carries a **Holm–Bonferroni** verdict beside
    the raw one, and *a raw "separated" that does not survive is not a finding.* ⚠️ **The family
    grows quadratically with the field**, so a rung added makes every existing verdict harder to
@@ -114,7 +114,7 @@ this project at least once.**
 
 ## 2. The ladder
 
-Eight rungs, each differing from the rung it hangs off in **exactly one decision** — which is what
+Nine rungs, each differing from the rung it hangs off in **exactly one decision** — which is what
 makes a difference in results attribute to that decision and to nothing else.
 
 | rung | what it decides differently | packet |
@@ -126,12 +126,14 @@ makes a difference in results attribute to that decision and to nothing else.
 | `counting` | `cautious`, plus a **memory**: what is left in the shoe is estimated from every card it has been shown this round, not from its own thirteen. | P20 |
 | `outs` | `greedy`, plus a **look ahead**: where the cover count ties, keep the thirteen that more of the values still out there would improve. | P21 |
 | `warden` | `outs`, plus the only decision that is about somebody else's hand: take a card you do not want when it **closes that rank** against the seat that threw it (RULES.md §5.1), and then hold the rank rather than throwing it back. | P31 |
+| `opportunist` | `warden`, **minus** the paid take: it takes only what improves its hand, exactly as `outs` does, and keeps `warden`'s hold on whatever ranks those ordinary takes happen to close. The lock at zero price. | P43 |
 | `prospector` | `outs`, plus the only decision money may touch: take a card from anywhere but the deck only when it is worth more than the ownership a blind draw confers. ⚠️ **At $5/$1 that is never, so it is `outs` — see §10.** | P22 |
 
 🔥 **It stopped being a ladder at P31 and became a tree, and that is worth saying plainly.** Every
 rung up to `outs` is one change from the rung above it in this list, so *"in the order it was
 built"* and *"weakest first"* were the same order for six rungs running. `warden` and `prospector`
-are **both** one change from `outs` — two branches, not a seventh and eighth step — so the last
+are **both** one change from `outs` — two branches, not a seventh and eighth step — and P43 grew
+the `warden` branch a step (`opportunist` is `warden` minus its paid take), so the last
 entry in the list is simply the branch written last. ⚠️ **A test had been asserting the
 coincidence as a law** (`StandingAnswerTests` demanded that the ladder's last entry *be* the
 strongest rung); it now asserts what was actually meant, which is that the strongest rung is one
@@ -155,9 +157,9 @@ rate.
 
 🔥 **Which is why it is not in §3's matrix, and that is a decision rather than an omission.** A
 head-to-head cell is played at one stakes; at the stakes this game is played for, `prospector`
-and `outs` deal the same rounds card for card (§10), so its six cells would reproduce an identity
-a unit test already asserts. **Three quarters of an hour of run time is the smaller half of the
-cost.** The larger half is that six null cells join the Holm family in §3 and **make every real
+and `outs` deal the same rounds card for card (§10), so its eight cells would reproduce an identity
+a unit test already asserts. **The run time is the smaller half of the
+cost.** The larger half is that eight null cells join the Holm family in §3 and **make every real
 verdict in it harder to reach** — a duplicate is not a free row. So each rung declares, in
 `Domain/Agents/BotCatalog.cs`, which instrument settles it (`BotRung.Ranked`), the ladder
 tournament measures one set and the money sweep the other, and **a test asserts that between them
@@ -173,56 +175,77 @@ two strategies across **five** seats — **30 of the 32 assignments**, the two h
 excluded because a game one of them is not at says nothing about the pair. **8,010 games a cell**,
 each strategy sitting in each seat exactly 1,602 times *by construction*.
 
-⚠️ **Seven rungs and not the catalog's eight**: `prospector` is settled by §10 rather than here,
+⚠️ **Eight rungs and not the catalog's nine**: `prospector` is settled by §10 rather than here,
 for the reason §2 gives. 🔥 **Its absence costs this matrix nothing, and that is measured rather
 than argued** — the run that produced these figures had `prospector` in the catalog and out of
-the field, and **every cell not involving `warden` came back byte-identical to the six-rung run
-before it** (§11).
+the field, and **every cell among the older seven rungs came back byte-identical to the run
+before it** (§11) — P43 repeating P31's reproduction exactly.
 
 **The row's win rate less the column's, in points, game by game:**
 
-| | `random` | `simple` | `greedy` | `cautious` | `counting` | `outs` | `warden` |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| **`random`** | · | -39.8 ± 0.3 \* | -39.8 ± 0.3 \* | -39.8 ± 0.3 \* | -39.8 ± 0.3 \* | -39.8 ± 0.3 \* | -39.6 ± 0.4 \* |
-| **`simple`** | +39.8 ± 0.3 \* | · | -7.4 ± 0.8 \* | -8.1 ± 0.8 \* | -8.0 ± 0.8 \* | -10.8 ± 0.8 \* | -2.8 ± 0.8 \* |
-| **`greedy`** | +39.8 ± 0.3 \* | +7.4 ± 0.8 \* | · | +0.0 ± 0.8 | +0.6 ± 0.8 | **-2.7 ± 0.8 \*** | **+4.5 ± 0.8 \*** |
-| **`cautious`** | +39.8 ± 0.3 \* | +8.1 ± 0.8 \* | -0.0 ± 0.8 | · | +0.1 ± 0.8 | **-2.9 ± 0.8 \*** | **+4.7 ± 0.8 \*** |
-| **`counting`** | +39.8 ± 0.3 \* | +8.0 ± 0.8 \* | -0.6 ± 0.8 | -0.1 ± 0.8 | · | **-2.9 ± 0.8 \*** | **+5.0 ± 0.8 \*** |
-| **`outs`** | +39.8 ± 0.3 \* | +10.8 ± 0.8 \* | **+2.7 ± 0.8 \*** | **+2.9 ± 0.8 \*** | **+2.9 ± 0.8 \*** | · | **+7.3 ± 0.8 \*** |
-| **`warden`** | +39.6 ± 0.4 \* | +2.8 ± 0.8 \* | **-4.5 ± 0.8 \*** | **-4.7 ± 0.8 \*** | **-5.0 ± 0.8 \*** | **-7.3 ± 0.8 \*** | · |
+| | `random` | `simple` | `greedy` | `cautious` | `counting` | `outs` | `warden` | `opportunist` |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| **`random`** | · | -39.8 ± 0.3 \* | -39.8 ± 0.3 \* | -39.8 ± 0.3 \* | -39.8 ± 0.3 \* | -39.8 ± 0.3 \* | -39.6 ± 0.4 \* | -39.8 ± 0.3 \* |
+| **`simple`** | +39.8 ± 0.3 \* | · | -7.4 ± 0.8 \* | -8.1 ± 0.8 \* | -8.0 ± 0.8 \* | -10.8 ± 0.8 \* | -2.8 ± 0.8 \* | -10.1 ± 0.8 \* |
+| **`greedy`** | +39.8 ± 0.3 \* | +7.4 ± 0.8 \* | · | +0.0 ± 0.8 | +0.6 ± 0.8 | **-2.7 ± 0.8 \*** | **+4.5 ± 0.8 \*** | **-2.0 ± 0.8 \*** |
+| **`cautious`** | +39.8 ± 0.3 \* | +8.1 ± 0.8 \* | -0.0 ± 0.8 | · | +0.1 ± 0.8 | **-2.9 ± 0.8 \*** | **+4.7 ± 0.8 \*** | **-2.2 ± 0.8 \*** |
+| **`counting`** | +39.8 ± 0.3 \* | +8.0 ± 0.8 \* | -0.6 ± 0.8 | -0.1 ± 0.8 | · | **-2.9 ± 0.8 \*** | **+5.0 ± 0.8 \*** | **-2.1 ± 0.8 \*** |
+| **`outs`** | +39.8 ± 0.3 \* | +10.8 ± 0.8 \* | **+2.7 ± 0.8 \*** | **+2.9 ± 0.8 \*** | **+2.9 ± 0.8 \*** | · | **+7.3 ± 0.8 \*** | **-0.1 ± 0.8** |
+| **`warden`** | +39.6 ± 0.4 \* | +2.8 ± 0.8 \* | **-4.5 ± 0.8 \*** | **-4.7 ± 0.8 \*** | **-5.0 ± 0.8 \*** | **-7.3 ± 0.8 \*** | · | **-6.2 ± 0.8 \*** |
+| **`opportunist`** | +39.8 ± 0.3 \* | +10.1 ± 0.8 \* | **+2.0 ± 0.8 \*** | **+2.2 ± 0.8 \*** | **+2.1 ± 0.8 \*** | **+0.1 ± 0.8** | **+6.2 ± 0.8 \*** | · |
 
-\* survives Holm at α = 0.05 over the family of twenty-one.
+\* survives Holm at α = 0.05 over the family of twenty-eight.
 
 | # | strategy | mean margin over the field | free-for-all win % | beat / lost / undecided |
 |---|---|---:|---:|---:|
-| 1 | `outs` | +11.1 | 27.5 ± 0.7 | 6 / 0 / 0 |
-| 2 | `cautious` | +8.3 | 24.8 ± 0.7 | 3 / 1 / 2 |
-| 3 | `greedy` | +8.3 | 24.9 ± 0.7 | 3 / 1 / 2 |
-| 4 | `counting` | +8.2 | 25.5 ± 0.7 | 3 / 1 / 2 |
-| 5 | `warden` | +3.5 | 20.2 ± 0.7 | 2 / 4 / 0 |
-| 6 | `simple` | +0.5 | 16.8 ± 0.6 | 1 / 5 / 0 |
-| 7 | `random` | -39.8 | 0.1 ± 0.1 | 0 / 6 / 0 |
+| 1 | `outs` | +9.5 | 27.4 ± 0.6 | 6 / 0 / 1 |
+| 2 | `opportunist` | +8.9 | 25.5 ± 0.6 | 6 / 0 / 1 |
+| 3 | `greedy` | +6.8 | 23.9 ± 0.5 | 3 / 2 / 2 |
+| 4 | `cautious` | +6.8 | 23.6 ± 0.5 | 3 / 2 / 2 |
+| 5 | `counting` | +6.7 | 24.1 ± 0.5 | 3 / 2 / 2 |
+| 6 | `warden` | +2.1 | 19.1 ± 0.5 | 2 / 5 / 0 |
+| 7 | `simple` | -1.0 | 16.3 ± 0.5 | 1 / 6 / 0 |
+| 8 | `random` | -39.8 | 0.1 ± 0.0 | 0 / 7 / 0 |
+
+🔥 **`opportunist` is P43's answer to the question `warden` left open, and the answer is a null
+published on purpose: `+0.1 ± 0.8` against `outs`, inside the interval.** It is `outs`' take
+exactly — a card is taken because it improves the hand, never for the lock — plus `warden`'s
+hold: a rank an ordinary take has closed against the seat above stays closed (the two escapes
+§5.1 gives itself and no more). **The lock arrives at zero price, and at zero price it is worth
+nothing this apparatus can see.** ⚠️ **The same run settles where `warden`'s loss lives**: it
+plays the identical hold and gives up `−6.2 ± 0.8` to `opportunist` — so the whole of the harm
+is the *paid take*, the draws spent buying locks, and none of it is the holding. **Denial did
+not fail because holding a rank costs something; it failed because `warden` paid a draw for a
+thing measured here to be worth about nothing.** The prediction — null to small positive —
+was written down first (`BUILD-PLAN.md` §5 P43), and the null is the finding: the free locks an
+ordinary `outs` game arms net out to nothing, so a successor that *pays* anything for a lock is
+betting its bought locks are better-targeted than the incidental ones measured here at zero —
+a much narrower claim than the one `warden` was built on, and nothing yet suggests it is true.
 
 🔥 **`warden` is the largest negative result this programme has produced, and it lands in the
 middle of the ladder.** It plays `RULES.md` §5.1 *offensively* — it will take a card it does not
-want in order to close that rank against the seat that threw it — and it is **−9.3 ± 1.0 against
-`outs`, the rung it is one change from**, and **about six points behind each of `greedy`,
-`cautious` and `counting`**. It beats only `simple` and `random`. **Every one of those six margins
-survives the correction over a family of twenty-one.** ⚠️ **The packet predicted a null** and
-wrote the prediction down first (`BUILD-PLAN.md` §5 P31); this is not a null, it is the biggest
-separated loss in the document. **§13 is where the *why* is**, and the why is measured rather than
-guessed.
+want in order to close that rank against the seat that threw it — and it is **−7.3 ± 0.8 against
+`outs`, the rung it is one change from**, **−6.2 ± 0.8 against `opportunist`, which plays its own
+hold without its paid take**, and **four and a half to five points behind each of `greedy`,
+`cautious` and `counting`**. It beats only `simple` and `random`. **Every one of those seven
+margins survives the correction over a family of twenty-eight.** ⚠️ **The packet predicted a
+null** and wrote the prediction down first (`BUILD-PLAN.md` §5 P31); this is not a null, it is the
+biggest separated loss in the document. **§13 is where the *why* is**, and the why is measured
+rather than guessed — and since P43, priced: the hold is worth nothing and the paid take is worth
+about minus six points.
 
 ⚠️ **Nothing in this table is comparable with a run from before 2026-08-21** — P25–P28 changed
 what winning a round means, what a money card pays, which cards may be thrown and who may stop a
 claim. The numbers below are the game as `RULES.md` rev 24 describes it, and the previous run's
 figures are quoted here only where a comparison is the finding.
 
-🔥 **`outs` is the first rung that beats `greedy`, and it beats everything: 5 / 0 / 0.** Where two
+🔥 **`outs` is the first rung that beats `greedy`, and it still tops the field: 6 / 0 / 1 — six
+separations and one dead heat, and the dead heat is its own zero-price twin.** Where two
 discards leave the hand equally melded it keeps the thirteen that **more of the values still out
-there would improve** — `+3.0 ± 1.0` over `greedy`, `+3.0 ± 1.0` over `cautious`, `+3.3 ± 1.0`
-over `counting`, all three surviving the correction over a family of twenty-one. It is the only
-figure in this document that separates two *thinking* rungs.
+there would improve** — `+2.7 ± 0.8` over `greedy`, `+2.9 ± 0.8` over `cautious`, `+2.9 ± 0.8`
+over `counting`, all three surviving the correction over a family of twenty-eight. Until P43 it
+was the only rung that separated from the `greedy` trio upward; `opportunist` now does too
+(`+2.0` to `+2.2 ± 0.8`), by being `outs` with a hold measured at nothing.
 
 🔥 **And it is the one margin the new win condition did not touch — which is P29's wrong
 prediction, and worth more than the two right ones.** `BUILD-PLAN.md` §5 P29 predicted `outs`
@@ -263,38 +286,46 @@ this resolution and §4 says so.**
 
 | comparison | margin | p | Holm threshold | raw | corrected |
 |---|---:|---:|---:|---|---|
-| `random` vs `cautious` | -39.8 ± 0.3 | < 1e-300 | 0.00238 | separated | **survives** |
-| `random` vs `counting` | -39.8 ± 0.3 | < 1e-300 | 0.00250 | separated | **survives** |
-| `random` vs `greedy` | -39.8 ± 0.3 | < 1e-300 | 0.00263 | separated | **survives** |
-| `random` vs `outs` | -39.8 ± 0.3 | < 1e-300 | 0.00278 | separated | **survives** |
-| `random` vs `simple` | -39.8 ± 0.3 | < 1e-300 | 0.00294 | separated | **survives** |
-| `random` vs `warden` | -39.6 ± 0.4 | < 1e-300 | 0.00313 | separated | **survives** |
-| `simple` vs `outs` | **-10.8 ± 0.8** | 4.8e-160 | 0.00333 | separated | **survives** |
-| `simple` vs `cautious` | **-8.1 ± 0.8** | 8.1e-87 | 0.00357 | separated | **survives** |
-| `simple` vs `counting` | **-8.0 ± 0.8** | 1.0e-84 | 0.00385 | separated | **survives** |
-| `simple` vs `greedy` | **-7.4 ± 0.8** | 1.6e-73 | 0.00417 | separated | **survives** |
-| `outs` vs `warden` | **+7.3 ± 0.8** | 3.4e-71 | 0.00455 | separated | **survives** |
-| `counting` vs `warden` | **+5.0 ± 0.8** | 1.8e-34 | 0.00500 | separated | **survives** |
-| `cautious` vs `warden` | **+4.7 ± 0.8** | 1.4e-30 | 0.00556 | separated | **survives** |
-| `greedy` vs `warden` | **+4.5 ± 0.8** | 1.3e-27 | 0.00625 | separated | **survives** |
-| `cautious` vs `outs` | **-2.9 ± 0.8** | 2.0e-12 | 0.00714 | separated | **survives** |
-| `counting` vs `outs` | **-2.9 ± 0.8** | 2.5e-12 | 0.00833 | separated | **survives** |
-| `simple` vs `warden` | **-2.8 ± 0.8** | 5.6e-12 | 0.01000 | separated | **survives** |
-| `greedy` vs `outs` | **-2.7 ± 0.8** | 1.1e-10 | 0.01250 | separated | **survives** |
-| `greedy` vs `counting` | **+0.6 ± 0.8** | 1.4e-01 | 0.01667 | inside | does not survive |
-| `cautious` vs `counting` | **+0.1 ± 0.8** | 8.1e-01 | 0.02500 | inside | does not survive |
+| `random` vs `simple` | -39.8 ± 0.3 | < 1e-300 | 0.00179 | separated | **survives** |
+| `random` vs `greedy` | -39.8 ± 0.3 | < 1e-300 | 0.00185 | separated | **survives** |
+| `random` vs `cautious` | -39.8 ± 0.3 | < 1e-300 | 0.00192 | separated | **survives** |
+| `random` vs `counting` | -39.8 ± 0.3 | < 1e-300 | 0.00200 | separated | **survives** |
+| `random` vs `outs` | -39.8 ± 0.3 | < 1e-300 | 0.00208 | separated | **survives** |
+| `random` vs `warden` | -39.6 ± 0.4 | < 1e-300 | 0.00217 | separated | **survives** |
+| `random` vs `opportunist` | -39.8 ± 0.3 | < 1e-300 | 0.00227 | separated | **survives** |
+| `simple` vs `outs` | **-10.8 ± 0.8** | 4.8e-160 | 0.00238 | separated | **survives** |
+| `simple` vs `opportunist` | **-10.1 ± 0.8** | 1.6e-137 | 0.00250 | separated | **survives** |
+| `simple` vs `cautious` | **-8.1 ± 0.8** | 8.1e-87 | 0.00263 | separated | **survives** |
+| `simple` vs `counting` | **-8.0 ± 0.8** | 1.0e-84 | 0.00278 | separated | **survives** |
+| `simple` vs `greedy` | **-7.4 ± 0.8** | 1.6e-73 | 0.00294 | separated | **survives** |
+| `outs` vs `warden` | **+7.3 ± 0.8** | 3.4e-71 | 0.00313 | separated | **survives** |
+| `warden` vs `opportunist` | **-6.2 ± 0.8** | 3.1e-51 | 0.00333 | separated | **survives** |
+| `counting` vs `warden` | **+5.0 ± 0.8** | 1.8e-34 | 0.00357 | separated | **survives** |
+| `cautious` vs `warden` | **+4.7 ± 0.8** | 1.4e-30 | 0.00385 | separated | **survives** |
+| `greedy` vs `warden` | **+4.5 ± 0.8** | 1.3e-27 | 0.00417 | separated | **survives** |
+| `cautious` vs `outs` | **-2.9 ± 0.8** | 2.0e-12 | 0.00455 | separated | **survives** |
+| `counting` vs `outs` | **-2.9 ± 0.8** | 2.5e-12 | 0.00500 | separated | **survives** |
+| `simple` vs `warden` | **-2.8 ± 0.8** | 5.6e-12 | 0.00556 | separated | **survives** |
+| `greedy` vs `outs` | **-2.7 ± 0.8** | 1.1e-10 | 0.00625 | separated | **survives** |
+| `cautious` vs `opportunist` | **-2.2 ± 0.8** | 2.1e-07 | 0.00714 | separated | **survives** |
+| `counting` vs `opportunist` | **-2.1 ± 0.8** | 6.8e-07 | 0.00833 | separated | **survives** |
+| `greedy` vs `opportunist` | **-2.0 ± 0.8** | 1.6e-06 | 0.01000 | separated | **survives** |
+| `greedy` vs `counting` | **+0.6 ± 0.8** | 1.4e-01 | 0.01250 | inside | does not survive |
+| `cautious` vs `counting` | **+0.1 ± 0.8** | 8.1e-01 | 0.01667 | inside | does not survive |
+| `outs` vs `opportunist` | **-0.1 ± 0.8** | 8.8e-01 | 0.02500 | inside | does not survive |
 | `greedy` vs `cautious` | **+0.0 ± 0.8** | 9.4e-01 | 0.05000 | inside | does not survive |
 
 ⚠️ **The `p` and `threshold` columns are recomputed here from the mean and standard error the CSV
 carries**, by the two-sided normal test and the Holm ladder the harness uses; **the `corrected`
-column is the CSV's own verdict**, and the two agree on all twenty-one rows.
+column is the CSV's own verdict**, and the two agree on all twenty-eight rows.
 
-🔥 **Adding a losing rung made every surviving verdict harder to reach and changed none of them.**
-The family went from fifteen comparisons to twenty-one, so the strictest threshold tightened from
-0.00333 to 0.00238 and **every row's threshold moved**; the three margins that did not survive
-before still do not, and the twelve that did still do. ⚠️ **That is the cost §2 warns about paid in
-the direction nobody minds** — `warden`'s six cells are real comparisons rather than duplicates, so
-unlike `prospector`'s they buy something for what they charge.
+🔥 **Adding a rung made every surviving verdict harder to reach and changed none of them, for the
+second time running.** The family went from twenty-one comparisons to twenty-eight, so the
+strictest threshold tightened from 0.00238 to 0.00179 and **every row's threshold moved**; the
+margins that did not survive before still do not — joined by the new null itself — and the
+eighteen that did still do. ⚠️ **That is the cost §2 warns about, paid knowingly** (`BUILD-PLAN.md`
+§5 P43 stated it in advance): `opportunist`'s seven cells hold six real separations and one
+null that is the packet's whole finding, so they buy something for what they charge.
 
 ⚠️ **Nothing was demoted here, and that is not an argument for dropping the correction.** The
 same run puts `greedy` 0.6 points ahead of `cautious` in the free-for-all and 0.1 points ahead of
@@ -310,20 +341,22 @@ than stored.
 
 ## 4. Everybody at one table
 
-The fully crossed table — every assignment of the field across **five** seats. Seven rungs is
-`7⁵ = 16,807` seatings, so 8,000 games rounds up to **16,807** — ✅ **one full pass, nothing
-subsampled** (P32 costed the crossing before choosing it) — and a given strategy is at the table
-in **9,031** of them.
+The fully crossed table — every assignment of the field across **five** seats. Eight rungs is
+`8⁵ = 32,768` seatings, so 8,000 games rounds up to **32,768** — ✅ **one full pass, nothing
+subsampled**, and exactly `SeatingPlan.MaximumAssignments`: **the ninth win-rate rung will not
+fit under the cap, and whichever packet adds one has to decide what gives** (see P45's note in
+`BUILD-PLAN.md`). A given strategy is at the table in **15,961** of them.
 
 | strategy | win rate |
 |---|---:|
-| `outs` | 27.5 ± 0.7 |
-| `counting` | 25.5 ± 0.7 |
-| `greedy` | 24.9 ± 0.7 |
-| `cautious` | 24.8 ± 0.7 |
-| `warden` | 20.2 ± 0.7 |
-| `simple` | 16.8 ± 0.6 |
-| `random` | 0.1 ± 0.1 |
+| `outs` | 27.4 ± 0.6 |
+| `opportunist` | 25.5 ± 0.6 |
+| `counting` | 24.1 ± 0.5 |
+| `greedy` | 23.9 ± 0.5 |
+| `cautious` | 23.6 ± 0.5 |
+| `warden` | 19.1 ± 0.5 |
+| `simple` | 16.3 ± 0.5 |
+| `random` | 0.1 ± 0.0 |
 
 ⚠️ **Every figure here moved when P21 added a rung, and none of that was a change in play.** Six
 strategies crossed over four seats is a different field from five, so each is at the table less
@@ -333,10 +366,10 @@ column is smaller and **none of that is play either**. **This is the column to d
 added; §3's margins are the column that survives it.**
 
 🔥 **P20's run of `greedy` / `counting` / `cautious` in a five-rung field had them 32.8 / 33.5 /
-34.3; P23's six-rung run had them 31.5 / 31.2 / 30.1; P29's had them 30.7 / 30.6 / 30.1; this one
-has them 30.6 / 30.0 / 30.8.** **Four orderings of three players, and their head-to-head margins
-have never left an interval of one point.** ⚠️ **A column that has now re-ranked the same three
-rungs three times is not a ranking.**
+34.3; P23's six-rung run had them 31.5 / 31.2 / 30.1; P29's had them 30.7 / 30.6 / 30.1; P43's
+eight-rung field has them 23.9 / 24.1 / 23.6.** **Five orderings of three players, and their
+head-to-head margins have never left an interval of one point.** ⚠️ **A column that has now
+re-ranked the same three rungs four times is not a ranking.**
 
 🔥 **P31 is the cleanest demonstration of that this document has, because nothing about those
 three rungs changed.** `warden` was added to the field and to nothing else; every head-to-head
@@ -344,9 +377,14 @@ cell among the older rungs came back **byte-identical** (§11), and this column 
 **A crossed field's win rate is a statement about the field, and §3's matrix is the statement
 about the players.**
 
-⚠️ **`warden` at 25.6 is the one figure here that is not noise.** It is five points below the
-three middle rungs and 2.6 above `simple`, which is where §3's matrix puts it too — a rung far
-enough from its neighbours that both columns agree.
+⚠️ **`warden` at 19.1 is the one low figure here that is not noise.** It is four and a half to
+five points below the three middle rungs and 2.8 above `simple`, which is where §3's matrix puts
+it too — a rung far enough from its neighbours that both columns agree. ⚠️ **And P43 hands this
+column a fresh caution**: `opportunist` sits two points below `outs` here while their
+head-to-head cell is a dead heat. Whether that is the column being a statement about the field
+again, or the hold genuinely costing something only a mixed table charges for, is exactly the
+kind of question §3's matrix answers and this column cannot — P48's composition-stratified
+margins are the instrument that could split it.
 
 ⚠️ **This answers a different question from §3 and the two are not interchangeable.** A
 free-for-all win rate depends on *who else is in the field*; a head-to-head margin weights every
@@ -393,52 +431,55 @@ unless they are not really playing.*
 of one strategy differ in *nothing*, so any gap between them is the apparatus — a seat that opens
 first, a seating that is not balanced, an estimator that counts seats as trials.
 
-| | win rate | seats sat in |
-|---|---:|---|
-| `warden` | 25.4 ± 0.5 | 4004 / 4004 / 4004 / 4004 |
-| `warden#mirror` | 24.6 ± 0.5 | 4004 / 4004 / 4004 / 4004 |
-| **margin** | **+0.9 ± 1.0** | inside the interval |
+| | win rate |
+|---|---:|
+| `opportunist` | 19.7 ± 0.4 |
+| `opportunist#mirror` | 20.3 ± 0.4 |
+| **margin** | **−0.6, inside the interval — the file's verdict is `holds`** |
 
-A fair four-seat table gives each 25.0%. ✅ **It holds, and `sim suite` exits non-zero if it ever
+A fair five-seat table gives each 20.0%. ✅ **It holds, and `sim suite` exits non-zero if it ever
 stops holding.**
 
 ⚠️ **The subject changes with the field, and P31 is where that stopped being tidy.** P17 ran this
-on `cautious`, P20 on `counting`, P23 and P29 on `outs` — the cell is played by the *last* rung the
-catalog names, which for six rungs running was also the strongest. `warden` and `prospector` both
-hang off `outs`, so the ladder became a tree and **the null cell changed hands to `warden` without
-anybody choosing it**. 🔥 **It is left that way deliberately.** The cell's whole claim is that
-*any* strategy against a copy of itself wins 1/n — a statement about the apparatus and not about
-the rung — so a null test that depended on who played it would itself be the finding. **It held on
-`outs` at +0.5 ± 1.0 and holds on `warden` at +0.9 ± 1.0**, which is a small piece of evidence for
-the harness rather than against it.
+on `cautious`, P20 on `counting`, P23 and P29 on `outs`, P31–P42 on `warden` — the cell is played
+by the *last* rung the catalog's ladder names, which for six rungs running was also the
+strongest. The ladder became a tree at P31 and **the null cell has now changed hands twice
+without anybody choosing it** — to `warden` when that branch appeared, to `opportunist` when P43
+extended it. 🔥 **It is left that way deliberately.** The cell's whole claim is that *any*
+strategy against a copy of itself wins 1/n — a statement about the apparatus and not about the
+rung — so a null test that depended on who played it would itself be the finding. **It held on
+`outs`, held on `warden`, and holds on `opportunist` at −0.6 with the fair 20% inside every
+interval**, which is a small piece of evidence for the harness rather than against it.
 
-🔥 **And the two rungs it has run on most recently are the two that could have broken it.** `outs`
-carries a **cache across deals**, and `warden` carries a **memory of every card it has been
-shown** — both exactly the kind of state that could make a game depend on the order the harness
-happened to schedule it in. Neither does: the cache is keyed on card *values* rather than on a
-round's shoe, and the memory is wiped by the deal. **This is the run that says so at scale rather
-than in a unit test.**
+🔥 **And the rungs it has run on most recently are the ones that could have broken it.** `outs`
+and `opportunist` carry a **cache across deals**, and `warden` carries a **memory of every card
+it has been shown** — exactly the kind of state that could make a game depend on the order the
+harness happened to schedule it in. None does: the cache is keyed on card *values* rather than
+on a round's shoe, and the memory is wiped by the deal. **This is the run that says so at scale
+rather than in a unit test.**
 
 **What pairing is worth, and which way it points.** The per-game difference against the
 add-the-variances formula, on identical data:
 
 | scope | comparison | paired SE ÷ independent |
 |---|---|---:|
+| within-cell | `outs` vs `opportunist` | **1.4142** |
 | within-cell | `cautious` vs `counting` | **1.4142** |
 | within-cell | `greedy` vs `cautious` | **1.4142** |
 | within-cell | `greedy` vs `counting` | **1.4142** |
-| within-cell | `cautious` vs `outs` | **1.4138** |
-| within-cell | `greedy` vs `outs` | **1.4138** |
-| within-cell | `counting` vs `outs` | **1.4137** |
+| within-cell | `opportunist` vs the `greedy` trio | **1.4139** |
+| within-cell | the `greedy` trio vs `outs` | **1.4136–1.4137** |
+| within-cell | `warden` vs `opportunist` | **1.4113** |
 | within-cell | `outs` vs `warden` | **1.4101** |
 | within-cell | `simple` vs any thinking rung | 1.405–1.414 |
-| within-cell | `random` vs anything | 1.009–1.011 |
+| within-cell | `random` vs anything | 1.013–1.027 |
 | across-cells | `greedy`: vs `cautious` less vs `counting` | **0.56** |
 | across-cells | `simple`: vs `greedy` less vs `cautious` | **0.61** |
-| across-cells | `cautious`: vs `counting` less vs `outs` | 0.75 |
-| across-cells | `random`: vs `simple` less vs `greedy` | 0.78 |
-| across-cells | `counting`: vs `outs` less vs `warden` | 0.81 |
-| across-cells | `outs`: vs `random` less vs `simple` | 0.92 |
+| across-cells | `cautious`: vs `counting` less vs `outs` | 0.73 |
+| across-cells | `random`: vs `simple` less vs `greedy` | 0.74 |
+| across-cells | `outs`: vs `warden` less vs `opportunist` | 0.79 |
+| across-cells | `counting`: vs `outs` less vs `warden` | 0.80 |
+| across-cells | `opportunist`: vs `random` less vs `simple` | 0.93 |
 | across-cells | `warden`: vs `random` less vs `simple` | 0.98 |
 
 ⚠️ **The ratio is what `measurements.csv` carries**, so it is what is quoted; the two standard
@@ -505,20 +546,28 @@ the ones that returned nothing live.** The complete map, so nothing has to be hu
 | `cautious` | **nothing** — `+0.1 ± 1.0` against `greedy` | below |
 | `counting` | **nothing**, and pointing the wrong way — `+0.4 ± 1.0` to `greedy` | below |
 | `outs` | **`+3.0 ± 1.0` over `greedy`**, and it beats the whole field | §3 |
-| `warden` | **worse than nothing** — `−9.3 ± 1.0` against `outs` and about six points behind three more rungs | below, and §13 |
+| `warden` | **worse than nothing** — `−7.3 ± 0.8` against `outs` and four and a half to five points behind three more rungs | below, and §13 |
+| `opportunist` | **nothing** — `+0.1 ± 0.8` against `outs`, the lock at zero price, and the null is the answer to `warden`'s open question | below, and §3 |
 | `prospector` | **nothing at the stakes this is played for**, `+14.6 ± 4.5` a round at $5/$40 | §10 |
 | `outs/refuse` vs `outs/allow` | **nothing** — `+0.4 ± 1.0` for refusing a claim | §12 |
 
-⚠️ **Three of the five research rungs are entries below, one is in §3, one is in §10 and P29 added
+⚠️ **Four of the six research rungs are entries below, one is in §3, one is in §10 and P29 added
 a null in §12 that is not a rung at all.** Read `cautious` and `counting` below with this in mind:
 **both of them put their new idea underneath `CoverScore.Potential` and `outs` put its above it**,
 and that is the only structural difference between them.
 
 🔥 **`warden` is a fourth kind of answer and the first rung that actively lost.** `cautious` and
-`counting` measured *nothing*; `warden` measured **six to nine points of harm**, separated under a
-correction over twenty-one comparisons. ⚠️ **A rung that loses that clearly is a stronger result
+`counting` measured *nothing*; `warden` measured **four and a half to seven points of harm**,
+separated under the correction. ⚠️ **A rung that loses that clearly is a stronger result
 than a null**, because a null leaves open whether the instrument could see the effect and this does
 not.
+
+🔥 **And `opportunist` is a sixth kind: a null that closes a question rather than leaving one
+open.** An ordinary null says *the instrument saw nothing*; this one was built as an instrument —
+`warden`'s hold with `warden`'s paid take removed — so its `+0.1 ± 0.8` against `outs` *decides*
+that the harm all lived in the price, and that denial free of charge is worth nothing this
+apparatus can see. **The prediction (null to small positive) was written before the run and the
+null was the more informative half.**
 
 🔥 **And `prospector` is a fifth kind of answer, which is why it has a section rather than a
 bullet.** It did not lose. It asked a question the other four never asked — *what is the side bet
@@ -555,18 +604,36 @@ is now the reason nobody has to wonder.
   not improve an answer to a question already shown not to matter.**
   ✅ It costs nothing to run — **77 rounds/s against `cautious`'s 76 and `greedy`'s 88** (P12's
   baseline: 51 serial, 85–92 parallel), so the memory is free and only the idea is not.
-- **`warden` — play the feeding ban at somebody.** Worth **`−9.3 ± 1.0` points against `outs`**,
-  and `−6.2 / −6.1 / −6.2` against `greedy`, `cautious` and `counting`; it beats `simple` by
-  `+2.5 ± 1.0` and nothing else. **All six margins survive Holm over a family of twenty-one**
-  (8,010 games a cell). 🔥 **It is the only rung whose failure has a measured mechanism rather than
-  an argued one**, and §13 is that measurement: the rule it plays **bites on 9.4% of every turn in
-  the field**, so the idea was not starved of opportunity. ⚠️ **What it got wrong is the price, and
-  the price is in the wrong currency.** It refuses to buy a lock that would cost it a *melded
-  card* — and then pays for every lock it does buy with a *draw*, which is the only thing that
-  improves a hand and which nothing in the rule prices. Measured, an all-`warden` table runs
-  **31.9 turns a round against `outs`' 24.1** (`sim bench`): about a third of its draws have become
-  locks. **A successor rung has to price the draw**, which `prospector` already does in money
-  (`MoneyOdds.PerBlindDraw`) and nothing yet does in cards.
+- **`warden` — play the feeding ban at somebody.** Worth **`−7.3 ± 0.8` points against `outs`**,
+  `−6.2 ± 0.8` against `opportunist`, and `−4.5 / −4.7 / −5.0` against `greedy`, `cautious` and
+  `counting`; it beats `simple` by `+2.8 ± 0.8` and nothing else. **All seven margins survive
+  Holm over a family of twenty-eight** (8,010 games a cell). 🔥 **It is the only rung whose
+  failure has a measured mechanism rather than an argued one**, and §13 is that measurement: the
+  rule it plays bites hard in a crossed field, so the idea was not starved of opportunity.
+  ⚠️ **What it got wrong is the price, and the price is in the wrong currency.** It refuses to
+  buy a lock that would cost it a *melded card* — and then pays for every lock it does buy with
+  a *draw*, which is the only thing that improves a hand and which nothing in the rule prices.
+  Measured, an all-`warden` table runs **31.9 turns a round against `outs`' 24.1** (`sim bench`):
+  about a third of its draws have become locks. **P31 closed saying a successor rung has to
+  price the draw; P43 priced the other half instead and settled it** — see the next entry.
+
+- **`opportunist` — the feeding ban at zero price.** Worth **`+0.1 ± 0.8` points against
+  `outs`** — inside the interval, the null the packet predicted — while beating `warden` by
+  `+6.2 ± 0.8` and the `greedy` trio by `+2.0` to `+2.2`, all separated over the family of
+  twenty-eight. 🔥 **It is `warden`'s hold without `warden`'s paid take**: it takes only cards
+  that improve its hand, exactly as `outs` does, and then declines to release whatever ranks
+  those ordinary takes closed (§5.1, exception 1 — a release is permanent). The hold is
+  literally shared code (`HeldLocks`), so the 2×2 is complete: `outs` neither buys nor holds,
+  `warden` buys and holds, `opportunist` holds without buying. ⚠️ **What the null decides**:
+  `warden`'s loss lives entirely in the paid take, and holding a lock — the flexibility given
+  up, the free denial delivered — nets to nothing this apparatus can see. **Denial did not fail
+  for want of a better price; at the best possible price, zero, it still buys nothing.** The
+  one door left open is targeting: the locks this rung holds are incidental, wherever an
+  improving take happened to land, and a rung that *chose* its locks would be making a claim
+  this null does not test — but it would be paying for them again, against a measured zero.
+  ⚠️ **Its free-for-all reading is two points behind `outs` while the head-to-head is a dead
+  heat** (§4) — either the column being a statement about the field again, or a cost only a
+  mixed table charges; P48's composition-stratified margins could split those.
 
 - **The upstream-neighbour hypothesis** — *the main factor is the skill of the player before
   you.* **False between thinking players** (`−1.0 ± 2.1`), true only across the gulf to someone
@@ -837,9 +904,10 @@ and measured by nothing is the failure this whole section exists to make impossi
 ## 11. Regenerating this document's data
 
 ```bash
-# the standing set — writes docs/strategy/measurements.csv. ⚠️ About three and a half hours
-# (12,445 s at P32; 13,257 s at P35, which was sharing the machine with a test run — the extra
-# 800 s is contention, not work, and P35 added one cheap row per cell). It is five seats by default since P32 — `--seats 4` regenerates
+# the standing set — writes docs/strategy/measurements.csv. ⚠️ About four and a quarter hours
+# (12,445 s at P32 with seven ladder rungs; ~15,200 s at P43 with eight — the eighth rung adds
+# seven head-to-head cells and doubles the free-for-all crossing to 8⁵ = 32,768, exactly the
+# SeatingPlan.MaximumAssignments cap). It is five seats by default since P32 — `--seats 4` regenerates
 # the four-handed set, which is kept frozen at docs/strategy/measurements-4-handed.csv.
 # No --strategies: the field is a filter of BotCatalog, and between the ladder tournament
 # and the money sweep every rung there is gets measured exactly once.
@@ -957,7 +1025,7 @@ never published.**
 
 | field | turns a round | games abandoned at the turn cap |
 |---|--:|--:|
-| the ladder, all seven rungs crossed | 29.9 | **0.006%** — 1 game of 16,807 |
+| the ladder, all eight rungs crossed | 29.4 | **0.003%** — 1 game of 32,768 |
 | the difficulty dial, all four levels crossed | 31.9 | 0 of 8,192 |
 | `outs/refuse` against `outs/allow` | 25.5 | 0 of 8,010 |
 
@@ -1076,19 +1144,23 @@ nothing in the engine may call, ranking the *whole hand* beside the ranking of t
 
 | field | discards chosen | the lock was **live** | of those, the lock **bit** | share of every turn |
 |---|---:|---:|---:|---:|
-| the ladder, all seven rungs crossed | 502,812 | **26.1%** | **29.8%** | **7.8%** |
+| the ladder, all eight rungs crossed | 962,809 | **25.2%** | **30.1%** | **7.6%** |
 | the difficulty dial, all four levels crossed | 260,975 | **23.0%** | **21.9%** | **5.0%** |
 
 *Live* means the ban had removed at least one held card from the choice. *Bit* means the card the
 seat would have thrown over its whole hand is not the card it threw over its legal set.
 
 🔥 **So the rule does a great deal.** At a table of thinking players **§5.1 takes the card a seat
-meant to play about once every eleven turns**, and a lock is live on nearly a third of all turns.
+meant to play about once every thirteen turns**, and a lock is live on a quarter of all turns.
 ⚠️ **This is the reading that makes `warden`'s loss attributable.** `BUILD-PLAN.md` §5 P31 wrote
 down, before the run, that a null would most likely mean *the lock is cheap to escape* rather than
 *denial is worthless* — and named this variable as the way to tell those apart. **The escape hatch
-is closed: the locks bite, and the rung still loses six to nine points.** The idea is not starved
-of opportunity; it is simply a bad trade at the price `warden` pays for it.
+is closed: the locks bite, and the rung still loses.** The idea is not starved
+of opportunity; it is simply a bad trade at the price `warden` pays for it. 🔥 **And since P43 the
+two halves of that sentence are separately priced**: `opportunist` arms locks off ordinary takes
+only, holds them with the same code, and measures level with `outs` (§3, §8) — so the bites this
+section counts are delivered free of charge or not worth delivering, and the paid take is where
+all of `warden`'s loss lives.
 
 ⚠️ **Two things this does not say.** It does not say the bites *cost* the bitten seat anything —
 the second-choice discard may be nearly as good, and this counts occurrences rather than damage.
@@ -1122,7 +1194,7 @@ question about something else. At the standard $5 stakes it takes a four-handed 
 
 | field | rounds settled | **won jokerless** |
 |---|---:|---:|
-| the ladder, all seven rungs crossed | 16,806 | **12.1%** |
+| the ladder, all eight rungs crossed | 32,767 | **12.1%** |
 | the difficulty dial, all four levels crossed | 8,192 | **12.0%** |
 | the two-arm claim-permission cell | 8,010 | **12.4%** |
 
@@ -1195,13 +1267,13 @@ number.
 
 | field | rounds settled | **won on the deal** | rounds |
 |---|---:|---:|---:|
-| the ladder, all seven rungs crossed | 16,806 | **0.042%** | 7 |
+| the ladder, all eight rungs crossed | 32,767 | **0.043%** | 14 |
 | the difficulty dial, all four levels crossed | 8,192 | **0.012%** | 1 |
 | the two-arm claim-permission cell | 8,010 | **0.012%** | 1 |
 
-**Nine rounds in 33,008 — about one deal in 3,700.** ⚠️ **Read the interval off the counts, not
-off the rate**: nine events is nine events, and the difference between the three cells here is
-noise.
+**Sixteen rounds in 48,969 — about one deal in 3,100.** ⚠️ **Read the interval off the counts, not
+off the rate**: sixteen events is sixteen events, and the difference between the three cells here
+is noise.
 
 🔥 **The finding is what it did *not* move, and it was worth the whole re-measurement to know.**
 This packet changed when a round can end, so a round that used to run turns now ends at turn 0 —

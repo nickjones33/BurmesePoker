@@ -6996,7 +6996,8 @@ documents — so the documents are written once, against final numbers.
 
 ⚠️ **Wall clock is the planning constraint, as it was for P31/P32.** `StandingAnswerTests`
 demands a published row for every catalog rung, so **each rung packet pays a full suite
-regeneration (~3.5 h)** — the discipline stands (a rung cannot be added without being measured),
+regeneration (~3.5 h at seven ladder rungs; ~4¼ h measured at P43 with eight)** — the
+discipline stands (a rung cannot be added without being measured),
 and it is why the rungs are sequenced rather than batched. Every added matrix rung also grows the
 Holm family (seven rungs is 21 comparisons; eight is 28), making every existing verdict harder to
 reach — §1 rule 5's cost, paid knowingly.
@@ -7017,7 +7018,23 @@ cannot choose it (`/model` before the session); these are recommendations with r
 
 ---
 
-### P43 — `opportunist`: the feeding ban at zero price ☐
+### P43 — `opportunist`: the feeding ban at zero price ☑ **done 2026-08-23, on Fable 5 — the predicted null arrived and closes the question**
+
+✅ **Outcome.** `+0.1 ± 0.8` against `outs` — inside the interval — while beating `warden` by
+`+6.2 ± 0.8` and the `greedy` trio by `+2.0`–`+2.2`, all separated over the new family of
+twenty-eight; every old cell reproduced byte-identically (only the `command` column moved) and
+no old verdict fell. **So `warden`'s whole loss lives in the paid take, and denial at zero
+price nets nothing this apparatus can see.** The hold is shared code (`HeldLocks`), the rung is
+`Strength: 3`, `Hardest` stays `outs`, and the null cell changed hands to `opportunist`
+(`Ladder[^1]`, the second hand-change, left that way deliberately — `STRATEGY.md` §6).
+⚠️ **Family cost, stated**: the strictest Holm threshold tightened 0.00238 → 0.00179 and no
+surviving verdict fell. ⚠️ **Two things it hands forward**: the suite is **~15,200 s (~4¼ h)**
+now, and the free-for-all crossing is **8⁵ = 32,768 — exactly `SeatingPlan.MaximumAssignments`,
+so the ninth win-rate rung does not fit under the cap** (see P45/P46). Its §4 free-for-all
+reading sits two points behind `outs` while the head-to-head is a dead heat — flagged for
+P48's composition-stratified margins.
+
+*The packet as planned:*
 
 **Goal.** One change off `outs`: lock a rank against the seat that fed you **only when the take
 is free** — the card already improves your own hand, so the lock costs nothing. 🔥 **This closes
@@ -7083,6 +7100,17 @@ it with `sim bench` before writing it** (P21's 10× budget), and expect the shor
 the packet's real cost. **Prediction: small positive or null** — but it changes the question
 asked above the tie-break, which is the only class of idea that has ever measured (§7's lesson).
 
+⚠️ **P43 left this packet a second decision it cannot skip: the crossing cap.** With eight
+win-rate rungs the free-for-all is `8⁵ = 32,768` seatings — **exactly**
+`SeatingPlan.MaximumAssignments` — so a ninth makes `9⁵ = 59,049` and `SeatingPlan.Balanced`
+**throws**. The honest options, in rough order of preference: raise the cap and pay the wall
+clock (a full pass of 9⁵ at `outs`-family prices is hours in that one cell alone — measure with
+`sim bench` before choosing); retire a rung from the *crossed cell only* with the omission
+`log`-stated (`random` contributes least — but §4's continuity breaks); or subsample with the
+cap's own "whole number of passes" rule honoured (against §11's *no silent caps* unless stated
+in the row's question). **Whichever way, the decision is a stated one in the packet, not a
+default** — and it applies to P46 too if both rungs land.
+
 **Build.** The rung, win-rate ranked, `Strength: 3` unless it wins its place; bench before and
 after; suite regeneration; prediction first.
 
@@ -7105,6 +7133,9 @@ under a match-unit harness** — §7.5 pays streaks, and a racer wins the rounds
 — so if `streaker` (P47) is ever unblocked, this rung is the one to revisit.
 
 **Build.** The rung; the fire-rate counter; suite regeneration; prediction first.
+⚠️ **It inherits P45's crossing-cap decision** (P43 filled the free-for-all to exactly
+`SeatingPlan.MaximumAssignments`; see P45) — whichever packet lands its win-rate rung first
+pays it, and the second follows the precedent.
 **Acceptance.** A published margin, the fire rate beside it, green.
 
 ---

@@ -202,6 +202,11 @@ public static class BotCatalog
             Strength: 3,
             _ => new WardenBotAgent()),
         new(
+            "opportunist",
+            "Never takes a card just to block you — but once a take has closed a rank against the player before it, it will not give that rank back.",
+            Strength: 3,
+            _ => new OpportunistBotAgent()),
+        new(
             "prospector",
             "Plays like the last one, and would sooner dig in the deck than take what you threw — the deck's cards pay it and yours never will.",
             Strength: 3,

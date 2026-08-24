@@ -245,81 +245,16 @@ public sealed class WardenBotAgent : IPlayerAgent, IRanksDiscards
         return false;
     }
 
-    /// <summary>The legal discards this seat is actually willing to make.</summary>
-    private static IReadOnlyList<Card> Candidates(TurnContext context) =>
-        Willing(context, context.LegalDiscards);
-
     /// <summary>
-    /// That choice less the ranks this seat has locked — <b>never empty</b>, and with the two
-    /// escapes RULES.md §5.1 gives itself.
+    /// The legal discards this seat is actually willing to make — the hold half of the rung,
+    /// shared with <see cref="OpportunistBotAgent"/> (see <see cref="HeldLocks"/>).
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// 🔥 <b>Deliberately the same shape as <see cref="FeedingBan.LegalDiscards"/></b>, because it
-    /// is the same rule read from the other side. A lock this seat armed is worth nothing if this
-    /// seat then releases it, so it holds those ranks — but it holds them the way the rule binds
-    /// the seat above, not more strictly than that.
-    /// </para>
-    /// <para>
-    /// ⚠️ <b>Going out first.</b> Where the throw would be the declaring discard the lock yields:
-    /// the round ends on it and the protected player never gets a turn in which to take the card
-    /// (§5.1, exception 2). <see cref="PartialCover.CoversAtLeast"/> gates the expensive question,
-    /// exactly as the ban's own enforcement does.
-    /// </para>
-    /// <para>
-    /// ⚠️ <b>And a floor.</b> Where holding every locked rank would leave nothing to throw, this
-    /// seat throws anyway — the discard is mandatory (§7.1) and a self-imposed restraint least of
-    /// all outranks it.
-    /// </para>
-    /// </remarks>
-    private static IReadOnlyList<Card> Willing(TurnContext context, IReadOnlyList<Card> candidates)
-    {
-        var locked = context.ClosedByYou;
+    private static IReadOnlyList<Card> Candidates(TurnContext context) =>
+        HeldLocks.Candidates(context);
 
-        if (locked.IsEmpty)
-        {
-            return candidates;
-        }
-
-        var willing = new List<Card>(candidates.Count);
-        var held = 0;
-
-        foreach (var card in candidates)
-        {
-            if (locked.Closes(card))
-            {
-                held++;
-            }
-            else
-            {
-                willing.Add(card);
-            }
-        }
-
-        if (held == 0)
-        {
-            return candidates;
-        }
-
-        if (context.Hand.Count == RoundEngine.HandSize + 1
-            && PartialCover.CoversAtLeast(context.Hand, RoundEngine.HandSize))
-        {
-            var withTheWinningDiscard = new List<Card>(candidates.Count);
-
-            foreach (var card in candidates)
-            {
-                if (!locked.Closes(card)
-                    || HandEvaluator.IsWinning(CoverScore.Without(context.Hand, card), context.Rules))
-                {
-                    withTheWinningDiscard.Add(card);
-                }
-            }
-
-            willing = withTheWinningDiscard;
-        }
-
-        return willing.Count > 0 ? willing : candidates;
-    }
+    /// <inheritdoc cref="HeldLocks.Willing"/>
+    private static IReadOnlyList<Card> Willing(TurnContext context, IReadOnlyList<Card> candidates) =>
+        HeldLocks.Willing(context, candidates);
 
     /// <summary>More outs is better, and the ranking takes the lowest key first.</summary>
     private long Outs(IReadOnlyList<Card> kept, int covered) => -LiveOuts.Count(kept, covered, _cache);

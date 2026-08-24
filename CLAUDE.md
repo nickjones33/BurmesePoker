@@ -13,14 +13,33 @@ over ad-hoc changes.
 
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
-recommendation per packet). In order: **P43 `opportunist`** (the feeding ban at zero price),
-**P44 `purist`** (the clean bonus, money-ranked), **P45 `angler`** (a draw priced in cards),
+recommendation per packet). ✅ **P43 `opportunist` is done (below); P44 `purist` is next.**
+In order: ✅ **P43 `opportunist`** (the feeding ban at zero price — a predicted null, question
+closed), **P44 `purist`** (the clean bonus, money-ranked), **P45 `angler`** (a draw priced in
+cards — ⚠️ **now also owns the crossing-cap decision**: P43 filled the free-for-all to exactly
+`SeatingPlan.MaximumAssignments`, so a ninth win-rate rung makes `SeatingPlan.Balanced` throw),
 **P46 `sprinter`** (the endgame as a race), **P47** the blocked-rungs ledger (`jackpot`,
 `streaker` — each needs an instrument that does not exist), **P48** the full verification and
 measurement-hardening run, **P49** `docs/SIMULATIONS.md` (the measurement programme taught,
 digit-free), **P50** the documentation cleanup (⚠️ **`STRATEGY.md`'s prose is a run behind its
-own tables in seven verified places** — the day's statistical review, F10). ⚠️ **Rungs, then
-the run, then the documents** — every rung packet pays a ~3.5 h suite regeneration.
+own tables** — the day's statistical review, F10; P43 corrected the four in its own blast
+radius, so re-verify the list). ⚠️ **Rungs, then the run, then the documents** — every rung
+packet pays a suite regeneration, **~4¼ h measured at P43**.
+
+**What P43 built, and the three things a cold session needs from it.**
+🔥 **(1) `Domain/Agents/OpportunistBotAgent.cs` is the missing 2×2 corner** — `outs`' take
+exactly (never a card it does not want), `warden`'s hold on whatever ranks ordinary takes
+close, the hold extracted to **`Domain/Agents/HeldLocks.cs`** with `warden` delegating (one
+home, P28's rule). Catalog after `warden`, `Strength: 3`, win-rate ranked, **`Hardest` stays
+`outs`** — no dial, ε or front-end change.
+🔥 **(2) The answer is the predicted null and it decides the question**: `+0.1 ± 0.8` against
+`outs`, while beating `warden` `+6.2 ± 0.8` and the `greedy` trio `+2.0`–`+2.2` (all separated,
+family 28). **`warden`'s whole loss is the paid take; denial at price zero buys nothing.**
+`STRATEGY.md` §3/§8/§13; the free-for-all-vs-head-to-head tension is flagged for P48's
+composition-stratified margins.
+✅ **(3) Every shared CSV cell came back byte-identical** (only the `command` column moved), no
+old verdict fell under the 21 → 28 tightening, and the null cell changed hands to
+`opportunist` (`Ladder[^1]`, second time, deliberate). Tree green at **862**, from 850.
 
 **Before that, `P42` shipped 2026-08-23 on Fable 5, the day it was written up: playtest
 readiness.** `RULES.md` stays **rev 31** (no rule changed), the tree is green at **850**, and
@@ -913,7 +932,8 @@ dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy
 dotnet run -c Release --project BurmesePoker.Sim -- money --games 8000               # should you draw blind for the money? a sweep over four stakes ratios
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs/refuse,outs/allow --pairs adjacent --games 8000   # is refusing a claim worth anything? (P29: no)
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs,warden --pairs adjacent --games 8000              # is playing the feeding ban offensively worth anything? (P31: no, −9.3 ± 1.0)
-dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv — five seats by default since P32 (⚠️ ~3h27, 12,445 s measured)
+dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs,opportunist --pairs adjacent --games 8000         # is holding the locks your ordinary takes arm worth anything? (P43: no, +0.1 ± 0.8)
+dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv — five seats by default since P32 (⚠️ ~4¼h, ~15,200 s measured at P43)
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seats 4     # …the four-handed game, kept frozen at docs/strategy/measurements-4-handed.csv
 
 python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0   # capture a scripted match with a person in it (0 expert, 1 hard, 2 medium, 3 easy; --script human is the default)
