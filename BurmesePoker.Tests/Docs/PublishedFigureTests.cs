@@ -171,9 +171,9 @@ public class PublishedFigureTests
         (string Anchor, string Id, double Scale)[] margins =
         [
             (@"worth \*\*\+([\d.]+) ± ([\d.]+) points\*\*", "ladder.head-to-head.greedy-over-outs", -100),
-            (@"measures\s+\*\*-\$([\d.]+) ± \$([\d.]+) a round\*\*", "money.net-per-round.5-1", -1),
-            (@"banks \*\*\+\$([\d.]+) ± \$([\d.]+)\*\* a round", "money.net-per-round.5-20", 1),
-            (@"\$5/\$40 \*\*\+\$([\d.]+) ± \$([\d.]+)\*\*", "money.net-per-round.5-40", 1),
+            (@"measures\s+\*\*-\$([\d.]+) ± \$([\d.]+) a round\*\*", "money.net-per-round.5-1.prospector", -1),
+            (@"banks \*\*\+\$([\d.]+) ± \$([\d.]+)\*\* a round", "money.net-per-round.5-20.prospector", 1),
+            (@"\$5/\$40 \*\*\+\$([\d.]+) ± \$([\d.]+)\*\*", "money.net-per-round.5-40.prospector", 1),
             (@"\*\*-([\d.]+) ± ([\d.]+) points\*\* of win rate", "claim.permission.refuse-over-allow", -100),
             (@"\*\*-\$([\d.]+) ± \$([\d.]+)\*\* a round between", "claim.permission.money.refuse-over-allow", -1),
             (@"\*\*\+([\d.]+) ± ([\d.]+) points\*\* \*behind\*", "ladder.head-to-head.greedy-over-counting", 100),
@@ -197,7 +197,7 @@ public class PublishedFigureTests
 
         Assert.True(slower.Success, "docs/HOW-TO-PLAY-WELL.md no longer says what chasing the money costs.");
 
-        Compare(slower.Groups[1].Value, Published["money.win-rate.5-20"].Mean * -100, "what chasing costs in rounds");
+        Compare(slower.Groups[1].Value, Published["money.win-rate.5-20.prospector"].Mean * -100, "what chasing costs in rounds");
 
         var jokerless = Regex.Match(guide, @"\*\*([\d.]+)%\*\* of rounds, purely by");
 
@@ -211,12 +211,12 @@ public class PublishedFigureTests
         {
             ("ladder.head-to-head.greedy-over-cautious", "inside the interval"),
             ("ladder.head-to-head.greedy-over-counting", "inside the interval"),
-            ("money.net-per-round.5-1", "inside the interval"),
+            ("money.net-per-round.5-1.prospector", "inside the interval"),
             ("claim.permission.refuse-over-allow", "inside the interval"),
             ("ladder.head-to-head.greedy-over-outs", "separated (Holm)"),
             ("ladder.head-to-head.outs-over-warden", "separated (Holm)"),
-            ("money.net-per-round.5-20", "separated (Holm)"),
-            ("money.net-per-round.5-40", "separated (Holm)"),
+            ("money.net-per-round.5-20.prospector", "separated (Holm)"),
+            ("money.net-per-round.5-40.prospector", "separated (Holm)"),
         })
         {
             Assert.True(

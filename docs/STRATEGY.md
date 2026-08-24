@@ -11,8 +11,9 @@ transcribed, out of `docs/strategy/measurements.csv`, which is written by one co
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seed 20260819
 ```
 
-Last generated **2026-08-23** (BUILD-PLAN P43). **143 measurements in about 15,200 s — four and a
-quarter hours** — the ladder ranked, the difficulty dial calibrated beside it, the money sweep, P12's
+Last generated **2026-08-24** (BUILD-PLAN P44). **175 measurements in about 18,600 s — five and a
+quarter hours** — the ladder ranked, the difficulty dial calibrated beside it, one money sweep per
+money-ranked rung (§10 and §14), P12's
 headline at **two** table sizes under both seatings, how long a round runs, what the claim's
 permission is worth, how often the feeding ban bites and how often the clean bonus is collected.
 
@@ -114,7 +115,7 @@ this project at least once.**
 
 ## 2. The ladder
 
-Nine rungs, each differing from the rung it hangs off in **exactly one decision** — which is what
+Ten rungs, each differing from the rung it hangs off in **exactly one decision** — which is what
 makes a difference in results attribute to that decision and to nothing else.
 
 | rung | what it decides differently | packet |
@@ -128,12 +129,14 @@ makes a difference in results attribute to that decision and to nothing else.
 | `warden` | `outs`, plus the only decision that is about somebody else's hand: take a card you do not want when it **closes that rank** against the seat that threw it (RULES.md §5.1), and then hold the rank rather than throwing it back. | P31 |
 | `opportunist` | `warden`, **minus** the paid take: it takes only what improves its hand, exactly as `outs` does, and keeps `warden`'s hold on whatever ranks those ordinary takes happen to close. The lock at zero price. | P43 |
 | `prospector` | `outs`, plus the only decision money may touch: take a card from anywhere but the deck only when it is worth more than the ownership a blind draw confers. ⚠️ **At $5/$1 that is never, so it is `outs` — see §10.** | P22 |
+| `purist` | `outs`, plus a preference the scoring created: where the melded cards tie, shed a joker — a jokerless declaration pays **×3** here (RULES.md §7.3) and every other rung forfeits it by construction. ⚠️ **It changed about one round in eight thousand — see §14.** | P44 |
 
 🔥 **It stopped being a ladder at P31 and became a tree, and that is worth saying plainly.** Every
 rung up to `outs` is one change from the rung above it in this list, so *"in the order it was
 built"* and *"weakest first"* were the same order for six rungs running. `warden` and `prospector`
-are **both** one change from `outs` — two branches, not a seventh and eighth step — and P43 grew
-the `warden` branch a step (`opportunist` is `warden` minus its paid take), so the last
+are **both** one change from `outs` — two branches, not a seventh and eighth step — P43 grew
+the `warden` branch a step (`opportunist` is `warden` minus its paid take), and P44 hung a third
+branch off `outs` (`purist`), so the last
 entry in the list is simply the branch written last. ⚠️ **A test had been asserting the
 coincidence as a law** (`StandingAnswerTests` demanded that the ladder's last entry *be* the
 strongest rung); it now asserts what was actually meant, which is that the strongest rung is one
@@ -152,8 +155,11 @@ spaced and one of them plays a *different and worse idea* rather than the right 
 ⚠️ **And `prospector` is the first rung whose strength is not a property of the rung alone.** Its
 one decision reads the **stakes**, which are fixed at the start of a game and not by the rules
 (RULES.md §4.3), so *how well it plays* is a different question at $5/$1 and at $5/$40 — §10 is
-where it is measured, and it is the only rung in this document ranked on money rather than on win
-rate.
+where it is measured. ⚠️ **P44 added a second rung ranked on money, for the other reason there
+is**: `purist` reads no stakes at all — it plays the same cards at every ratio, and the run
+proves it — but its whole idea is trading rounds for a multiplied prize, so a win-rate ranking
+would misjudge it *by construction* rather than by noise. It is measured in §14, beside the
+bonus it plays for.
 
 🔥 **Which is why it is not in §3's matrix, and that is a decision rather than an omission.** A
 head-to-head cell is played at one stakes; at the stakes this game is played for, `prospector`
@@ -164,7 +170,10 @@ verdict in it harder to reach** — a duplicate is not a free row. So each rung 
 `Domain/Agents/BotCatalog.cs`, which instrument settles it (`BotRung.Ranked`), the ladder
 tournament measures one set and the money sweep the other, and **a test asserts that between them
 they are the whole catalog** — so a rung can no more fall out of the programme than it can fail
-to appear in it.
+to appear in it. ⚠️ **The same declaration keeps `purist` out of §3** — and, incidentally, keeps
+the free-for-all crossing at `8⁵ = 32,768`, which P43 filled to exactly
+`SeatingPlan.MaximumAssignments`; the crossing-cap decision still falls to the next *win-rate*
+rung (P45/P46).
 
 ---
 
@@ -548,10 +557,11 @@ the ones that returned nothing live.** The complete map, so nothing has to be hu
 | `outs` | **`+3.0 ± 1.0` over `greedy`**, and it beats the whole field | §3 |
 | `warden` | **worse than nothing** — `−7.3 ± 0.8` against `outs` and four and a half to five points behind three more rungs | below, and §13 |
 | `opportunist` | **nothing** — `+0.1 ± 0.8` against `outs`, the lock at zero price, and the null is the answer to `warden`'s open question | below, and §3 |
-| `prospector` | **nothing at the stakes this is played for**, `+14.6 ± 4.5` a round at $5/$40 | §10 |
+| `prospector` | **nothing at the stakes this is played for**, `+14.2 ± 4.8` a round at $5/$40 | §10 |
+| `purist` | **nothing** — the clean bonus at zero price changed about one round in eight thousand; the accidental floor already collects every free clean win | below, and §14 |
 | `outs/refuse` vs `outs/allow` | **nothing** — `+0.4 ± 1.0` for refusing a claim | §12 |
 
-⚠️ **Four of the six research rungs are entries below, one is in §3, one is in §10 and P29 added
+⚠️ **Five of the seven research rungs are entries below, one is in §3, one is in §10 and P29 added
 a null in §12 that is not a rung at all.** Read `cautious` and `counting` below with this in mind:
 **both of them put their new idea underneath `CoverScore.Potential` and `outs` put its above it**,
 and that is the only structural difference between them.
@@ -567,12 +577,16 @@ open.** An ordinary null says *the instrument saw nothing*; this one was built a
 `warden`'s hold with `warden`'s paid take removed — so its `+0.1 ± 0.8` against `outs` *decides*
 that the harm all lived in the price, and that denial free of charge is worth nothing this
 apparatus can see. **The prediction (null to small positive) was written before the run and the
-null was the more informative half.**
+null was the more informative half.** ⚠️ **P44's `purist` is a second null of exactly this
+kind, one packet later** (§14): the highest-expected-value unbuilt rung in the project came
+back deciding that the free half of the clean bonus was *already being collected* — two
+zero-price rungs in two packets, and both nulls say `outs`' plain cover maximisation is already
+standing at the free-lunch frontier.
 
 🔥 **And `prospector` is a fifth kind of answer, which is why it has a section rather than a
 bullet.** It did not lose. It asked a question the other four never asked — *what is the side bet
 worth?* — and got back **a function of the stakes** rather than a number: literally the same
-player as `outs` at $5/$1, `+7.34 ± 3.29` a round at $5/$40. ⚠️ **A rung can fail to be
+player as `outs` at $5/$1, `+14.2 ± 4.8` a round at $5/$40. ⚠️ **A rung can fail to be
 interesting at the stakes the game is played for and still be the right thing to have built**,
 because the null is what settles the question. RULES.md §4.4 had a `DERIVED` remark saying the
 money layer is *"not meant to be played for, only settled"*; §10 is that remark measured, and it
@@ -634,6 +648,19 @@ is now the reason nobody has to wonder.
   ⚠️ **Its free-for-all reading is two points behind `outs` while the head-to-head is a dead
   heat** (§4) — either the column being a statement about the field again, or a cost only a
   mixed table charges; P48's composition-stratified margins could split those.
+
+- **`purist` — play for the clean bonus, at zero price.** Its whole preference — where the
+  melded cards tie, shed a joker — changed **about one round in eight thousand**: its clean-win
+  share reads `12.8% ± 1.0` against `12.8%` for a control that is literally `outs` under
+  another name, and its money margin sits within **half a cent a round** of the same control
+  cell (§14 has the instrumented reading). 🔥 **The null's mechanism was visible in hindsight**:
+  whenever throwing the joker is the *unique* winning discard, `outs` already throws it —
+  thirteen melded beats everything before the joker's never-throw sentinel is consulted — so
+  the accidental floor already contains every clean win that costs nothing, and what a
+  zero-price preference can add is only the exact ties, of which the game supplies almost none.
+  ⚠️ **So §14's arithmetic stands and its distance cannot be crossed free**: every clean win
+  still on the table costs melded cards — win probability, the currency `warden` proved
+  ruinous to spend on a side idea.
 
 - **The upstream-neighbour hypothesis** — *the main factor is the skill of the player before
   you.* **False between thinking players** (`−1.0 ± 2.1`), true only across the gulf to someone
@@ -797,6 +824,13 @@ is part of the standing set, so one `sim suite` regenerates the whole document's
 its four cells changed verdict or doubled, because `prospector` is the one rung whose decision
 reads the money and P26 changed what the money is.
 
+⚠️ **The instrument generalised at P44 and the row ids moved with it.** There are two
+money-ranked rungs now, so `sim suite` runs **one sweep per challenger** — this section is
+`prospector`'s; `purist`'s lives in §14, beside the bonus it plays for — and **the challenger is
+part of every `money.*` id**: `money.net-per-round.5-1` became `money.net-per-round.5-1.prospector`,
+values unmoved, exactly as the seat count joined the headline ids at P32. An unqualified
+`money.*` id in anything below this line is a pre-P44 spelling of the same row.
+
 **The question.** Ownership of a money card is permanent and never transfers (RULES.md §4.4), so
 holding one is worth nothing and throwing one away costs nothing — which is why every rung's
 *discard* is money-blind and why a test says so. What that rule does **not** settle is where a
@@ -904,10 +938,11 @@ and measured by nothing is the failure this whole section exists to make impossi
 ## 11. Regenerating this document's data
 
 ```bash
-# the standing set — writes docs/strategy/measurements.csv. ⚠️ About four and a quarter hours
+# the standing set — writes docs/strategy/measurements.csv. ⚠️ About five and a quarter hours
 # (12,445 s at P32 with seven ladder rungs; ~15,200 s at P43 with eight — the eighth rung adds
 # seven head-to-head cells and doubles the free-for-all crossing to 8⁵ = 32,768, exactly the
-# SeatingPlan.MaximumAssignments cap). It is five seats by default since P32 — `--seats 4` regenerates
+# SeatingPlan.MaximumAssignments cap; ~18,600 s at P44, whose second money sweep adds four
+# outs-priced cells). It is five seats by default since P32 — `--seats 4` regenerates
 # the four-handed set, which is kept frozen at docs/strategy/measurements-4-handed.csv.
 # No --strategies: the field is a filter of BotCatalog, and between the ladder tournament
 # and the money sweep every rung there is gets measured exactly once.
@@ -925,7 +960,8 @@ dotnet run -c Release --project BurmesePoker.Sim -- bench --rounds 200
 # the difficulty dial on its own — §9
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies easy,medium,hard,expert --pairs adjacent --games 8000 --seed 20260819
 
-# the money sweep on its own — §10
+# the money sweeps on their own — §10 (prospector) and §14 (purist). A bare `money` sweeps
+# every money-ranked rung in turn; --challenger names just one.
 dotnet run -c Release --project BurmesePoker.Sim -- money --games 8000 --seed 20260819 --csv docs/strategy/money.csv
 ```
 
@@ -1223,13 +1259,66 @@ $5/$40. **A prize that is sometimes doubled is a tax on selling rounds.** ⚠️
 measured interaction between the money layer and the scoring layer in this project**, and it
 arrived without either being changed for the other's sake.
 
-⚠️ **What this does not measure.** It does not say how often a hand *could* have been brought home
-jokerless — only how often one was. A rung that valued the bonus would trade cover count for
-cleanliness and the rate would move; **by how much is unmeasured and is the obvious next
-experiment.** 🔥 **And the arithmetic already says roughly what the prize for trying is worth**:
-at five seats the bonus pays **+$10 a head** against a whole round's flat prize of $5 a head — so a
-rung that could turn one round in eight into one in four would be collecting an extra half of a
-round's prize every round, which is far inside what this apparatus resolves (§7).
+⚠️ **What this section used to say it did not measure, P44 has now measured — the half of it
+that is free.** The paragraph that stood here called a rung that valued the bonus *"the obvious
+next experiment"*, and the arithmetic made it the highest-expected-value unbuilt rung in the
+project: at five seats the bonus pays **+$10 a head** against a whole round's flat prize of $5 a
+head, so a rung that turned one round in eight into one in four would collect an extra half of a
+round's prize every round — far inside what this apparatus resolves (§7). **The experiment ran
+on 2026-08-24 and the answer is below.** The arithmetic was sound; what it priced turned out not
+to be purchasable at zero.
+
+### What P44 measured: at zero price there is nothing left to buy
+
+**The rung.** `purist` is `outs` with one change: a *fewest-jokers-kept* preference between
+`outs`' two ranking keys, so it sheds a joker whenever that costs **no melded card** — paying
+any number of live outs, never a meld. The exchange rate is stated rather than tuned
+(`prospector`'s precedent), and it is lexicographic rather than a number: a numeric rate would
+need a win-probability estimate nothing here supplies. It is ranked on money (`BotRung.Ranked`),
+measured by its own money sweep against `outs`, 8,010 games a cell, its own Holm family of four.
+
+**The prediction, written before the run** (BUILD-PLAN P44): `+$0.5` to `+$1.5` a round at
+$5/$1, clean-win share up from the ~12% floor to 20–35%. ❌ **Both halves were wrong, and the
+wrong prediction is again worth the most** (P29's precedent).
+
+**The measurement, and the instrument that sharpens it.** At $5/$1 the sweep reads
+`−$0.23 ± 0.32` a round — inside the interval — but the paired design gives this cell an exact
+control: `prospector`'s $5/$1 cell is played from the same master seed over the same seatings,
+and at $5/$1 `prospector` **is** `outs` card for card (§10's identity), so that cell's
+`−$0.228 ± 0.32` is pure seat luck. **The difference between the two cells isolates `purist`'s
+real effect: about `−$0.005` a round and `−0.01` points of win rate — one round in eight
+thousand.** Its clean-win share (`money.clean-win-rate.5-1.purist`) reads **12.81% ± 1.04**
+against the identity control's **12.83%** and the field's 12.22% floor. 🔥 **The mechanism did
+not move at all.**
+
+**Why, and it was visible in hindsight.** Whenever throwing the joker is the *unique* winning
+discard, `outs` already throws it — thirteen melded beats everything before the joker's
+never-throw sentinel is ever consulted — **so the accidental floor already contains every clean
+win that costs nothing.** A zero-price preference can only add the exact ties (a clean and a
+dirty declaration available on the same turn) and the free mid-round sheds (a joker gluing
+nothing, at no cost in melds), and the game supplies almost none of either: a held joker almost
+always earns its place in the cover, which is exactly why every rung holds one over everything.
+
+**What the null decides, and what it leaves.** *"One round in eight is a floor"* stays true and
+stops being promising: **the floor is the whole of the free lunch.** Every clean win still on
+the table costs melded cards — win probability, the currency `warden` (§8) proved ruinous to
+spend on a side idea — so a *paying* clean-bonus rung is the remaining unknown, and after two
+zero-price nulls in two consecutive packets (P43, P44) it joins the anti-recommendation idiom:
+**a packet proposing one must first say what changed.** ⚠️ Two standing caveats: `purist`'s
+ceiling is bounded by §9 **#33**'s recorded default (a *locked* joker may leave only as the
+declaring discard), so if the expert session flips #33 this rung must be re-measured; and its
+verdict should be re-read under P48's composition-stratified margins like every head-to-head
+figure (review F1).
+
+**Two checks and one aside, from the same rows.** The rung reads no stakes and the run proves
+it — its take rate (24.81%, `outs`' own control value) and win margin are byte-identical at all
+four ratios, with only the side-bet noise widening. The higher-ratio cells (`−$1.1`, `−$2.0`,
+`−$3.8`, all inside their intervals) are that same seat-luck deficit rescaled by the money-card
+value, not a stakes effect. 🔥 **And the aside**: `prospector`'s own clean-win share collapses
+to **~5.6%** in the cells where its rule fires ($5/$20, $5/$40) — a blind-draw-heavy hand
+reaches the declaration holding more jokers, the first observed interaction between the draw
+decision and the clean bonus, and one more tax on chasing the side bet that §10's totals were
+already carrying.
 
 ✅ **P32 answered the paragraph that used to stand here, which said this had not reached five
 seats.** It has: everything above **is** five-handed now, and the four-handed figures it is

@@ -175,7 +175,13 @@ public class StandingAnswerTests
         var options = new SuiteOptions();
 
         Assert.Equal(BotCatalog.Hardest.Name, options.MoneyReference);
-        Assert.Equal(BotCatalog.StakesSensitive[^1].Name, options.MoneyChallenger);
+
+        // ⚠️ Every money-ranked rung, not the last one written (P44): a single challenger
+        // defaulting to StakesSensitive[^1] would have dropped prospector from the programme
+        // the day purist landed, in complete silence.
+        Assert.Equal(
+            BotCatalog.StakesSensitive.Select(rung => rung.Name),
+            options.MoneyChallengers);
         Assert.Equal(BotCatalog.Ladder.Select(rung => rung.Name), options.Strategies.Select(one => one.Name));
     }
 

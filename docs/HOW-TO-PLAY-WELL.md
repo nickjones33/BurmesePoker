@@ -8,9 +8,10 @@ not to bother with is the cheapest improvement there is.
 
 **One caveat, stated once.** Every figure here was measured between computer players, over
 thousands of rounds a question, at a five-handed table. Nothing has been measured against
-people. And the three scoring bonuses — a jokerless win, a win on the deal, a third win in a
-row — are known to **no** computer player, so their value to a player who chased them is
-**unpriced rather than small** (see *The bonuses nobody has priced*, below). The research
+people. Of the three scoring bonuses — a jokerless win, a win on the deal, a third win in a
+row — the last two are known to **no** computer player, so their value to a player who chased
+them is **unpriced rather than small**; the first has now been played for deliberately, and
+chasing it for free bought nothing (see *The bonuses*, below). The research
 itself — intervals, corrections, how the measuring is done — is `STRATEGY.md`; every number
 below comes from the same file that document is generated from,
 `docs/strategy/measurements.csv`.
@@ -111,18 +112,23 @@ place you would otherwise spend attention for nothing.
   are both actually playing. When the table asks to change seats, agree or refuse on comfort —
   the measurement has no opinion.
 
-## The bonuses nobody has priced
+## The bonuses, and what playing for them is worth
 
-Three settlement rules multiply what a win pays, and **no measured player knows any of them
-exist** — so everything above optimises win rate and none of it prices a bonus. This is the
-one part of the game where the honest answer is *unknown*, not *no*.
+Three settlement rules multiply what a win pays. Two remain unpriced — nothing measured knows
+they exist — and for those the honest answer is still *unknown*, not *no*. The third has now
+been measured, and the answer came back the way this game keeps answering.
 
 - **The jokerless win** pays triple at this table, and even players holding jokers over
   everything — the exact opposite of trying — collect it in **12.1%** of rounds, purely by
-  accident. That is a floor. Whether deliberately shedding a joker late, at some cost in
-  speed, collects it often enough to pay has never been measured — and the arithmetic of the
-  prize says a player who managed it even one round in four would be well ahead. If anything
-  on this page is worth experimenting with at a real table, it is this.
+  accident. **Playing for it deliberately has now been measured, and at no cost it buys
+  nothing at all**: a player who sheds a joker whenever that gives up no melded card wins the
+  same rounds, collects the bonus no more often, and changes about one round in eight
+  thousand. The reason is worth knowing at a real table — when throwing your joker is the
+  *only* way to go out, you already throw it, so the accidental rate above is already every
+  clean win that comes free. The wins still on the table all cost melds — that is, they cost
+  winning — and paying win-currency for a side prize is the one idea measurement has shown to
+  lose outright (the feeding-ban bullet above). Whether some *small, chosen* price could pay
+  has not been measured; nothing measured so far recommends it.
 - **The win on the deal** pays double, and it is luck: about one deal in thousands arrives
   already melded. There is no decision to make — if your dealt thirteen covers, declare.
 - **The third consecutive win** is paid entirely by the player above the winner. Whether a

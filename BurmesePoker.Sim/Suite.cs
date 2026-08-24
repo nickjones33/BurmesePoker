@@ -48,23 +48,29 @@ public sealed record SuiteOptions
     public IReadOnlyList<Stakes> Ratios { get; init; } = MoneySweep.DefaultRatios;
 
     /// <summary>
-    /// The rung whose take decision reads the side bet, and the rung it is one change from.
+    /// The rungs the money sweep settles — one sweep each — and the rung every sweep runs
+    /// against.
     /// </summary>
     /// <remarks>
     /// ⚠️ <b>Read off the catalog rather than typed</b> (BUILD-PLAN P23). Both were literals
     /// until P23, which is the same defect one layer up from the one P18 and P20 each removed: a
-    /// second stakes-reading rung would have been added to <see cref="BotCatalog"/> and measured
-    /// by nothing. The challenger is the stakes-sensitive rung; the reference is the strongest
-    /// rung there is.
-    /// ⚠️ <b>It read <c>Ladder[^1]</c> until P31 and now reads <see cref="BotCatalog.Hardest"/></b>
-    /// — the same rung, said properly. Adding <c>warden</c> put a second branch on <c>outs</c>, so
-    /// the ladder's last entry is the branch written last rather than the strongest thing in it,
-    /// and the old expression would have measured the side bet against a rung that had never been
-    /// ranked above anything.
+    /// second money-ranked rung would have been added to <see cref="BotCatalog"/> and measured
+    /// by nothing. The challengers are every rung that declares <see cref="RankedOn.Money"/>;
+    /// the reference is the strongest rung there is.
+    /// ⚠️ <b>It was one challenger until P44</b> — <c>purist</c> is the second, and a single
+    /// <c>MoneyChallenger</c> defaulting to <c>StakesSensitive[^1]</c> would have silently
+    /// swapped <c>prospector</c> out of the programme the day it landed, which is exactly the
+    /// failure <c>StandingAnswerTests</c> exists to make red.
+    /// ⚠️ <b>The reference read <c>Ladder[^1]</c> until P31 and now reads
+    /// <see cref="BotCatalog.Hardest"/></b> — the same rung, said properly. Adding <c>warden</c>
+    /// put a second branch on <c>outs</c>, so the ladder's last entry is the branch written last
+    /// rather than the strongest thing in it, and the old expression would have measured the
+    /// side bet against a rung that had never been ranked above anything.
     /// </remarks>
-    public string MoneyChallenger { get; init; } = BotCatalog.StakesSensitive[^1].Name;
+    public IReadOnlyList<string> MoneyChallengers { get; init; } =
+        [.. BotCatalog.StakesSensitive.Select(rung => rung.Name)];
 
-    /// <inheritdoc cref="MoneyChallenger"/>
+    /// <inheritdoc cref="MoneyChallengers"/>
     public string MoneyReference { get; init; } = BotCatalog.Hardest.Name;
 
     /// <summary>
@@ -138,7 +144,11 @@ public sealed record SuiteMeasurement(
 /// <param name="Measurements">Every published number.</param>
 /// <param name="Tournament">The ladder ranked — the research instrument.</param>
 /// <param name="Difficulty">The dial calibrated — the product (BUILD-PLAN P19).</param>
-/// <param name="Money">The side bet swept — the one axis that is not rummy (BUILD-PLAN P22).</param>
+/// <param name="Money">
+/// One sweep per money-ranked rung, in catalog order (BUILD-PLAN P22, P44): <c>prospector</c>'s
+/// asks about the side bet, <c>purist</c>'s about the clean bonus, and each is its own Holm
+/// family because each is its own experiment.
+/// </param>
 /// <param name="Claim">
 /// The claim's permission, refusing against allowing — the one decision in the engine that was
 /// taken rather than measured (BUILD-PLAN P28 item 5, P29).
@@ -149,7 +159,7 @@ public sealed record SuiteReport(
     IReadOnlyList<SuiteMeasurement> Measurements,
     TournamentReport Tournament,
     TournamentReport Difficulty,
-    MoneyReport Money,
+    IReadOnlyList<MoneyReport> Money,
     TournamentCell Claim,
     TimeSpan Elapsed)
 {
@@ -228,18 +238,21 @@ public static class Suite
 
         // ⚠️ The stakes are the independent variable here and are Stakes.Standard everywhere
         // else in this suite, which is why it is a third run rather than more cells in the
-        // first (BUILD-PLAN P22).
-        var money = MoneySweep.Run(new MoneySweepOptions
-        {
-            Challenger = StrategyCatalog.Resolve(options.MoneyChallenger),
-            Reference = StrategyCatalog.Resolve(options.MoneyReference),
-            Ratios = options.Ratios,
-            Seats = options.Seats,
-            GamesPerCell = options.GamesPerCell,
-            MasterSeed = options.MasterSeed,
-            TurnCap = options.TurnCap,
-            Parallel = options.Parallel
-        });
+        // first (BUILD-PLAN P22). One sweep per money-ranked rung since P44, each corrected as
+        // its own family, because each is its own experiment.
+        var money = options.MoneyChallengers
+            .Select(challenger => MoneySweep.Run(new MoneySweepOptions
+            {
+                Challenger = StrategyCatalog.Resolve(challenger),
+                Reference = StrategyCatalog.Resolve(options.MoneyReference),
+                Ratios = options.Ratios,
+                Seats = options.Seats,
+                GamesPerCell = options.GamesPerCell,
+                MasterSeed = options.MasterSeed,
+                TurnCap = options.TurnCap,
+                Parallel = options.Parallel
+            }))
+            .ToList();
 
         // 🔥 One cell, and no correction, because one comparison is its own family. Every rung
         // refuses whenever RULES.md §4.5 allows it, which P28 decided from the rule's own
@@ -423,61 +436,97 @@ public static class Suite
         var ratios = string.Join(
             ",", options.Ratios.Select(stakes => $"{stakes.RoundValue}:{stakes.MoneyCardValue}"));
 
-        var moneyCommand = string.Create(CultureInfo.InvariantCulture,
-            $"BurmesePoker.Sim -- money --challenger {options.MoneyChallenger} "
-            + $"--reference {options.MoneyReference} --ratios {ratios} --seats {options.Seats} "
-            + $"--games {options.GamesPerCell} --seed {options.MasterSeed}");
-
-        for (var index = 0; index < money.Cells.Count; index++)
+        // ⚠️ The challenger is part of every money id since P44: a second money-ranked rung made
+        // the unqualified `money.net-per-round.5-1` ambiguous, which is P32's headline lesson
+        // (the seat count joined that id) arriving at this family. The take-rate id had carried
+        // the name since P22 and is unchanged.
+        foreach (var sweep in money)
         {
-            var cell = money.Cells[index];
-            var verdict = money.Verdicts[index];
+            var challenger = sweep.Options.Challenger.Name;
+            var reference = sweep.Options.Reference.Name;
 
-            var reading = verdict.Survives ? "separated (Holm)" : verdict.Separated ? "raw only" : "inside the interval";
+            var moneyCommand = string.Create(CultureInfo.InvariantCulture,
+                $"BurmesePoker.Sim -- money --challenger {challenger} "
+                + $"--reference {reference} --ratios {ratios} --seats {options.Seats} "
+                + $"--games {options.GamesPerCell} --seed {options.MasterSeed}");
 
-            measurements.Add(new SuiteMeasurement(
-                $"money.net-per-round.{cell.Id}",
-                "Should you draw blind for the money? A blind draw confers ownership of a money "
-                + "card and a take never does (RULES.md §4.4). ⚠️ This is the verdict figure and "
-                + "it is money, not win rate.",
-                moneyCommand,
-                $"{money.Options.Challenger.Name} over {money.Options.Reference.Name} at {cell.Label}",
-                "net per round margin",
-                cell.NetMargin,
-                reading));
+            for (var index = 0; index < sweep.Cells.Count; index++)
+            {
+                var cell = sweep.Cells[index];
+                var verdict = sweep.Verdicts[index];
 
-            measurements.Add(new SuiteMeasurement(
-                $"money.win-rate.{cell.Id}",
-                "The same margin in win rate, reported beside the money because this is the "
-                + "first packet where the two can come apart (BUILD-PLAN P22 acceptance 2).",
-                moneyCommand,
-                $"{money.Options.Challenger.Name} over {money.Options.Reference.Name} at {cell.Label}",
-                "win rate margin",
-                cell.WinMargin,
-                cell.MoneyAndWinRateDisagree ? "points the other way to the money" : string.Empty));
+                var reading = verdict.Survives ? "separated (Holm)" : verdict.Separated ? "raw only" : "inside the interval";
 
-            measurements.Add(new SuiteMeasurement(
-                $"money.take-rate.{cell.Id}.{money.Options.Challenger.Name}",
-                "The mechanism. The rule can only act by refusing takes, so a cell in which this "
-                + "has not moved from the reference's is a cell in which nothing happened.",
-                moneyCommand,
-                $"{money.Options.Challenger.Name} at {cell.Label}",
-                "take rate",
-                cell.Player(money.Options.Challenger.Name).TakeRate,
-                string.Empty));
+                measurements.Add(new SuiteMeasurement(
+                    $"money.net-per-round.{cell.Id}.{challenger}",
+                    "Is what this rung trades rounds for worth more than the rounds? A "
+                    + "money-ranked rung is judged in dollars because win rate would misjudge it "
+                    + "by construction (RankedOn.Money). ⚠️ This is the verdict figure and it is "
+                    + "money, not win rate — and the challenger is part of the id since P44.",
+                    moneyCommand,
+                    $"{challenger} over {reference} at {cell.Label}",
+                    "net per round margin",
+                    cell.NetMargin,
+                    reading));
 
-            measurements.Add(new SuiteMeasurement(
-                $"money.side-margin.{cell.Id}",
-                "The money-card half of the net margin alone — where the mechanism has to show "
-                + "up if the rule is doing anything. ⚠️ Computed on every run since P22 and "
-                + "never published (review R13): it reached bytes only through money.csv, which "
-                + "sim suite does not regenerate, so §10's mechanism argument leaned on a file "
-                + "one command behind the others.",
-                moneyCommand,
-                $"{money.Options.Challenger.Name} over {money.Options.Reference.Name} at {cell.Label}",
-                "side bet margin",
-                cell.SideMargin,
-                string.Empty));
+                measurements.Add(new SuiteMeasurement(
+                    $"money.win-rate.{cell.Id}.{challenger}",
+                    "The same margin in win rate, reported beside the money because a "
+                    + "money-ranked rung is where the two can come apart (BUILD-PLAN P22 "
+                    + "acceptance 2).",
+                    moneyCommand,
+                    $"{challenger} over {reference} at {cell.Label}",
+                    "win rate margin",
+                    cell.WinMargin,
+                    cell.MoneyAndWinRateDisagree ? "points the other way to the money" : string.Empty));
+
+                measurements.Add(new SuiteMeasurement(
+                    $"money.take-rate.{cell.Id}.{challenger}",
+                    "prospector's mechanism: its rule can only act by refusing takes, so a cell "
+                    + "in which this has not moved from the reference's is a cell in which "
+                    + "nothing happened. Every other challenger's is a control.",
+                    moneyCommand,
+                    $"{challenger} at {cell.Label}",
+                    "take rate",
+                    cell.Player(challenger).TakeRate,
+                    string.Empty));
+
+                measurements.Add(new SuiteMeasurement(
+                    $"money.side-margin.{cell.Id}.{challenger}",
+                    "The money-card half of the net margin alone — where a rule about the draw "
+                    + "has to show up if it is doing anything. ⚠️ Computed on every run since "
+                    + "P22 and never published (review R13): it reached bytes only through "
+                    + "money.csv, which sim suite does not regenerate, so §10's mechanism "
+                    + "argument leaned on a file one command behind the others.",
+                    moneyCommand,
+                    $"{challenger} over {reference} at {cell.Label}",
+                    "side bet margin",
+                    cell.SideMargin,
+                    string.Empty));
+
+                measurements.Add(new SuiteMeasurement(
+                    $"money.clean-win-rate.{cell.Id}.{challenger}",
+                    "purist's mechanism (BUILD-PLAN P44): of the rounds the challenger itself "
+                    + "won, the share declared jokerless (RULES.md §7.3) — read it beside "
+                    + "docs/STRATEGY.md §14's accidental floor, which is what a rung that is "
+                    + "not trying collects.",
+                    moneyCommand,
+                    $"{challenger} at {cell.Label}",
+                    "clean win rate",
+                    cell.Player(challenger).CleanWinRate,
+                    string.Empty));
+
+                measurements.Add(new SuiteMeasurement(
+                    $"money.jokerless-rate.{cell.Id}.{challenger}",
+                    "Share of the cell's settled rounds won jokerless, whoever won them — the "
+                    + "same rate the tournaments publish per scope (bonus.jokerless-rate.*), so "
+                    + "a sweep's table can be read beside the ladder's floor (BUILD-PLAN P44).",
+                    moneyCommand,
+                    $"{challenger} vs {reference} field at {cell.Label}",
+                    "jokerless rate",
+                    new Measurement(cell.Rounds, cell.JokerlessRate, 0),
+                    string.Empty));
+            }
         }
 
         var claimCommand = string.Create(CultureInfo.InvariantCulture,

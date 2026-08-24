@@ -1,3 +1,4 @@
+using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Money;
 
 using BurmesePoker.Sim;
@@ -138,10 +139,18 @@ public class SuiteTests
 
         // ⚠️ And P22's rows, which are the only ones in the file not played at the standard
         // stakes: a published money figure is meaningless without the ratio it was played at,
-        // so the ratio is in the id rather than in the prose beside it.
-        Assert.Contains(ids, id => id == "money.net-per-round.5-1");
-        Assert.Contains(ids, id => id == "money.win-rate.5-40");
-        Assert.Contains(ids, id => id.StartsWith("money.take-rate.", StringComparison.Ordinal));
+        // so the ratio is in the id rather than in the prose beside it — and the challenger is
+        // too, since P44, because there is more than one (one sweep each, every rung ranked on
+        // money the subject of its own rows).
+        foreach (var challenger in BotCatalog.StakesSensitive)
+        {
+            Assert.Contains(ids, id => id == $"money.net-per-round.5-1.{challenger.Name}");
+            Assert.Contains(ids, id => id == $"money.win-rate.5-40.{challenger.Name}");
+            Assert.Contains(ids, id => id == $"money.clean-win-rate.5-1.{challenger.Name}");
+            Assert.Contains(ids, id => id == $"money.jokerless-rate.5-1.{challenger.Name}");
+            Assert.Contains(
+                ids, id => id.StartsWith($"money.take-rate.5-1.{challenger.Name}", StringComparison.Ordinal));
+        }
 
         var path = Path.Combine(Path.GetTempPath(), $"burmese-poker-{Guid.NewGuid():N}", "measurements.csv");
 

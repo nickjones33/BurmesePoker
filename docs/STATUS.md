@@ -10,11 +10,60 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-🔥 **`P43` shipped 2026-08-23 on Fable 5: `opportunist` — the feeding ban at zero price — and
-the answer is the null the packet predicted, which closes the question `warden` left open.**
-`RULES.md` stays rev 31 (no rule changed), the tree is green at **862**, and **`P44` `purist`
+🔥 **`P44` shipped 2026-08-24 on Fable 5: `purist` — the clean bonus played for at zero price —
+and the predicted positive came back a null whose mechanism was flat, which is the finding.**
+`RULES.md` stays rev 31 (no rule changed), the tree is green at **874**, and **`P45` `angler`
 is the next packet** (`BUILD-PLAN.md` §5 — rungs, then P48's verification run, then the
-documents; `P40` stands beside them, blocked on Nick's vetted Burmese text).
+documents; `P40` stands beside them, blocked on Nick's vetted Burmese text). ⚠️ **P45 owns the
+crossing-cap decision** — `purist` is money-ranked, so the free-for-all is still exactly at
+`SeatingPlan.MaximumAssignments` and the next *win-rate* rung still breaks it.
+
+**What P44 built, and the four things a cold session needs from it.**
+
+- 🔥 **(1) The rung is one lexicographic preference, and the exchange rate is stated rather
+  than tuned.** `Domain/Agents/PuristBotAgent.cs` is `outs` with a *fewest-jokers-kept* key
+  between `outs`' two ranking keys: it sheds a joker whenever that costs **no melded card**,
+  paying any number of live outs and never a meld (a numeric rate would need a win-probability
+  estimate nothing supplies; a knob would be a family of rungs, P15). Catalog entry last,
+  `Strength: 3`, **`Ranked = RankedOn.Money` for the second reason there is** — it reads no
+  stakes, but trades rounds for a multiplied prize, so win rate would misjudge it by
+  construction. `Hardest` stays `outs`; no dial, ε, or front-end change; **the ladder stays at
+  eight win-rate rungs, so the free-for-all crossing did not move**.
+- 🔥 **(2) The answer is a null that falsified both halves of its own written prediction**
+  (predicted `+$0.5–1.5` a round and clean share 20–35%): at $5/$1 the sweep reads
+  `−$0.23 ± 0.32`, and `prospector`'s $5/$1 cell — same seed, same seatings, played by a rung
+  that *is* `outs` there — reads `−$0.228 ± 0.32`, so **`purist`'s real effect is −$0.005 a
+  round, −0.01 points: about one round in eight thousand. Its clean-win share is 12.81 ± 1.04%
+  against the control's 12.83%** — the mechanism never fired. Why (visible in hindsight): when
+  the joker-throw is the *unique* winning discard `outs` already throws it, so **the accidental
+  12% floor already contains every clean win that costs nothing**. `STRATEGY.md` §2/§8/§10/§14;
+  a paying clean-bonus rung is now the second standing anti-recommendation (BUILD-PLAN P47).
+- ✅ **(3) The instrument generalised without touching a value**: one money sweep per
+  money-ranked rung (`SuiteOptions.MoneyChallengers`, every one, read off the catalog — a
+  single challenger defaulting to `StakesSensitive[^1]` would have silently dropped
+  `prospector` the day `purist` landed), the challenger is part of every `money.*` id (P32's
+  precedent; the twelve renamed rows are **byte-identical on values**), per-cell
+  `money.clean-win-rate.*` / `money.jokerless-rate.*` mechanism rows exist for both
+  challengers, and a bare `sim money` sweeps each rung in turn. **All 131 unrenamed shared rows
+  came back byte-identical; no old verdict moved; the new sweep is its own Holm family of
+  four.** The suite is **~18,600 s now (5¼ h, was ~15,200 s)** — the second sweep adds four
+  `outs`-priced cells.
+- ⚠️ **(4) Two corrections recorded on the way.** The plan's constraint that *"the joker cannot
+  be shed before the declaring discard"* overstates §9 #33's built default — the engine
+  restricts a joker's exit **only while jokers are locked** (§5.1 with #27's joker-closes-jokers
+  ruling), so `purist` legally sheds unlocked jokers early and the null is measured under the
+  rules as built; the re-measure-if-#33-flips caveat stands in §14 and the P44 outcome. And two
+  more F10-stale prose figures in the blast radius were corrected (`prospector`'s $5/$40 margin
+  in §8's map and prose, `+14.6 ± 4.5`/`+7.34 ± 3.29` → the CSV's `+14.2 ± 4.8`); **the rest of
+  F10 stays P50's**. One aside published in §14: `prospector`'s own clean-win share collapses
+  to ~5.6% in the cells where its rule fires — a blind-draw-heavy hand declares holding more
+  jokers, the first observed interaction between the draw decision and the clean bonus.
+
+---
+
+🔥 **Before P44, the day before: `P43` — `opportunist`, the feeding ban at zero price — the
+null the packet predicted, closing the question `warden` left open.** `RULES.md` stayed rev 31,
+the tree was green at **862**.
 
 **What P43 built, and the four things a cold session needs from it.**
 
@@ -699,30 +748,33 @@ unasserted altogether.
 
 ## What is next
 
-✅ **`P43` — `opportunist` — is done (2026-08-23, the day it was planned).** The null it
-predicted arrived and closes `warden`'s open question — see *Current state* at the top of this
-file. ⚠️ **Two things it hands forward**: the free-for-all/head-to-head tension for **P48**'s
-composition-stratified margins (§4, §8), and **the crossing cap** — 8⁵ is exactly
-`SeatingPlan.MaximumAssignments`, so **the next win-rate rung (`P45`/`P46`) does not fit and
-its packet must decide what gives**; money-ranked `P44` is unaffected.
+✅ **`P44` — `purist` — is done (2026-08-24).** The predicted positive came back a null with a
+flat mechanism — the accidental jokerless floor is already the whole free lunch — see *Current
+state* at the top of this file. ✅ **`P43` — `opportunist` — done the day before** (its null
+closed `warden`'s question). ⚠️ **What P44 hands forward**: a paying clean-bonus rung is the
+second standing anti-recommendation (BUILD-PLAN P47); `purist` must be re-measured if the
+experts flip §9 #33; and **the crossing cap is still P45's** — `purist` is money-ranked, so
+the free-for-all sits at exactly `SeatingPlan.MaximumAssignments` and the next *win-rate* rung
+still breaks it.
 
 🔥 **The plan grew eight entries on 2026-08-23, at Nick's direction: `P43`–`P50` — the strategy
 frontier and the writing-down** (`BUILD-PLAN.md` §5, with a model recommendation per packet).
-✅ `P43` `opportunist` is done (above; recommended Opus 5, shipped on Fable 5). Next in order:
-**`P44` `purist`** (plays for the clean bonus, money-ranked, needs the sweep generalised;
-Fable 5), **`P45` `angler`** (a draw priced in cards, §8's own named successor; Fable 5 —
-⚠️ now also owns the crossing-cap decision), **`P46` `sprinter`** (the endgame as a race;
+✅ `P43` `opportunist` and `P44` `purist` are done (both shipped on Fable 5). Next in order:
+**`P45` `angler`** (a draw priced in cards, §8's own named successor; Fable 5 —
+⚠️ owns the crossing-cap decision), **`P46` `sprinter`** (the endgame as a race;
 Opus 5) — then **`P47`**, the blocked-rungs ledger (`jackpot` needs a conditioned-deal
-harness, `streaker` needs a match-unit harness, and an anti-recommendation: no more
-defence-refinement rungs), **`P48`**, the full verification and measurement-hardening run
+harness, `streaker` needs a match-unit harness, and two anti-recommendations: no more
+defence-refinement rungs, and no paying clean-bonus rung without new information),
+**`P48`**, the full verification and measurement-hardening run
 (fresh-seed replication, composition-stratified margins, ladder money margins, the bootstrap;
 Fable 5), **`P49`**, `docs/SIMULATIONS.md` — the measurement programme taught, digit-free and
 fenced (Fable 5) — and **`P50`**, the documentation cleanup that fixes the stale prose
-figures the review found in `STRATEGY.md` and fences the class (Opus 5 — ⚠️ P43 corrected the
-four in its own blast radius, so re-verify F10's list rather than trusting its count).
+figures the review found in `STRATEGY.md` and fences the class (Opus 5 — ⚠️ P43 corrected four
+and P44 two more in their own blast radii, so re-verify F10's list rather than trusting its
+count).
 ⚠️ **Order matters: rungs, then the run, then the documents** — each rung packet pays a full
-suite regeneration (**~4¼ h now**, measured at P43), and the documents are written once,
-against hardened numbers.
+suite regeneration (**~5¼ h now — 18,600 s measured at P44**), and the documents are written
+once, against hardened numbers.
 
 **`P40` — the game in Burmese — stands beside them, blocked on input only Nick can produce.** ⚠️ **Its translations must be made from the rev-31 rulebook**
 — attach the current `RULEBOOK.md`, which teaches the face-up rule; the first-round outputs
@@ -4106,6 +4158,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 ## Session log
 
 | Date | Packet | Outcome |
+| 2026-08-24 | P44 | **Done — `purist`, the clean bonus played for at zero price, on Fable 5 (the plan's own recommendation) — and the predicted positive came back a null whose mechanism never fired, which is the finding.** `Domain/Agents/PuristBotAgent.cs` is `outs` with one change: a *fewest-jokers-kept* key **between** `outs`' two ranking keys, so a joker is shed whenever that costs no melded card — the exchange rate stated lexicographically rather than tuned (never a meld, any number of live outs; a numeric rate would need a win-probability estimate nothing supplies). Catalog entry last, `Strength: 3`, `Ranked = RankedOn.Money` **for the second reason there is** — it reads no stakes (the run proves it: take rate and win margin byte-identical at all four ratios) but trades rounds for a multiplied prize, so win rate would misjudge it by construction; `Hardest` stays `outs`, no dial/ε/front-end change, and the ladder stays at eight win-rate rungs so the crossing cap is untouched and still P45's. **Measured (prediction written first, both halves wrong): at $5/$1 the sweep reads `−$0.23 ± 0.32` against a same-seed control cell of `−$0.228 ± 0.32` (`prospector` at $5/$1 *is* `outs`), so `purist`'s real effect is −$0.005 a round, −0.01 points — one round in eight thousand — and its clean-win share is 12.81 ± 1.04% against the control's 12.83% and the field's 12.22% floor.** Why: when the joker-throw is the unique winning discard, `outs` already throws it, so **the accidental floor already contains every clean win that costs nothing**; every remaining clean win costs melds — `warden`'s ruinous currency — so a *paying* clean-bonus rung is the second standing anti-recommendation (P47), with re-measure-if-#33-flips recorded. **The instrument generalised**: one sweep per money-ranked rung (`SuiteOptions.MoneyChallengers`, off the catalog — a single `StakesSensitive[^1]` default would have silently dropped `prospector`), the challenger joined every `money.*` id (P32's precedent; the twelve renamed rows byte-identical on values), per-cell `money.clean-win-rate.*`/`money.jokerless-rate.*` mechanism rows for both challengers, bare `sim money` sweeps each rung in turn. ✅ **Reproduction exact: 131/131 unrenamed shared rows byte-identical, no verdict moved, the new sweep its own Holm family of four (all inside).** Suite **18,600 s (5¼ h)**. Aside published in §14: `prospector`'s clean-win share collapses to ~5.6% where its rule fires — the first observed interaction between the draw decision and the clean bonus. Fences: `PuristBotAgentTests` (6, three proved able to fail by mutating the joker key), both hand-written ladder lists, `StandingAnswerTests`' challengers assertion, `SuiteTests`' id set, `PublishedFigureTests` re-anchored to the renamed ids. Docs: `STRATEGY.md` head/§2/§8/§10/§11/§14, `HOW-TO-PLAY-WELL.md`'s bonuses section rewritten (the jokerless bonus is priced now — its free half is worthless), CLAUDE.md, BUILD-PLAN P44 ☑ + P47/P48 re-plan; two more F10-stale prose figures corrected in the blast radius. ⚠️ One plan correction recorded: constraint (3) overstated §9 #33's built default — the engine restricts a joker's exit only while jokers are *locked*. Tree green at **874** (was 862). |
 | 2026-08-23 | P43 | **Done — `opportunist`, the feeding ban at zero price, on Fable 5 (the plan recommended Opus 5; the session records what shipped it), and the predicted null arrived and is the finding.** `Domain/Agents/OpportunistBotAgent.cs` is `outs`' take exactly plus `warden`'s hold — the missing 2×2 corner (take-for-denial no, hold yes) — with the hold extracted to `Domain/Agents/HeldLocks.cs` and `warden` delegating to it, so the restraint has one home (P28's one-predicate rule applied to a strategy). Catalog entry after `warden`, `Strength: 3`, win-rate ranked; `Hardest` stays `outs`, no dial or front-end change. **Measured: `+0.1 ± 0.8` against `outs` (inside the interval) while beating `warden` `+6.2 ± 0.8` and the `greedy` trio `+2.0`–`+2.2`, all separated over the family of twenty-eight** — so `warden`'s whole loss lives in the paid take, and denial at the best possible price, zero, buys nothing this apparatus can see; the prediction (null to small positive) was written first (P20's discipline). ✅ **Reproduction repeated P31's exactly**: every shared cell byte-identical but for the `command` column, all twenty-one old verdicts survived the tightening to twenty-eight, the null cell changed hands to `opportunist` (`Ladder[^1]`, second time) and holds. ⚠️ **The suite is ~15,200 s now (~4¼ h)**: seven new `outs`-priced cells plus the free-for-all doubling to **8⁵ = 32,768 — exactly `SeatingPlan.MaximumAssignments`, so the ninth win-rate rung will not fit and P45/P46 must decide what gives** (noted in §4, both packets, and *What is next*). `STRATEGY.md` §1–§4, §6, §8 (a sixth kind of answer: a null that closes a question), §11–§15 updated from the CSV; four F10-stale prose figures in the blast radius corrected (`warden` −9.3 → −7.3 among them), the rest left for P50 with a note. Fences: `OpportunistBotAgentTests` (6 — the zero-price take asserted against `warden`'s, the hold, both escapes, the counterfactual instrument, outs-card-for-card when idle), `BotCatalogTests`' written-out ladder grew to nine, and the discovered-count fence caught STATUS's 850 exactly as designed. ✅ **No rules question arose; `RULES.md` stays rev 31.** 🔥 **Green at 862 / 0**, from 850. |
 | 2026-08-23 | P42 | **Playtest readiness — done, the day it was written up, on Fable 5.** **(1) The console deals five**: the seat prompt's default is `RoundEngine.DefaultPlayers` with the floor untouched; both `drive-console.py` scripts re-captured clean at five seats (⚠️ the driver's default script *is* `human` — the two scripts are `bots` and the default). **(2) The ×5 is said out loud**: `RoundResult.JackpotOwner` (`PlayerId?`, **required not defaulted** — `Win`'s lesson) is filled in `RoundEngine.Settle` from the same `ConfigurationOf` the settlement reads, because **a watcher cannot compute it**; `MoneyCardRegistry.IsTheJackpotPair` is public static for the half that *is* public from the deal, and `TableBoard.JackpotPairUp` folds it **at `RoundStarted`, not off the live turn-up list** (a claimed top card leaves that list while its designation stands). Console settlement line + round-start narration; web `SettlementPanel` sentence from the result alone + a quiet table-centre note. `CardDisplayState` stays ×5-free; **§9 #32 not generalised, both fences untouched**. Fenced by `RoundEngineTests.AJackpotRoundCarriesItsOwnerOnTheResult` (constructed round: pair turned up, one seat given both partners **and all four jokers** so the hand-computed payouts are clean; split-pair twin asserts null) and `JackpotSpokenTests` (source scan: each front end must *read* the fact — deliberately not a wording fence), **both proved able to fail by mutation**. **(3) Byte-identity, P41's exact procedure**: seeded 300-game `Sim` (`--seed 20260823`) journal + CSV **byte-identical** either side; HEAD journal replays to a byte-identical CSV. **(4) The browser round was actually played** — Claude in Chrome, the real extension, `--people 1 --seed 20260823 --pace 300`: sat down, **four settlements** clicked through; claim **refused twice and granted once** (§4.5's holder-only disclosure seen working); §5.1 closed rank 3 and the card stopped being a control; **§9 #50 live** (concealed duplicate of a face-up 3♦ thrown, the ▲ stayed); P41's chips and piles from both sides; why?, legend, log, timeout stand-in. ⚠️ **UX observation, not a defect**: at pace 300 the settlement panel's on-screen window is ~one pace beat before the next deal replaces it — fenced by `BrowserRoundTests`, but a human playtester may want the round to linger. Green at **850 / 0**, from 845 — 5 new tests. |
 | 2026-08-23 | P41 | **The table shows what the rules make public — done, the day it was written up.** One fold, written once: `Presentation/TableLook.cs` holds every seat's pile (§5) and every seat's face-up cards (§5.2), and the console's observer, the server's fan-out and the browser's board each hold one — the browser's pile fold moved *into* it, so pile logic has one home too. The blind draw has **no method on the type**; `ConcealmentTests.ABlindDrawnCardIsNeverShownFaceUp` holds the fan-out to it, **proved able to fail by mutating `PlayerDrew`**, with a positive twin that plays a real open take through a connection. §9 **#49** and **#50** built on their recommended defaults, each fenced in `TableLookTests` by a test named for the row, both mutation-proved; **the mark is by `CardId` throughout**, so the concealed duplicate stays concealed. Browser: face-up chips flat on each seat panel (`▲`), the whole pile behind the ▾ `<details>`, your own `▲` in your hand; console: a fourth panel *Everyone can see this*, `▲` in the hand and legend; `drive-console.py` re-captured clean (capture differs — presentation). ⚠️ **`TurnContext` deliberately not widened** — no rung sees any of it. ✅ **Byte-identity asserted**: seeded 300-game `Sim` journal + CSV **byte-identical** either side, HEAD journal replays; `git diff` empty on Domain and Sim. **§10 #24 discharged, §10 empty again (#7 standing); registry §5.2 → `Checked` (no ⚠ — both defaults are presentation-only), ceiling 7 → 6, no whole exemptions at all.** Green at **845 / 0**, from 832 — 13 new tests. |

@@ -13,18 +13,51 @@ over ad-hoc changes.
 
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
-recommendation per packet). ✅ **P43 `opportunist` is done (below); P44 `purist` is next.**
-In order: ✅ **P43 `opportunist`** (the feeding ban at zero price — a predicted null, question
-closed), **P44 `purist`** (the clean bonus, money-ranked), **P45 `angler`** (a draw priced in
-cards — ⚠️ **now also owns the crossing-cap decision**: P43 filled the free-for-all to exactly
-`SeatingPlan.MaximumAssignments`, so a ninth win-rate rung makes `SeatingPlan.Balanced` throw),
+recommendation per packet). ✅ **P43 `opportunist` and P44 `purist` are done (below); P45
+`angler` is next.** In order: ✅ **P43 `opportunist`** (the feeding ban at zero price — a
+predicted null, question closed), ✅ **P44 `purist`** (the clean bonus at zero price — a
+predicted *positive* that came back a null with a flat mechanism, and the wrong prediction is
+the finding), **P45 `angler`** (a draw priced in
+cards — ⚠️ **owns the crossing-cap decision**: P43 filled the free-for-all to exactly
+`SeatingPlan.MaximumAssignments` and money-ranked P44 left it there, so a ninth win-rate rung
+makes `SeatingPlan.Balanced` throw),
 **P46 `sprinter`** (the endgame as a race), **P47** the blocked-rungs ledger (`jackpot`,
-`streaker` — each needs an instrument that does not exist), **P48** the full verification and
+`streaker` — each needs an instrument that does not exist; **plus two anti-recommendations
+now**: no defence-refinement rungs, and no *paying* clean-bonus rung without new information),
+**P48** the full verification and
 measurement-hardening run, **P49** `docs/SIMULATIONS.md` (the measurement programme taught,
 digit-free), **P50** the documentation cleanup (⚠️ **`STRATEGY.md`'s prose is a run behind its
-own tables** — the day's statistical review, F10; P43 corrected the four in its own blast
-radius, so re-verify the list). ⚠️ **Rungs, then the run, then the documents** — every rung
-packet pays a suite regeneration, **~4¼ h measured at P43**.
+own tables** — the day's statistical review, F10; P43 corrected four and P44 two more in their
+blast radii, so re-verify the list). ⚠️ **Rungs, then the run, then the documents** — every rung
+packet pays a suite regeneration, **~5¼ h — 18,600 s measured at P44**.
+
+**What P44 built, and the four things a cold session needs from it.**
+🔥 **(1) `Domain/Agents/PuristBotAgent.cs` is `outs` plus one lexicographic preference** — a
+*fewest-jokers-kept* key **between** `outs`' two ranking keys, so a joker is shed only when
+that costs no melded card (pays any number of live outs, never a meld — the stated exchange
+rate, `prospector`'s one-assumption idiom). Catalog last, `Strength: 3`, **`Ranked =
+RankedOn.Money` for the second reason there is**: it reads no stakes but trades rounds for a
+multiplied prize (RULES.md §7.3), so win rate would misjudge it by construction. `Hardest`
+stays `outs`; the ladder stays at eight win-rate rungs, so **the crossing cap is untouched and
+still P45's**.
+🔥 **(2) The answer is a null that falsified both halves of its own prediction**: at $5/$1 the
+sweep reads `−$0.23 ± 0.32` against a same-seed control of `−$0.228 ± 0.32` (`prospector` at
+$5/$1 *is* `outs`), so the real effect is **−$0.005 a round — one round in eight thousand —
+and the clean-win share never moved: 12.81 ± 1.04% vs the control's 12.83%.** When the
+joker-throw is the unique winning discard `outs` already throws it, so **the accidental 12%
+floor already contains every clean win that costs nothing**; the remaining clean wins cost
+melds, `warden`'s ruinous currency. `STRATEGY.md` §14 (the instrumented reading), §2/§8/§10.
+⚠️ **(3) The money instrument generalised**: one sweep per money-ranked rung
+(`SuiteOptions.MoneyChallengers`, off the catalog), **the challenger is part of every
+`money.*` id now** (twelve renamed rows, values byte-identical — P32's precedent), per-cell
+`money.clean-win-rate.*`/`money.jokerless-rate.*` mechanism rows, and bare `sim money` sweeps
+every money-ranked rung in turn. ✅ **Reproduction exact: 131/131 unrenamed shared rows
+byte-identical, no verdict moved, the new sweep its own Holm family of four.**
+Tree green at **874**, from 862.
+⚠️ **(4) One plan correction recorded**: the plan said §9 #33's default means the joker cannot
+be shed before the declaring discard — **the engine restricts a joker's exit only while jokers
+are locked** (§5.1 with #27), so `purist` sheds unlocked jokers early and the null stands under
+the rules as built; re-measure if the experts flip #33.
 
 **What P43 built, and the three things a cold session needs from it.**
 🔥 **(1) `Domain/Agents/OpportunistBotAgent.cs` is the missing 2×2 corner** — `outs`' take
@@ -933,7 +966,8 @@ dotnet run -c Release --project BurmesePoker.Sim -- money --games 8000          
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs/refuse,outs/allow --pairs adjacent --games 8000   # is refusing a claim worth anything? (P29: no)
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs,warden --pairs adjacent --games 8000              # is playing the feeding ban offensively worth anything? (P31: no, −9.3 ± 1.0)
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs,opportunist --pairs adjacent --games 8000         # is holding the locks your ordinary takes arm worth anything? (P43: no, +0.1 ± 0.8)
-dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv — five seats by default since P32 (⚠️ ~4¼h, ~15,200 s measured at P43)
+dotnet run -c Release --project BurmesePoker.Sim -- money --challenger purist --games 8000                                         # is playing for the clean bonus worth anything? (P44; bare `money` sweeps every money-ranked rung in turn)
+dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv — five seats by default since P32 (⚠️ ~5¼h, ~18,600 s measured at P44)
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seats 4     # …the four-handed game, kept frozen at docs/strategy/measurements-4-handed.csv
 
 python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0   # capture a scripted match with a person in it (0 expert, 1 hard, 2 medium, 3 easy; --script human is the default)

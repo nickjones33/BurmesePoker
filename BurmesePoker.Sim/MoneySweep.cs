@@ -105,8 +105,14 @@ public sealed record MoneySweepOptions
 /// <param name="NetPerRound">What it banked, both halves together — <b>what the packet is judged on</b>.</param>
 /// <param name="SideBetPerRound">The money-card half alone, where the mechanism has to show up.</param>
 /// <param name="TakeRate">
-/// Share of its acquisitions taken off a discard rather than drawn blind. <b>The mechanism
-/// variable</b>: if the rule fires at all, this is what moves first.
+/// Share of its acquisitions taken off a discard rather than drawn blind. <b><c>prospector</c>'s
+/// mechanism variable</b>: if a rule about the draw fires at all, this is what moves first.
+/// </param>
+/// <param name="CleanWinRate">
+/// Share of its <b>own wins</b> declared with no joker in the thirteen (RULES.md §7.3) —
+/// <b><c>purist</c>'s mechanism variable</b> (BUILD-PLAN P44), a conditional series like
+/// <c>TurnsToWin</c>: only games this player won have trials. For every rung that is not
+/// playing for the bonus it reads near §14's accidental floor, which is the control.
 /// </param>
 /// <param name="SeatRounds">Seat-rounds by seat index — the balance the design claims.</param>
 public sealed record MoneyPlayer(
@@ -115,6 +121,7 @@ public sealed record MoneyPlayer(
     Measurement NetPerRound,
     Measurement SideBetPerRound,
     Measurement TakeRate,
+    Measurement CleanWinRate,
     IReadOnlyList<int> SeatRounds)
 {
     /// <summary>Whether it sat in every seat the same number of times, to within one.</summary>
@@ -140,6 +147,12 @@ public sealed record MoneyPlayer(
 /// The same margin in win rate, reported beside the money because <b>this is the first packet
 /// where the two can come apart</b> (P22 acceptance 2).
 /// </param>
+/// <param name="Rounds">Rounds that settled — one per settled game at <c>RoundsPerGame = 1</c>.</param>
+/// <param name="JokerlessRounds">
+/// Of those, how many the winner declared jokerless (RULES.md §7.3) — the cell-level twin of
+/// the <c>bonus.jokerless-rate.*</c> rows the tournaments publish, so a money cell can be read
+/// beside <c>docs/STRATEGY.md</c> §14's floor (BUILD-PLAN P44).
+/// </param>
 public sealed record MoneyCell(
     Stakes Stakes,
     int Assignments,
@@ -149,8 +162,13 @@ public sealed record MoneyCell(
     IReadOnlyList<MoneyPlayer> Players,
     Measurement NetMargin,
     Measurement SideMargin,
-    Measurement WinMargin)
+    Measurement WinMargin,
+    int Rounds = 0,
+    int JokerlessRounds = 0)
 {
+    /// <summary>Share of the settled rounds won jokerless in this cell (RULES.md §7.3).</summary>
+    public double JokerlessRate => Rounds == 0 ? 0 : (double)JokerlessRounds / Rounds;
+
     /// <summary>The money card value as a multiple of the round value — the dial being swept.</summary>
     public double Ratio => (double)Stakes.MoneyCardValue / Stakes.RoundValue;
 
@@ -280,8 +298,11 @@ public static class MoneySweep
         var run = RunOf(options, stakes);
         var report = Simulator.Run(run);
         var series = StrategySeries.Of(report);
+        var clean = CleanWins(report);
 
         var settled = report.Games.Count(game => game.Rounds.Count > 0);
+        var rounds = report.Games.Sum(game => game.Rounds.Count);
+        var jokerless = report.Games.Sum(game => game.Rounds.Count(round => round.Jokerless));
 
         var players = series
             .Select(one => new MoneyPlayer(
@@ -290,6 +311,7 @@ public static class MoneySweep
                 Measurement.Of(one.NetPerRound),
                 Measurement.Of(one.SideBetPerRound),
                 Measurement.Of(one.TakeRate),
+                Measurement.Of(clean[one.Name]),
                 one.SeatRounds))
             .ToList();
 
@@ -305,7 +327,60 @@ public static class MoneySweep
             players,
             Measurement.Paired(challenger.NetPerRound, reference.NetPerRound),
             Measurement.Paired(challenger.SideBetPerRound, reference.SideBetPerRound),
-            Measurement.Paired(challenger.WinRate, reference.WinRate));
+            Measurement.Paired(challenger.WinRate, reference.WinRate),
+            rounds,
+            jokerless);
+    }
+
+    /// <summary>
+    /// Each strategy's clean wins, a value per game: how many of the rounds it won this game
+    /// were declared jokerless, out of the rounds it won at all.
+    /// </summary>
+    /// <remarks>
+    /// <b>Arithmetic over rows the run already produced</b> (BUILD-PLAN §3.8) — the winner is
+    /// the seat whose <see cref="SeatRow.Won"/> is set, and cleanliness is the round's own
+    /// <see cref="RoundRow.Jokerless"/>. A game a strategy never won contributes a value with no
+    /// trials, which <see cref="Measurement.Of(IReadOnlyList{GameValue})"/> drops rather than
+    /// counts — the same conditional-series rule <c>TurnsToWin</c> follows.
+    /// </remarks>
+    private static Dictionary<string, List<GameValue>> CleanWins(SimulationReport report)
+    {
+        var series = report.Options.Strategies.ToDictionary(
+            strategy => strategy.Name,
+            _ => new List<GameValue>(report.Games.Count),
+            StringComparer.Ordinal);
+
+        foreach (var game in report.Games)
+        {
+            if (game.Rounds.Count == 0)
+            {
+                continue;
+            }
+
+            var wins = new Dictionary<string, (int Won, int Clean)>(StringComparer.Ordinal);
+
+            foreach (var round in game.Rounds)
+            {
+                foreach (var seat in round.Seats)
+                {
+                    var tally = wins.TryGetValue(seat.Strategy, out var held) ? held : (0, 0);
+
+                    if (seat.Won)
+                    {
+                        tally = (tally.Item1 + 1, tally.Item2 + (round.Jokerless ? 1 : 0));
+                    }
+
+                    wins[seat.Strategy] = tally;
+                }
+            }
+
+            foreach (var (name, tally) in wins)
+            {
+                series[name].Add(new GameValue(game.Seed, tally.Clean, tally.Won));
+            }
+        }
+
+        return series;
     }
 }
 
@@ -363,9 +438,9 @@ public static class MoneyCsv
 
         yield return
             "round_value,money_card_value,ratio,games,settled,abandoned,"
-            + "challenger,challenger_net,challenger_side,challenger_win,challenger_take,"
-            + "reference,reference_net,reference_side,reference_win,reference_take,"
-            + "net_margin,net_interval,side_margin,side_interval,win_margin,win_interval,p,verdict";
+            + "challenger,challenger_net,challenger_side,challenger_win,challenger_take,challenger_clean,"
+            + "reference,reference_net,reference_side,reference_win,reference_take,reference_clean,"
+            + "net_margin,net_interval,side_margin,side_interval,win_margin,win_interval,jokerless_rate,p,verdict";
 
         for (var index = 0; index < report.Cells.Count; index++)
         {
@@ -379,13 +454,14 @@ public static class MoneyCsv
                 + $"{cell.Games},{cell.Settled},{cell.Abandoned},"
                 + $"{challenger.Name},{Number(challenger.NetPerRound.Mean)},"
                 + $"{Number(challenger.SideBetPerRound.Mean)},{Number(challenger.WinRate.Mean)},"
-                + $"{Number(challenger.TakeRate.Mean)},"
+                + $"{Number(challenger.TakeRate.Mean)},{Number(challenger.CleanWinRate.Mean)},"
                 + $"{reference.Name},{Number(reference.NetPerRound.Mean)},"
                 + $"{Number(reference.SideBetPerRound.Mean)},{Number(reference.WinRate.Mean)},"
-                + $"{Number(reference.TakeRate.Mean)},"
+                + $"{Number(reference.TakeRate.Mean)},{Number(reference.CleanWinRate.Mean)},"
                 + $"{Number(cell.NetMargin.Mean)},{Number(cell.NetMargin.Interval)},"
                 + $"{Number(cell.SideMargin.Mean)},{Number(cell.SideMargin.Interval)},"
                 + $"{Number(cell.WinMargin.Mean)},{Number(cell.WinMargin.Interval)},"
+                + $"{Number(cell.JokerlessRate)},"
                 + $"{Number(verdict.PValue)},{verdict.Survives switch
                 {
                     true => "survives",

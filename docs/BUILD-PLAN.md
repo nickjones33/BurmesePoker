@@ -7057,7 +7057,43 @@ green with `STATUS.md`'s count matching.
 
 ---
 
-### P44 — `purist`: a rung that plays for the clean bonus ☐
+### P44 — `purist`: a rung that plays for the clean bonus ☑ **done 2026-08-24, on Fable 5 — the predicted positive came back a null, and the wrong prediction is the finding**
+
+✅ **Outcome.** `purist`'s whole preference changed **about one round in eight thousand**: at
+$5/$1 its sweep reads `−$0.23 ± 0.32` (inside the interval), and the paired design supplies an
+exact control — `prospector`'s $5/$1 cell is the same seatings from the same seed played by a
+rung that *is* `outs` there — which reads `−$0.228 ± 0.32`, so `purist`'s real effect is about
+**−$0.005 a round and −0.01 points**. 🔥 **The mechanism was flat: clean-win share 12.81 ± 1.04%
+against the control's 12.83% and the field's 12.22% floor.** Why, visible in hindsight: when
+throwing the joker is the *unique* winning discard, `outs` already throws it (thirteen melded
+beats everything before the joker's never-throw sentinel is consulted), **so the accidental
+floor already contains every clean win that costs nothing** — §14's "one in eight → one in
+four" arithmetic stands, and the distance cannot be crossed free. Two zero-price nulls in two
+packets (P43, P43's idiom repeated here); a *paying* clean-bonus rung joins the
+anti-recommendation list (P47). `STRATEGY.md` §2/§8/§10/§14 carry it; the sweep generalised to
+one run per money-ranked rung, the challenger is part of every `money.*` id now (P32's
+precedent — old ids renamed, values byte-identical), and per-cell `clean-win-rate` /
+`jokerless-rate` mechanism rows exist for both challengers. ✅ **Reproduction exact**: all 131
+unrenamed shared rows and all 12 renamed ones byte-identical on values; family cost nil — the
+new sweep is its own Holm family of four and no existing verdict moved. **Suite ~18,600 s now
+(5¼ h)**; tree green at **874**. ⚠️ **One plan correction, recorded**: constraint (3) below
+overstates §9 #33's built default — the engine restricts a joker's exit only while jokers are
+*locked* (§5.1 with #27), so `purist` can and does shed unlocked jokers early; the measured
+null is under the rules as actually built, and the re-measure-if-#33-flips caveat stands.
+
+*The packet as planned:*
+
+**Prediction, written 2026-08-23 before the run** (P20's discipline, recorded by the session
+building the packet): at $5/$1 `purist` banks **more** than `outs` — order **+$0.5 to +$1.5 a
+round**, plausibly separated at 8,010 games — while winning **the same or slightly fewer**
+rounds (0 to −2 points); its mechanism variable, the share of **its own wins** that come out
+jokerless, moves from §14's ~12% accidental floor to **somewhere in 20–35%**, while `outs`'
+clean share in the same cells stays at the floor; the margin is **roughly constant across the
+four ratios** (the rung reads no stakes — the higher ratios only add side-bet noise to the
+interval); and its take rate stays at `outs`' ~24% control. **Either sign is the finding**: a
+positive prices the first of §14's "unknown rather than small" bonuses, a null says the
+lexicographic zero-meld price buys too few clean wins to see — and would leave a priced
+successor (a rung that pays melded cards) explicitly *not* recommended, by `warden`'s lesson.
 
 **Goal.** One change off `outs`: where covers or discards are otherwise tied or nearly tied,
 prefer the line that keeps the declaration **jokerless**. 🔥 **§14 has already done the
@@ -7162,6 +7198,17 @@ below the tie-break. Three independent nulls point the same way — `cautious` (
 `counting` (+0.6 ± 0.8 the wrong way), and P16's neighbour result — and §7 says the residue they
 compete for is smaller than the instrument. **A packet proposing one must first say what changed.**
 
+⚠️ **A second anti-recommendation, added by P44 (2026-08-24): no *paying* clean-bonus rung
+without new information.** The zero-price version (`purist`) measured that the accidental
+jokerless floor already contains every free clean win — the whole preference changed one round
+in eight thousand — so any further clean win costs melded cards, which is win probability,
+which is the currency `warden` measured as ruinous to spend on a side idea. Two zero-price
+rungs in two consecutive packets (P43's lock hold, P44's joker shed) both came back nulls
+saying `outs`' plain cover maximisation already sits at the free-lunch frontier. **What would
+count as new information**: §9 #33 flipping (re-measure `purist` as its own outcome block
+says), or a win-probability estimate good enough to price a *small chosen* meld sacrifice —
+which is an instrument, not a tie-break.
+
 ---
 
 ### P48 — The full verification and measurement-hardening run ☐ — **after P43–P46**
@@ -7179,7 +7226,9 @@ P49 and P50 write are written against numbers that have been hardened, not just 
 2. 🔥 **Composition-stratified margins** (review F1). Publish each head-to-head margin split by
    seating mix — at minimum the 1-vs-4 and 4-vs-1 compositions beside the pooled figure. **A
    readout over data the runner already has, not a re-run.** This is the packet that says whether
-   `warden`'s loss (and P43's answer) is denial failing or self-play compounding.
+   `warden`'s loss (and P43's answer) is denial failing or self-play compounding — and P44's
+   null should be re-read the same way, though a delta of half a cent a round leaves it little
+   room to be composition's artifact.
 3. 🔥 **Money margins for every ladder pair** (review F2). `CellPlayer.NetPerRoundByGame` is
    computed and published nowhere; add `ladder.money-margin.*` rows so the §3 ordering is checked
    in the game's actual currency. **If win rate and money disagree anywhere, that is a headline,

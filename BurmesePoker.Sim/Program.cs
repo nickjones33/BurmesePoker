@@ -413,44 +413,64 @@ static int RunMoney(string[] args)
 {
     var arguments = Arguments.Parse(args);
 
-    var options = new MoneySweepOptions
+    // ⚠️ Everything off the catalog and nothing typed (P23): the challengers are the rungs that
+    // declare themselves ranked on money, the reference is the top of the ladder. A literal
+    // here is how a second such rung would arrive measured by nothing at all — and since P44
+    // there *are* two, so the bare command sweeps each in turn rather than silently measuring
+    // whichever was written last.
+    var challengers = arguments.Has("challenger")
+        ? new[] { arguments.Value("challenger", string.Empty) }
+        : [.. BotCatalog.StakesSensitive.Select(rung => rung.Name)];
+
+    var reports = new List<MoneyReport>(challengers.Length);
+
+    foreach (var challenger in challengers)
     {
-        // ⚠️ Both off the catalog and neither typed (P23): the challenger is the rung that
-        // declares itself ranked on money, the reference is the top of the ladder it is one
-        // change from. A literal here is how a second such rung would arrive measured by
-        // nothing at all.
-        Challenger = StrategyCatalog.Resolve(
-            arguments.Value("challenger", BotCatalog.StakesSensitive[^1].Name)),
-        Reference = StrategyCatalog.Resolve(arguments.Value("reference", BotCatalog.Ladder[^1].Name)),
-        Ratios = Ratios(arguments.Value("ratios", string.Empty)),
-        Seats = arguments.Number("seats", SuiteOptions.DefaultSeats),
-        GamesPerCell = arguments.Number("games", 2000),
-        MasterSeed = arguments.Number("seed", 20260819),
-        TurnCap = arguments.Number("turn-cap", 400),
-        Parallel = !arguments.Flag("serial")
-    }.Validated();
+        var options = new MoneySweepOptions
+        {
+            Challenger = StrategyCatalog.Resolve(challenger),
+            Reference = StrategyCatalog.Resolve(arguments.Value("reference", BotCatalog.Ladder[^1].Name)),
+            Ratios = Ratios(arguments.Value("ratios", string.Empty)),
+            Seats = arguments.Number("seats", SuiteOptions.DefaultSeats),
+            GamesPerCell = arguments.Number("games", 2000),
+            MasterSeed = arguments.Number("seed", 20260819),
+            TurnCap = arguments.Number("turn-cap", 400),
+            Parallel = !arguments.Flag("serial")
+        }.Validated();
 
-    var ratios = string.Join(
-        ",", options.Ratios.Select(stakes => $"{stakes.RoundValue}:{stakes.MoneyCardValue}"));
+        var ratios = string.Join(
+            ",", options.Ratios.Select(stakes => $"{stakes.RoundValue}:{stakes.MoneyCardValue}"));
 
-    Console.WriteLine(
-        $"money: {options.Challenger.Name} against {options.Reference.Name} at {options.Seats} seats, "
-        + $"{options.Ratios.Count} stakes ratio(s) {ratios}, {options.GamesPerCell} games a cell, "
-        + $"seed {options.MasterSeed}");
-    Console.WriteLine(
-        "reproduce with: BurmesePoker.Sim -- money "
-        + $"--challenger {options.Challenger.Name} --reference {options.Reference.Name} "
-        + $"--ratios {ratios} --seats {options.Seats} --games {options.GamesPerCell} "
-        + $"--seed {options.MasterSeed}");
+        Console.WriteLine(
+            $"money: {options.Challenger.Name} against {options.Reference.Name} at {options.Seats} seats, "
+            + $"{options.Ratios.Count} stakes ratio(s) {ratios}, {options.GamesPerCell} games a cell, "
+            + $"seed {options.MasterSeed}");
+        Console.WriteLine(
+            "reproduce with: BurmesePoker.Sim -- money "
+            + $"--challenger {options.Challenger.Name} --reference {options.Reference.Name} "
+            + $"--ratios {ratios} --seats {options.Seats} --games {options.GamesPerCell} "
+            + $"--seed {options.MasterSeed}");
 
-    var report = MoneySweep.Run(options);
+        var report = MoneySweep.Run(options);
 
-    ReportMoney(report);
+        ReportMoney(report);
+        reports.Add(report);
+        Console.WriteLine();
+    }
 
     if (arguments.Has("csv"))
     {
         var path = arguments.Value("csv", MoneySweep.DefaultPath);
-        MoneyCsv.WriteTo(path, report);
+
+        // One file, one header, every sweep's cells — the challenger column is what tells the
+        // rows apart, exactly as it does in measurements.csv.
+        if (Path.GetDirectoryName(Path.GetFullPath(path)) is { Length: > 0 } directory)
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllLines(path, reports.SelectMany(
+            (report, index) => MoneyCsv.Rows(report).Skip(index == 0 ? 0 : 1)));
         Console.WriteLine($"Cells written to {path}");
     }
 
@@ -876,13 +896,14 @@ static string Usage() => $"""
       --null NAME        who plays the null cell          (the last one named)
       --seats N, --seed N, --turn-cap N, --serial, --csv PATH  as above
 
-    money — should you draw blind for the money? A blind draw confers ownership of a money
-    card and a take never does (RULES.md §4.4), so a seat that digs in the deck banks more
-    side bet while playing a worse hand. What that trade is worth depends on the ratio of the
-    two stakes, so the stakes are swept. ⚠️ Judged on $/round, with the win rate beside it —
-    a rung that wins fewer rounds and banks more money is the better player.
+    money — the instrument for every rung ranked on money rather than win rate. prospector's
+    sweep asks: should you draw blind for the money? (a blind draw confers ownership, a take
+    never does — RULES.md §4.4); purist's asks: is playing for the clean bonus worth anything?
+    (a jokerless declaration pays x2 or x3 — §7.3). The stakes are swept either way. ⚠️ Judged
+    on $/round, with the win rate beside it — a rung that wins fewer rounds and banks more
+    money is the better player.
 
-      --challenger NAME  the rung whose take reads the side bet        (prospector)
+      --challenger NAME  one money-ranked rung    (each of them, one sweep in turn)
       --reference NAME   the rung it is one change away from      (the strongest rung)
       --ratios R         round:money pairs, cheapest side bet first
                          (5:1,5:10,5:20,5:40)

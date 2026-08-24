@@ -22,6 +22,14 @@ namespace BurmesePoker.Domain.Agents;
 /// one layer at a time, now made total.
 /// </para>
 /// <para>
+/// ⚠️ <b>P44 added a second reason to be money-ranked, and it is not stakes-sensitivity.</b>
+/// <c>purist</c> reads no stakes at all — it is the same player at every ratio — but its whole
+/// idea is trading rounds for a multiplied prize (RULES.md §7.3), so win rate would misjudge it
+/// <em>by construction</em> rather than by noise. What <see cref="Money"/> actually declares is
+/// <em>which currency settles this rung</em>; whether the rung varies with the stakes is a fact
+/// the sweep discovers, not one the enum encodes.
+/// </para>
+/// <para>
 /// 🔥 <b>And it is not only a saving of wall clock.</b> Putting <c>prospector</c> in the ladder
 /// field costs six head-to-head cells that reproduce a fact a unit test already asserts
 /// (<c>MoneySweepTests.AtTheStandardStakesTheTwoRungsPlayOneGameUnderTwoNames</c>) — but it also
@@ -216,6 +224,18 @@ public static class BotCatalog
             // at one stakes cannot rank (BUILD-PLAN P22, and see RankedOn). It is measured, and
             // it is measured by the money sweep — docs/STRATEGY.md §10.
             Ranked = RankedOn.Money
+        },
+        new(
+            "purist",
+            "Never gives up a meld for it, but works its jokers out of its hand whenever that is free — a win without them is paid extra, and it plays for the extra.",
+            Strength: 3,
+            _ => new PuristBotAgent())
+        {
+            // 🔥 Money-ranked for the *other* reason a rung can be (see RankedOn): its decision
+            // never reads the stakes, but its whole idea is trading win probability for a
+            // multiplied prize (RULES.md §7.3), so a field ranked on declarations would misjudge
+            // it by construction. Measured by the money sweep — docs/STRATEGY.md §14.
+            Ranked = RankedOn.Money
         }
     ];
 
@@ -248,13 +268,16 @@ public static class BotCatalog
         [.. All.Where(rung => rung.Ranked is RankedOn.WinRate)];
 
     /// <summary>
-    /// The rungs the <b>money sweep</b> settles: those whose play depends on what the table is
-    /// played for (BUILD-PLAN P22).
+    /// The rungs the <b>money sweep</b> settles: those judged in dollars a round rather than in
+    /// win rate (BUILD-PLAN P22, P44).
     /// </summary>
     /// <remarks>
     /// ⚠️ <b>Together with <see cref="Ladder"/> this is exactly <see cref="All"/></b>, which is
     /// how <c>sim suite</c> can promise to measure every rung there is without measuring one
-    /// twice.
+    /// twice. ⚠️ <b>The name predates <c>purist</c></b>: <c>prospector</c> really does read the
+    /// stakes, <c>purist</c> merely trades rounds for money — what the list collects is the
+    /// rungs whose verdict is money, whichever of <see cref="RankedOn"/>'s two reasons put them
+    /// there.
     /// </remarks>
     public static IReadOnlyList<BotRung> StakesSensitive { get; } =
         [.. All.Where(rung => rung.Ranked is RankedOn.Money)];
