@@ -66,7 +66,35 @@ internal static class LiveOuts
     /// recomputed, because the caller has just paid for it.
     /// </param>
     /// <param name="cache">Answers this seat has already bought, or null to buy every one afresh.</param>
-    internal static int Count(IReadOnlyList<Card> kept, int covered, OutsCache? cache = null)
+    internal static int Count(IReadOnlyList<Card> kept, int covered, OutsCache? cache = null) =>
+        Total(kept, covered, cache, weighted: false);
+
+    /// <summary>
+    /// The same outs, weighed by how many <b>copies</b> of each are still out there — the count
+    /// a probability wants, where <see cref="Count"/> is the count a tie-break wants
+    /// (BUILD-PLAN P45).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Why two counts and not one.</b> As a ranking key, a value the hand is waiting on is a
+    /// door either open or shut, and <see cref="Count"/> counts doors. As the numerator of
+    /// <em>what would a blind draw bring</em>, a value with both copies loose is twice as likely
+    /// to arrive as one this hand already holds a copy of — so each improving value counts its
+    /// available copies (<see cref="ThreatScore.NotInThisHand"/>, the same knowingly-optimistic
+    /// supply the probe filter uses), and the four jokers, one value in every meld there is,
+    /// weigh whatever number of them the hand does not hold.
+    /// </para>
+    /// <para>
+    /// <b>The probes are <see cref="Count"/>'s probes exactly</b> — same prune, same bar, same
+    /// cache key — so a seat that has ranked its discards has already bought most of the answers
+    /// this asks for, which is what makes <see cref="AnglerBotAgent"/> affordable.
+    /// </para>
+    /// </remarks>
+    internal static int CardCount(IReadOnlyList<Card> kept, int covered, OutsCache? cache = null) =>
+        Total(kept, covered, cache, weighted: true);
+
+    /// <summary>One loop for both counts — an improving value scores 1 or its loose copies.</summary>
+    private static int Total(IReadOnlyList<Card> kept, int covered, OutsCache? cache, bool weighted)
     {
         var available = ThreatScore.NotInThisHand(kept);
         var search = new CoverProbe(kept);
@@ -74,24 +102,28 @@ internal static class LiveOuts
         var outs = 0;
 
         // A joker fits anywhere, so it is never pruned — only asked.
-        if (JokersHeld(kept) < JokersInTheShoe
+        var jokersLoose = JokersInTheShoe - JokersHeld(kept);
+
+        if (jokersLoose > 0
             && Improves(search, kept, Card.Joker(new CardId(ProbeId), CardColor.Red), bar, cache))
         {
-            outs++;
+            outs += weighted ? jokersLoose : 1;
         }
 
         foreach (var suit in CardText.AllSuits)
         {
             foreach (var rank in CardText.AllRanks)
             {
-                if (available(rank, suit) == 0 || !CouldJoinAMeld(rank, suit, kept))
+                var copies = available(rank, suit);
+
+                if (copies == 0 || !CouldJoinAMeld(rank, suit, kept))
                 {
                     continue;
                 }
 
                 if (Improves(search, kept, Card.Ranked(new CardId(ProbeId), rank, suit), bar, cache))
                 {
-                    outs++;
+                    outs += weighted ? copies : 1;
                 }
             }
         }
@@ -116,6 +148,14 @@ internal static class LiveOuts
         cache is null
             ? search.CoversAtLeastWith(drawn, bar)
             : cache.CoversAtLeast(search, kept, drawn, bar);
+
+    /// <summary>
+    /// <see cref="CouldJoinAMeld(Rank,Suit,IReadOnlyList{Card})"/> asked of a whole card — the
+    /// gate <see cref="AnglerBotAgent"/>'s lookahead stands behind (BUILD-PLAN P45). A joker
+    /// joins anything.
+    /// </summary>
+    internal static bool CouldJoinAMeld(Card card, IReadOnlyList<Card> kept) =>
+        card.IsJoker || CouldJoinAMeld(card.Rank!.Value, card.Suit!.Value, kept);
 
     /// <summary>
     /// Could a meld containing this value be built out of this hand at all?

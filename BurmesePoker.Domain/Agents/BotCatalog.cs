@@ -236,7 +236,12 @@ public static class BotCatalog
             // multiplied prize (RULES.md §7.3), so a field ranked on declarations would misjudge
             // it by construction. Measured by the money sweep — docs/STRATEGY.md §14.
             Ranked = RankedOn.Money
-        }
+        },
+        new(
+            "angler",
+            "Weighs what you threw against the luck of the deck — and will pick up a card it cannot use yet, when it opens more doors than a blind draw would.",
+            Strength: 3,
+            _ => new AnglerBotAgent())
     ];
 
     /// <summary>

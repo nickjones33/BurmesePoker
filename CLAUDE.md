@@ -13,23 +13,57 @@ over ad-hoc changes.
 
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
-recommendation per packet). ✅ **P43 `opportunist` and P44 `purist` are done (below); P45
-`angler` is next.** In order: ✅ **P43 `opportunist`** (the feeding ban at zero price — a
-predicted null, question closed), ✅ **P44 `purist`** (the clean bonus at zero price — a
-predicted *positive* that came back a null with a flat mechanism, and the wrong prediction is
-the finding), **P45 `angler`** (a draw priced in
-cards — ⚠️ **owns the crossing-cap decision**: P43 filled the free-for-all to exactly
-`SeatingPlan.MaximumAssignments` and money-ranked P44 left it there, so a ninth win-rate rung
-makes `SeatingPlan.Balanced` throw),
-**P46 `sprinter`** (the endgame as a race), **P47** the blocked-rungs ledger (`jackpot`,
+recommendation per packet). ✅ **P43 `opportunist`, P44 `purist` and P45 `angler` are done
+(below); P46 `sprinter` is next.** In order: ✅ **P43 `opportunist`** (the feeding ban at zero
+price — a predicted null, question closed), ✅ **P44 `purist`** (the clean bonus at zero price —
+a predicted *positive* that came back a null with a flat mechanism, and the wrong prediction is
+the finding), ✅ **P45 `angler`** (a draw priced in cards — the predicted null, and its
+mechanism never armed; the crossing cap was paid measured, 32,768 → 65,536),
+**P46 `sprinter`** (the endgame as a race — ⚠️ **the crossing cap recurs**: a tenth win-rate
+rung is `10⁵ = 100,000 > 65,536`, so `SeatingPlan.Balanced` throws again and the decision must
+be stated), **P47** the blocked-rungs ledger (`jackpot`,
 `streaker` — each needs an instrument that does not exist; **plus two anti-recommendations
 now**: no defence-refinement rungs, and no *paying* clean-bonus rung without new information),
 **P48** the full verification and
-measurement-hardening run, **P49** `docs/SIMULATIONS.md` (the measurement programme taught,
+measurement-hardening run (⚠️ **two raw-only/free-for-all tensions queued for its
+composition-stratified margins**: `opportunist` two points behind `outs` in the crossed column
+against a head-to-head dead heat, and `angler` over `opportunist` at `+1.0 ± 0.8` raw-only),
+**P49** `docs/SIMULATIONS.md` (the measurement programme taught,
 digit-free), **P50** the documentation cleanup (⚠️ **`STRATEGY.md`'s prose is a run behind its
-own tables** — the day's statistical review, F10; P43 corrected four and P44 two more in their
-blast radii, so re-verify the list). ⚠️ **Rungs, then the run, then the documents** — every rung
-packet pays a suite regeneration, **~5¼ h — 18,600 s measured at P44**.
+own tables** — the day's statistical review, F10; P43 corrected four, P44 two and P45 four more
+in their blast radii, so re-verify the list). ⚠️ **Rungs, then the run, then the documents** —
+every rung packet pays a suite regeneration, **~6¼ h — ~22,500 s CPU-accounted at P45** (the
+wall clock read 95,870 s because the laptop slept mid-run; re-time with `sim bench`, never
+trust a wall clock that may contain a nap).
+
+**What P45 built, and the four things a cold session needs from it.**
+🔥 **(1) `Domain/Agents/AnglerBotAgent.cs` is `outs` with the take priced, at both places it
+arises** (take and claim — `prospector`'s rule): acquire a known card iff
+`gain·unseen + outsAfter > 2·outsNow` — cover gain plus kept-hand draw equity against the
+forfeited blind draw, integers over public facts, **one stated model: a one-draw horizon**.
+`LiveOuts.CardCount` (copies-weighted outs, sharing `Count`'s loop and cache) is the numerator,
+`MoneyOdds`' unseen pool the denominator. The one new move is the **enrichment take** — a card
+that melds nothing, taken when it more than doubles the hand's out-cards. Catalog last,
+`Strength: 3`, win-rate ranked, `Hardest` stays `outs`. **Bench 9.3× `greedy` / 1.21× `outs`**
+— inside P21's 10× budget after two stated cuts, and an all-`angler` table runs `outs`' 24.9
+turns (no `warden`-style inflation).
+🔥 **(2) The answer is the predicted null and the flat mechanism is the finding** (P44's shape):
+`+0.6 ± 0.8` against `outs`, beating the `greedy` trio `+2.6`–`+2.9` and `warden` `+6.9` (all
+separated, family 36); **take rate 24.66 ± 0.09% vs `outs`' 24.71 ± 0.09%** — the enrichment
+take almost never arms (the prediction said 1–5% and was wrong), so under a one-draw horizon
+**`outs`' improvement-only take already collects everything a card-priced model can see**.
+Third zero/stated-price null in three packets. `STRATEGY.md` §3/§8; mechanism rows
+`ladder.take-rate.{rung}` now published for every rung.
+✅ **(3) Reproduction repeated P43's exactly**: 148/172 shared rows byte-identical outside the
+command column, every mover field-dependent by construction, **no Holm verdict moved under
+28 → 36**; the null cell changed hands to `angler` (third time, `Ladder[^1]`, deliberate) and
+holds at −0.5; the `LiveOuts` refactor proved byte-identical separately (seeded 300-game
+`outs,purist` run, HEAD worktree vs tree). One game of 59,049 abandoned (`random`'s field —
+precedent P29). Tree green at **886**, from 874.
+⚠️ **(4) Two curiosities published rather than claimed**: `angler` over `opportunist`
+`+1.0 ± 0.8` **raw only** (`p = 0.013` vs Holm 0.0083 — the family's first raw-only casualty,
+P48's), and §6's new across-cells pairing ratio **0.37** for `warden` vs its two nearly
+identical comparators — a statement about the players, not the method.
 
 **What P44 built, and the four things a cold session needs from it.**
 🔥 **(1) `Domain/Agents/PuristBotAgent.cs` is `outs` plus one lexicographic preference** — a
@@ -967,7 +1001,8 @@ dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs,warden --pairs adjacent --games 8000              # is playing the feeding ban offensively worth anything? (P31: no, −9.3 ± 1.0)
 dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs,opportunist --pairs adjacent --games 8000         # is holding the locks your ordinary takes arm worth anything? (P43: no, +0.1 ± 0.8)
 dotnet run -c Release --project BurmesePoker.Sim -- money --challenger purist --games 8000                                         # is playing for the clean bonus worth anything? (P44; bare `money` sweeps every money-ranked rung in turn)
-dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv — five seats by default since P32 (⚠️ ~5¼h, ~18,600 s measured at P44)
+dotnet run -c Release --project BurmesePoker.Sim -- tournament --strategies outs,angler --pairs adjacent --games 8000              # is pricing the take against the blind draw worth anything? (P45: no, +0.6 ± 0.8, and the enrichment take almost never arms)
+dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000               # regenerate docs/strategy/measurements.csv — five seats by default since P32 (⚠️ ~6¼h, ~22,500 s CPU-accounted at P45)
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seats 4     # …the four-handed game, kept frozen at docs/strategy/measurements-4-handed.csv
 
 python3 scripts/drive-console.py --out before.raw --seed 20260819 --pick 0   # capture a scripted match with a person in it (0 expert, 1 hard, 2 medium, 3 easy; --script human is the default)

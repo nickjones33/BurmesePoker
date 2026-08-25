@@ -294,6 +294,23 @@ public static class Suite
                 string.Empty));
         }
 
+        // 🔥 P45's mechanism variable, published for every rung rather than the one that asked
+        // for it: `angler`'s whole change is the take, so a null with an unmoved take rate and a
+        // null with a moved one are different findings (P31's discipline). The rate was always
+        // measured (CellPlayer.TakeRate); this row is it reaching the CSV.
+        foreach (var player in tournament.FreeForAll.Players)
+        {
+            measurements.Add(new SuiteMeasurement(
+                $"ladder.take-rate.{player.Name}",
+                "Of this rung's acquisitions at the crossed table, how many came off the pile "
+                + "rather than the deck?",
+                tournamentCommand,
+                player.Name,
+                "take rate",
+                player.TakeRate,
+                string.Empty));
+        }
+
         for (var index = 0; index < tournament.Pairs.Count; index++)
         {
             var cell = tournament.Pairs[index];

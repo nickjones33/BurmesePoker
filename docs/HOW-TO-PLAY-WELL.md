@@ -119,7 +119,7 @@ they exist — and for those the honest answer is still *unknown*, not *no*. The
 been measured, and the answer came back the way this game keeps answering.
 
 - **The jokerless win** pays triple at this table, and even players holding jokers over
-  everything — the exact opposite of trying — collect it in **12.1%** of rounds, purely by
+  everything — the exact opposite of trying — collect it in **12.2%** of rounds, purely by
   accident. **Playing for it deliberately has now been measured, and at no cost it buys
   nothing at all**: a player who sheds a joker whenever that gives up no melded card wins the
   same rounds, collects the bonus no more often, and changes about one round in eight

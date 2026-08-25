@@ -7121,7 +7121,47 @@ the jokerless rate for a `purist` field published beside §14's accidental floor
 
 ---
 
-### P45 — `angler`: a draw priced in cards ☐
+### P45 — `angler`: a draw priced in cards ☑ **done 2026-08-25, on Fable 5 — the predicted null arrived, and the mechanism never armed**
+
+✅ **Outcome.** `+0.6 ± 0.8` against `outs` — inside the interval — while beating the `greedy`
+trio `+2.6`–`+2.9` and `warden` `+6.9`, all separated over the new family of thirty-six; no old
+verdict fell, and 148 of 172 shared CSV rows came back byte-identical outside the command column
+(every mover field-dependent by construction — P43's reproduction repeated). 🔥 **The mechanism
+was flat, which is the finding** (P44's shape): the take rate at the crossed table read
+24.66 ± 0.09% against `outs`' 24.71 ± 0.09%, so the **enrichment take** — the rule's one new
+move, a non-improving card taken when it more than doubles the hand's live out-cards — almost
+never arms; the prediction below expected 1–5% of acquisitions and was wrong about exactly that.
+**Under a one-draw horizon, `outs`' improvement-only take already collects everything a
+card-priced model can see** — the third zero-or-stated-price null in three packets, each from a
+different direction. ⚠️ **Bench: 9.3× `greedy`, 1.21× `outs`** — inside P21's budget after two
+stated approximations (the lookahead skips the outs refinement's probes; an enrichment take
+requires the offered card itself meldable with the hand). ⚠️ **The crossing cap was paid,
+measured first**: `SeatingPlan.MaximumAssignments` 32,768 → 65,536, the free-for-all one full
+pass of `9⁵ = 59,049`, suite ~22,500 s (~6¼ h, CPU-accounted — the measuring laptop slept
+mid-run). ⚠️ **Two things it hands forward**: a tenth win-rate rung is `10⁵ = 100,000` and
+breaks the cap again — **P46 pays the decision next, and it must be stated, not defaulted** —
+and `angler` over `opportunist` reads `+1.0 ± 0.8` raw-only (`p = 0.013` against Holm's
+0.0083), the family's first raw-only casualty, flagged for P48's composition-stratified margins.
+
+*The packet as planned:*
+
+**Prediction, written 2026-08-24 before the run** (P20's discipline, recorded by the session
+building the packet): against `outs` head to head, **null to small positive — 0 to +1.5
+points** — more likely inside the interval than separated at 8,008 games (±0.8–1.0). The one
+rule contains two directions and they fire at very different rates: the **enrichment take** (a
+non-improving card taken because it more than doubles the hand's live out-cards) fires on
+**order 1–5% of acquisitions**, lifting `angler`'s take rate visibly above `outs`' control,
+while the **refusal** direction (declining an improving card because the forfeited draw is
+worth more) **essentially never fires** — a certain melded card prices at the whole unseen
+pool (~90 card-equivalents against out-counts that rarely pass 40) — so `angler`'s improving
+takes are predicted to be `outs`' card for card. Mechanism variable: per-rung take rates at
+the crossed table (`ladder.take-rate.*`, new rows), with `angler`'s the field's highest and
+`outs`' unmoved. Bench prediction: within P21's 10× `greedy` budget — order 1.05–1.4× `outs`
+— with a low-outs guard carrying the load, because the expensive lookahead is only needed
+where the hand's own outs are thin. **Either answer is the finding**: a positive says `outs`
+undervalues the pile as a source of *future* cards; a null says a one-draw-horizon enrichment
+is too rare or too weak to see, constraining the pricing family the same way P43 and P44's
+zero-price nulls did.
 
 **Goal.** One change off `outs`: when the offered discard's marginal improvement is small,
 compare it against the **expected improvement of a blind draw** — live outs over cards unseen —
@@ -7169,9 +7209,15 @@ under a match-unit harness** — §7.5 pays streaks, and a racer wins the rounds
 — so if `streaker` (P47) is ever unblocked, this rung is the one to revisit.
 
 **Build.** The rung; the fire-rate counter; suite regeneration; prediction first.
-⚠️ **It inherits P45's crossing-cap decision** (P43 filled the free-for-all to exactly
-`SeatingPlan.MaximumAssignments`; see P45) — whichever packet lands its win-rate rung first
-pays it, and the second follows the precedent.
+⚠️ **The crossing cap recurs here, and P45's precedent does not cover it**: P45 raised the cap
+to 65,536 for `9⁵ = 59,049`, but a tenth win-rate rung makes `10⁵ = 100,000` and
+`SeatingPlan.Balanced` throws again. The options are P45's (raise and pay — measure with
+`sim bench` first; a full pass at `outs`-family prices is roughly double P45's free-for-all),
+retire a rung from the crossed cell only with the omission stated, or subsample honouring the
+whole-passes rule — **a stated decision in the packet, not a default**. ⚠️ P45's fire-rate
+lesson applies doubly here: `sprinter`'s trigger has a tunable feel to it, and P45's enrichment
+take — carefully priced, never tuned — armed too rarely to measure. **State the trigger, count
+its firing, and treat a flat fire rate as the finding rather than a failure.**
 **Acceptance.** A published margin, the fire rate beside it, green.
 
 ---

@@ -26,21 +26,23 @@ public static class SeatingPlan
     /// wrong name, and is refused rather than silently truncated.
     /// </summary>
     /// <remarks>
-    /// 🔥 <b>Raised from 4,096 to 32,768 by P32, and the number is a budget rather than a
-    /// taste.</b> Moving the standing set to five seats takes the ladder's crossing from
-    /// <c>7⁴ = 2,401</c> to <c>7⁵ = 16,807</c>, so the old cap refused the one cell the whole
-    /// field sits down together in — and the packet's own choice was *full crossing or a stated
-    /// subsample*. ⚠️ <b>It was decided by measuring rather than by guessing</b>: a full pass of
-    /// the seven-rung crossing at four seats is <b>2,401 games in 51 s</b>, so the five-handed
-    /// pass is about seven minutes of an eleven-thousand-second suite. <b>The full crossing is
-    /// played and nothing is subsampled</b> (<c>STRATEGY.md</c> §11, "no silent caps").
+    /// 🔥 <b>Raised from 4,096 to 32,768 by P32 and to 65,536 by P45, and both times the number
+    /// was a budget rather than a taste.</b> P32 moved the standing set to five seats
+    /// (<c>7⁵ = 16,807</c>); P43 filled the raised cap exactly (<c>8⁵ = 32,768</c>); P45's ninth
+    /// win-rate rung makes the ladder's crossing <c>9⁵ = 59,049</c>, so the cap either rises or
+    /// the one cell the whole field sits down together in is refused. ⚠️ <b>Both raises were
+    /// decided by measuring rather than by guessing</b>: P32 timed a full four-seat pass at
+    /// <b>2,401 games in 51 s</b>, and P45 timed the nine-rung field before running it — see the
+    /// packet — after the plan's own fear of "hours in that one cell" was recalled to be the
+    /// same order-of-magnitude overestimate P32 corrected. <b>The full crossing is played and
+    /// nothing is subsampled</b> (<c>STRATEGY.md</c> §11, "no silent caps").
     /// ⚠️ <b>What the cap is really protecting against is a run shorter than one pass</b>, in
     /// which "balanced" means "the first few thousand of them". Every cell of a tournament
     /// rounds its game count up to a whole number of passes
     /// (<see cref="TournamentOptions.GamesFor"/>); a hand-driven <c>--seating balanced</c> run
     /// does not, which is why the ceiling is kept rather than removed.
     /// </remarks>
-    public const int MaximumAssignments = 32768;
+    public const int MaximumAssignments = 65536;
 
     /// <summary>
     /// Every way of seating <paramref name="strategies"/> across <paramref name="seats"/> seats
