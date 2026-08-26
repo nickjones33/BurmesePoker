@@ -14,10 +14,12 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 the first rung to separate above `outs` since `outs` was built.** `RULES.md` stays rev 31 (no rule
 changed), the tree is green at **897**, and **`P48` (the verification-and-hardening run) is the
 next code packet** — P47's ledger is already landed, and P49/P50 are the writing-down; `P40`
-stands beside them, blocked on Nick's vetted Burmese text. ⚠️ **One follow-up is owned rather than
-done**: the race-reach instrument recomputes an uncached cover search per crossed-table discard —
-correct but wasteful — and a cheap optimization pass (share the seat's `OutsCache`, reuse the
-covered count) is queued; it does not change the measurement, so it is off the critical path.
+stands beside them, blocked on Nick's vetted Burmese text. ✅ **The P46 race-reach perf follow-up is
+done** (a small second commit the same day): the recorder now holds an `Endgame.Reader` carrying a
+per-seat `OutsCache`, so the winning-draw search is no longer bought fresh every crossed-table
+discard — **2.95× on the instrument's hot path** (501 vs 1477 µs/call on a near-win-heavy workload),
+**counts byte-identical** (asserted cached == static), so `measurements.csv` is unchanged and no
+re-run was needed. It confirmed the instrument was ~1% of the suite — never the bottleneck.
 
 **What P46 built, and the four things a cold session needs from it.**
 

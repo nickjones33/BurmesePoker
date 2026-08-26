@@ -22,6 +22,12 @@ public sealed class SeatRecorder(
 {
     private readonly IPlayerAgent _inner = inner;
 
+    /// <summary>
+    /// The race-reach reader, held for the life of the seat so its cover-search answers survive
+    /// between turns (BUILD-PLAN P46 follow-up). Only built when a cell asks for the count.
+    /// </summary>
+    private readonly Endgame.Reader? _endgame = countRaceReach ? new Endgame.Reader() : null;
+
     /// <summary>How many times this seat was offered the turned-up money card, this round.</summary>
     public int ClaimOffers { get; private set; }
 
@@ -130,7 +136,7 @@ public sealed class SeatRecorder(
     /// </summary>
     private void CountReach(TurnContext context, Card discarded)
     {
-        if (countRaceReach && Endgame.AfterDiscardIsWithinOneCard(context.Hand, discarded))
+        if (_endgame is not null && _endgame.AfterDiscardIsWithinOneCard(context.Hand, discarded))
         {
             WithinReachDiscards++;
         }

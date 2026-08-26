@@ -35,7 +35,7 @@ public static class Endgame
     {
         ArgumentNullException.ThrowIfNull(thirteen);
 
-        return LiveOuts.WinningDraws(thirteen, CoverScore.Covered(thirteen)) > 0;
+        return WithinOneCardOfCovering(thirteen, cache: null);
     }
 
     /// <summary>
@@ -47,6 +47,37 @@ public static class Endgame
     {
         ArgumentNullException.ThrowIfNull(hand);
 
-        return WithinOneCardOfCovering(CoverScore.Without(hand, discarded));
+        return WithinOneCardOfCovering(CoverScore.Without(hand, discarded), cache: null);
+    }
+
+    private static bool WithinOneCardOfCovering(IReadOnlyList<Card> thirteen, OutsCache? cache) =>
+        LiveOuts.WinningDraws(thirteen, CoverScore.Covered(thirteen), cache) > 0;
+
+    /// <summary>
+    /// A stateful reader of <see cref="AfterDiscardIsWithinOneCard"/> that keeps one seat's
+    /// answers between turns (BUILD-PLAN P46 follow-up).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Its whole job is to carry an <see cref="OutsCache"/>.</b> The static form buys the
+    /// winning-draw search fresh every call, which is what the Sim's <c>SeatRecorder</c> was doing
+    /// on every crossed-table discard — correct, but it threw away the probe answers the previous
+    /// turn had already paid for (the same values-keyed cache <c>outs</c> and <c>sprinter</c> reuse
+    /// inside a hand). A reader held for the life of a seat keeps them, and <b>changes no answer</b>
+    /// — the cache is transparent over <see cref="Melds.PartialCover.CoversAtLeast"/>, asserted by
+    /// <c>OutsCache</c>'s own fences. ⚠️ <b>Not thread-safe, and it does not need to be</b>: a
+    /// recorder wraps one seat and is touched from one game's thread only, which is the same
+    /// contract the agents' own caches keep.
+    /// </remarks>
+    public sealed class Reader
+    {
+        private readonly OutsCache _cache = new();
+
+        /// <inheritdoc cref="AfterDiscardIsWithinOneCard"/>
+        public bool AfterDiscardIsWithinOneCard(IReadOnlyList<Card> hand, Card discarded)
+        {
+            ArgumentNullException.ThrowIfNull(hand);
+
+            return WithinOneCardOfCovering(CoverScore.Without(hand, discarded), _cache);
+        }
     }
 }
