@@ -241,7 +241,12 @@ public static class BotCatalog
             "angler",
             "Weighs what you threw against the luck of the deck — and will pick up a card it cannot use yet, when it opens more doors than a blind draw would.",
             Strength: 3,
-            _ => new AnglerBotAgent())
+            _ => new AnglerBotAgent()),
+        new(
+            "sprinter",
+            "Plays for the best hand until the end is in sight, then plays for the fastest one — near the line it keeps whatever is likeliest to win outright, not whatever is likeliest to improve.",
+            Strength: 3,
+            _ => new SprinterBotAgent())
     ];
 
     /// <summary>

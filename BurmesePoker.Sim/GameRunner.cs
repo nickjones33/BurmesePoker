@@ -42,6 +42,7 @@ public static class GameRunner
             player => new SeatRecorder(
                 seating[player.Value].Create(SeedSequence.SeatSeed(seed, player.Value)),
                 options.TurnCap,
+                options.CountLockBites,
                 options.CountLockBites));
 
         // The journal wraps the recorder rather than the other way round, so what is written
@@ -219,7 +220,8 @@ public static class GameRunner
                 Claims: recorders[player].Claims,
                 DiscardsChosen: recorders[player].DiscardsChosen,
                 RestrictedTurns: recorders[player].RestrictedTurns,
-                LockBites: recorders[player].LockBites));
+                LockBites: recorders[player].LockBites,
+                WithinReachDiscards: recorders[player].WithinReachDiscards));
         }
 
         return new RoundRow(

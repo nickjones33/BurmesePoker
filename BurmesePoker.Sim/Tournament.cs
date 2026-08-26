@@ -171,6 +171,10 @@ public sealed record TournamentOptions
 /// <param name="WinRate">Share of the games it declared in, a value per game.</param>
 /// <param name="NetPerRound">What it banked.</param>
 /// <param name="TakeRate">Share of its acquisitions taken off a discard.</param>
+/// <param name="RaceReachRate">
+/// Share of its discards after which it was within one card of covering — 🔥 <b>P46's mechanism
+/// variable</b> (<c>sprinter</c>), measured at the crossed table only.
+/// </param>
 /// <param name="SeatRounds">Seat-rounds by seat index — the balance the design claims.</param>
 /// <param name="WinRateByGame">
 /// The win rate before it was summarised, a value per game with the seed that game was dealt
@@ -188,6 +192,7 @@ public sealed record CellPlayer(
     Measurement WinRate,
     Measurement NetPerRound,
     Measurement TakeRate,
+    Measurement RaceReachRate,
     IReadOnlyList<int> SeatRounds,
     IReadOnlyList<GameValue> WinRateByGame,
     IReadOnlyList<GameValue> NetPerRoundByGame)
@@ -590,6 +595,7 @@ public static class Tournament
                 Measurement.Of(one.WinRate),
                 Measurement.Of(one.NetPerRound),
                 Measurement.Of(one.TakeRate),
+                Measurement.Of(one.RaceReachRate),
                 one.SeatRounds,
                 one.WinRate,
                 one.NetPerRound))

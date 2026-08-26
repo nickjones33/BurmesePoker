@@ -34,10 +34,10 @@ public class BotCatalogTests
     /// would agree with any rename at all.
     /// </remarks>
     private static readonly string[] Ladder =
-        ["random", "simple", "greedy", "cautious", "counting", "outs", "warden", "opportunist", "prospector", "purist", "angler"];
+        ["random", "simple", "greedy", "cautious", "counting", "outs", "warden", "opportunist", "prospector", "purist", "angler", "sprinter"];
 
     [Fact]
-    public void TheLadderIsTheElevenRungsInTheOrderTheyWereBuilt()
+    public void TheLadderIsTheTwelveRungsInTheOrderTheyWereBuilt()
     {
         Assert.Equal(Ladder, BotCatalog.All.Select(rung => rung.Name));
     }
@@ -58,6 +58,7 @@ public class BotCatalogTests
     [InlineData("prospector")]
     [InlineData("purist")]
     [InlineData("angler")]
+    [InlineData("sprinter")]
     public void AnOlderFileNamingARungStillResolvesToOne(string written)
     {
         var rung = BotCatalog.Resolve(written);

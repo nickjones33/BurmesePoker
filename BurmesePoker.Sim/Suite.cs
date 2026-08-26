@@ -311,6 +311,24 @@ public static class Suite
                 string.Empty));
         }
 
+        // 🔥 P46's mechanism variable, published for every rung the way P45's take rate is: a null
+        // with the reach rate unmoved from `outs`' and a null with it lifted are different findings
+        // (P31's discipline). `sprinter` only differs from `outs` on a discard that leaves the hand
+        // one card from covering, so how often that happens at all bounds what the rung could be
+        // worth — and whether `sprinter` steers into it more often than `outs` is the whole question.
+        foreach (var player in tournament.FreeForAll.Players)
+        {
+            measurements.Add(new SuiteMeasurement(
+                $"ladder.race-reach.{player.Name}",
+                "Of this rung's discards at the crossed table, how many left it within one card of "
+                + "covering — the endgame regime `sprinter` races in (RULES.md §7.1, BUILD-PLAN P46)?",
+                tournamentCommand,
+                player.Name,
+                "race reach rate",
+                player.RaceReachRate,
+                string.Empty));
+        }
+
         for (var index = 0; index < tournament.Pairs.Count; index++)
         {
             var cell = tournament.Pairs[index];

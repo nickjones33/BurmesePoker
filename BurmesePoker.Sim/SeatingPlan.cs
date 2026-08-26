@@ -26,23 +26,26 @@ public static class SeatingPlan
     /// wrong name, and is refused rather than silently truncated.
     /// </summary>
     /// <remarks>
-    /// 🔥 <b>Raised from 4,096 to 32,768 by P32 and to 65,536 by P45, and both times the number
-    /// was a budget rather than a taste.</b> P32 moved the standing set to five seats
-    /// (<c>7⁵ = 16,807</c>); P43 filled the raised cap exactly (<c>8⁵ = 32,768</c>); P45's ninth
-    /// win-rate rung makes the ladder's crossing <c>9⁵ = 59,049</c>, so the cap either rises or
-    /// the one cell the whole field sits down together in is refused. ⚠️ <b>Both raises were
-    /// decided by measuring rather than by guessing</b>: P32 timed a full four-seat pass at
-    /// <b>2,401 games in 51 s</b>, and P45 timed the nine-rung field before running it — see the
-    /// packet — after the plan's own fear of "hours in that one cell" was recalled to be the
-    /// same order-of-magnitude overestimate P32 corrected. <b>The full crossing is played and
-    /// nothing is subsampled</b> (<c>STRATEGY.md</c> §11, "no silent caps").
+    /// 🔥 <b>Doubled three times — 4,096 → 32,768 (P32), → 65,536 (P45), → 131,072 (P46) — and
+    /// every time the number was a budget rather than a taste.</b> P32 moved the standing set to
+    /// five seats (<c>7⁵ = 16,807</c>); P43 filled the cap exactly (<c>8⁵ = 32,768</c>); P45's
+    /// ninth win-rate rung made the crossing <c>9⁵ = 59,049</c>; <b>P46's tenth makes it
+    /// <c>10⁵ = 100,000</c></b>, past 65,536, so the cap either rises or the one cell the whole
+    /// field sits down together in is refused. 🔥 <b>P46's raise is a stated decision, not a
+    /// default</b> (BUILD-PLAN P46): of the honest options — raise and pay, drop a rung from the
+    /// crossed cell only, or subsample — <b>the cap rises</b>, because dropping a rung breaks §4's
+    /// continuity (the free-for-all is the one cell with the <em>whole</em> field present) and
+    /// subsampling breaks §11's "no silent caps". The bill is a full pass of 100,000 games at
+    /// <c>outs</c>-family prices, roughly <b>1.7×</b> P45's free-for-all cell, priced with
+    /// <c>sim bench</c> before the run as its two predecessors were. <b>The full crossing is
+    /// played and nothing is subsampled</b> (<c>STRATEGY.md</c> §11).
     /// ⚠️ <b>What the cap is really protecting against is a run shorter than one pass</b>, in
     /// which "balanced" means "the first few thousand of them". Every cell of a tournament
     /// rounds its game count up to a whole number of passes
     /// (<see cref="TournamentOptions.GamesFor"/>); a hand-driven <c>--seating balanced</c> run
     /// does not, which is why the ceiling is kept rather than removed.
     /// </remarks>
-    public const int MaximumAssignments = 65536;
+    public const int MaximumAssignments = 131072;
 
     /// <summary>
     /// Every way of seating <paramref name="strategies"/> across <paramref name="seats"/> seats

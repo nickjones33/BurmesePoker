@@ -14,7 +14,11 @@ namespace BurmesePoker.Sim;
 /// because only the agent sees what it was <em>asked</em>: the observer is told the money card
 /// was claimed, but never that the offer was made and declined.
 /// </remarks>
-public sealed class SeatRecorder(IPlayerAgent inner, int turnCap, bool countLockBites = false) : IPlayerAgent
+public sealed class SeatRecorder(
+    IPlayerAgent inner,
+    int turnCap,
+    bool countLockBites = false,
+    bool countRaceReach = false) : IPlayerAgent
 {
     private readonly IPlayerAgent _inner = inner;
 
@@ -51,6 +55,22 @@ public sealed class SeatRecorder(IPlayerAgent inner, int turnCap, bool countLock
     /// </remarks>
     public int LockBites { get; private set; }
 
+    /// <summary>
+    /// Of the discards chosen, how many left this seat <b>within one card of covering</b> — the
+    /// endgame regime <c>sprinter</c> steers in (RULES.md §7.1, BUILD-PLAN P46).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>P46's mechanism variable, and the number that tells a rung that never raced apart
+    /// from one that raced and gained nothing</b> (P31's discipline). A hand rarely gets one draw
+    /// from a win on its own discard turn before somebody declares, so a flat reach rate is the
+    /// finding rather than a failure. Measured off the card the seat actually threw
+    /// (<see cref="Endgame.AfterDiscardIsWithinOneCard"/>), so a rung that keeps the more winnable
+    /// thirteen shows a higher reach than one that keeps the more improvable one — or does not,
+    /// which is the whole question. ⚠️ <b>It costs a cover search on a hand near the line</b>, so
+    /// it is off unless a cell asks for it, and paid only at the crossed table.
+    /// </remarks>
+    public int WithinReachDiscards { get; private set; }
+
     /// <summary>Starts a fresh round's tallies.</summary>
     public void BeginRound()
     {
@@ -59,6 +79,7 @@ public sealed class SeatRecorder(IPlayerAgent inner, int turnCap, bool countLock
         DiscardsChosen = 0;
         RestrictedTurns = 0;
         LockBites = 0;
+        WithinReachDiscards = 0;
     }
 
     public TurnAction ChooseAction(TurnContext context)
@@ -77,7 +98,9 @@ public sealed class SeatRecorder(IPlayerAgent inner, int turnCap, bool countLock
         // The ban is free on an ordinary turn: nothing closed means the hand itself, same list.
         if (legal.Count == context.Hand.Count)
         {
-            return _inner.ChooseDiscard(context);
+            var free = _inner.ChooseDiscard(context);
+            CountReach(context, free);
+            return free;
         }
 
         RestrictedTurns++;
@@ -96,7 +119,21 @@ public sealed class SeatRecorder(IPlayerAgent inner, int turnCap, bool countLock
             LockBites++;
         }
 
-        return _inner.ChooseDiscard(context);
+        var chosen = _inner.ChooseDiscard(context);
+        CountReach(context, chosen);
+        return chosen;
+    }
+
+    /// <summary>
+    /// Whether the thirteen this seat is left holding is one card from a win, counted once the
+    /// discard is chosen — the reach half of P46's mechanism, paid only when a cell asks for it.
+    /// </summary>
+    private void CountReach(TurnContext context, Card discarded)
+    {
+        if (countRaceReach && Endgame.AfterDiscardIsWithinOneCard(context.Hand, discarded))
+        {
+            WithinReachDiscards++;
+        }
     }
 
     public bool ClaimTurnedUpMoneyCard(TurnContext context)

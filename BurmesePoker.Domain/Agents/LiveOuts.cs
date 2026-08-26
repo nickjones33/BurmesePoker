@@ -67,7 +67,7 @@ internal static class LiveOuts
     /// </param>
     /// <param name="cache">Answers this seat has already bought, or null to buy every one afresh.</param>
     internal static int Count(IReadOnlyList<Card> kept, int covered, OutsCache? cache = null) =>
-        Total(kept, covered, cache, weighted: false);
+        Total(kept, covered + 1, cache, weighted: false);
 
     /// <summary>
     /// The same outs, weighed by how many <b>copies</b> of each are still out there — the count
@@ -91,14 +91,48 @@ internal static class LiveOuts
     /// </para>
     /// </remarks>
     internal static int CardCount(IReadOnlyList<Card> kept, int covered, OutsCache? cache = null) =>
-        Total(kept, covered, cache, weighted: true);
+        Total(kept, covered + 1, cache, weighted: true);
+
+    /// <summary>
+    /// How many of the loose copies out there would let these thirteen <b>win next turn</b> —
+    /// the copies-weighted values that complete a declarable hand rather than merely improve it
+    /// (BUILD-PLAN P46).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The one number <c>sprinter</c> maximises when the fuse is short.</b> A blind draw
+    /// wins the round the moment thirteen of the fourteen it leaves meld, so the winning bar is
+    /// <see cref="IReadOnlyList{T}.Count"/> of the kept hand itself — every held card accounted
+    /// for, one drawn card the spare (<see cref="CoverProbe.CoversAtLeastWith"/> with
+    /// <c>target = 13</c>). It is copies-weighted for the same reason <see cref="CardCount"/> is:
+    /// this is a probability of the next draw, not a door count, and a value with both copies
+    /// loose arrives twice as often.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>It is cheap where it does not matter, which is almost everywhere.</b> One drawn card
+    /// lifts the cover of the fourteen by at most three (itself and the two it melds with), so a
+    /// hand more than three short of covering has no winning draw at all and the whole scan is
+    /// skipped — the endgame is a narrow window, and this pays the search only inside it.
+    /// </para>
+    /// </remarks>
+    internal static int WinningDraws(IReadOnlyList<Card> kept, int covered, OutsCache? cache = null) =>
+        covered < kept.Count - MostOneCardCanCover ? 0 : Total(kept, kept.Count, cache, weighted: true);
+
+    /// <summary>
+    /// The most a single drawn card can raise a cover count by: itself, plus the two held cards
+    /// the smallest meld (three, RULES.md §6) needs beside it.
+    /// </summary>
+    private const int MostOneCardCanCover = 3;
 
     /// <summary>One loop for both counts — an improving value scores 1 or its loose copies.</summary>
-    private static int Total(IReadOnlyList<Card> kept, int covered, OutsCache? cache, bool weighted)
+    /// <param name="bar">
+    /// The cover count a drawn value must reach to be counted — <c>covered + 1</c> for an out that
+    /// merely improves, the hand's own size for a draw that wins (BUILD-PLAN P46).
+    /// </param>
+    private static int Total(IReadOnlyList<Card> kept, int bar, OutsCache? cache, bool weighted)
     {
         var available = ThreatScore.NotInThisHand(kept);
         var search = new CoverProbe(kept);
-        var bar = covered + 1;
         var outs = 0;
 
         // A joker fits anywhere, so it is never pruned — only asked.

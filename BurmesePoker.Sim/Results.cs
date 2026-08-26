@@ -42,6 +42,11 @@ namespace BurmesePoker.Sim;
 /// Of those, how many the ban changed the seat's answer on — 🔥 <b>P31's mechanism variable</b>,
 /// and zero in every cell that did not ask for it (it costs a second ranking).
 /// </param>
+/// <param name="WithinReachDiscards">
+/// Of the discards chosen, how many left this seat within one card of covering — 🔥 <b>P46's
+/// mechanism variable</b> (<c>sprinter</c>), and zero in every cell that did not ask for it (it
+/// costs a cover search on a hand near the line).
+/// </param>
 public sealed record SeatRow(
     int Seat,
     string Strategy,
@@ -56,7 +61,8 @@ public sealed record SeatRow(
     int Claims,
     int DiscardsChosen = 0,
     int RestrictedTurns = 0,
-    int LockBites = 0);
+    int LockBites = 0,
+    int WithinReachDiscards = 0);
 
 /// <summary>One played round of one game.</summary>
 /// <param name="Round">Which round of the game, counting from 1.</param>

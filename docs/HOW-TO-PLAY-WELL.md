@@ -53,12 +53,21 @@ the two at a five-handed table.
 Where two discards leave the hand equally melded *and* equally partnered, keep the thirteen
 that **more of the pack would improve**. Ask, of each card you cannot see, whether drawing it
 would help the hand you would be left with — and hold the hand with more such cards. That is
-worth **+2.7 ± 0.8 points** of win rate over the partner rule alone, and it is the only
-refinement, of the five this project has built and measured, that has ever beaten it.
+worth **+2.7 ± 0.8 points** of win rate over the partner rule alone, and for five packets it was
+the only refinement, of the several this project has built and measured, that had ever beaten it
+— until the endgame idea just below, which is built on top of it.
 
 The clearest case of what the partner rule cannot see: a second copy of a card already inside
 a long run looks like a spare — same partners either way — but keeping it lets the run split
 into two legal runs later. Counting arrivals sees that; counting partners cannot.
+
+**And once — very near the end — change what you are counting.** When you are a single useful
+card from going out, stop keeping the hand that the most of the pack would *improve* and keep the
+hand that the most of the pack would *win*: a round is a race to declare first, and the last
+turn or two it is worth accepting a slightly weaker hand for a faster chance to finish. A
+computer rung built to do exactly this is the only thing that has ever measurably out-played the
+refinement above — by a small margin, and one still being checked against a fresh run — so treat
+it as the direction the endgame rewards rather than a settled number.
 
 ## The money: settle it, never chase it
 

@@ -116,18 +116,20 @@ public class SeatingPlanTests
     [Fact]
     public void BalancedSeatingRefusesToBecomeASamplingScheme()
     {
-        // Nine seats of four strategies is 262,144 assignments, past the point where "balanced"
-        // would mean "the first few thousand of them"; eight is 65,536 — the cap exactly, raised
-        // there by P45 for the nine-rung five-seat crossing — and is played in full.
+        // The cap is 131,072, doubled there by P46 for the ten-rung five-seat crossing
+        // (10⁵ = 100,000, past P45's 65,536). Two strategies across seventeen seats is 2¹⁷ =
+        // 131,072 — the cap exactly — and eighteen is 262,144, past the point where "balanced"
+        // would mean "the first few thousand of them".
         //
-        // ⚠️ Four of the catalog rather than all of it, since P20 made it five: the cap is a
-        // property of the plan, and a test that read the whole ladder would change what it
+        // ⚠️ A fixed handful of the catalog rather than all of it, since P20 made it five: the cap
+        // is a property of the plan, and a test that read the whole ladder would change what it
         // asserted every time a rung was added.
-        var ladder = StrategyCatalog.All.Take(4).ToList();
+        var four = StrategyCatalog.All.Take(4).ToList();
+        var two = StrategyCatalog.All.Take(2).ToList();
 
-        Assert.Equal(4096, SeatingPlan.Balanced(ladder, 6).Count);
-        Assert.Equal(SeatingPlan.MaximumAssignments, SeatingPlan.Balanced(ladder, 8).Count);
-        Assert.Throws<ArgumentException>(() => SeatingPlan.Balanced(ladder, 9));
+        Assert.Equal(4096, SeatingPlan.Balanced(four, 6).Count);
+        Assert.Equal(SeatingPlan.MaximumAssignments, SeatingPlan.Balanced(two, 17).Count);
+        Assert.Throws<ArgumentException>(() => SeatingPlan.Balanced(two, 18));
     }
 
     /// <summary>Every <c>(seat's strategy, the strategy feeding it)</c> pair of one seating.</summary>

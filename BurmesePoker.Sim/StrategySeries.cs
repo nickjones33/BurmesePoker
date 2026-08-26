@@ -11,6 +11,10 @@ namespace BurmesePoker.Sim;
 /// <param name="CoveredWhenLosing">How close it came. Only games it lost have trials.</param>
 /// <param name="TakeRate">Share of its acquisitions taken off a discard rather than drawn blind.</param>
 /// <param name="ClaimRate">Share of the offered turned-up money cards taken (RULES.md §4.5).</param>
+/// <param name="RaceReachRate">
+/// Share of its discards after which it was within one card of covering — 🔥 <b>P46's mechanism
+/// variable</b>, zero unless the cell asked for it (<see cref="SeatRow.WithinReachDiscards"/>).
+/// </param>
 /// <param name="SeatRounds">
 /// How many seat-rounds it played in each seat index. <b>The balance check</b>: seat 0 opens and
 /// is the only seat offered the turned-up money card (P12), so an unbalanced run measures the
@@ -44,6 +48,7 @@ public sealed record StrategySeries(
     IReadOnlyList<GameValue> CoveredWhenLosing,
     IReadOnlyList<GameValue> TakeRate,
     IReadOnlyList<GameValue> ClaimRate,
+    IReadOnlyList<GameValue> RaceReachRate,
     IReadOnlyList<int> SeatRounds)
 {
     /// <summary>How many games contributed anything at all.</summary>
@@ -130,6 +135,10 @@ public sealed record StrategySeries(
 
         internal int Claims { get; private set; }
 
+        internal int DiscardsChosen { get; private set; }
+
+        internal int WithinReach { get; private set; }
+
         internal readonly List<int> Seats = [];
 
         internal void Add(SeatRow seat, int turns)
@@ -141,6 +150,8 @@ public sealed record StrategySeries(
             Draws += seat.Draws;
             ClaimOffers += seat.ClaimOffers;
             Claims += seat.Claims;
+            DiscardsChosen += seat.DiscardsChosen;
+            WithinReach += seat.WithinReachDiscards;
             Seats.Add(seat.Seat);
 
             if (seat.Won)
@@ -165,6 +176,7 @@ public sealed record StrategySeries(
         private readonly List<GameValue> _covered = [];
         private readonly List<GameValue> _takeRate = [];
         private readonly List<GameValue> _claimRate = [];
+        private readonly List<GameValue> _raceReachRate = [];
         private readonly int[] _seatRounds = new int[seats];
 
         internal void Add(int gameSeed, GameTally tally)
@@ -189,9 +201,11 @@ public sealed record StrategySeries(
             _covered.Add(new GameValue(gameSeed, tally.CoveredWhenLost, tally.Losses));
             _takeRate.Add(new GameValue(gameSeed, tally.Takes, tally.Takes + tally.Draws));
             _claimRate.Add(new GameValue(gameSeed, tally.Claims, tally.ClaimOffers));
+            _raceReachRate.Add(new GameValue(gameSeed, tally.WithinReach, tally.DiscardsChosen));
         }
 
         internal StrategySeries Build() => new(
-            name, _winRate, _net, _sideBet, _turnsToWin, _covered, _takeRate, _claimRate, _seatRounds);
+            name, _winRate, _net, _sideBet, _turnsToWin, _covered, _takeRate, _claimRate,
+            _raceReachRate, _seatRounds);
     }
 }

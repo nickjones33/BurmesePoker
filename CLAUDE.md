@@ -13,28 +13,60 @@ over ad-hoc changes.
 
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
-recommendation per packet). ✅ **P43 `opportunist`, P44 `purist` and P45 `angler` are done
-(below); P46 `sprinter` is next.** In order: ✅ **P43 `opportunist`** (the feeding ban at zero
-price — a predicted null, question closed), ✅ **P44 `purist`** (the clean bonus at zero price —
-a predicted *positive* that came back a null with a flat mechanism, and the wrong prediction is
-the finding), ✅ **P45 `angler`** (a draw priced in cards — the predicted null, and its
-mechanism never armed; the crossing cap was paid measured, 32,768 → 65,536),
-**P46 `sprinter`** (the endgame as a race — ⚠️ **the crossing cap recurs**: a tenth win-rate
-rung is `10⁵ = 100,000 > 65,536`, so `SeatingPlan.Balanced` throws again and the decision must
-be stated), **P47** the blocked-rungs ledger (`jackpot`,
-`streaker` — each needs an instrument that does not exist; **plus two anti-recommendations
-now**: no defence-refinement rungs, and no *paying* clean-bonus rung without new information),
+recommendation per packet). ✅ **P43 `opportunist`, P44 `purist`, P45 `angler` and P46 `sprinter`
+are all done (below). `P48` (the verification-and-hardening run) is the next code packet** — P47's
+ledger is already landed, and P49/P50 are the writing-down. In order: ✅ **P43 `opportunist`** (the
+feeding ban at zero price — a predicted null, question closed), ✅ **P44 `purist`** (the clean
+bonus at zero price — a predicted *positive* that came back a flat null), ✅ **P45 `angler`** (a
+draw priced in cards — the predicted null, mechanism never armed; cap 32,768 → 65,536),
+🔥 ✅ **P46 `sprinter`** (the endgame as a race — **the first rung to separate above `outs`,
+`+1.2 ± 0.8` Holm, and the packet where the mechanism variable finally armed**; the crossing cap
+was paid a third time, `65,536 → 131,072` for `10⁵ = 100,000`, a stated decision),
+**P47** the blocked-rungs ledger (`jackpot`,
+`streaker` — each needs an instrument that does not exist; **plus two anti-recommendations**:
+no defence-refinement rungs, and no *paying* clean-bonus rung without new information),
 **P48** the full verification and
-measurement-hardening run (⚠️ **two raw-only/free-for-all tensions queued for its
-composition-stratified margins**: `opportunist` two points behind `outs` in the crossed column
-against a head-to-head dead heat, and `angler` over `opportunist` at `+1.0 ± 0.8` raw-only),
+measurement-hardening run (⚠️ **tensions queued for its composition-stratified margins**:
+`opportunist`/`warden` crossed-column vs head-to-head gaps, **two raw-only casualties**
+`angler`-`sprinter` (p=0.0079) and `opportunist`-`angler` (p=0.013), and 🔥 **`sprinter`'s
+`+1.2 ± 0.8` itself — a one-point margin wants a fresh-seed replication before it is *settled***),
 **P49** `docs/SIMULATIONS.md` (the measurement programme taught,
 digit-free), **P50** the documentation cleanup (⚠️ **`STRATEGY.md`'s prose is a run behind its
-own tables** — the day's statistical review, F10; P43 corrected four, P44 two and P45 four more
-in their blast radii, so re-verify the list). ⚠️ **Rungs, then the run, then the documents** —
-every rung packet pays a suite regeneration, **~6¼ h — ~22,500 s CPU-accounted at P45** (the
-wall clock read 95,870 s because the laptop slept mid-run; re-time with `sim bench`, never
-trust a wall clock that may contain a nap).
+own tables** — F10; P43 corrected four, P44 two, P45 four and P46 more in their blast radii, so
+re-verify the list — ⚠️ **and `STRATEGY.md`'s top block still describes the rules as an older
+revision with P35/P36 unbuilt, stale since P35–P37 shipped: also P50's**). ⚠️ **A rung packet
+pays a suite regeneration**,
+**~5 h on this 24-core workstation at P46** (the older "~6¼ h / ~22,500 s" is a *laptop* figure
+and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pasted wall clock).
+⚠️ **One P46 follow-up owned, not done**: the race-reach instrument recomputes an uncached cover
+search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
+share the seat's `OutsCache` is queued and does not change the measurement.
+
+**What P46 built, and the four things a cold session needs from it.**
+🔥 **(1) `Domain/Agents/SprinterBotAgent.cs` is `outs` with one change: the discard's last-resort
+key.** Within one card of covering it stops maximising live outs and maximises **winning draws**
+(`LiveOuts.WinningDraws` — copies-weighted values that let 13 of the 14 it leaves meld, bar = the
+hand's size). Lexicographic key *winning draws then outs* in one `long`, so **off the endgame it
+is `outs` card for card** — the trigger is existence, not a tuned threshold (P45's idiom).
+`Endgame.WithinOneCardOfCovering` is the public read the Sim counts. Take/claim/object/declare are
+`outs`'. Catalog last, `Strength: 3`, `Hardest` stays `outs`. **Bench 8.1× `greedy` / 1.21×
+`outs`**, no turn inflation.
+🔥 **(2) The answer is a positive that separates — the first since `outs` beat `greedy`.**
+**`+1.2 ± 0.8` vs `outs`, p=2.9e-03, Holm over family 45**, confirmed on a second command;
+beats `opportunist` (+1.6 Holm), `angler` (+1.1 raw-only); tops both ranking columns (mean +8.1,
+crossed 25.5). ⚠️ **Small and fragile** — crossed table 25.5 vs 25.3 is a dead heat, P48's
+fresh-seed run graduates it. 🔥 **The mechanism armed** after three flat nulls: race-reach
+**26.6% vs `outs`' 25.6%** (~4 SE, new `ladder.race-reach.*` rows) — steers into more near-wins,
+win rate follows. **A moved mechanism + moved margin together is why it's believed.** `STRATEGY.md`
+§3/§8 (its story is in §3 like `outs`', not §8's failures).
+✅ **(3) Reproduction held, cap paid measured.** 9 old rungs' head-to-head byte-identical; 38 moved
+rows all field-dependent; no Holm verdict fell; null cell → `sprinter` (4th time, holds −0.4).
+**`SeatingPlan.MaximumAssignments` 65,536 → 131,072**, stated (raise/pay over drop/subsample),
+fence updated. 1 game of 100,000 abandoned (`random`'s field, P29).
+⚠️ **(4) Suite ~5 h here; the instrument is cheap and was a red herring.** A first run was killed
+mid-session on a wrong "the instrument is pathological" diagnosis — measured, `WithinOneCardOf…`
+is ~54 µs/call (~2 ms only on the ~2% of hands at covered ≥ 10); the 10-rung suite is just large.
+Tree green at **897**, from 886.
 
 **What P45 built, and the four things a cold session needs from it.**
 🔥 **(1) `Domain/Agents/AnglerBotAgent.cs` is `outs` with the take priced, at both places it

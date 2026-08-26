@@ -7010,7 +7010,7 @@ cannot choose it (`/model` before the session); these are recommendations with r
 | P43 `opportunist` | **Opus 5** | a small, sharply-specified delta off `warden`; the design is already done |
 | P44 `purist` | **Fable 5** | money-ranked, needs the sweep generalised, and the §9 #33 interaction takes judgment |
 | P45 `angler` | **Fable 5** | probability pricing inside the `outs` family's perf budget — the hardest design of the four |
-| P46 `sprinter` | **Opus 5** | one objective switch with a clear trigger condition |
+| P46 `sprinter` | ✅ **done, Opus 4.8** | one objective switch with a clear trigger — **the first rung to beat `outs`** |
 | P47 blocked ledger | — | landed by this planning edit; no session |
 | P48 verification run | **Fable 5** | new estimator readouts and statistical judgment on the results, not just orchestration |
 | P49 sims explained | **Fable 5** | the writing must carry the statistical subtleties faithfully (precedent: P38/P39) |
@@ -7194,7 +7194,44 @@ after; suite regeneration; prediction first.
 
 ---
 
-### P46 — `sprinter`: the endgame is a race ☐
+### P46 — `sprinter`: the endgame is a race ☑ **done 2026-08-25, on Opus 4.8 — the first rung to separate above `outs`, and the packet where the mechanism variable armed**
+
+🔥 **Outcome — a positive, and the prediction's optimistic branch.** `+1.2 ± 0.8` against `outs`,
+`p = 2.9e-03`, **surviving Holm over the family of forty-five** — confirmed on a second command and
+reproducing exactly. It is **the first rung to separate above `outs` since P21**, beats
+`opportunist` (+1.6, Holm) and `angler` (+1.1, raw only), and tops both ranking columns (mean
+margin +8.1, crossed win rate 25.5). 🔥 **The mechanism moved, which is the finding after three
+flat nulls**: `sprinter`'s race-reach — the share of discards leaving it one card from covering —
+is **26.6 ± 0.2% against `outs`' 25.6 ± 0.2%** (~4 SE, the new `ladder.race-reach.*` rows), so it
+demonstrably steers into more near-wins and the win rate follows. **A moved mechanism and a moved
+margin arriving together, after `opportunist`/`purist`/`angler` each moved neither, is why the
++1.2 is believed rather than dismissed as the family's luckiest cell.** ⚠️ **Small and fragile,
+stated as such**: the crossed table is a dead heat (25.5 vs 25.3, overlapping intervals — a
+five-point edge over one opponent diluted by eight others), and a one-point margin is the tightest
+this document asks Holm to hold, so **P48's fresh-seed replication is where it graduates from
+*measured* to *settled*.** Two raw-only casualties at the top (`angler`-`sprinter` p=0.0079,
+`opportunist`-`angler` p=0.013), flagged for P48. ⚠️ **The trigger fired as predicted — the fire
+rate is real, not flat** — which is the opposite of P45, and the reason the fire-rate discipline
+paid off: it distinguished this positive from the three nulls before it.
+
+✅ **The crossing cap was paid, stated first**: `SeatingPlan.MaximumAssignments` doubled
+`65,536 → 131,072` for the `10⁵ = 100,000` free-for-all — raise and pay, over dropping a rung
+from the crossed cell (breaks §4 continuity) or subsampling (breaks §11's no-silent-caps. 9 old
+rungs' head-to-head cells came back **byte-identical**; the 38 rows that moved are field-dependent
+by construction; no Holm verdict fell; the null cell changed hands to `sprinter` (fourth time) and
+holds. **Bench 8.1× `greedy`, 1.21× `outs`** — inside P21's budget, no turn inflation. Suite ran
+in **~5 h on a 24-core workstation** (the older ~6¼ h is a laptop figure).
+
+⚠️ **A perf follow-up is owned rather than done, and a process note.** The race-reach instrument
+(`SeatRecorder.CountReach` → `Endgame`) recomputes an uncached cover search on every crossed-table
+discard — correct but wasteful; a cheap pass (give the recorder its own `OutsCache`, reuse the
+covered count) is queued and **does not change the measurement**. ⚠️ **Process lesson**: a first
+suite run was killed mid-session on a wrong hypothesis that this instrument was pathological —
+a direct micro-benchmark then measured it at ~54 µs/call (~2 ms only on the ~2% of hands near a
+win), far too small to matter, and the second run confirmed the 10-rung suite is simply large.
+**Measure the suspect before killing a multi-hour run.**
+
+*The packet as planned:*
 
 **Goal.** One change off `outs`: when within one card of covering, stop maximising expected outs
 and maximise the probability of **winning on the next turn** — accept a worse hand in expectation
@@ -7283,6 +7320,12 @@ P49 and P50 write are written against numbers that have been hardened, not just 
    second master seed, published as a comparison — the first statement about reproducibility in
    this project that is statistics rather than determinism. **Predict before running**: every
    Holm verdict holds, every margin lands inside its own interval of the seed-20260819 value.
+   🔥 **The load-bearing case is now `sprinter` over `outs` at `+1.2 ± 0.8` (P46)** — a one-point
+   margin that survives Holm but is a dead heat at the crossed table, the tightest separation in
+   the document. **If any P46 verdict is going to fail replication it is this one**, so predict
+   it explicitly and report the outcome either way: does `outs` vs `sprinter` still separate at a
+   second seed, and does `sprinter`'s race-reach still lead `outs`' by ~1 point? The two raw-only
+   casualties (`angler`-`sprinter`, `opportunist`-`angler`) should stay raw-only or fall inside.
 5. **A bootstrap coverage check on the two separated money cells** (review F6) — the
    heaviest-tailed verdicts in the document — and **intervals on the mechanism rates** the
    document compares across fields (review F7), by the house game-level ratio method.
