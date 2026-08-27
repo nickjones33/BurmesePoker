@@ -13,9 +13,9 @@ over ad-hoc changes.
 
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
-recommendation per packet). ✅ **P43–P48 are all done (below). `P49` (`docs/SIMULATIONS.md`, the
-measurement programme taught) is the next packet; the tree is green at 906.** — P47's ledger is
-already landed, and P49/P50 are the writing-down. In order: ✅ **P43 `opportunist`** (the
+recommendation per packet). ✅ **P43–P49 are all done (below). `P50` (the documentation cleanup —
+F10) is the next and last planned packet; the tree is green at 907.** — P47's ledger is
+already landed, and P50 is the last of the writing-down. In order: ✅ **P43 `opportunist`** (the
 feeding ban at zero price — a predicted null, question closed), ✅ **P44 `purist`** (the clean
 bonus at zero price — a predicted *positive* that came back a flat null), ✅ **P45 `angler`** (a
 draw priced in cards — the predicted null, mechanism never armed; cap 32,768 → 65,536),
@@ -32,8 +32,8 @@ self-play compounding; the money ladder agrees with the win-rate ladder; 214/235
 with no mean moved). ✅ **The two raw-only casualties resolved**: `opportunist`-`angler` fell inside
 (null), `sprinter`-`angler` firmed to Holm. `STRATEGY.md` §16. **This was not a rung packet** — the
 diff is `Sim` + tests + docs only, no agent touched.
-**P49** `docs/SIMULATIONS.md` (the measurement programme taught,
-digit-free), **P50** the documentation cleanup (⚠️ **`STRATEGY.md`'s prose is a run behind its
+✅ **P49** `docs/SIMULATIONS.md` (the measurement programme taught,
+digit-free and fenced — a pure-doc packet, no production code, tree 906 → 907), **P50** the documentation cleanup (⚠️ **`STRATEGY.md`'s prose is a run behind its
 own tables** — F10; P43 corrected four, P44 two, P45 four and P46 more in their blast radii, so
 re-verify the list — ⚠️ **and `STRATEGY.md`'s top block still describes the rules as an older
 revision with P35/P36 unbuilt, stale since P35–P37 shipped: also P50's**). ⚠️ **A rung packet
@@ -1099,6 +1099,7 @@ verified bug to show for it.
 | `docs/translation/corrections_geminiResponse1.md` | ⚠️ **P40 working input, first round** — Gemini's corrected translation after the cross-check. **Not yet landable**: it is rev-30-based (no face-up rule), stamps rev 30, and has not itself been cross-checked. P40 re-runs the loop against the rev-31 rulebook. |
 | `docs/translation/PROMPTS.md` | **The translation workflow for P40** — three prompts (rulebook, strategy guide, cross-check) Nick runs against Gemini/ChatGPT outside the repo, and the rules they enforce (Latin digits, verbatim card notation, Unicode Burmese) that make the translations fence-able when the packet lands them. |
 | `docs/STRATEGY.md` | **What actually works** — the ranking, with intervals and a corrected verdict, **§9 the difficulty calibration**, **§10 the side bet**, **§12 round length, abandoned rounds and what refusing a claim is worth** (P29), **§13 how often the feeding ban actually bites** (P31), **§14 how often the clean bonus is actually collected** (P33) and **§15 how often a hand wins before anybody plays it** (P35, and ⚠️ **§11 says why §7.5 has no section at all**). Every figure is generated from `docs/strategy/measurements.csv`, never transcribed, and since P23 **one `sim suite` regenerates all of it** — §10, §12 and §13 included. ⚠️ **§11 is where "a rung cannot be added without being measured" stopped being a habit and became a test.** |
+| `docs/SIMULATIONS.md` | **How the measuring works** — the measurement programme taught to a curious person: what a seeded parallel run is, a seed against a journal, why the game is the trial, why a win rate is the totals divided, what pairing buys, why Holm, what the null cell is for, and a tour of the experiment shapes. ⚠️ **Digit-free by rule** — it explains the instrument and points at `STRATEGY.md`/`HOW-TO-PLAY-WELL.md` for every figure, so it cannot go stale the way prose figures do; the absence is fenced by `PublishedFigureTests`. |
 | `docs/RULES-PRIMER.md` | One-page rules recall aid for humans. |
 | `docs/PLAYING.md` | **How to actually play** a solo game — the console's prompts, panels, markers and flags, and the browser table at the end of it, **including what opening a "why?" now tells you** (P24.2). Written for a person at the keyboard, not for a build session. |
 | `docs/spec/RUN-CANDIDATES.md` | **Worked spec for packet P3**, the hardest one. Read before touching run generation. |

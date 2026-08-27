@@ -265,6 +265,48 @@ public class PublishedFigureTests
     }
 
     /// <summary>
+    /// ✅ <b>P49 acceptance — the document that teaches the instrument carries no figure of its own.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b><c>docs/SIMULATIONS.md</c> explains <em>how</em> the numbers are measured and points
+    /// at the two documents that hold them</b> — <c>STRATEGY.md</c> and
+    /// <c>HOW-TO-PLAY-WELL.md</c>. It is P39's one-home rule applied in advance: a document that
+    /// carried a figure would be a second place that figure could go stale, which is the exact
+    /// staleness class F10 caught living in <c>STRATEGY.md</c>'s prose. So the guarantee is that
+    /// there is no figure here to rot.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Asserted as an absence, the same shape as the <c>PLAYING.md</c> fence above</b>: no
+    /// interval marker and no percentage claim. The two pointers are asserted to still exist,
+    /// because a teaching document that stopped pointing at the figures would send a reader
+    /// nowhere. Commands the document prints are checked separately, by
+    /// <c>DocumentationTests.EveryCommandTheDocumentationPrintsResolves</c>.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheSimulationsGuideTeachesTheInstrumentAndCarriesNoFigureOfItsOwn()
+    {
+        var sims = Documentation.Text("docs/SIMULATIONS.md");
+
+        Assert.Contains("STRATEGY.md", sims, StringComparison.Ordinal);
+        Assert.Contains("HOW-TO-PLAY-WELL.md", sims, StringComparison.Ordinal);
+
+        Assert.True(
+            !sims.Contains('±'),
+            "docs/SIMULATIONS.md quotes a measured margin. It teaches the instrument and has no "
+            + "figures of its own — those live in STRATEGY.md and HOW-TO-PLAY-WELL.md, so it cannot "
+            + "go stale the way F10's prose did.");
+
+        var percentage = Regex.Match(sims, @"\d\s*%");
+
+        Assert.False(
+            percentage.Success,
+            $"docs/SIMULATIONS.md states a percentage figure (`{percentage.Value}`). It is digit-free "
+            + "by rule; say it in words and point at the file that carries the number.");
+    }
+
+    /// <summary>
     /// ✅ <b>The one measurement this project ships as prose <em>in the product</em> is still
     /// the measurement it claims to be.</b>
     /// </summary>

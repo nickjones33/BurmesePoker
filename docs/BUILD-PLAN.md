@@ -7357,7 +7357,7 @@ stated either way; `STATUS.md` updated.
 
 ---
 
-### P49 — The sims explained: `docs/SIMULATIONS.md` ☐ — **after P48**
+### P49 — The sims explained: `docs/SIMULATIONS.md` ☑ — **done 2026-08-27 (Opus 4.8)**
 
 **Goal.** One document a curious human can read to understand **how this project measures
 things and why the numbers can be trusted** — the measurement programme taught, the way P38
@@ -7415,7 +7415,10 @@ games, all four-handed); §8's map and bullets repeating the stale −9.3 / +3.0
 3. **Sweep the rest of `docs/`** for four-handed leftovers and rev-lagged claims —
    `RULES-PRIMER.md`, `PLAYING.md`'s prose, `README.md` — touching **only current-claim text**:
    the narrative documents keep every superseded figure on purpose (P34's rule), and this packet
-   must not flatten history to fix staleness.
+   must not flatten history to fix staleness. ⚠️ **`SIMULATIONS.md` (P49) is already digit-free
+   and fenced** — it holds no figures by construction, so the sweep skips it; and note P49 already
+   chose the *one-home / digit-free* discipline for the sims doc, which is the option item 2
+   weighs for `STRATEGY.md`.
 4. **The map, banner and command fences stay green** throughout, which is what makes item 3
    checkable.
 
