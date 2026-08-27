@@ -1098,6 +1098,7 @@ verified bug to show for it.
 | `.claude/skills/poker/SKILL.md` | The `/poker` work cycle. |
 | `docs/STATUS.md` | Cross-session progress. Read first, update last. |
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
+| `docs/HOSTING.md` | **A hosting exploration and work brief** — how to take the app from LAN/single-machine to a simple hosted app for friends online. Frames the deployment problem (Blazor Server is already a networked server), the one constraint (single always-on instance — stateful circuits + a singleton `Lobby`), homelab-vs-Azure options, a shippable build sequence, and the decisions only Nick can make. ⚠️ **A plan, not a record** — nothing here is built; ops/deployment, separate from the rules/strategy programme. |
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
 | `docs/RULEBOOK.md` | **The game taught** — one document a stranger can learn to play from, in reading order, with a generated worked round and a house-readings appendix. Derived from `RULES.md` and decides nothing; stamps the rev it was derived from, bound by `RulebookTests`. |
 | `docs/HOW-TO-PLAY-WELL.md` | **How to get better** — the strategy guide for a player: what has actually been measured, organised by decision, with the nulls given as much room as the margins. Every figure it quotes is CSV-fenced by `PublishedFigureTests`, and it is the **only** home of the player-facing figures — `PLAYING.md` points here rather than quoting any. |
