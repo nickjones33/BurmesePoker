@@ -11,7 +11,8 @@ transcribed, out of `docs/strategy/measurements.csv`, which is written by one co
 dotnet run -c Release --project BurmesePoker.Sim -- suite --games 8000 --seed 20260819
 ```
 
-Last generated **2026-08-25** (BUILD-PLAN P46). **235 measurements in about five hours** on a
+Last generated **2026-08-25** (BUILD-PLAN P46) and extended with P48's hardening readouts on
+**2026-08-27** (§16). **372 measurements** — the P46 suite in about five hours on a
 24-core workstation (the same-shaped run took five to six hours on the laptop the earlier packets
 were timed on — the wall clock is the machine as much as the run) — the ladder ranked, the
 difficulty dial calibrated beside it, one money sweep per
@@ -28,12 +29,13 @@ jokerless hand is paid **×2** at four and **×3** at five. **Four-handed is a d
 old version of this one** — so it is kept, whole and frozen, at
 `docs/strategy/measurements-4-handed.csv`, and a test asserts every row of it says `seats=4`.
 
-✅ **Measured under the rules as the engine plays them** — `RULES.md` rev 26's play, with P25's win
-condition, P26's money layer, P27's feeding ban, P28's claim permission and P33's clean bonus all
-in force. ⚠️ **`RULES.md` is at rev 29 as this is written**, and the three revisions since are §7.4,
-§7.5 (settlement, unbuilt — P35) and §3's corrected seating (unbuilt — P36). **None of them can
-reach a figure here**: the first two are unimplemented, and the third cannot matter because every
-experiment runs one round a game.
+✅ **Measured under the rules as the engine plays them** — with P25's win
+condition, P26's money layer, P27's feeding ban, P28's claim permission, P33's clean bonus and
+P35's deal bonus (§7.4, measured in §15) all in force. ⚠️ **`RULES.md` is at rev 31 as this is
+written**, and the rules settled since the run — P35's §7.5 feeding-blame, P36 and P37's held
+seating, and rev 30–31's visibility rules — **cannot reach a figure here**: §7.5 needs a match
+rather than a round (§11, §15), a held seating takes no numbers out of a one-round game (§5), and
+no rung reads a visibility rule.
 
 🔥 **The headline is a negative result about this document's own explanation, and it needed the
 right instrument to see.** P29 attributed the four-handed levelling of `simple` to §7.1.1's
@@ -239,8 +241,9 @@ only). ⚠️ **The margin is real but small, and the crossed table hides it**: 
 `outs`' 25.3 are inside each other's intervals, because a five-point edge over one opponent is
 diluted to nothing when eight others share the table. **The head-to-head cell is where a
 one-point effect is visible and the free-for-all is where it is not** — the two columns are not
-in conflict, they are answering different questions (§4). It should still be re-read under P48's
-fresh-seed replication before it is called settled, because a one-point margin is the smallest
+in conflict, they are answering different questions (§4). P48 re-read it under a fresh master
+seed and it held — `+1.23 (Holm) → +1.19 (Holm)`, the one verdict most likely to fall — which is
+what graduated it from *measured* to *settled* (§16.5), because a one-point margin is the smallest
 this document has ever asked Holm to defend.
 
 🔥 **And `sprinter` is the packet that says the mechanism variable earns its keep.** Three rungs
@@ -264,8 +267,8 @@ refusal, but expected the enrichment take to arm on 1–5% of acquisitions; **it
 that**, and the flat rate is the finding: under a one-draw horizon, `outs`' improvement-only
 take already collects essentially everything a card-priced model can see. ⚠️ **The one cell
 that hints otherwise is `angler` over `opportunist` — `+1.0 ± 0.8`, separated raw and not under
-the correction.** If it is real it is an interaction with the hold rather than with `outs` —
-flagged for P48's composition-stratified margins rather than claimed.
+the correction.** P48's fresh seed then read it **inside the interval** — the null it was flagged
+as (§16.5) — so the hint was the family's luck, not an interaction with the hold.
 
 🔥 **`opportunist` is P43's answer to the question `warden` left open, and the answer is a null
 published on purpose: `+0.1 ± 0.8` against `outs`, inside the interval.** It is `outs`' take
@@ -297,7 +300,7 @@ about minus six points.
 
 ⚠️ **Nothing in this table is comparable with a run from before 2026-08-21** — P25–P28 changed
 what winning a round means, what a money card pays, which cards may be thrown and who may stop a
-claim. The numbers below are the game as `RULES.md` rev 24 describes it, and the previous run's
+claim. The numbers below are the game as `RULES.md` rev 31 describes it, and the previous run's
 figures are quoted here only where a comparison is the finding.
 
 🔥 **`outs` was the top of the ladder for five packets, and P46 is where something finally beat
@@ -341,11 +344,11 @@ identical partners can leave different numbers of outs behind — the clearest c
 copy of a card already in a run of six, which no count of partners can see and which splits that
 run into two legal runs covering one more card.
 
-🔥 **`greedy` and `cautious` are still `+0.1 ± 1.0` apart, and `counting` is still inside the
-interval against both.** Three rungs, one level, four packets of measurement — and **the sign of
-that margin has now flipped twice without the number ever leaving its interval.** ⚠️ **Note what
-their free-for-all order does here**: `greedy` 30.7, `counting` 30.6, `cautious` 30.1 — a
-0.6-point spread among three players nothing can separate head to head. **That column is noise at
+🔥 **`greedy` and `cautious` are still `+0.0 ± 0.8` apart, and `counting` is still inside the
+interval against both.** Three rungs, one level, five packets of measurement — and **the sign of
+that margin keeps flipping without the number ever leaving its interval.** ⚠️ **Note what
+their free-for-all order does here**: `counting` 22.4, `greedy` 22.2, `cautious` 22.2 — a
+0.2-point spread among three players nothing can separate head to head. **That column is noise at
 this resolution and §4 says so.**
 
 **The family, and what the correction cost:**
@@ -483,7 +486,8 @@ apart — the +1.2 head-to-head margin is diluted here to 0.2. And `opportunist`
 points below `outs` in this column while their head-to-head cell is a dead heat. Whether that
 dilution is the column being a statement about the field, or a mixed table charging for
 something a head-to-head does not, is exactly the kind of question §3's matrix answers and this
-column cannot — P48's composition-stratified margins are the instrument that could split it.
+column cannot — and P48's composition-stratified margins (§16.1) are that instrument: they hold
+`opportunist`'s null at every mix and leave `sprinter`'s one-point edge below what a stratum resolves.
 
 ⚠️ **This answers a different question from §3 and the two are not interchangeable.** A
 free-for-all win rate depends on *who else is in the field*; a head-to-head margin weights every
@@ -620,20 +624,21 @@ changes touched — so a run that moved 87 of 91 published numbers moved this ta
 ## 7. What this apparatus can and cannot resolve
 
 At 8,010 games a cell the standard error on a head-to-head margin between two thinking rungs is
-**0.52 points**, so the 95% half-width is **1.02**.
+**0.41 points**, so the 95% half-width is **0.81**.
 
-- **Anything smaller than about a point is reported as inside the interval** and is not claimed.
-  *"Smaller than we can detect"* is a real answer.
-- ⚠️ **To resolve half a point — the size of P15's `cautious` effect — costs about 34,000 games
-  a cell**, roughly four hours on the machine this was measured on. That is very nearly the
-  32,000 P15 had to run to settle the same question.
-- **So a new rung worth less than about a point is not promotable at the default run size**, and
-  a packet proposing one has to say in advance what it will cost to measure.
+- **Anything smaller than about eight-tenths of a point is reported as inside the interval** and
+  is not claimed. *"Smaller than we can detect"* is a real answer.
+- ⚠️ **To resolve half a point — the size of P15's `cautious` effect — costs about 21,000 games
+  a cell**, a couple of hours on the machine this was measured on. That is about two-thirds of the
+  32,000 P15 had to run at four seats to settle the same question.
+- **So a new rung worth less than about eight-tenths of a point is not promotable at the default
+  run size**, and a packet proposing one has to say in advance what it will cost to measure.
 
 🔥 **P21 is the first rung this apparatus has been able to see, and the margin is what tells you
-where to look for the next one.** `outs` came in at `+3.0 ± 1.0` — three times the half-width, at
-the ordinary run size, with no special design, and **it came back at three times the half-width
-again under a changed win condition** (P29). ⚠️ **Read that beside `cautious`'s half a point
+where to look for the next one.** `outs` comes in at `+2.7 ± 0.8` — more than three times the
+half-width, at the ordinary run size, with no special design, and **it came in at three times the
+half-width against `greedy` under the four-handed win condition too** (P29, at `+3.0 ± 1.0`).
+⚠️ **Read that beside `cautious`'s half a point
 and it says something about *kinds* of idea rather than about sample sizes**: a rung that refines
 what greedy had already given up on is competing for a residue that is smaller than the
 instrument, and no affordable number of games rescues it. A rung that changes the question asked
@@ -652,16 +657,16 @@ the ones that returned nothing live.** The complete map, so nothing has to be hu
 | rung | verdict | where |
 |---|---|---|
 | `random`, `simple`, `greedy` | the three separated skill levels | §3 |
-| `cautious` | **nothing** — `+0.1 ± 1.0` against `greedy` | below |
-| `counting` | **nothing**, and pointing the wrong way — `+0.4 ± 1.0` to `greedy` | below |
-| `outs` | **`+3.0 ± 1.0` over `greedy`**, and it beats the whole field | §3 |
+| `cautious` | **nothing** — `+0.0 ± 0.8` against `greedy` | below |
+| `counting` | **nothing**, and pointing the wrong way — `−0.6 ± 0.8` to `greedy` | below |
+| `outs` | **`+2.7 ± 0.8` over `greedy`**, and it beats the whole field | §3 |
 | `warden` | **worse than nothing** — `−7.3 ± 0.8` against `outs` and four and a half to five points behind three more rungs | below, and §13 |
 | `opportunist` | **nothing** — `+0.1 ± 0.8` against `outs`, the lock at zero price, and the null is the answer to `warden`'s open question | below, and §3 |
 | `prospector` | **nothing at the stakes this is played for**, `+14.2 ± 4.8` a round at $5/$40 | §10 |
 | `purist` | **nothing** — the clean bonus at zero price changed about one round in eight thousand; the accidental floor already collects every free clean win | below, and §14 |
 | `angler` | **nothing** — `+0.6 ± 0.8` against `outs`, and the take rate never moved: the enrichment take its price permits almost never arms | below, and §3 |
 | `sprinter` | **`+1.2 ± 0.8` over `outs`** — the endgame race, and the first rung to separate above `outs`; the mechanism armed (§3) | §3 |
-| `outs/refuse` vs `outs/allow` | **nothing** — `+0.4 ± 1.0` for refusing a claim | §12 |
+| `outs/refuse` vs `outs/allow` | **nothing** — `−0.3 ± 0.8` for refusing a claim | §12 |
 
 ⚠️ **Six of the nine research rungs are entries below, `outs` and `sprinter` are in §3, one is
 in §10 and P29 added a null in §12 that is not a rung at all.** Read `cautious` and `counting`
@@ -696,14 +701,14 @@ money layer is *"not meant to be played for, only settled"*; §10 is that remark
 is now the reason nobody has to wonder.
 
 - **`cautious` — throw the card least useful to the player you feed.** Worth `+0.5 ± 0.55`
-  points (P15, 32,000 games), `−0.2 ± 1.0` at P23 and `+0.1 ± 1.0` here; **not separated from
-  `greedy` under any design yet run, and the sign has now changed twice without the number ever
+  points (P15, 32,000 games), `−0.2 ± 1.0` at P23 and `+0.0 ± 0.8` here; **not separated from
+  `greedy` under any design yet run, and the sign keeps changing without the number ever
   leaving its interval.** ⚠️ It also could not be shown to *deny* anybody anything: sitting upstream of a focal
   seat it cost that seat `−0.3 ± 1.4` points and cost itself nothing (P16). **Denial and
   self-interest point the same way**, and what is left over is only what a hand cannot influence
   — how many runs a rank sits in at all, and second-order blockages.
-- **`counting` — remember every card you have been shown.** Worth **`+0.4 ± 1.0` points to
-  `greedy`**, i.e. not separated and pointing the wrong way; `cautious` is `+0.5 ± 1.0` ahead of
+- **`counting` — remember every card you have been shown.** Worth **`−0.6 ± 0.8` points to
+  `greedy`**, i.e. not separated and pointing the wrong way; `cautious` is `+0.1 ± 0.8` ahead of
   it (8,010 games a cell). 🔥 **It is not that the memory does not work — it does, and a
   test says so.** A counting seat's estimate of what is left really does fall below what
   `cautious` would say for every card it has watched go by, and stays at the full two copies for
@@ -715,7 +720,7 @@ is now the reason nobody has to wonder.
   of 108**. It ends the round having learned about **ten cards beyond its own hand**, roughly one
   a turn, and knowing a fifth of the shoe.
   **(2) It enters where nothing is paid.** The estimate feeds `ThreatScore`, which is
-  `cautious`'s tie-break — and §3 already measured that tie-break at `+0.1 ± 1.0`. **A sharper
+  `cautious`'s tie-break — and §3 already measured that tie-break at `+0.0 ± 0.8`. **A sharper
   input to a decision rule worth nothing is worth nothing**, and the two nulls compound rather
   than add. ⚠️ **The lesson for P21 and P22: the next rung must change *which question is asked*,
   not improve an answer to a question already shown not to matter.**
@@ -755,7 +760,8 @@ is now the reason nobody has to wonder.
   this null does not test — but it would be paying for them again, against a measured zero.
   ⚠️ **Its free-for-all reading is two points behind `outs` while the head-to-head is a dead
   heat** (§4) — either the column being a statement about the field again, or a cost only a
-  mixed table charges; P48's composition-stratified margins could split those.
+  mixed table charges; P48's composition-stratified margins split those, and the null holds at
+  every mix (§16.1).
 
 - **`purist` — play for the clean bonus, at zero price.** Its whole preference — where the
   melded cards tie, shed a joker — changed **about one round in eight thousand**: its clean-win
@@ -792,7 +798,7 @@ is now the reason nobody has to wonder.
   the free-lunch frontier, and what is left costs currency**. ⚠️ **One loose end, stated
   rather than hidden**: `angler` over `opportunist` reads `+1.0 ± 0.8`, separated raw at
   `p = 0.013` and dead under Holm's 0.0083 — over the family it was measured in that is what luck
-  looks like, and it is flagged for P48 rather than claimed.
+  looks like, and P48's fresh seed confirmed it, reading the cell inside the interval (§16.5).
 
 🔥 **`sprinter` is where P46 found what the frontier costs, and the currency is not a better hand
 — it is a different objective.** After three nulls saying `outs`' cover maximisation already
@@ -809,7 +815,8 @@ it demonstrably steers into more near-wins — and the win rate moved with it. *
 and a moved margin arriving together, after three packets where neither moved, is why the +1.2 is
 believed rather than dismissed as the family's luckiest cell.** ⚠️ **It is still small** — a dead
 heat at the crossed table, and a one-point margin is the tightest this document has asked Holm to
-hold — so P48's fresh-seed replication is where it graduates from *measured* to *settled*.
+hold — so P48's fresh-seed replication is where it graduated from *measured* to *settled*, reading
+`+1.19 (Holm)` at the fresh seed against `+1.23` at the published one (§16.5).
 
 - **The upstream-neighbour hypothesis** — *the main factor is the skill of the player before
   you.* **False between thinking players** (`−1.0 ± 2.1`), true only across the gulf to someone
@@ -1007,7 +1014,7 @@ the better player.
 |---|--:|--:|--:|--:|---|
 | **$5/$1** — as played | 0.2 rounds | 24.8 | **-0.23 ± 0.32** | -0.6 ± 0.8 | inside |
 | $5/$10 | 2 rounds | 14.7 | **-0.35 ± 1.24** | -5.9 ± 0.8 | inside |
-| $5/$20 | 4 rounds | 0.1 | **+3.98 ± 2.43** | -16.0 ± 0.8 | **separated** |
+| $5/$20 | 4 rounds | 0.1 | **+3.99 ± 2.43** | -16.0 ± 0.8 | **separated** |
 | $5/$40 | 8 rounds | 0.0 | **+14.20 ± 4.81** | -16.0 ± 0.8 | **separated** |
 
 `outs` takes about 24% of its cards off the pile in every cell, which is the control: the only
@@ -1045,8 +1052,8 @@ assertion. The top row above is therefore still a **null cell**.
 
 🔥 **Yes — from a money card worth four rounds, which is one ratio lower than it used to be.**
 At $5/$20 the rung has already stopped taking (0.1%), wins **20 points fewer rounds**, and banks
-**$5.32 ± 2.27 more a round**, surviving Holm; at $5/$40 it banks **$14.63 ± 4.48**, twice what
-the same cell paid before P26. Below that, $5/$10 is `−0.21 ± 1.15` and inside its interval —
+**$3.99 ± 2.43 more a round**, surviving Holm; at $5/$40 it banks **$14.20 ± 4.81**, twice what
+the same cell paid before P26. Below that, $5/$10 is `−0.35 ± 1.24` and inside its interval —
 where before it was separated raw and pointing down. **The order of the four is monotone in the
 stakes**, which is the shape the hypothesis predicted and which has now survived a change to the
 money layer itself.
@@ -1461,8 +1468,9 @@ zero-price nulls in two consecutive packets (P43, P44) it joins the anti-recomme
 **a packet proposing one must first say what changed.** ⚠️ Two standing caveats: `purist`'s
 ceiling is bounded by §9 **#33**'s recorded default (a *locked* joker may leave only as the
 declaring discard), so if the expert session flips #33 this rung must be re-measured; and its
-verdict should be re-read under P48's composition-stratified margins like every head-to-head
-figure (review F1).
+verdict is a money-sweep cell, so P48's composition-stratified margins (F1, §16.1, which split the
+win-rate ladder) do not reach it — a stratified reading of `purist`'s money verdict is still
+unmeasured.
 
 **Two checks and one aside, from the same rows.** The rung reads no stakes and the run proves
 it — its take rate (24.81%, `outs`' own control value) and win margin are byte-identical at all
@@ -1514,8 +1522,8 @@ number.
 | the difficulty dial, all four levels crossed | 8,192 | **0.012%** | 1 |
 | the two-arm claim-permission cell | 8,010 | **0.012%** | 1 |
 
-**Twenty-eight rounds in 75,250 — about one deal in 2,700.** ⚠️ **Read the interval off the
-counts, not off the rate**: twenty-eight events is twenty-eight events, and the difference
+**Fifty-two rounds in 116,201 — about one deal in 2,200.** ⚠️ **Read the interval off the
+counts, not off the rate**: fifty-two events is fifty-two events, and the difference
 between the three cells here is noise.
 
 🔥 **The finding is what it did *not* move, and it was worth the whole re-measurement to know.**

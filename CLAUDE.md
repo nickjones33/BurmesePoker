@@ -13,9 +13,9 @@ over ad-hoc changes.
 
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
-recommendation per packet). ✅ **P43–P49 are all done (below). `P50` (the documentation cleanup —
-F10) is the next and last planned packet; the tree is green at 907.** — P47's ledger is
-already landed, and P50 is the last of the writing-down. In order: ✅ **P43 `opportunist`** (the
+recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
+F10) was the last planned packet; the tree is green at 908.** — every planned entry is landed;
+only `P40` (the Burmese rulebook, blocked on Nick's vetted text) stands open. In order: ✅ **P43 `opportunist`** (the
 feeding ban at zero price — a predicted null, question closed), ✅ **P44 `purist`** (the clean
 bonus at zero price — a predicted *positive* that came back a flat null), ✅ **P45 `angler`** (a
 draw priced in cards — the predicted null, mechanism never armed; cap 32,768 → 65,536),
@@ -33,10 +33,17 @@ with no mean moved). ✅ **The two raw-only casualties resolved**: `opportunist`
 (null), `sprinter`-`angler` firmed to Holm. `STRATEGY.md` §16. **This was not a rung packet** — the
 diff is `Sim` + tests + docs only, no agent touched.
 ✅ **P49** `docs/SIMULATIONS.md` (the measurement programme taught,
-digit-free and fenced — a pure-doc packet, no production code, tree 906 → 907), **P50** the documentation cleanup (⚠️ **`STRATEGY.md`'s prose is a run behind its
-own tables** — F10; P43 corrected four, P44 two, P45 four and P46 more in their blast radii, so
-re-verify the list — ⚠️ **and `STRATEGY.md`'s top block still describes the rules as an older
-revision with P35/P36 unbuilt, stale since P35–P37 shipped: also P50's**). ⚠️ **A rung packet
+digit-free and fenced — a pure-doc packet, no production code, tree 906 → 907), ✅ **P50** the
+documentation cleanup — F10 discharged (⚠️ **most of the known list was already current**: P43–P46's
+blast radius had brought §3/§4/§6/§12 up to date, so the genuine staleness was the top-block
+revision claims — `24/26/29`, `P35/P36 unbuilt`, `235 measurements`, all fixed to **rev 31 / built /
+372** — plus §7's resolution floor (`0.52/1.02 → 0.41/0.81`), §8's map and `cautious`/`counting`
+bullets (four-handed `± 1.0` → `± 0.8`), §10's "The answer" and §15's deal-win summary). 🔥 **The
+fence choice was extend-not-strip** (`PublishedFigureTests.TheProseFiguresTheStrategyDocumentQuotesAreTheFiguresInTheCsv`):
+`STRATEGY.md` is the measurement authority whose voice *is* inline figures, so a digit-free rewrite
+(P49's rule for the sims doc) would gut it — instead seven current-claim prose margins plus §7's
+derived floor are anchored to their CSV rows in the proven HOW-TO-PLAY-WELL shape, sign carried by
+the scale, proved able to fail. Pure-doc, tree 907 → 908. ⚠️ **A rung packet
 pays a suite regeneration**,
 **~5 h on this 24-core workstation at P46** (the older "~6¼ h / ~22,500 s" is a *laptop* figure
 and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pasted wall clock).

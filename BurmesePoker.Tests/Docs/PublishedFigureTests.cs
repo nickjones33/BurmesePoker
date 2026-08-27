@@ -121,6 +121,79 @@ public class PublishedFigureTests
     }
 
     /// <summary>
+    /// ✅ <b>P50 — the figures the strategy document quotes <em>in prose</em> are the figures in
+    /// the CSV, not a generation behind them.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Finding F10 was a whole class of staleness the table fence above could not see.</b>
+    /// <c>sim suite</c> regenerates every <em>table</em> in <c>docs/STRATEGY.md</c>, and
+    /// <see cref="EveryFigureTheStrategyDocumentTabulatesIsTheFigureInTheCsv"/> holds them to the
+    /// CSV — but the analytical prose between the tables quotes the same margins in words, and
+    /// nothing regenerates a sentence. So §3's <c>warden</c> paragraph, §7's resolution floor,
+    /// §8's map and §10's answer each drifted a measurement behind their own tables, quoting
+    /// four-handed <c>± 1.0</c> intervals under five-handed <c>± 0.8</c> ones.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The choice P50 made, and why it is this and not the digit-free rule P49 applied to
+    /// <c>SIMULATIONS.md</c>:</b> <c>STRATEGY.md</c> is the measurement authority, and its whole
+    /// voice is the inline interpretation of a measured margin — a digit-free rewrite would gut
+    /// the one document whose job is to quote and explain figures. So the fence keeps the voice
+    /// and is extended instead, in the exact anchored shape already proven for
+    /// <c>HOW-TO-PLAY-WELL.md</c> below: each current-claim prose margin is bound to the CSV row
+    /// it duplicates, the printed sign is carried by the scale so a flipped margin fails rather
+    /// than reading as its own opposite, and the tolerance is the printed precision. ⚠️ <b>It
+    /// fences the current-claim margins, never the deliberately-kept historical ones</b> (P34's
+    /// newest-first rule) — so the anchors are the figures a reader is told are true <em>now</em>.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheProseFiguresTheStrategyDocumentQuotesAreTheFiguresInTheCsv()
+    {
+        var strategy = Documentation.Text("docs/STRATEGY.md");
+
+        // Each anchor captures (mean, interval); the CSV row it must agree with; and the scale
+        // that carries the printed sign and the units (points of win rate, or dollars a round).
+        // ⚠️ The '−' in the money-blind and refusal anchors is U+2212, the character the document
+        // prints, not an ASCII hyphen — the sign is in the anchor and the scale, never captured.
+        (string Anchor, string Id, double Scale)[] margins =
+        [
+            // §3 headline: the first rung to separate above outs, and the tightest cell in the file.
+            (@"head-to-head cell against `outs` is \*\*\+([\d.]+) ± ([\d.]+),", "ladder.head-to-head.outs-over-sprinter", -100),
+            // §8 map: outs over greedy, cautious's null, counting pointing the wrong way, the refusal null.
+            (@"\*\*`\+([\d.]+) ± ([\d.]+)` over `greedy`\*\*, and it beats the whole field", "ladder.head-to-head.greedy-over-outs", -100),
+            (@"\*\*nothing\*\* — `\+([\d.]+) ± ([\d.]+)` against `greedy` \| below", "ladder.head-to-head.greedy-over-cautious", -100),
+            (@"pointing the wrong way — `−([\d.]+) ± ([\d.]+)` to `greedy` \| below", "ladder.head-to-head.greedy-over-counting", 100),
+            (@"\*\*nothing\*\* — `−([\d.]+) ± ([\d.]+)` for refusing a claim", "claim.permission.refuse-over-allow", -100),
+            // §10 "The answer": the two separated money cells, in dollars a round.
+            (@"\*\*\$([\d.]+) ± ([\d.]+) more a round\*\*", "money.net-per-round.5-20.prospector", 1),
+            (@"at \$5/\$40 it banks \*\*\$([\d.]+) ± ([\d.]+)\*\*", "money.net-per-round.5-40.prospector", 1),
+        ];
+
+        foreach (var (anchor, id, scale) in margins)
+        {
+            var quoted = Regex.Match(strategy, anchor);
+
+            Assert.True(quoted.Success, $"docs/STRATEGY.md no longer quotes {id} where P50 fenced it.");
+
+            Compare(quoted.Groups[1].Value, Published[id].Mean * scale, $"{id}'s prose margin");
+            Compare(quoted.Groups[2].Value, Published[id].Interval * Math.Abs(scale), $"{id}'s prose interval");
+        }
+
+        // §7's resolution floor is derived, not a CSV cell: the head-to-head half-width in points,
+        // and the standard error that is it over 1.96. Both are quoted in prose and both went
+        // stale at four-handed values (1.02 / 0.52) under the five-handed tables (0.81 / 0.41).
+        var halfWidth = Published["ladder.head-to-head.greedy-over-cautious"].Interval * 100;
+
+        var floor = Regex.Match(strategy, @"is\s+\*\*([\d.]+) points\*\*, so the 95% half-width is \*\*([\d.]+)\*\*");
+
+        Assert.True(floor.Success, "docs/STRATEGY.md §7 no longer states the resolution floor.");
+
+        Compare(floor.Groups[2].Value, halfWidth, "§7's 95% half-width");
+        Compare(floor.Groups[1].Value, halfWidth / 1.96, "§7's standard error");
+    }
+
+    /// <summary>
     /// ✅ <b>The guide written for a player quotes the same file the strategy document does.</b>
     /// </summary>
     /// <remarks>

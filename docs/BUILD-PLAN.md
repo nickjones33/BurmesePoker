@@ -7388,7 +7388,21 @@ a cell, a margin, and a verdict are.
 
 ---
 
-### P50 — Documentation cleanup: the prose catches up with the tables ☐ — **after P48 and P49**
+### P50 — Documentation cleanup: the prose catches up with the tables ☑ — **done 2026-08-27 (Opus 4.8)**
+
+> ✅ **Done.** F10 discharged. Most of the 2026-08-23 known list was already current — P43–P46's
+> blast radius had regenerated §3/§4/§6/§12 — so the genuine staleness was the **top block**
+> (rev 24/26/29, "P35/P36 unbuilt", "235 measurements" → rev 31 / built / 372), **§7's resolution
+> floor** (0.52/1.02/~34,000 → 0.41/0.81/~21,000), **§8's map + cautious/counting bullets**
+> (± 1.0 → ± 0.8), **§3's greedy/cautious/counting paragraph**, **§10's "The answer"** (matched to
+> its own table, and the table's 3.98 → 3.99 rounding), and **§15's deal-win summary** (28/75,250 →
+> 52/116,201) — each re-derived from the CSV. P48's forward-references (§3/§4/§8/§14's "re-read
+> under P48", "flagged for P48") reworded to the settled §16 result. 🔥 **Item 2 chose *extend the
+> fence*, not digit-free**: `STRATEGY.md` is the measurement authority whose voice *is* inline
+> figures, so a digit-free rewrite would gut it. `PublishedFigureTests.TheProseFiguresTheStrategyDocumentQuotesAreTheFiguresInTheCsv`
+> anchors seven current-claim prose margins plus §7's derived floor to their CSV rows in the proven
+> HOW-TO-PLAY-WELL shape, proved able to fail. README/PLAYING/RULES-PRIMER swept clean. Tree
+> 907 → 908. See `STATUS.md`.
 
 **Goal.** Discharge review finding **F10** — `STRATEGY.md`'s prose quotes a measurement
 generation behind its own tables in at least seven places — and sweep the rest of `docs/` for
