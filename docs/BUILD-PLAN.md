@@ -7294,7 +7294,26 @@ which is an instrument, not a tie-break.
 
 ---
 
-### P48 — The full verification and measurement-hardening run ☐ — **after P43–P46**
+### P48 — The full verification and measurement-hardening run ☑ **done 2026-08-27, on Opus 4.8 — F1–F7 discharged and `sprinter` settled at a fresh seed**
+
+✅ **Outcome.** All six build items landed. **F1** composition margins (`ladder.composition.*`)
+found `warden`'s loss is partly self-play compounding (`outs` beats a lone `warden` +6.3, four
+`warden`s +10.6) and confirmed P43's `opportunist` null holds at every composition. **F2** money
+margins (`ladder.money-margin.*`) agree in direction with the win-rate ladder everywhere (0 of 45
+disagree) and show `sprinter` banking +$0.45/round over `outs`. **F5** the fresh-seed replication
+(`sim replicate` → `docs/strategy/replication.csv`): **every Holm verdict held (0 of 48 fell)**, 3
+of 48 margins landed just outside their published interval (fewer than the ~8 the geometry
+predicts), and **`sprinter` over `outs` reproduced +1.23 → +1.19, both Holm — the graduation from
+measured to settled.** **F6** bootstrap on the two separated money cells: normal intervals hold at
+money's tails. **F7** the field rates now carry intervals (the ladder's lock-bite 30.0% is
+separated from the dial's 21.9%). 🔥 **Reproduction: 214 of 235 shared rows byte-identical and not
+one mean moved** — the 21 movers only gained an interval (F7). ⚠️ **Two things for P49/P50:** the
+efficient replication reads seed A from `measurements.csv` (a dial-ordering bug cost the first run,
+now pre-flighted); and `STRATEGY.md` §3's "re-read under P48 before settled" and its "flagged for
+P48" notes are now discharged by §16 — **P50's staleness triage owns rewording them.** `STRATEGY.md`
+gained §16 (§16.1–§16.5); the tree is green at **906**, from 897.
+
+*The packet as planned:*
 
 **Goal.** One consolidated pass that (a) verifies the whole tree the way P42 verified the
 browser, and (b) discharges the statistical review's recommendations — so that the documents

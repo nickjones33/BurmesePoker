@@ -1,0 +1,49 @@
+id,subject,mean_a,interval_a,verdict_a,mean_b,interval_b,verdict_b,margin_inside,verdict
+ladder.head-to-head.random-over-simple,random vs simple,-0.398402,0.003429,separated (Holm),-0.398102,0.003431,separated (Holm),yes,reproduces
+ladder.head-to-head.random-over-greedy,random vs greedy,-0.398102,0.003443,separated (Holm),-0.398302,0.003434,separated (Holm),yes,reproduces
+ladder.head-to-head.random-over-cautious,random vs cautious,-0.398302,0.003440,separated (Holm),-0.398302,0.003434,separated (Holm),yes,reproduces
+ladder.head-to-head.random-over-counting,random vs counting,-0.398202,0.003443,separated (Holm),-0.398302,0.003434,separated (Holm),yes,reproduces
+ladder.head-to-head.random-over-outs,random vs outs,-0.398302,0.003436,separated (Holm),-0.399201,0.003387,separated (Holm),yes,reproduces
+ladder.head-to-head.random-over-warden,random vs warden,-0.395571,0.003500,separated (Holm),-0.396509,0.003491,separated (Holm),yes,reproduces
+ladder.head-to-head.random-over-opportunist,random vs opportunist,-0.398072,0.003438,separated (Holm),-0.398901,0.003400,separated (Holm),yes,reproduces
+ladder.head-to-head.random-over-angler,random vs angler,-0.398302,0.003436,separated (Holm),-0.399201,0.003387,separated (Holm),yes,reproduces
+ladder.head-to-head.random-over-sprinter,random vs sprinter,-0.398302,0.003438,separated (Holm),-0.399201,0.003394,separated (Holm),yes,reproduces
+ladder.head-to-head.simple-over-greedy,simple vs greedy,-0.074207,0.008017,separated (Holm),-0.079800,0.007897,separated (Holm),yes,reproduces
+ladder.head-to-head.simple-over-cautious,simple vs cautious,-0.080599,0.007999,separated (Holm),-0.079401,0.007938,separated (Holm),yes,reproduces
+ladder.head-to-head.simple-over-counting,simple vs counting,-0.079600,0.007998,separated (Holm),-0.078801,0.007944,separated (Holm),yes,reproduces
+ladder.head-to-head.simple-over-outs,simple vs outs,-0.108365,0.007879,separated (Holm),-0.100974,0.007848,separated (Holm),yes,reproduces
+ladder.head-to-head.simple-over-warden,simple vs warden,-0.028464,0.008096,separated (Holm),-0.025868,0.008101,separated (Holm),yes,reproduces
+ladder.head-to-head.simple-over-opportunist,simple vs opportunist,-0.100574,0.007897,separated (Holm),-0.090886,0.007875,separated (Holm),no,outside the interval
+ladder.head-to-head.simple-over-angler,simple vs angler,-0.107965,0.007885,separated (Holm),-0.101373,0.007844,separated (Holm),yes,reproduces
+ladder.head-to-head.simple-over-sprinter,simple vs sprinter,-0.115056,0.007832,separated (Holm),-0.108464,0.007806,separated (Holm),yes,reproduces
+ladder.head-to-head.greedy-over-cautious,greedy vs cautious,0.000300,0.008096,inside the interval,-0.002797,0.008150,inside the interval,yes,reproduces
+ladder.head-to-head.greedy-over-counting,greedy vs counting,0.006092,0.008121,inside the interval,0.000699,0.008115,inside the interval,yes,reproduces
+ladder.head-to-head.greedy-over-outs,greedy vs outs,-0.026667,0.008096,separated (Holm),-0.029863,0.008073,separated (Holm),yes,reproduces
+ladder.head-to-head.greedy-over-warden,greedy vs warden,0.044844,0.008068,separated (Holm),0.043845,0.008083,separated (Holm),yes,reproduces
+ladder.head-to-head.greedy-over-opportunist,greedy vs opportunist,-0.019875,0.008111,separated (Holm),-0.022272,0.008072,separated (Holm),yes,reproduces
+ladder.head-to-head.greedy-over-angler,greedy vs angler,-0.026167,0.008100,separated (Holm),-0.028365,0.008072,separated (Holm),yes,reproduces
+ladder.head-to-head.greedy-over-sprinter,greedy vs sprinter,-0.034657,0.008075,separated (Holm),-0.037054,0.008068,separated (Holm),yes,reproduces
+ladder.head-to-head.cautious-over-counting,cautious vs counting,0.000999,0.008147,inside the interval,-0.000200,0.008137,inside the interval,yes,reproduces
+ladder.head-to-head.cautious-over-outs,cautious vs outs,-0.029164,0.008121,separated (Holm),-0.033159,0.008065,separated (Holm),yes,reproduces
+ladder.head-to-head.cautious-over-warden,cautious vs warden,0.047441,0.008092,separated (Holm),0.044245,0.008054,separated (Holm),yes,reproduces
+ladder.head-to-head.cautious-over-opportunist,cautious vs opportunist,-0.021573,0.008139,separated (Holm),-0.023770,0.008086,separated (Holm),yes,reproduces
+ladder.head-to-head.cautious-over-angler,cautious vs angler,-0.028365,0.008121,separated (Holm),-0.032459,0.008064,separated (Holm),yes,reproduces
+ladder.head-to-head.cautious-over-sprinter,cautious vs sprinter,-0.033159,0.008072,separated (Holm),-0.036355,0.008084,separated (Holm),yes,reproduces
+ladder.head-to-head.counting-over-outs,counting vs outs,-0.029064,0.008131,separated (Holm),-0.031061,0.008045,separated (Holm),yes,reproduces
+ladder.head-to-head.counting-over-warden,counting vs warden,0.050137,0.008026,separated (Holm),0.046542,0.008053,separated (Holm),yes,reproduces
+ladder.head-to-head.counting-over-opportunist,counting vs opportunist,-0.020574,0.008116,separated (Holm),-0.023271,0.008079,separated (Holm),yes,reproduces
+ladder.head-to-head.counting-over-angler,counting vs angler,-0.028764,0.008132,separated (Holm),-0.030162,0.008044,separated (Holm),yes,reproduces
+ladder.head-to-head.counting-over-sprinter,counting vs sprinter,-0.034657,0.008098,separated (Holm),-0.038652,0.008050,separated (Holm),yes,reproduces
+ladder.head-to-head.outs-over-warden,outs vs warden,0.072809,0.007998,separated (Holm),0.066117,0.008034,separated (Holm),yes,reproduces
+ladder.head-to-head.outs-over-opportunist,outs vs opportunist,-0.000599,0.008100,inside the interval,0.004195,0.008099,inside the interval,yes,reproduces
+ladder.head-to-head.outs-over-angler,outs vs angler,-0.005893,0.008116,inside the interval,-0.000899,0.008102,inside the interval,yes,reproduces
+ladder.head-to-head.outs-over-sprinter,outs vs sprinter,-0.012285,0.008099,separated (Holm),-0.011885,0.008105,separated (Holm),yes,reproduces
+ladder.head-to-head.warden-over-opportunist,warden vs opportunist,-0.061523,0.008008,separated (Holm),-0.059825,0.008018,separated (Holm),yes,reproduces
+ladder.head-to-head.warden-over-angler,warden vs angler,-0.069413,0.007999,separated (Holm),-0.071011,0.007994,separated (Holm),yes,reproduces
+ladder.head-to-head.warden-over-sprinter,warden vs sprinter,-0.074207,0.007988,separated (Holm),-0.078402,0.007969,separated (Holm),yes,reproduces
+ladder.head-to-head.opportunist-over-angler,opportunist vs angler,-0.010287,0.008129,raw only,-0.007690,0.008090,inside the interval,yes,reproduces
+ladder.head-to-head.opportunist-over-sprinter,opportunist vs sprinter,-0.015581,0.008115,separated (Holm),-0.018876,0.008076,separated (Holm),yes,reproduces
+ladder.head-to-head.angler-over-sprinter,angler vs sprinter,-0.010986,0.008104,raw only,-0.012185,0.008097,separated (Holm),yes,reproduces
+difficulty.step.medium-over-easy,medium over easy,0.091186,0.007894,separated (Holm),0.091785,0.007962,separated (Holm),yes,reproduces
+difficulty.step.hard-over-medium,hard over medium,0.079301,0.007962,separated (Holm),0.070512,0.007957,separated (Holm),no,outside the interval
+difficulty.step.expert-over-hard,expert over hard,0.065418,0.008007,separated (Holm),0.056429,0.007985,separated (Holm),no,outside the interval

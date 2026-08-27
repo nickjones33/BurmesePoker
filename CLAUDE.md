@@ -13,9 +13,9 @@ over ad-hoc changes.
 
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
-recommendation per packet). ✅ **P43 `opportunist`, P44 `purist`, P45 `angler` and P46 `sprinter`
-are all done (below). `P48` (the verification-and-hardening run) is the next code packet** — P47's
-ledger is already landed, and P49/P50 are the writing-down. In order: ✅ **P43 `opportunist`** (the
+recommendation per packet). ✅ **P43–P48 are all done (below). `P49` (`docs/SIMULATIONS.md`, the
+measurement programme taught) is the next packet; the tree is green at 906.** — P47's ledger is
+already landed, and P49/P50 are the writing-down. In order: ✅ **P43 `opportunist`** (the
 feeding ban at zero price — a predicted null, question closed), ✅ **P44 `purist`** (the clean
 bonus at zero price — a predicted *positive* that came back a flat null), ✅ **P45 `angler`** (a
 draw priced in cards — the predicted null, mechanism never armed; cap 32,768 → 65,536),
@@ -25,11 +25,13 @@ was paid a third time, `65,536 → 131,072` for `10⁵ = 100,000`, a stated deci
 **P47** the blocked-rungs ledger (`jackpot`,
 `streaker` — each needs an instrument that does not exist; **plus two anti-recommendations**:
 no defence-refinement rungs, and no *paying* clean-bonus rung without new information),
-**P48** the full verification and
-measurement-hardening run (⚠️ **tensions queued for its composition-stratified margins**:
-`opportunist`/`warden` crossed-column vs head-to-head gaps, **two raw-only casualties**
-`angler`-`sprinter` (p=0.0079) and `opportunist`-`angler` (p=0.013), and 🔥 **`sprinter`'s
-`+1.2 ± 0.8` itself — a one-point margin wants a fresh-seed replication before it is *settled***),
+🔥 ✅ **P48** the full verification and
+measurement-hardening run — **F1–F7 discharged and `sprinter` graduated to *settled*** (fresh-seed
+replication `+1.23 → +1.19`, both Holm; every Holm verdict held; `warden`'s loss is partly
+self-play compounding; the money ladder agrees with the win-rate ladder; 214/235 rows byte-identical
+with no mean moved). ✅ **The two raw-only casualties resolved**: `opportunist`-`angler` fell inside
+(null), `sprinter`-`angler` firmed to Holm. `STRATEGY.md` §16. **This was not a rung packet** — the
+diff is `Sim` + tests + docs only, no agent touched.
 **P49** `docs/SIMULATIONS.md` (the measurement programme taught,
 digit-free), **P50** the documentation cleanup (⚠️ **`STRATEGY.md`'s prose is a run behind its
 own tables** — F10; P43 corrected four, P44 two, P45 four and P46 more in their blast radii, so

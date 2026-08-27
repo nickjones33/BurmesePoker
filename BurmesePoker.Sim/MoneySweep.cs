@@ -164,8 +164,21 @@ public sealed record MoneyCell(
     Measurement SideMargin,
     Measurement WinMargin,
     int Rounds = 0,
-    int JokerlessRounds = 0)
+    int JokerlessRounds = 0,
+    IReadOnlyList<GameValue>? ChallengerNetByGame = null,
+    IReadOnlyList<GameValue>? ReferenceNetByGame = null)
 {
+    /// <summary>
+    /// A percentile-bootstrap interval on <see cref="NetMargin"/> — 🔥 <b>P48's coverage check</b>
+    /// (review F6). Money a round is heavy-tailed (a ×5 jackpot is a rare, large, one-sided
+    /// contribution), so a separated money cell is exactly where the normal interval this file
+    /// publishes wants a second opinion the tails cannot fool.
+    /// </summary>
+    public BootstrapInterval BootstrapNetMargin(int resamples = Bootstrap.DefaultResamples, int seed = 20260826) =>
+        ChallengerNetByGame is null || ReferenceNetByGame is null
+            ? throw new InvalidOperationException("This cell kept no per-game net series to bootstrap.")
+            : Bootstrap.PairedMargin(ChallengerNetByGame, ReferenceNetByGame, resamples, seed);
+
     /// <summary>Share of the settled rounds won jokerless in this cell (RULES.md §7.3).</summary>
     public double JokerlessRate => Rounds == 0 ? 0 : (double)JokerlessRounds / Rounds;
 
@@ -329,7 +342,9 @@ public static class MoneySweep
             Measurement.Paired(challenger.SideBetPerRound, reference.SideBetPerRound),
             Measurement.Paired(challenger.WinRate, reference.WinRate),
             rounds,
-            jokerless);
+            jokerless,
+            challenger.NetPerRound,
+            reference.NetPerRound);
     }
 
     /// <summary>

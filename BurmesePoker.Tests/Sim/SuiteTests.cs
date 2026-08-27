@@ -152,6 +152,21 @@ public class SuiteTests
                 ids, id => id.StartsWith($"money.take-rate.5-1.{challenger.Name}", StringComparison.Ordinal));
         }
 
+        // ✅ P48's hardening readouts, each produced by the suite rather than read from the file
+        // (the file-level fences are in StandingAnswerTests). F2 — every ladder pair in dollars;
+        // F1 — the same pairs split by seating composition; F7 — a field rate now carrying an
+        // interval where it used to be a bare point.
+        Assert.Contains(ids, id => id == "ladder.money-margin.simple-over-greedy");
+        Assert.Contains(ids, id => id == "ladder.composition.simple-over-greedy.1-of-4");
+        Assert.Contains(ids, id => id == "ladder.composition.simple-over-greedy.3-of-4");
+
+        var lockLive = report.Measurements.Single(one => one.Id == "feeding.lock-live.ladder");
+
+        Assert.True(
+            lockLive.Value.StandardError > 0,
+            "feeding.lock-live.ladder is a rate the document compares across fields (F7) and must "
+            + "carry an interval, not a bare point.");
+
         var path = Path.Combine(Path.GetTempPath(), $"burmese-poker-{Guid.NewGuid():N}", "measurements.csv");
 
         try

@@ -345,6 +345,86 @@ public static class Suite
                 verdict.Survives ? "separated (Holm)" : verdict.Separated ? "raw only" : "inside the interval"));
         }
 
+        // 🔥 F1 — the same head-to-head margins, split by seating composition (BUILD-PLAN P48).
+        // A pair cell pools every mix in which both sit, so the pooled margin cannot tell a rung
+        // that plays worse head to head from one whose weakness compounds when the table fills
+        // with its own copies. The two extremes — the row outnumbered one-to-four, and the row
+        // outnumbering four-to-one — read that apart. A decomposition of the corrected figure
+        // above, so no Holm family of its own: the verdict is the raw interval.
+        foreach (var cell in tournament.Pairs)
+        {
+            foreach (var rowSeats in new[] { 1, options.Seats - 1 })
+            {
+                var stratum = cell.MarginAtComposition(rowSeats);
+
+                if (stratum.Count == 0)
+                {
+                    continue;
+                }
+
+                measurements.Add(new SuiteMeasurement(
+                    $"ladder.composition.{cell.Row}-over-{cell.Column}.{rowSeats}-of-{options.Seats}",
+                    "The head-to-head margin within the seating mix in which the row held this many "
+                    + "of the seats — F1's composition split (BUILD-PLAN P48). ⚠️ Read the two "
+                    + "compositions of a pair against EACH OTHER, not against the pooled figure: a "
+                    + "margin flat across them is one player beating another; a margin that deepens "
+                    + "as the row's own count rises is self-play compounding (what P31 left open for "
+                    + "warden). The pooled margin is a ratio-of-sums difference and can sit outside "
+                    + "the strata's range.",
+                    tournamentCommand,
+                    $"{cell.Row} over {cell.Column}, {rowSeats} of {options.Seats} row seats",
+                    "win rate margin",
+                    stratum,
+                    stratum.IsSeparatedFromZero ? "separated (raw)" : "inside the interval"));
+            }
+        }
+
+        // 🔥 F2 — every ladder pair's margin in money, not just win rate (BUILD-PLAN P48). The §3
+        // ranking is by win rate, but the game's object is money (RULES.md §4); a rung that wins
+        // fewer rounds and banks more is the better player and the win-rate ladder would misrank
+        // it. Its own Holm family, because it is a second question over the same field.
+        var moneyMargins = tournament.Pairs
+            .Select(cell => (
+                cell,
+                margin: Measurement.Paired(
+                    cell.Player(cell.Row).NetPerRoundByGame, cell.Player(cell.Column).NetPerRoundByGame)))
+            .ToList();
+
+        var moneyVerdicts = Holm.Correct(
+            [.. moneyMargins.Select(pair => (pair.cell.Label, pair.margin))],
+            Holm.DefaultAlpha);
+
+        for (var index = 0; index < moneyMargins.Count; index++)
+        {
+            var (cell, margin) = moneyMargins[index];
+            var moneyVerdict = moneyVerdicts[index];
+            var winVerdict = tournament.Verdicts[index];
+
+            // 🔥 The headline F2 is hunting for: the two currencies disagreeing about who is
+            // better. Both must clear their own correction before it is claimed — two unseparated
+            // numbers pointing opposite ways are one number pointing nowhere.
+            var disagree = moneyVerdict.Survives && winVerdict.Survives
+                && Math.Sign(margin.Mean) != Math.Sign(cell.Margin.Mean);
+
+            var reading = disagree
+                ? "DISAGREES WITH WIN RATE"
+                : moneyVerdict.Survives ? "separated (Holm)"
+                : moneyVerdict.Separated ? "raw only"
+                : "inside the interval";
+
+            measurements.Add(new SuiteMeasurement(
+                $"ladder.money-margin.{cell.Row}-over-{cell.Column}",
+                "The same head-to-head pair in dollars a round, so the §3 win-rate ordering is "
+                + "checked in the currency the game is actually played for (RULES.md §4, BUILD-PLAN "
+                + "P48 F2). ⚠️ Where the verdict reads DISAGREES WITH WIN RATE the two orderings "
+                + "part company — a rung banking more while winning fewer rounds.",
+                tournamentCommand,
+                cell.Label,
+                "net per round margin",
+                margin,
+                reading));
+        }
+
         foreach (var standing in tournament.Ranking)
         {
             measurements.Add(new SuiteMeasurement(
@@ -561,6 +641,33 @@ public static class Suite
                     "jokerless rate",
                     new Measurement(cell.Rounds, cell.JokerlessRate, 0),
                     string.Empty));
+
+                // 🔥 F6 — a bootstrap coverage check on the cells that actually separated, which
+                // are the heaviest-tailed verdicts in the file: money a round carries a rare ×5
+                // jackpot (RULES.md §4) that the normal interval's symmetry cannot see. The row is
+                // published only where the net margin survived Holm, because a coverage check on a
+                // dead heat says nothing. Its interval is the resampled half-width; the verdict is
+                // whether the normal interval this file publishes is honest at these tails.
+                if (verdict.Survives)
+                {
+                    var boot = cell.BootstrapNetMargin();
+                    var (below, above) = boot.FromPoint;
+                    var halfWidth = (below + above) / 2;
+
+                    measurements.Add(new SuiteMeasurement(
+                        $"money.net-per-round-bootstrap.{cell.Id}.{challenger}",
+                        "A 95% percentile bootstrap of the net-per-round margin above, resampling "
+                        + "whole games with replacement (BUILD-PLAN P48 F6). ⚠️ Published only for a "
+                        + "cell that separated, and only to check the normal interval it separated "
+                        + "by: money a round is heavy-tailed, so this is where the symmetric "
+                        + "interval would understate the spread if anywhere. The verdict says "
+                        + "whether it does; the interval column is the resampled half-width.",
+                        moneyCommand,
+                        $"{challenger} over {reference} at {cell.Label}",
+                        "net per round margin",
+                        new Measurement(boot.Resamples, boot.Point, halfWidth / 1.959963985),
+                        boot.NormalIsCovered ? "normal interval holds" : "NORMAL INTERVAL UNDERSTATES TAILS"));
+                }
             }
         }
 
@@ -612,18 +719,18 @@ public static class Suite
                 command,
                 scope,
                 "turns a round",
-                new Measurement(cell.Rounds, cell.TurnsPerRound, 0),
+                Measurement.Of(cell.Field!.TurnsPerRound),
                 string.Empty));
 
             measurements.Add(new SuiteMeasurement(
                 $"play.abandoned.{scope}",
                 "Share of games given up at the turn cap. This is the number that would show a "
                 + "table failing to converge, and a value above zero is a result rather than a "
-                + "nuisance (BUILD-PLAN P29).",
+                + "nuisance (BUILD-PLAN P29). ⚠️ Carries an interval since P48 (F7).",
                 command,
                 scope,
                 "abandoned rate",
-                new Measurement(cell.Games, cell.AbandonedRate, 0),
+                Measurement.Of(cell.Field!.Abandoned),
                 cell.Abandoned == 0 ? "every game settled" : "SOME GAMES DID NOT SETTLE"));
 
             measurements.Add(new SuiteMeasurement(
@@ -633,7 +740,7 @@ public static class Suite
                 command,
                 scope,
                 "refusal rate",
-                new Measurement(cell.ClaimAttempts, cell.RefusalRate, 0),
+                Measurement.Of(cell.Field!.Refusal),
                 string.Empty));
 
             measurements.Add(new SuiteMeasurement(
@@ -649,7 +756,7 @@ public static class Suite
                 command,
                 scope,
                 "jokerless rate",
-                new Measurement(cell.Rounds, cell.JokerlessRate, 0),
+                Measurement.Of(cell.Field!.Jokerless),
                 string.Empty));
 
             measurements.Add(new SuiteMeasurement(
@@ -667,7 +774,7 @@ public static class Suite
                 command,
                 scope,
                 "deal-bonus rate",
-                new Measurement(cell.Rounds, cell.DealWinRate, 0),
+                Measurement.Of(cell.Field!.DealWin),
                 string.Empty));
 
             measurements.Add(new SuiteMeasurement(
@@ -677,7 +784,7 @@ public static class Suite
                 command,
                 scope,
                 "claim rate",
-                new Measurement(cell.Rounds, cell.ClaimRate, 0),
+                Measurement.Of(cell.Field!.ClaimRate),
                 string.Empty));
 
             // 🔥 P31's mechanism variable, and its denominator. Measured at the crossed table
@@ -693,7 +800,7 @@ public static class Suite
                 command,
                 scope,
                 "restricted rate",
-                new Measurement((int)cell.DiscardsChosen, cell.RestrictedRate, 0),
+                Measurement.Of(cell.Field!.LockLive),
                 string.Empty));
 
             measurements.Add(new SuiteMeasurement(
@@ -705,7 +812,7 @@ public static class Suite
                 command,
                 scope,
                 "lock bite rate",
-                new Measurement((int)cell.RestrictedTurns, cell.LockBiteRate, 0),
+                Measurement.Of(cell.Field!.LockBite),
                 string.Empty));
         }
 

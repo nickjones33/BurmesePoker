@@ -452,6 +452,67 @@ public class StandingAnswerTests
         Assert.Contains(archive.Keys, id => id.StartsWith("money.net-per-round.", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// ✅ <b>P48 — the measurement-hardening readouts are in the published file, not just the
+    /// code.</b> Every head-to-head pair the ladder ranks is also published in dollars (F2) and
+    /// split by seating composition (F1), and a field rate the document compares across fields
+    /// carries an interval (F7).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>It reads the file rather than running the suite</b>, in the idiom of the tests above
+    /// it: running the suite would assert the code emits these rows, which is true by construction;
+    /// reading the file asserts somebody <em>ran</em> it since the readouts were added. The join
+    /// is the ladder's own head-to-head ids — every one of them has a money twin and both extreme
+    /// compositions — so a pair that reaches the win-rate matrix and not the money one is a red
+    /// build.
+    /// </remarks>
+    [Fact]
+    public void EveryLadderPairIsPublishedInDollarsAndSplitByComposition()
+    {
+        var seats = SuiteOptions.DefaultSeats;
+
+        var pairs = Published.Keys
+            .Where(id => id.StartsWith("ladder.head-to-head.", StringComparison.Ordinal))
+            .Select(id => id["ladder.head-to-head.".Length..])
+            .ToList();
+
+        Assert.NotEmpty(pairs);
+
+        foreach (var pair in pairs)
+        {
+            // F2 — the same pair in the currency the game is played for (RULES.md §4).
+            Assert.True(
+                Published.ContainsKey($"ladder.money-margin.{pair}"),
+                $"ladder.money-margin.{pair} is missing: a ranked pair with no money twin (P48 F2). "
+                + "Regenerate docs/strategy/measurements.csv with `sim suite`.");
+
+            // F1 — the row outnumbered one-to-many, and outnumbering many-to-one.
+            Assert.True(Published.ContainsKey($"ladder.composition.{pair}.1-of-{seats}"));
+            Assert.True(Published.ContainsKey($"ladder.composition.{pair}.{seats - 1}-of-{seats}"));
+        }
+
+        // F7 — the rates §12 and §13 compare across fields now carry a standard error, so a
+        // difference between two of them is a claim with an error bar rather than two bare points.
+        foreach (var id in new[]
+        {
+            "play.turns-per-round.ladder", "feeding.lock-live.ladder", "feeding.lock-bit.ladder"
+        })
+        {
+            Assert.NotEqual(string.Empty, Row(id)[Column.Interval]);
+        }
+
+        // F6 — a bootstrap coverage row exists for at least one separated money cell, and it says
+        // whether the normal interval it separated by is honest at money's tails.
+        var bootstrap = Published.Keys
+            .Where(id => id.StartsWith("money.net-per-round-bootstrap.", StringComparison.Ordinal))
+            .ToList();
+
+        Assert.NotEmpty(bootstrap);
+        Assert.All(bootstrap, id => Assert.Contains(
+            Row(id)[Column.Verdict],
+            new[] { "normal interval holds", "NORMAL INTERVAL UNDERSTATES TAILS" }));
+    }
+
     /// <summary>Which column of a row is which. The header names them; this is the order.</summary>
     private static class Column
     {

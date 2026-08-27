@@ -37,6 +37,11 @@ try
         return RunSuite(args[1..]);
     }
 
+    if (args.Length > 0 && args[0] == "replicate")
+    {
+        return RunReplicate(args[1..]);
+    }
+
     return args.Length > 0 && args[0] == "replay" ? Replay(args[1..]) : Run(args);
 }
 catch (ArgumentException problem)
@@ -618,6 +623,73 @@ static int RunSuite(string[] args)
     }
 
     return 0;
+}
+
+// 🔥 F5 — the fresh-seed replication (BUILD-PLAN P48). Runs §3's ladder matrix and the dial's
+// adjacent steps at a second master seed and sets them beside the published one, so the project
+// says once whether a second draw of the world finds the same thing rather than only that one
+// draw reproduces to the bit.
+static int RunReplicate(string[] args)
+{
+    var arguments = Arguments.Parse(args);
+
+    var ladder = Ladder(arguments.Value("strategies", WholeLadder()));
+
+    // ⚠️ The dial must be listed in the SAME order the suite lists it (StrategyCatalog.Levels,
+    // weakest-first), because the published dial-step ids are {above}-over-{below} in that order —
+    // ByStrength would generate hard-over-expert against the file's expert-over-hard and miss.
+    var dial = Ladder(arguments.Value("levels", string.Join(",", StrategyCatalog.Levels.Select(l => l.Name))));
+    var seats = arguments.Number("seats", SuiteOptions.DefaultSeats);
+    var games = arguments.Number("games", 2000);
+    var seedA = arguments.Number("seed", 20260819);
+    var seedB = arguments.Number("replication-seed", Replication.DefaultReplicationSeed);
+    var path = arguments.Value("out", Replication.DefaultPath);
+
+    // 🔥 By default reuse the suite's published seed-A matrix and run only seed B (Nick's call,
+    // P48): the published margins came from the same Tournament.Run at the same games, so this is
+    // still apples to apples and saves recomputing a matrix the suite already spent hours on.
+    // --recompute-a runs both seeds self-contained, which adds a byte-identical integrity check.
+    var published = arguments.Value("published", Suite.DefaultPath);
+    var recomputeA = arguments.Flag("recompute-a");
+
+    var source = recomputeA ? "both seeds recomputed" : $"seed A read from {published}";
+
+    Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+        $"replicate: {games} games a cell, {seats} seats, seed {seedA} vs {seedB} -> {path} ({source})"));
+
+    var report = recomputeA
+        ? Replication.Run(ladder, dial, seats, games, seedA, seedB, !arguments.Flag("serial"))
+        : Replication.AgainstPublished(published, ladder, dial, seats, games, seedA, seedB, !arguments.Flag("serial"));
+
+    ReplicationCsv.WriteTo(path, report);
+
+    Console.WriteLine();
+    Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+        $"{report.Rows.Count} comparison(s) in {report.Elapsed.TotalSeconds:0.0} s, written to {path}"));
+    Console.WriteLine();
+    Console.WriteLine($"{"id",-46}{"seed A",18}{"seed B",18}  verdict");
+
+    foreach (var row in report.Rows)
+    {
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"{row.Id,-46}{row.A.Mean,10:0.0000} ± {row.A.Interval,5:0.000}"
+            + $"{row.B.Mean,10:0.0000} ± {row.B.Interval,5:0.000}  {row.Reading}"));
+    }
+
+    Console.WriteLine();
+    Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+        $"every separation held: {report.EveryVerdictHolds}; every margin inside its interval: {report.EveryMarginInside}"));
+
+    // The load-bearing case, named rather than left to be found (BUILD-PLAN P46/P48).
+    if (report.Rows.Any(row => row.Id == "ladder.head-to-head.outs-over-sprinter"))
+    {
+        var sprinter = report.Row("ladder.head-to-head.outs-over-sprinter");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"sprinter over outs: seed A {-sprinter.A.Mean:+0.0000;-0.0000} ({sprinter.VerdictA}), "
+            + $"seed B {-sprinter.B.Mean:+0.0000;-0.0000} ({sprinter.VerdictB})"));
+    }
+
+    return report.EveryVerdictHolds ? 0 : 1;
 }
 
 // ⚠️ The default field is the catalog rather than a list written out here (BUILD-PLAN P18,

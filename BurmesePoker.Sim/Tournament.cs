@@ -202,6 +202,49 @@ public sealed record CellPlayer(
 }
 
 /// <summary>
+/// The field-level mechanism rates of a cell, <b>a value per game</b> so that a rate the
+/// document compares across fields carries an interval — 🔥 <b>P48's measurement hardening</b>
+/// (review F7).
+/// </summary>
+/// <remarks>
+/// <para>
+/// The scalar totals on <see cref="TournamentCell"/> (turns, restricted turns, lock bites, …)
+/// were enough to print a point estimate, but <c>docs/STRATEGY.md</c> §12 and §13 read these
+/// rates <em>against each other across fields</em> — the ladder's lock-bite against the dial's,
+/// <c>warden</c>'s round length against <c>outs</c>' — and a difference between two rates with no
+/// intervals is a claim with no error bar. These are the same rates, kept as the per-game
+/// (total, trials) pairs <see cref="Measurement.Of(IReadOnlyList{GameValue})"/> turns into a
+/// ratio with a standard error, by the same house game-level method every win rate uses.
+/// </para>
+/// <para>
+/// ⚠️ <b>The game is still the unit of independence.</b> A round's turns are as correlated as the
+/// shoe it was dealt from, so each game contributes one (total, trials) pair summed over its
+/// rounds and seats — never one per turn, which would tighten the interval by a factor no run
+/// earns back (<see cref="Measurement"/>).
+/// </para>
+/// </remarks>
+/// <param name="TurnsPerRound">Turns, out of rounds — §12's round length.</param>
+/// <param name="Abandoned">One per game given up at the turn cap, out of one — §12's convergence.</param>
+/// <param name="Jokerless">Rounds won jokerless, out of rounds — §14's floor (RULES.md §7.3).</param>
+/// <param name="DealWin">Rounds won on the deal, out of rounds — §15's bonus (RULES.md §7.4).</param>
+/// <param name="ClaimRate">Claims asked, out of rounds — the refusal rate's denominator.</param>
+/// <param name="Refusal">Claims refused, out of claims asked (RULES.md §4.5).</param>
+/// <param name="LockLive">Restricted discards, out of discards — §13, how often a lock was live.</param>
+/// <param name="LockBite">
+/// Bites, out of restricted discards — §13's mechanism variable (BUILD-PLAN P31). Empty unless
+/// the cell counted lock bites (<see cref="SimulationOptions.CountLockBites"/>).
+/// </param>
+public sealed record FieldSeries(
+    IReadOnlyList<GameValue> TurnsPerRound,
+    IReadOnlyList<GameValue> Abandoned,
+    IReadOnlyList<GameValue> Jokerless,
+    IReadOnlyList<GameValue> DealWin,
+    IReadOnlyList<GameValue> ClaimRate,
+    IReadOnlyList<GameValue> Refusal,
+    IReadOnlyList<GameValue> LockLive,
+    IReadOnlyList<GameValue> LockBite);
+
+/// <summary>
 /// One cell: a table, a seating scheme, and what everybody at it did.
 /// </summary>
 /// <param name="Kind">What the cell is for.</param>
@@ -254,10 +297,53 @@ public sealed record TournamentCell(
     long RestrictedTurns = 0,
     long LockBites = 0,
     int JokerlessRounds = 0,
-    int DealWinRounds = 0)
+    int DealWinRounds = 0,
+    FieldSeries? Field = null)
 {
     /// <summary>Average turns to a declaration in this cell.</summary>
     public double TurnsPerRound => Rounds == 0 ? 0 : (double)Turns / Rounds;
+
+    /// <summary>
+    /// The row's win-rate margin over the column <b>within the seating mix in which the row held
+    /// exactly <paramref name="rowSeats"/> of the seats</b> — 🔥 <b>P48's composition
+    /// stratification</b> (review F1).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A head-to-head cell pools every seating in which both are at the table, so a five-seat pair
+    /// cell is played at compositions from one row seat and four column seats up to four and one.
+    /// Comparing the margin <em>across</em> those compositions answers <b>the</b> question a pooled
+    /// margin cannot: does the row lose by the same per-seat amount whoever it is outnumbered by
+    /// (the column simply plays better), or does the gap widen as the row's own copies fill the
+    /// table (its weakness compounding against itself)? P31's autopsy of <c>warden</c> left exactly
+    /// this open. The stratum is a per-game pairing over the filtered games, because the row's own
+    /// <see cref="GameValue.Trials"/> in a win-rate series <b>is</b> its seat count that game
+    /// (<c>RoundsPerGame = 1</c>): the composition is already carried, and this reads it.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The games partition by composition; the margin does not.</b> Each stratum's games are
+    /// disjoint and together they are the pooled cell (<see cref="Margin"/>'s <c>Count</c> is their
+    /// sum), but the pooled margin is a difference of two ratios-of-sums over <em>different</em>
+    /// seat-round denominators, so it is <b>not</b> the seat-round-weighted average of these strata
+    /// and can sit outside their range — read the strata against each other, not against the pool.
+    /// ⚠️ <b>A reading of the corrected figure, not a new comparison</b>: the pooled margin is the
+    /// one in the Holm family; these carry a raw interval and no correction of their own. A default
+    /// measurement where the cell has no games at that composition, so a caller can skip the row.
+    /// </para>
+    /// </remarks>
+    public Measurement MarginAtComposition(int rowSeats)
+    {
+        if (Kind == CellKind.FreeForAll)
+        {
+            return default;
+        }
+
+        var rowGames = Player(Row).WinRateByGame
+            .Where(value => (int)Math.Round(value.Trials) == rowSeats)
+            .ToList();
+
+        return rowGames.Count == 0 ? default : Measurement.Paired(rowGames, Player(Column).WinRateByGame);
+    }
 
     /// <summary>
     /// Share of the discards chosen in which the feeding ban had taken a held card out of the
@@ -565,29 +651,82 @@ public static class Tournament
         var jokerless = 0;
         var onTheDeal = 0;
 
+        // 🔥 The same field rates, kept a value per game so they can carry an interval (P48, F7).
+        // One (total, trials) pair per game, summed over its rounds and seats — the game is the
+        // unit of independence (Measurement, StrategySeries).
+        var turnsByGame = new List<GameValue>(report.Games.Count);
+        var abandonedByGame = new List<GameValue>(report.Games.Count);
+        var jokerlessByGame = new List<GameValue>(report.Games.Count);
+        var dealWinByGame = new List<GameValue>(report.Games.Count);
+        var claimByGame = new List<GameValue>(report.Games.Count);
+        var refusalByGame = new List<GameValue>(report.Games.Count);
+        var lockLiveByGame = new List<GameValue>(report.Games.Count);
+        var lockBiteByGame = new List<GameValue>(report.Games.Count);
+
         foreach (var game in report.Games)
         {
+            // An abandoned game reached the turn cap with no declaration: one trial, one failure.
+            abandonedByGame.Add(new GameValue(game.Seed, game.Rounds.Count == 0 ? 1 : 0));
+
+            var gameRounds = 0;
+            var gameTurns = 0L;
+            var gameAttempts = 0;
+            var gameRefused = 0;
+            var gameDiscards = 0L;
+            var gameRestricted = 0L;
+            var gameBites = 0L;
+            var gameJokerless = 0;
+            var gameOnTheDeal = 0;
+
             foreach (var round in game.Rounds)
             {
-                rounds++;
-                turns += round.Turns;
-                attempts += round.Seats.Sum(seat => seat.Claims);
-                refused += round.ClaimsRefused;
-                discards += round.Seats.Sum(seat => seat.DiscardsChosen);
-                restricted += round.Seats.Sum(seat => seat.RestrictedTurns);
-                bites += round.Seats.Sum(seat => seat.LockBites);
+                gameRounds++;
+                gameTurns += round.Turns;
+                gameAttempts += round.Seats.Sum(seat => seat.Claims);
+                gameRefused += round.ClaimsRefused;
+                gameDiscards += round.Seats.Sum(seat => seat.DiscardsChosen);
+                gameRestricted += round.Seats.Sum(seat => seat.RestrictedTurns);
+                gameBites += round.Seats.Sum(seat => seat.LockBites);
 
                 if (round.Jokerless)
                 {
-                    jokerless++;
+                    gameJokerless++;
                 }
 
                 if (round.OnTheDeal)
                 {
-                    onTheDeal++;
+                    gameOnTheDeal++;
                 }
             }
+
+            rounds += gameRounds;
+            turns += gameTurns;
+            attempts += gameAttempts;
+            refused += gameRefused;
+            discards += gameDiscards;
+            restricted += gameRestricted;
+            bites += gameBites;
+            jokerless += gameJokerless;
+            onTheDeal += gameOnTheDeal;
+
+            turnsByGame.Add(new GameValue(game.Seed, gameTurns, gameRounds));
+            jokerlessByGame.Add(new GameValue(game.Seed, gameJokerless, gameRounds));
+            dealWinByGame.Add(new GameValue(game.Seed, gameOnTheDeal, gameRounds));
+            claimByGame.Add(new GameValue(game.Seed, gameAttempts, gameRounds));
+            refusalByGame.Add(new GameValue(game.Seed, gameRefused, gameAttempts));
+            lockLiveByGame.Add(new GameValue(game.Seed, gameRestricted, gameDiscards));
+            lockBiteByGame.Add(new GameValue(game.Seed, gameBites, gameRestricted));
         }
+
+        var field = new FieldSeries(
+            turnsByGame,
+            abandonedByGame,
+            jokerlessByGame,
+            dealWinByGame,
+            claimByGame,
+            refusalByGame,
+            lockLiveByGame,
+            lockBiteByGame);
 
         var cellPlayers = series
             .Select(one => new CellPlayer(
@@ -607,7 +746,7 @@ public static class Tournament
                 kind, row, column, assignments.Count, report.Games.Count, settled,
                 report.Games.Count - settled, cellPlayers, default, default,
                 rounds, turns, attempts, refused, discards, restricted, bites, jokerless,
-                onTheDeal);
+                onTheDeal, field);
         }
 
         var rowSeries = series.Single(one => one.Name == row);
@@ -632,7 +771,8 @@ public static class Tournament
             restricted,
             bites,
             jokerless,
-            onTheDeal);
+            onTheDeal,
+            field);
     }
 
     private static IReadOnlyList<Standing> Standings(

@@ -1551,3 +1551,155 @@ row in this document and cannot have one.** Every experiment runs `RoundsPerGame
 three-round streak never occurs. It is audited rather than measured; see §11 for what that leaves
 unknown, which is **what the rule is worth** and whether moving seats before somebody's third win
 is a strategy.
+
+## 16. The measurement-hardening run
+
+**Added by P48, the packet that verified the tree and discharged the statistical review's
+recommendations (findings F1–F7) so that P49 and P50 write against numbers that have been
+hardened rather than only regenerated.** Everything here is a *readout over the run the rest of
+this document already quotes* — one suite, one master seed — except §16.5, which is a second
+seed. ⚠️ **Nothing in §1–§15 moved because of this section**; these are new rows beside the old
+ones, not a re-measurement of them.
+
+### 16.1 The margins split by seating composition (F1)
+
+**A head-to-head cell pools every mix in which both rungs sit — from one row seat against four to
+four against one. Splitting the margin by that mix answers the question the pooled figure hides:
+does a rung lose by the same per-seat amount whoever it is outnumbered by, or does its weakness
+compound as its own copies fill the table?** The new rows are `ladder.composition.{pair}.{k}-of-5`,
+at the two extremes — the row outnumbered one-to-four, and outnumbering four-to-one.
+
+⚠️ **Read the two compositions of a pair against *each other*, never against the pooled figure.**
+The pooled margin is a difference of two ratios-of-sums over different seat-round denominators, so
+it is **not** the seat-round-weighted average of the strata and can sit outside their range — for
+`random` against `outs` the strata are `−25.0` (one random seat, which never wins) and `−99.4`
+(four random seats, the lone `outs` winning almost every game) while the pool is `−39.8`. The
+strata carry a raw interval (±2.4–3.0 points, an eighth the games of the pooled cell) and no
+correction of their own.
+
+🔥 **`warden`'s loss is partly self-play compounding, and this is the row that shows it.** Against
+`warden`, the anti-`warden` margin **widens as the table fills with `warden`s**:
+
+| pair | 1 `warden`, 4 opponents | 4 `warden`s, 1 opponent | pooled |
+|---|---:|---:|---:|
+| `outs` over `warden` | +6.3 ± 2.4 | **+10.6 ± 3.0** | +7.3 |
+| `greedy` over `warden` | +4.3 ± 2.5 | **+6.1 ± 2.9** | +4.5 |
+| `simple` over `warden` | −4.3 ± 2.8 | **−2.5 ± 2.6** | −2.8 |
+
+**All three comparators point the same way**: a `warden` does worse the more `warden`s share its
+table. `outs` beats a lone `warden` by +6.3 and a table of four by +10.6; even `simple`, which
+*loses* to `warden`, loses by less (−2.5 rather than −4.3) once the `warden`s are crowding one
+another. ⚠️ **Each pair's two strata overlap within their wide intervals**, so the evidence is the
+**consistent direction across three independent comparators**, not any single cell. This refines
+§13: `warden` pays a draw for every lock, and a table of `warden`s inflates the round length
+together (31.9 turns against `outs`' 24.9 at the bench), so the tax compounds. **The free-for-all
+17.9% and the head-to-head +7.3 each describe a *different* composition, and neither is the whole
+story.**
+
+✅ **P43's `opportunist` null holds at every composition.** `outs` over `opportunist` is
+`−0.8 ± 2.7` with one `opportunist` and `−0.3 ± 2.7` with four — both inside the interval, flat
+across the mix. **Denial at zero price buys nothing whoever is holding the locks**, which is a
+stronger statement than the pooled null alone: the composition-stratified margin was the exact
+instrument P43 asked P48 to point at the free-for-all-vs-head-to-head gap, and it finds no gap.
+
+⚠️ **`sprinter`'s edge over `outs` does not reverse at any composition, but the strata cannot
+resolve it.** `outs` over `sprinter` reads `−1.3 ± 2.6` (four `sprinter`s) and `−0.3 ± 2.7` (one),
+both inside their intervals — a one-point effect is below what a stratum of ~1,335 games can
+separate. It is *consistent* with the pooled `+1.2 ± 0.8` and never points the other way, but this
+is the free-for-all's lesson again (§4): the effect is real, small, and only the full paired
+sample resolves it. §16.5 is the test that matters for it.
+
+### 16.2 Every ladder pair in dollars (F2)
+
+**The §3 ranking is by win rate, but the game's object is money (RULES.md §4).** A rung that wins
+fewer rounds and banks more would be misranked by win rate, so P48 publishes every head-to-head
+pair a *second* time in dollars a round — `ladder.money-margin.{pair}`, its own Holm family of
+forty-five, from the per-game net series each cell already kept.
+
+🔥 **The two currencies never disagree in direction: zero of the forty-five money margins point
+the opposite way to their win-rate twin.** Where win rate separates a pair, money mostly does too
+(38 of 45 separated under Holm, 5 inside the interval, 2 raw only) and always with the same sign.
+**The win-rate ladder is the money ladder** — a reassurance that was not guaranteed and is now
+measured rather than assumed.
+
+⚠️ **The magnitudes are their own small findings.** `outs` beats `warden` by only +7.3 points of
+win rate but **+$2.71 ± 0.32 a round** — `warden` bleeds money through the very takes and long
+rounds that cost it the win rate. **`outs` banks +$0.97 ± 0.33 a round over `greedy`** (which it
+beats by +2.7 points), and — the one that matters most — **`sprinter` banks +$0.45 ± 0.32 a round
+over `outs`**, separated under Holm. **A second, independent currency confirms `sprinter`'s edge**:
+it is not only winning a shade more often, it is banking more, and both clear their own
+correction. That is one more reason the `+1.2` is believed (§3, §8).
+
+### 16.3 A bootstrap coverage check on the money cells (F6)
+
+**Money a round is the heaviest-tailed statistic in this document** — a ×5 jackpot (RULES.md §4)
+is a rare, large, one-sided contribution the normal interval's symmetry cannot see. So P48
+resamples the two money cells that actually separated — `prospector` at $5/$20 and $5/$40 — ten
+thousand times, whole games with replacement, and reads a 95% percentile interval off the
+resamples (`money.net-per-round-bootstrap.*`).
+
+✅ **The normal intervals hold.** At $5/$20 the margin is `+$3.99` with a resampled half-width of
+±2.41 against the normal ±2.28; at $5/$40, `+$14.20` at ±4.81 against ±4.85. **The percentile
+interval sits essentially on top of the normal one** — the tails are not fat enough at eight
+thousand games to make the symmetric interval dishonest, so §10's separations stand on the
+interval it already published, now with a heavy-tail check behind them.
+
+### 16.4 Intervals on the field rates (F7)
+
+**The rates §12 and §13 compare across fields — round length, how often a lock was live, how often
+it bit — were bare points until this packet.** A difference between two of them (the ladder's
+lock-bite against the dial's, say) is a claim, and a claim needs an error bar. P48 keeps each as a
+per-game (total, trials) series and reports it as a ratio with a standard error, by the same house
+method every win rate uses:
+
+| rate | the ladder | the difficulty dial | the claim-permission cell |
+|---|---:|---:|---:|
+| turns a round | 28.3 ± 0.07 | 31.9 ± 0.28 | 25.5 ± 0.20 |
+| lock live | 23.3% ± 0.1 | 23.0% ± 0.3 | 17.8% ± 0.3 |
+| lock bit | 30.0% ± 0.2 | 21.9% ± 0.6 | — |
+
+🔥 **The ladder's lock-bite rate (30.0%) is now *separated* from the dial's (21.9%)** — a gap §13
+described without an interval and could not previously defend. The dial's field is four `outs`-ε
+levels, so its lower bite rate is a real property of a field of near-identical players, not noise.
+(The claim-permission cell is two arms of one rung and was never asked for the counterfactual, so
+its lock-bite is structurally zero — §13.)
+
+
+### 16.5 The fresh-seed replication (F5)
+
+**Every figure in §1–§15 descends from one master seed (20260819). Two runs of that seed agree to
+the last bit and say nothing about whether a *second draw of the world* would find the same
+thing.** P48 runs §3's forty-five head-to-head margins and the dial's three adjacent steps at a
+**second** master seed (20260826) and sets them beside the published ones —
+`docs/strategy/replication.csv`, the project's first reproducibility statement that is statistics
+rather than determinism.
+
+🔥 **The prediction, written before the run: every Holm verdict holds, and every margin lands
+inside its own interval of the published value. The first half held exactly; the second was
+optimistic.**
+
+- ✅ **Every separation held: 0 of 48 verdicts fell.** Every margin that survived Holm at the
+  published seed survives it at the fresh seed. **Not one ranking claim in §3 or §9 depends on the
+  seed it was drawn from.**
+- ⚠️ **45 of 48 margins landed inside their published interval; three landed just outside**
+  (`simple` over `opportunist`, and the `hard`-over-`medium` and `expert`-over-`hard` dial steps),
+  each by a thousandth or two, each keeping its separation. **This is not instability — it is the
+  interval geometry, and the prediction was the thing that was slightly wrong.** Two independent
+  95% intervals leave the second estimate inside the first only about 83% of the time, so **~8 of
+  48 were expected outside and only 3 were** — the estimates are *more* stable than the strict
+  all-inside prediction assumed. A margin is reproduced by its verdict surviving, not by two
+  independent draws landing within one interval of each other.
+
+🔥 **The load-bearing case reproduced.** `sprinter` over `outs` — the tightest separation in the
+document, `+1.2` surviving Holm but a dead heat at the crossed table — reads **+1.23 (Holm) at the
+published seed and +1.19 (Holm) at the fresh seed.** **The one verdict most likely to fall did not
+move.** Together with the money margin (§16.2, `sprinter` banks +$0.45/round over `outs`) and the
+moved race-reach mechanism (§3), the fresh seed is what graduates `sprinter`'s edge from *measured*
+to *settled*.
+
+⚠️ **The two raw-only casualties split, and both ways are informative.** `angler` over
+`opportunist` — `+1.0` raw only at the published seed — **fell inside the interval at the fresh
+seed**, so it is read as the null it was flagged as. `sprinter` over `angler` — raw only at the
+published seed — **cleared Holm at the fresh seed**, so that small edge is more likely real than
+noise, and in the direction the rest of this section already points (`sprinter` at the top). **A
+raw-only cell is exactly the one a second seed is for, and here it moved one each way.**
