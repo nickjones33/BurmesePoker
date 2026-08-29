@@ -1,6 +1,8 @@
 using BurmesePoker.Web;
 using BurmesePoker.Web.Components;
 
+using Microsoft.AspNetCore.HttpOverrides;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ⚠️ Interactivity is a *component's* opt-in, never the app's (BUILD-PLAN §3.11 C12). Adding
@@ -16,7 +18,28 @@ builder.Services.AddRazorComponents()
 // client counts tables.
 builder.Services.AddSingleton<Lobby>();
 
+// 🔥 What a TLS-terminating proxy in front of this app forwards, and nothing else can supply
+// (BUILD-PLAN P51). Behind Traefik the app sees a plain HTTP request from another container:
+// without these headers it computes redirects and antiforgery tokens against http:// and the
+// container's own host, and the page renders perfectly while the button does nothing — the
+// exact failure class P13.6 met with the doubled antiforgery token.
+// ⚠️ The known networks and proxies are cleared deliberately: the proxy is a container on a
+// docker network whose address is assigned at run time, so there is no address to trust in
+// advance. That trusts whatever fronts the app, which is safe only because nothing but the
+// proxy can reach it — do not publish this port straight to the internet.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 var app = builder.Build();
+
+// ⚠️ First, and before anything that reads the scheme or the host — routing, antiforgery and
+// the static-asset endpoints all do.
+app.UseForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -34,6 +57,10 @@ app.MapStaticAssets();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// A restart policy and an ingress probe both need one cheap URL that answers without touching
+// a table. It says nothing about the game on purpose: a health check is about the process.
+app.MapGet("/healthz", () => Results.Text("ok"));
 
 // One table is open from boot, from the same command line the console takes, so that
 // `dotnet run --project BurmesePoker.Web` is a game rather than an empty room with a form in

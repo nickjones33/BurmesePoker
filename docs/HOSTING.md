@@ -207,7 +207,7 @@ to GitHub) already runs the whole of Option B.** What is there:
 
 These are sized like `BUILD-PLAN.md` packets — small, shippable, tree-green at each end.
 
-**Step 1 — Containerize (`P51`; do this first — it unlocks every option).**
+**Step 1 — Containerize (`P51`; do this first — it unlocks every option). ✅ Built 2026-08-28** — see `BUILD-PLAN.md` §5 P51 for what shipped and for the `--no-restore` trap it found.
 Multi-stage Dockerfile (.NET 10 SDK build → `aspnet` runtime), a `.dockerignore`, listen on
 `0.0.0.0:8080` via `ASPNETCORE_URLS`. In `Program.cs` add `app.UseForwardedHeaders(...)` (before
 routing) and a `/healthz` endpoint. **Acceptance:** the container runs and a real browser round

@@ -121,3 +121,18 @@ dotnet test --filter-class "*CardTextTests*"
 
 Everything targets `net10.0`. The tests are xunit v3 on Microsoft.Testing.Platform, which is why
 filtering is `--filter-class` and `--filter-method` rather than VSTest's `--filter`.
+
+## Hosting it
+
+The browser table is an ordinary ASP.NET Core server, and there is a `Dockerfile` at the root
+that publishes it as one image listening on port 8080:
+
+```text
+docker build -t burmesepoker .
+docker run --rm -p 8080:8080 burmesepoker --people 1
+```
+
+It takes the same options as `dotnet run --project BurmesePoker.Web`, answers `/healthz`, and
+reads `X-Forwarded-Proto` and `X-Forwarded-Host`, so it sits behind a TLS-terminating reverse
+proxy without further configuration. ⚠️ It trusts whatever forwards those headers — put a proxy
+in front of it rather than publishing the port straight to the internet.

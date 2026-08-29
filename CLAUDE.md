@@ -14,12 +14,12 @@ over ad-hoc changes.
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
 recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
-F10) was the last of them; the tree is green at 908.**
+F10) was the last of them; the tree is green at 913.**
 🔥 **A fourth track was added 2026-08-28 at Nick's direction: `P51`–`P54`, *taking the table
 online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
-no measurement can move. **`P51` (containerize) is the next packet and is unblocked**; `P52` is
-blocked on a Gitea PAT; **`P53` is work in a *different repository*** (`~/source/repos/ansible-nas`,
+no measurement can move. ✅ **`P51` (containerize) shipped 2026-08-28 — see the block below**;
+**`P52` is the next packet** and is blocked on a Gitea PAT; **`P53` is work in a *different repository*** (`~/source/repos/ansible-nas`,
 plan already written at that repo's `docs/superpowers/plans/2026-08-28-burmesepoker-hosting.md`).
 🔥 **The review that reshaped it: the homelab had already solved the hard part** — `ansible-nas`
 runs Traefik with a wildcard `*.nickjones.dev` Let's Encrypt cert over Cloudflare DNS-01 and 80/443
@@ -63,6 +63,39 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 ⚠️ **One P46 follow-up owned, not done**: the race-reach instrument recomputes an uncached cover
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
+
+**What P51 built, and the four things a cold session needs from it.**
+🔥 **(1) There is a `Dockerfile` at the root and the browser table runs out of it** — multi-stage
+(`sdk:10.0` → `aspnet:10.0`, both tags fenced against the csproj's moniker), publishing
+`BurmesePoker.Web` and its three project references only, `0.0.0.0:8080` via `ASPNETCORE_URLS`,
+non-root, **231 MB**. A real round was **played** in it, not just loaded: sat down through the
+lobby's `EditForm` (the antiforgery path), claimed, discarded, watched four bot seats take their
+turns and drew blind — the private event arriving over the circuit.
+🔥 **(2) The finding is that the standard restore-caching idiom breaks Blazor, and it was
+measured.** Copy the csprojs → `dotnet restore` → copy the sources → `dotnet publish --no-restore`
+is what every .NET Dockerfile does, and here it publishes an app with **no
+`wwwroot/_framework/blazor.web.js` at all** (the endpoint manifest names it **zero** times against
+**one** when the publish restores for itself). The symptom is **P13.3's exactly** — `MapStaticAssets`
+404s the script that starts the circuit, the page renders perfectly and never moves again — and
+nothing in the tree can see it, because the app is fine and the image is not. **The publish does not
+pass `--no-restore`, and `ContainerTests` fails the build if it ever does again.**
+🔥 **(3) `app.UseForwardedHeaders()` is in `Program.cs`, first, and no label can substitute for
+it.** `KnownIPNetworks`/`KnownProxies` are cleared deliberately (a proxy container's address is
+assigned at run time) — ⚠️ **which is safe only because nothing but the proxy reaches the port; do
+not publish 8080 to the internet.** Proved live: with `X-Forwarded-Proto: https` and
+`X-Forwarded-Host: poker.nickjones.dev` the container logs the request as
+`https://poker.nickjones.dev/`. The ordering is fenced against `UseAntiforgery`, `MapStaticAssets`
+and `MapRazorComponents` — *present* was not a strong enough assertion.
+⚠️ **(4) `/healthz` answers `ok` and touches no table** (fenced against reading `Lobby`) — a health
+check is about the process. Five new facts in `BurmesePoker.Tests/Web/ContainerTests.cs`, all source
+scans in `JackpotSpokenTests`' idiom; tree green at **913**, from 908. `Domain`, `Presentation`,
+`Server`, `Console` and `Sim` are byte-identical — the whole diff is `Dockerfile`,
+`.dockerignore`, `Program.cs` and docs.
+
+```text
+docker build -t burmesepoker .
+docker run --rm -p 8080:8080 burmesepoker --people 1 --seed 20260828 --pace 300
+```
 
 **What P46 built, and the four things a cold session needs from it.**
 🔥 **(1) `Domain/Agents/SprinterBotAgent.cs` is `outs` with one change: the discard's last-resort

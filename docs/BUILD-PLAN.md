@@ -7468,7 +7468,7 @@ review and the three consequences.
 
 ---
 
-### P51 — Containerize: the app as a portable image ☐ — **the first hosting packet, and hosting-agnostic**
+### P51 — Containerize: the app as a portable image ☑ — **done 2026-08-28 (Opus 5)**
 
 **Goal.** One container that runs the browser table unchanged, so the hosting choice stays open.
 **`HOSTING.md` §6 Step 1.**
@@ -7489,6 +7489,28 @@ green and **`Domain` is byte-identical**. Report the image size and the exact ru
 ⚠️ **Docker commands go in `text` fences, never `bash`** — `DocumentationTests` resolves every
 `bash`-fenced command against the parser that would accept it.
 
+**What it built.** A root `Dockerfile` (`sdk:10.0` → `aspnet:10.0`, non-root, `0.0.0.0:8080`,
+**231 MB**) and `.dockerignore`; `app.UseForwardedHeaders()` first in `Program.cs` with the known
+networks and proxies cleared; `/healthz`; and five source-scan facts in
+`BurmesePoker.Tests/Web/ContainerTests.cs`. A real round was played in the container — sat down
+through the lobby form, claimed, discarded, four bot turns, a blind draw. Tree green at **913**;
+`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical.
+
+🔥 **The finding, and it changes P52.** The standard layer-caching idiom — copy csprojs, restore,
+copy sources, `dotnet publish --no-restore` — publishes a Blazor Server app **with no
+`wwwroot/_framework/blazor.web.js` at all**; the endpoint manifest names it zero times against one
+when the publish restores for itself. `MapStaticAssets` then 404s the script that starts the
+circuit and the page renders perfectly and never moves again — **P13.3's failure arriving by a
+different road**, and invisible from inside the tree. The publish therefore restores for itself
+(cheap — the packages are already in the image's cache) and `ContainerTests` reddens on
+`--no-restore`. ⚠️ **A CI workflow that rewrites the build for speed will meet this**, which is
+P52's business.
+
+⚠️ **One safety note carried forward.** The forwarded-headers configuration trusts whatever sets
+the headers, because a proxy container's address is assigned at run time. **The port must not be
+published straight to the internet** — P53's Traefik labels are what make that true, and P54's
+gating decision sits on top of it.
+
 ---
 
 ### P52 — A published image ☐ — **blocked on a Gitea PAT from Nick**
@@ -7507,7 +7529,12 @@ everything else. **`roles/gitea-actions-runner` already carries an opt-in docker
 passthrough for runners that build images** (`gitea_actions_runner_mount_docker_sock`), so the
 capability exists.
 
-**Acceptance.** Pulling the published tag runs the container P51 verified.
+⚠️ **Amended by P51.** The workflow must build **the repository's `Dockerfile` as it stands** —
+do not "optimise" the publish with `--no-restore`, which silently drops `blazor.web.js` and ships a
+dead table (P51's finding, fenced by `ContainerTests`). **Acceptance is not that the image builds**:
+pulling the published tag must run the container P51 verified — check `/healthz`, then check
+`_framework/blazor.web.js` answers **200**, which is the one request that separates a working
+image from a perfect-looking dead one.
 
 ---
 

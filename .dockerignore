@@ -1,0 +1,19 @@
+# Everything the build stage does not need. `bin`/`obj` matter most: a host build's
+# artefacts copied into the image would shadow the container's own restore.
+**/bin/
+**/obj/
+.git/
+.github/
+.claude/
+.vs/
+.vscode/
+docs/
+scripts/
+BurmesePoker.Console/
+BurmesePoker.Sim/
+BurmesePoker.Tests/
+*.raw
+*.jsonl
+*.md
+Dockerfile
+.dockerignore
