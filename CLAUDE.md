@@ -14,8 +14,21 @@ over ad-hoc changes.
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
 recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
-F10) was the last planned packet; the tree is green at 908.** — every planned entry is landed;
-only `P40` (the Burmese rulebook, blocked on Nick's vetted text) stands open. In order: ✅ **P43 `opportunist`** (the
+F10) was the last of them; the tree is green at 908.**
+🔥 **A fourth track was added 2026-08-28 at Nick's direction: `P51`–`P54`, *taking the table
+online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
+programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
+no measurement can move. **`P51` (containerize) is the next packet and is unblocked**; `P52` is
+blocked on a Gitea PAT; **`P53` is work in a *different repository*** (`~/source/repos/ansible-nas`,
+plan already written at that repo's `docs/superpowers/plans/2026-08-28-burmesepoker-hosting.md`).
+🔥 **The review that reshaped it: the homelab had already solved the hard part** — `ansible-nas`
+runs Traefik with a wildcard `*.nickjones.dev` Let's Encrypt cert over Cloudflare DNS-01 and 80/443
+already forwarded, so `HOSTING.md`'s original Cloudflare-Tunnel recommendation was **withdrawn** in
+favour of the proxy already running (§5a). ⚠️ **Three traps recorded in advance**: `*_memory: 64m`
+(what both hand-written roles use — **512m minimum** for a .NET server holding circuits), building
+the image on the NAS instead of in Gitea Actions, and **WebSockets/idle timeouts being assumed
+rather than proved**. ⚠️ **Docker and Ansible commands go in `text` fences, never `bash`.**
+Besides that track, only `P40` (the Burmese rulebook, blocked on Nick's vetted text) stands open. In order: ✅ **P43 `opportunist`** (the
 feeding ban at zero price — a predicted null, question closed), ✅ **P44 `purist`** (the clean
 bonus at zero price — a predicted *positive* that came back a flat null), ✅ **P45 `angler`** (a
 draw priced in cards — the predicted null, mechanism never armed; cap 32,768 → 65,536),
@@ -1098,7 +1111,7 @@ verified bug to show for it.
 | `.claude/skills/poker/SKILL.md` | The `/poker` work cycle. |
 | `docs/STATUS.md` | Cross-session progress. Read first, update last. |
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
-| `docs/HOSTING.md` | **A hosting exploration and work brief** — how to take the app from LAN/single-machine to a simple hosted app for friends online. Frames the deployment problem (Blazor Server is already a networked server), the one constraint (single always-on instance — stateful circuits + a singleton `Lobby`), homelab-vs-Azure options, a shippable build sequence, and the decisions only Nick can make. ⚠️ **A plan, not a record** — nothing here is built; ops/deployment, separate from the rules/strategy programme. |
+| `docs/HOSTING.md` | **A hosting exploration and work brief** — how to take the app from LAN/single-machine to a simple hosted app for friends online. Frames the deployment problem (Blazor Server is already a networked server), the one constraint (single always-on instance — stateful circuits + a singleton `Lobby`), homelab-vs-Azure options, a shippable build sequence, and the decisions only Nick can make. ⚠️ **A plan, not a record** — nothing here is built; ops/deployment, separate from the rules/strategy programme. ⚠️ **Revised 2026-08-28**: §5a records a review of `~/source/repos/ansible-nas` and **withdraws the original Cloudflare-Tunnel recommendation** — the homelab's Traefik already has a wildcard cert and 80/443 forwarded, so the delta is a Dockerfile, an image and a role. The packets it implies are `BUILD-PLAN.md` §5 **P51–P54**. |
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
 | `docs/RULEBOOK.md` | **The game taught** — one document a stranger can learn to play from, in reading order, with a generated worked round and a house-readings appendix. Derived from `RULES.md` and decides nothing; stamps the rev it was derived from, bound by `RulebookTests`. |
 | `docs/HOW-TO-PLAY-WELL.md` | **How to get better** — the strategy guide for a player: what has actually been measured, organised by decision, with the nulls given as much room as the margins. Every figure it quotes is CSV-fenced by `PublishedFigureTests`, and it is the **only** home of the player-facing figures — `PLAYING.md` points here rather than quoting any. |

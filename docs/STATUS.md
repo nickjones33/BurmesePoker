@@ -982,12 +982,40 @@ unasserted altogether.
 
 ## What is next
 
-🔥 **`P50` is the next and last planned packet — the documentation cleanup (F10).** ✅ **`P49` —
-`docs/SIMULATIONS.md`, the measurement programme taught, digit-free and fenced — is done
-(2026-08-27, Opus 4.8);** see *Current state* at the top. P50 fixes `STRATEGY.md`'s prose where
-it lags its own tables and fences the class, then sweeps the rest of `docs/` for four-handed and
-rev-lagged leftovers (`BUILD-PLAN.md` §5 P50). ⚠️ **No suite regeneration is owed** — P49 and P50
-touch no production code, so the hardened P48 numbers stand. `P40` still stands beside it, blocked
+🔥 **The plan grew a fourth track on 2026-08-28, at Nick's direction: `P51`–`P54`, *taking the
+table online* (`BUILD-PLAN.md` §5, `docs/HOSTING.md`).** Every packet P0–P50 is done, so this and
+`P40` are the whole of the open work. ⚠️ **This track is ops, not the rules/strategy programme**:
+no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and no measurement
+can move. **`P51` (containerize) is the next packet and is unblocked** — a multi-stage Dockerfile,
+`ASPNETCORE_URLS` on `0.0.0.0:8080`, `UseForwardedHeaders`, `/healthz`, and a **real browser round
+dealt inside the container** (the P13.6 / P42 check, not a page load). ⚠️ **Docker and Ansible
+commands go in `text` fences, never `bash`** — `DocumentationTests` resolves `bash`-fenced commands
+against the parser that would accept them.
+
+- 🔥 **The finding that reshaped the plan: the homelab had already solved the hard part.** A review
+  of `~/source/repos/ansible-nas` on 2026-08-28 found **Traefik running with a wildcard
+  `*.nickjones.dev` Let's Encrypt certificate over Cloudflare DNS-01**, 80/443 already forwarded,
+  110 roles on one two-file shape, and a Gitea Actions runner already carrying an opt-in
+  docker-socket passthrough for runners that build images. **So `HOSTING.md`'s original recommendation — a Cloudflare Tunnel —
+  was withdrawn** in favour of the reverse proxy that is already there, and the "where to host"
+  decision stopped being a fork (§5a records it).
+- ⚠️ **Two of the four packets are work in a different repository.** `P53` is a role in
+  `ansible-nas`, whose task-level plan is already written at that repo's
+  `docs/superpowers/plans/2026-08-28-burmesepoker-hosting.md`. `P52` is **blocked on a Gitea PAT**
+  only Nick can issue. `P51` and `P54` are this repo.
+- ⚠️ **Three traps recorded in advance**, each from the review rather than from experience here:
+  `*_memory: 64m` (what both hand-written roles use — an OOM-kill loop for a .NET server holding
+  circuits, **512m minimum**); building the image on the NAS rather than in CI; and **WebSockets and
+  idle timeouts being assumed rather than proved** — the only role in that repo that mentions
+  websockets is `bitwarden`, so `P53`'s acceptance is *a real round played from a phone off the home
+  network*.
+
+---
+
+✅ **`P50` shipped 2026-08-27 — the documentation cleanup (F10) — and was the last planned packet
+of the original programme.** ✅ **`P49` — `docs/SIMULATIONS.md` — shipped the same day.** Both were pure-documentation
+packets touching no production code, so the hardened P48 numbers stand and **no suite regeneration
+is owed by anything on the plan today**. `P40` — the game in Burmese — still stands open, blocked
 on Nick's vetted Burmese text.
 
 ✅ **`P44` — `purist` — is done (2026-08-24).** The predicted positive came back a null with a

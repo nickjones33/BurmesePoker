@@ -7,7 +7,10 @@ choice, lays out the hosting options with trade-offs, proposes a shippable build
 lists the decisions only Nick can make. Nothing here is built yet; `STATUS.md` and `BUILD-PLAN.md`
 remain the authorities for what is.
 
-Written 2026-08-27. Context: Nick has a basement homelab and is familiar with Azure.
+Written 2026-08-27; **revised 2026-08-28 after reviewing `~/source/repos/ansible-nas`** — the
+homelab turns out to have already solved most of this, which moves the recommendation. See **§5a**,
+and read it before §5. Context: Nick has a basement homelab managed by Ansible, and is familiar
+with Azure.
 
 ---
 
@@ -136,9 +139,67 @@ enable **WebSockets**, enable **ARR affinity**, set **Always On = true**, deploy
 `dotnet publish`), attach a custom domain with a free managed cert. Slightly higher price floor
 than Container Apps depending on the plan.
 
-> **Recommendation.** Build the container (Step 1) first. Then, given the homelab and the "private,
-> for friends" goal, go **A (homelab + Cloudflare Tunnel)**; choose **C (Container Apps, 1 replica)**
-> instead if you'd prefer it not live in your basement. B and D are solid fallbacks.
+> **Recommendation — revised 2026-08-28, see §5a.** Build the container (Step 1) first; it is
+> hosting-agnostic and unblocks all four. Then go **B — the homelab's Traefik, which is already
+> running** with a wildcard certificate and 80/443 already forwarded, so the marginal cost of this
+> app is a role and a DNS name. Choose **C (Container Apps, `min = max = 1`)** instead if you would
+> rather the game's uptime not be your basement's. ⚠️ **A is no longer the default**: it buys only
+> hiding the home IP, which the existing setup has already traded away for every other service, at
+> the price of a second ingress path beside Traefik for one app. **D** stays a fallback.
+
+*(The original recommendation was **A**. It was written without knowledge of `ansible-nas`; §5a is
+what changed it.)*
+
+---
+
+## 5a. ⚠️ What the homelab already has — reviewed 2026-08-28
+
+🔥 **`~/source/repos/ansible-nas` (origin `gitea.nickjones.dev/nickjones/ansible-homelab`, mirrored
+to GitHub) already runs the whole of Option B.** What is there:
+
+- **Traefik with a wildcard `*.nickjones.dev` certificate**, issued by Let's Encrypt over
+  **DNS-01 through Cloudflare** (`roles/traefik`), with **ports 80 and 443 the only ones exposed**
+  and every other service LAN-only. TLS, DNS and ingress are solved — for every app at once.
+- **110 roles on one shape**, two of them written by hand for Nick's own applications:
+  - `roles/nickjones-dev` — clone the app repo onto the server, `community.docker.docker_image`
+    build it there, run it with Traefik labels.
+  - 🔥 `roles/mirroquest` — the newer and better shape: **build nothing on the server.**
+    `docker_login` to the Gitea registry, `pull: true`, run. Registry credentials fail fast with
+    `ansible.builtin.fail` when the inventory has not set them.
+
+  Both are exactly two files (`defaults/main.yml`, `tasks/main.yml`): an `*_enabled` flag, an
+  `*_available_externally` flag, a memory cap, the six standard Traefik labels, and a stop block
+  that removes the container when the flag is false. **A `burmesepoker` role is that, with a
+  different port.**
+- **A Gitea Actions runner with opt-in docker-socket passthrough for runners that build images**
+  (`roles/gitea-actions-runner`, `gitea_actions_runner_mount_docker_sock`) — so there is already
+  somewhere to build an image that is not the NAS.
+- **A plans convention**, `docs/superpowers/plans/YYYY-MM-DD-*.md`; the `nickjones-dev` role was
+  written from one. **The plan for this work lives there**, not in this repo:
+  `docs/superpowers/plans/2026-08-28-burmesepoker-hosting.md`.
+
+**Three consequences for this document.**
+
+1. 🔥 **Option B is not a fallback; it is already built.** The delta for "friends online" collapses
+   to a Dockerfile, a published image, a role and a DNS name.
+2. ⚠️ **Option A is now mostly redundant** — see the revised recommendation in §5.
+3. **The Azure options survive as the answer to one question only** — *should the game's uptime
+   depend on the basement?* That is a preference, not a technical fork, so **§7's first decision is
+   much less consequential than it was written to be.**
+
+⚠️ **Four things a Blazor role needs that none of the 110 existing roles does.**
+
+- **`*_memory: 64m` must not be copied.** Both hand-written roles front a tiny static site; a .NET
+  server holding live circuits wants **512m** at least.
+- **`UseForwardedHeaders` is on the *app* side and no Ansible label can substitute for it** (§8),
+  which is why the container step comes first wherever this ends up hosted.
+- **WebSockets and idle timeouts are assumptions here, not established facts.** Traefik proxies
+  WebSockets transparently by default and does not close idle streams by default — but **the only
+  role in the whole repo that mentions websockets is `bitwarden`**, so nothing there proves it for
+  this app. ⚠️ **Test it with a real round from a phone off the home network**; do not rely on it.
+- **There is no auth-middleware pattern in the repo** — roles are `available_externally` or they are
+  not. So §7's gating decision is genuinely new work: a Traefik `basicauth` middleware label, or
+  Cloudflare Access in front of the hostname.
 
 ---
 
@@ -146,7 +207,7 @@ than Container Apps depending on the plan.
 
 These are sized like `BUILD-PLAN.md` packets — small, shippable, tree-green at each end.
 
-**Step 1 — Containerize (do this first; it unlocks every option).**
+**Step 1 — Containerize (`P51`; do this first — it unlocks every option).**
 Multi-stage Dockerfile (.NET 10 SDK build → `aspnet` runtime), a `.dockerignore`, listen on
 `0.0.0.0:8080` via `ASPNETCORE_URLS`. In `Program.cs` add `app.UseForwardedHeaders(...)` (before
 routing) and a `/healthz` endpoint. **Acceptance:** the container runs and a real browser round
@@ -159,38 +220,52 @@ docker build -t burmesepoker .
 docker run --rm -p 8080:8080 -e ASPNETCORE_URLS=http://0.0.0.0:8080 burmesepoker
 ```
 
-**Step 2 — Reachability.** Resolve the §7 hosting fork, then wire it:
-- A: a `cloudflared` tunnel config mapping `poker.yourdomain.com` → the container; verify TLS **and
-  a WebSocket round from a phone off your network**.
-- C: `az containerapp create` with external ingress, `--transport auto`, session affinity, and
-  `min/max-replicas 1`; verify the same.
+**Step 2 — A published image (`P52`).** Give the repo a **Gitea origin** beside GitHub — the
+pattern every other personal repo here uses (push to `gitea.nickjones.dev`, push-mirror to GitHub) —
+and a **Gitea Actions workflow** that builds the Dockerfile and pushes
+`gitea.nickjones.dev/nickjones/burmesepoker:latest` on a push to `main`. ⚠️ **Build there, not on
+the NAS**: a .NET SDK image plus a full restore on the Hyper-V VM every time the checkout moves is
+exactly the cost `roles/mirroquest` was written to avoid, and `roles/gitea-actions-runner` already
+carries the opt-in docker-socket passthrough for runners that build images. **Acceptance:**
+pulling the published tag
+runs the same container Step 1 verified. **Needs from Nick:** a Gitea PAT with package write.
 
-**Step 3 — Long-lived-host hardening.** Confirm/implement **idle-table reaping** in `Lobby`
-(remove a table with no viewers after N minutes and stop its bot loop — check `HostedTable` /
-`TableSession` disposal), and add a **"create table → copy link"** affordance on the lobby page.
-Optionally a per-table code (§7 e).
+**Step 3 — The Ansible role (`P53`, in `ansible-nas`).** `roles/burmesepoker/` on the
+**`mirroquest` template**: `defaults/main.yml` (`burmesepoker_enabled: false`,
+`burmesepoker_available_externally: false`, image / version / registry vars,
+`burmesepoker_memory: 512m`, and the app's own `seats` / `pace` / `patience` / `hints` / `between`
+carried as environment), `tasks/main.yml` (fail-fast on missing registry credentials,
+`docker_login`, `docker_container` with `pull: true`, the six Traefik labels routing
+`poker.{{ ansible_nas_domain }}` at container port **8080**, and the stop block), one entry in
+`nas.yml` in alphabetical position, and a page under `website/docs/applications/`.
+**Acceptance:** the playbook brings the table up at `https://poker.nickjones.dev`, and **a real
+round is played from a phone off the home network** — which is what settles §5a's WebSocket and
+idle-timeout assumptions.
 
-**Step 4 — Config for prod.** Drive `seats` / `pace` / `patience` / `hints` / `between` from
-environment (already supported), with **longer patience** tuned for real humans on flaky internet,
-and a sensible between-rounds pause. Keep secrets (if any) in the host's store (Azure) or the
-tunnel's config file (homelab), never in the image.
+**Step 4 — Long-lived-host hardening (`P54`, back in this repo).** Confirm or implement **idle-table
+reaping** in `Lobby` (drop a table with no viewers after N minutes and stop its parked bot loop —
+check `HostedTable` / `TableSession` disposal), add a **"create table → copy link"** affordance to
+the lobby page, tune **patience for real humans on flaky internet**, and land the §7 gating decision
+(a Traefik `basicauth` middleware label, or Cloudflare Access).
 
 **Step 5 — (optional) Durability & observability.** Decide ephemeral vs. persistent (§7). The
 `--journal` already records every table as JSONL; *resuming* a live game from a journal after a
 restart is a much larger effort and probably not worth it for friends. Add structured logging and a
 couple of basic metrics regardless.
 
----
+## 7. Open decisions for Nick (resolve these before Step 3)
 
-## 7. Open decisions for Nick (resolve these before Step 2)
-
-1. **Where:** homelab (private, your hardware, ~free) **or** Azure (managed, off your hardware,
-   small cost)? — drives Step 2 and the whole of §5.
-2. **Gating:** open link · shared site password · per-table code · Cloudflare Access email
-   allow-list? — drives §4 e.
+1. ⚠️ **Where — largely settled by §5a, and now a preference rather than a fork.** The homelab
+   already runs Traefik with a wildcard cert and 80/443 forwarded, so **B costs a role**; Azure (C)
+   is the answer only to *"should the game be down when the basement is?"* **Default: homelab.**
+2. 🔥 **Gating — the decision that actually costs work now.** Open link · a Traefik `basicauth`
+   middleware · a per-table code · Cloudflare Access email allow-list? ⚠️ **`ansible-nas` has no
+   auth-middleware pattern at all** (§5a), so whichever is chosen is new in that repo. Drives §4 e
+   and Step 4.
 3. **Durability:** ephemeral (a restart or redeploy ends the game — simplest, recommended) **or**
    some persistence? — drives whether Step 5 is real work.
-4. **Domain:** a custom domain (`poker.yourdomain.com`) or a provider hostname?
+4. **Domain:** the wildcard cert already covers `*.nickjones.dev`, so **`poker.nickjones.dev` is
+   free and needs no new certificate** — confirm the hostname, or name another.
 5. **Budget:** how many concurrent tables / players to plan for? — sets resource limits and whether
    `MostTables = 12` is right.
 
@@ -212,18 +287,26 @@ couple of basic metrics regardless.
   cheapest way to make it *invited-friends-only*.
 - ⚠️ **Cost floor:** an always-on Azure instance has a small but nonzero monthly cost; the homelab
   trades that for electricity and your time.
+- ⚠️ **A 64m memory cap will kill it.** The two hand-written `ansible-nas` roles are static sites
+  and cap at `64m`; copying that number into a .NET role holding live circuits produces an OOM-kill
+  loop that looks like a networking fault. **512m minimum** (§5a).
+- ⚠️ **Building the image on the NAS is a trap**, not merely slow: a .NET SDK layer plus a full
+  restore on the Hyper-V VM, on every playbook run that sees a new commit. Build in Gitea Actions
+  and pull the tag (§6 Step 2).
 
 ---
 
 ## 9. A ready-to-run prompt for the next session
 
-> Read `docs/HOSTING.md`. This is a **deployment/ops** effort, separate from the rules/strategy
-> programme — do **not** touch `Domain`, and keep the tree green (the doc fences require any new
-> doc to be mapped in `CLAUDE.md` and forbid `bash`-fenced non-`dotnet` commands).
+> Read `docs/HOSTING.md` (including **§5a**) and `BUILD-PLAN.md` §5 **P51**. This is a
+> **deployment/ops** effort, separate from the rules/strategy programme — do **not** touch `Domain`,
+> and keep the tree green (the doc fences require any new doc to be mapped in `CLAUDE.md` and forbid
+> `bash`-fenced non-`dotnet` commands, so docker and ansible commands go in `text` fences).
 >
-> Execute **Step 1 (Containerize)** as a self-contained packet: add a multi-stage Dockerfile and
+> Execute **P51 (Containerize)** as a self-contained packet: add a multi-stage Dockerfile and
 > `.dockerignore`, make the app listen on `0.0.0.0:8080` via `ASPNETCORE_URLS`, wire
 > `UseForwardedHeaders` and a `/healthz` endpoint in `Program.cs`. **Prove** a real browser round
-> deals over `http://localhost:8080` from inside the container (the P13.6 browser-round check).
-> Report the image size and the exact run command. Then **stop and confirm the §7 hosting fork
-> (A vs C) with Nick** before Step 2 — the hosting decisions are his to make.
+> deals over `http://localhost:8080` from inside the container (the P13.6 / P42 browser-round
+> check). Report the image size and the exact run command. Then **stop**: P52 needs a Gitea PAT
+> from Nick, and P53 is work in a different repository (`ansible-nas`, whose plan is already
+> written at `docs/superpowers/plans/2026-08-28-burmesepoker-hosting.md`).

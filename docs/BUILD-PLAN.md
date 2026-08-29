@@ -7441,6 +7441,114 @@ no historical block altered; green with `STATUS.md`'s count matching.
 
 ---
 
+### P51–P54 — Taking the table online (the hosting track) ☐ — **added 2026-08-28, at Nick's direction**
+
+> ⚠️ **A different kind of work from everything above it.** P0–P50 are the rules engine, the
+> strategy programme and the documents. **This track is ops**: no rule changes, no measurement can
+> move, and **`Domain` is not touched at all** — so the suite is not regenerated and
+> `measurements.csv` is untouched by any of the four. The exploration and the trade-offs live in
+> **`docs/HOSTING.md`**; these entries are the packets it implies. ⚠️ **Two of the four are work in
+> a *different repository*** (`~/source/repos/ansible-nas`, origin `gitea.nickjones.dev`), whose own
+> plan is written at `docs/superpowers/plans/2026-08-28-burmesepoker-hosting.md`.
+
+🔥 **The finding that shaped this track: the homelab has already solved the hard part.**
+`ansible-nas` runs **Traefik with a wildcard `*.nickjones.dev` Let's Encrypt certificate over
+Cloudflare DNS-01**, with 80/443 already forwarded — so TLS, DNS and ingress are done for every app
+at once, and the marginal cost of this one is a container image and a role. **`HOSTING.md`'s
+original recommendation (a Cloudflare Tunnel) was written without knowledge of that repo and has
+been withdrawn** in favour of the Traefik that is already running; `HOSTING.md` §5a records the
+review and the three consequences.
+
+| Packet | Repo | Model | Why |
+|---|---|---|---|
+| P51 containerize | BurmesePoker | **Opus 5** | small but subtle — the forwarded-headers failure class renders a perfect page with a dead button, and only a real round in the container catches it |
+| P52 published image | BurmesePoker (+ Gitea) | **Sonnet 5** | mechanical CI wiring against an established in-house pattern; blocked on a PAT, not on judgment |
+| P53 the Ansible role | ansible-nas | **Sonnet 5** | copy a two-file role template and change the port; the judgment was spent choosing `mirroquest`'s shape over `nickjones-dev`'s |
+| P54 host hardening | BurmesePoker | **Opus 5** | touches `Lobby` lifetimes and a live UI affordance — real code in the server, and the one packet here that can break a running table |
+
+---
+
+### P51 — Containerize: the app as a portable image ☐ — **the first hosting packet, and hosting-agnostic**
+
+**Goal.** One container that runs the browser table unchanged, so the hosting choice stays open.
+**`HOSTING.md` §6 Step 1.**
+
+**Build.**
+
+1. A **multi-stage `Dockerfile`** (.NET 10 SDK build → `aspnet` runtime) and a `.dockerignore`,
+   publishing `BurmesePoker.Web`. Listen on `0.0.0.0:8080` via `ASPNETCORE_URLS`.
+2. 🔥 **`app.UseForwardedHeaders(...)` in `Program.cs`, before routing** — mandatory behind any
+   TLS-terminating proxy, and **no Ansible label or ingress setting can substitute for it**. Without
+   it the app computes redirects and antiforgery tokens against the wrong scheme and host: the
+   "renders perfectly, button does nothing" failure this project already met at P13.6.
+3. A **`/healthz`** endpoint, for container restart policy and any future ingress probe.
+
+**Acceptance.** The image builds; a **real browser round deals** over `http://localhost:8080`
+against the container (the P13.6 / P42 check, not a page load); `/healthz` answers; the tree is
+green and **`Domain` is byte-identical**. Report the image size and the exact run command.
+⚠️ **Docker commands go in `text` fences, never `bash`** — `DocumentationTests` resolves every
+`bash`-fenced command against the parser that would accept it.
+
+---
+
+### P52 — A published image ☐ — **blocked on a Gitea PAT from Nick**
+
+**Goal.** The image is built by CI and pulled by the server, never built on the server.
+**`HOSTING.md` §6 Step 2.**
+
+**Build.** A **Gitea origin** for this repo beside GitHub (the pattern the other personal repos
+use: push to `gitea.nickjones.dev`, push-mirror to GitHub), and a Gitea Actions workflow building
+the Dockerfile and pushing `gitea.nickjones.dev/nickjones/burmesepoker:latest` on a push to `main`.
+
+⚠️ **Why not build on the NAS.** `roles/nickjones-dev` builds on the server and `roles/mirroquest`
+does not; the newer one is right here, because a .NET SDK layer plus a full restore on the Hyper-V
+VM on every playbook run that sees a new commit is a real cost on a machine that is also serving
+everything else. **`roles/gitea-actions-runner` already carries an opt-in docker-socket
+passthrough for runners that build images** (`gitea_actions_runner_mount_docker_sock`), so the
+capability exists.
+
+**Acceptance.** Pulling the published tag runs the container P51 verified.
+
+---
+
+### P53 — The `burmesepoker` Ansible role ☐ — **work in `ansible-nas`, not in this repo**
+
+**Goal.** `poker.nickjones.dev` serves the table, managed like every other service on the NAS.
+**`HOSTING.md` §6 Step 3**; the task-level plan is in that repo's
+`docs/superpowers/plans/2026-08-28-burmesepoker-hosting.md`.
+
+**Build.** `roles/burmesepoker/` on the **`mirroquest` two-file template** — fail-fast on missing
+registry credentials, `docker_login`, `docker_container` with `pull: true` and the six standard
+Traefik labels routing `poker.{{ ansible_nas_domain }}` at container port **8080**, plus the stop
+block — one entry in `nas.yml` in alphabetical position, and a page under
+`website/docs/applications/`.
+
+⚠️ **Four things no existing role needs** (`HOSTING.md` §5a): **`*_memory: 512m`, never the `64m`
+both hand-written roles use**; WebSockets and idle timeouts are *assumptions* about Traefik here
+and must be tested, not trusted; `UseForwardedHeaders` is P51's job and cannot be done with a
+label; and there is **no auth-middleware pattern in that repo**, so gating is new work.
+
+**Acceptance.** `ansible-playbook nas.yml --tags burmesepoker --become --ask-become-pass` brings
+the table up over HTTPS, and 🔥 **a real round is played from a phone off the home network** —
+which is what settles the WebSocket and idle-timeout assumptions.
+
+---
+
+### P54 — Long-lived-host hardening ☐ — **the one hosting packet that touches real server code**
+
+**Goal.** A table that has been up for weeks behaves. **`HOSTING.md` §6 Step 4.**
+
+**Build.** Confirm or implement **idle-table reaping** in `Lobby` (drop a table with no viewers
+after N minutes and stop its parked bot loop — check `HostedTable` / `TableSession` disposal;
+⚠️ **whether tables are reaped today is unconfirmed**, and without it the site fills `MostTables`
+and quietly stops opening tables); a **"create table → copy link"** affordance on the lobby page;
+**patience tuned for real humans on flaky internet**; and the gating decision from `HOSTING.md` §7.
+
+**Acceptance.** A table with no viewers is gone after the configured interval and its bot loop has
+stopped; the lobby affordance works in a real browser; the tree is green; **`Domain` untouched**.
+
+---
+
 ## 6. Cold-start protocol
 
 For picking up in a fresh session with no memory of this conversation.
