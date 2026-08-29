@@ -19,7 +19,16 @@ F10) was the last of them; the tree is green at 914.**
 online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
 no measurement can move. ✅ **`P51` (containerize) and `P52` (a published image) both shipped 2026-08-28 — see the blocks
-below**; **`P53` is the next packet** and is **work in `ansible-nas`**; ⚠️ **`P55` was added the same day
+below**; ◐ **`P53` is half-done the same day — the role is built and committed in `ansible-nas`
+(`7ffd645e`), but the table is not up**: `ansible-playbook nas.yml --tags burmesepoker --become
+--ask-become-pass` needs `ssh-add ~/ubuntuServer22key` and an interactive become password, **which a
+session cannot type**, so the WebSocket and idle-timeout assumptions are still assumptions and the
+acceptance (**a real round from a phone off the home wifi, network tab open**) is unrun. ⚠️ **The
+gating decision was taken: a Traefik `basicauth` middleware, attached only when
+`burmesepoker_basicauth_users` is non-empty** — a router naming a middleware with an empty users list
+serves **503**, not a login prompt — and it adds a second thing the phone round must settle, because
+a browser cannot set an `Authorization` header on a `WebSocket` and Blazor will silently fall back to
+long polling if the cached credentials are not replayed; ⚠️ **`P55` was added the same day
 — make Gitea primary and GitHub a mirror**, and its planning found that **the `pre-rewrite` tag
 this file cites does not exist on any remote** (the 2023 tree is the history before `b32d08b`,
 `P0: restructure and salvage`) — P55 settles that before configuring a mirror, because a mirror

@@ -7553,7 +7553,7 @@ image from a perfect-looking dead one.
 
 ---
 
-### P53 — The `burmesepoker` Ansible role ☐ — **work in `ansible-nas`, not in this repo**
+### P53 — The `burmesepoker` Ansible role ◐ — **work in `ansible-nas`, not in this repo; role built 2026-08-28, deploy outstanding**
 
 **Goal.** `poker.nickjones.dev` serves the table, managed like every other service on the NAS.
 **`HOSTING.md` §6 Step 3**; the task-level plan is in that repo's
@@ -7577,6 +7577,40 @@ label; and there is **no auth-middleware pattern in that repo**, so gating is ne
 **Acceptance.** `ansible-playbook nas.yml --tags burmesepoker --become --ask-become-pass` brings
 the table up over HTTPS, and 🔥 **a real round is played from a phone off the home network** —
 which is what settles the WebSocket and idle-timeout assumptions.
+
+**What shipped 2026-08-28 (Opus 5), and what did not.** ✅ **The role exists, is wired in and is
+proved as far as it can be proved from here** — `ansible-nas` commit `7ffd645e`:
+`roles/burmesepoker/{defaults,tasks}/main.yml` on the `mirroquest` shape, the include in `nas.yml`
+between `booksonic` and `calibre`, a page at `website/docs/applications/gaming/burmesepoker.md`,
+and the (gitignored) inventory enabled with `mirroquest_registry_password` reused exactly as P52
+predicted. `yamllint` and `ansible-lint` both clean at the repo's own `production` profile;
+`ansible-playbook nas.yml --syntax-check` passes.
+⚠️ **Not done: the deploy and the phone round.** The play needs `ssh-add ~/ubuntuServer22key` (the
+key is passphrase-protected) and an interactive `--ask-become-pass`, **neither of which a session
+can supply** — so the WebSocket and idle-timeout assumptions are still assumptions and this packet
+is ◐ rather than ☑.
+
+🔥 **The gating decision was made and it is Task 5 option B — a Traefik `basicauth` middleware.**
+There is no auth pattern anywhere in that repo, so this is new ground, and the shape matters: the
+two labels are **`combine`d in only when `burmesepoker_basicauth_users` is non-empty**, because a
+router naming a middleware with an empty users list serves **503** — which reads as a broken
+deployment rather than as a locked door. Both branches were proved with a throwaway play before
+the role was committed (empty → six labels, set → eight), and the bcrypt hash's `$` signs survive
+intact — Ansible's `docker_container` needs none of compose's `$$` escaping.
+⚠️ **It adds a *second* thing the phone round has to settle.** A browser cannot set an
+`Authorization` header on a `WebSocket`, so the `/_blazor` handshake depends on the browser
+replaying its cached credentials for the origin. If it does not, Blazor falls back to long polling
+and the table **works but feels slow** — so the acceptance is *check the network tab*, not merely
+*a round played*.
+
+⚠️ **One amendment to the plan's own acceptance, made while building: there is no LAN check at
+`http://192.168.50.142:8080`, on purpose.** `mirroquest` publishes no host ports and neither does
+this role — Traefik runs `network_mode: host` and reaches containers over the bridge. Publishing
+8080 would also be the one thing P51 forbids: `KnownProxies` is empty, so the app trusts whatever
+sets `X-Forwarded-Proto`/`-Host`, and the port must be reachable from the proxy and nothing else.
+✅ **And the plan was wrong about one small thing**: it said there is no `games` category on the
+website, so the page should go in "the closest existing one or a deliberately created one" — there
+is a **`gaming`** category, with three servers already in it.
 
 ---
 

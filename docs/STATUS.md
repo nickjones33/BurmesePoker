@@ -10,6 +10,50 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
+◐ **`P53` is half-shipped, 2026-08-28 on Opus 5: the `burmesepoker` role exists in `ansible-nas`
+and is proved as far as a session can prove it — but the table is not up, because the deploy needs
+two secrets only Nick can type.** `RULES.md` stays rev 31, the tree is green at **914** (this
+packet touched no code in this repository at all), and **`P53` stays ◐ until the play is run and a
+round is played from a phone off the home network.**
+
+- ✅ **(1) The role is built, wired and linted.** `ansible-nas` commit `7ffd645e`:
+  `roles/burmesepoker/{defaults,tasks}/main.yml` on the `mirroquest` two-file shape (fail fast on
+  missing credentials → `docker_login` → `docker_container` with `pull: true` and the Traefik
+  labels → the stop block), the include in `nas.yml` between `booksonic` and `calibre`, a page at
+  `website/docs/applications/gaming/burmesepoker.md`, and the gitignored inventory enabled.
+  `yamllint` clean, `ansible-lint` clean at that repo's own `production` profile,
+  `ansible-playbook nas.yml --syntax-check` passes. ✅ **P52's prediction held exactly**: the
+  `read:package` token already in the inventory as `mirroquest_registry_password` is what
+  `burmesepoker_registry_password` wants, and no credential was minted.
+- ⚠️ **(2) What is not done, and why it is not a judgment call.** `ansible-playbook nas.yml --tags
+  burmesepoker --become --ask-become-pass` needs `ssh-add ~/ubuntuServer22key` (the key is
+  passphrase-protected — `ansible all -m ping` comes back `Permission denied (publickey,password)`)
+  **and** an interactive become password. **A session can supply neither.** So the two assumptions
+  this packet exists to settle — that Traefik proxies the WebSocket and that nothing in the path
+  closes an idle one — are **still assumptions**.
+- 🔥 **(3) The gating decision was taken: Task 5 option B, a Traefik `basicauth` middleware**, and
+  the shape is the finding. There is no auth pattern anywhere in that repo. The two labels are
+  **`combine`d in only when `burmesepoker_basicauth_users` is non-empty**, because a router naming a
+  middleware with an empty users list serves **503** — a broken deployment rather than a locked
+  door. Both branches were proved with a throwaway play before the commit (empty → six labels, set
+  → eight), and the bcrypt `$` signs survive intact: `docker_container` needs none of compose's
+  `$$` escaping. ⚠️ **The credentials are `poker` / a generated passphrase, in the gitignored
+  inventory only**; regenerate with `htpasswd -nbB poker <new password>`.
+- ⚠️ **(4) It gives the phone round a second thing to settle.** A browser cannot set an
+  `Authorization` header on a `WebSocket`, so the `/_blazor` handshake depends on the browser
+  replaying its cached basic credentials for the origin. If it does not, Blazor falls back to long
+  polling and the table **works but feels slow** — so the acceptance is *look at the network tab*,
+  not merely *a round played*.
+- ⚠️ **(5) Two corrections to that repo's plan, made while building.** **(a) There is no LAN check
+  at `http://192.168.50.142:8080`** — this role publishes no host ports, exactly as `mirroquest`
+  does, because Traefik runs `network_mode: host` and reaches containers over the bridge; and
+  publishing 8080 is the one thing P51 forbids (`KnownProxies` is empty, so the app trusts whatever
+  sets the forwarded headers). **Verify through Traefik, or `docker exec` against the bridge
+  address.** **(b) The plan said there is no `games` category on the website** — there is a
+  **`gaming`** one, with three servers already in it.
+
+---
+
 🔥 **`P52` shipped 2026-08-28 on Opus 5: the image is built by CI and pulled from the registry,
 never built on the server.** `RULES.md` stays rev 31, the tree is green at **914**, and **`P53`
 (the Ansible role) is next — and it is work in `~/source/repos/ansible-nas`, not in this repo.**
@@ -1061,13 +1105,24 @@ unasserted altogether.
 table online* (`BUILD-PLAN.md` §5, `docs/HOSTING.md`).** Every packet P0–P50 is done, so this and
 `P40` are the whole of the open work. ⚠️ **This track is ops, not the rules/strategy programme**:
 no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and no measurement
-can move. ✅ **`P51` (containerize) and `P52` (a published image) both shipped 2026-08-28.** **`P53`
-(the `burmesepoker` Ansible role) is next, and it is work in `~/source/repos/ansible-nas`** — its
-task-level plan is already written at that repo's
-`docs/superpowers/plans/2026-08-28-burmesepoker-hosting.md`, it pulls
-`gitea.nickjones.dev/nickjones/burmesepoker:latest` at container port **8080**, and it needs
-**`burmesepoker_memory: 512m`**, never the `64m` both hand-written roles use. ⚠️ **It needs no new
-credential** — `mirroquest_registry_password` in the inventory is already the `read:package` token.
+can move. ✅ **`P51` (containerize) and `P52` (a published image) both shipped 2026-08-28.**
+◐ **`P53` (the `burmesepoker` Ansible role) is half-done the same day**: the role is built, wired
+into `nas.yml`, linted and committed in `~/source/repos/ansible-nas` (`7ffd645e`), and the
+gitignored inventory is enabled — **but the play has not been run.** ⚠️ **It is not blocked on
+judgment, on a credential or on the plan**: `ansible-playbook nas.yml --tags burmesepoker --become
+--ask-become-pass` needs `ssh-add ~/ubuntuServer22key` and an interactive become password, and a
+session can type neither. **So the next move on this packet is Nick's, and it is two commands**:
+
+```text
+ssh-add ~/ubuntuServer22key
+ansible-playbook nas.yml --tags burmesepoker --become --ask-become-pass
+```
+
+🔥 **Then the acceptance, which is the whole point of the packet: a real round played from a phone
+off the home wifi, with the network tab open.** Not a page that loads — a page that loads and then
+does nothing is the shared symptom of a broken WebSocket path, an idle timeout, a missing
+`UseForwardedHeaders`, *and* of the new basicauth failing the `/_blazor` upgrade. ⚠️ **The login is
+`poker` and a generated passphrase, in the gitignored inventory.**
 Then `P54` (host hardening) comes back to this repo.
 
 🔥 **`P55` was added 2026-08-28 at Nick's direction: make Gitea primary and GitHub a mirror.**
@@ -4522,6 +4577,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 | --- | --- | --- |
+| 2026-08-28 | P53 | **Partial — the `burmesepoker` Ansible role, on Opus 5. The role is built and committed; the table is not up.** Work in `~/source/repos/ansible-nas` (commit `7ffd645e`), which is why this repository's tree is untouched and still green at **914**: `roles/burmesepoker/{defaults,tasks}/main.yml` on the `mirroquest` two-file shape (fail fast on missing credentials → `docker_login` → `docker_container` with `pull: true` and the Traefik labels → the stop block), the include in `nas.yml` between `booksonic` and `calibre`, a page at `website/docs/applications/gaming/burmesepoker.md`, and the gitignored inventory enabled. `yamllint` clean, `ansible-lint` clean at that repo's `production` profile, `ansible-playbook nas.yml --syntax-check` passes. ✅ **P52's prediction held exactly**: `mirroquest_registry_password` is the `read:package` token `burmesepoker_registry_password` wants, and nothing was minted. ⚠️ **What is not done is not a judgment call**: the play needs `ssh-add ~/ubuntuServer22key` (the key is passphrase-protected — `ansible all -m ping` returns `Permission denied (publickey,password)`) **and** an interactive `--ask-become-pass`, and a session can type neither — so **the WebSocket and idle-timeout assumptions this packet exists to settle are still assumptions**, and the packet is ◐. 🔥 **The gating decision was taken — Task 5 option B, a Traefik `basicauth` middleware, which is the first auth pattern in that repo — and its shape is the finding**: the two labels are `combine`d in **only when `burmesepoker_basicauth_users` is non-empty**, because a router naming a middleware with an empty users list serves **503**, which reads as a broken deployment rather than as a locked door. Both branches proved with a throwaway play before committing (empty → six labels, set → eight); the bcrypt `$` signs survive intact, so `docker_container` needs none of compose's `$$` escaping. ⚠️ **It gives the phone round a second thing to settle**: a browser cannot set an `Authorization` header on a `WebSocket`, so the `/_blazor` upgrade depends on the browser replaying its cached basic credentials — if it does not, Blazor falls back to long polling and the table **works but feels slow**, so the acceptance is *check the network tab*, not merely *a round played*. ⚠️ **Two corrections to that repo's plan**: there is **no LAN check at `http://192.168.50.142:8080`** — this role publishes no host ports, exactly as `mirroquest` does (Traefik is `network_mode: host` and reaches containers over the bridge), and publishing 8080 is the one thing P51 forbids; and the plan's claim that there is no games category was wrong — **`gaming` exists**, with three servers in it. No rules question; `RULES.md` stays rev 31. Every project in this repository byte-identical; no measurement can move. Tree green at **914** (unchanged — **no test was added, because this packet added no code here**). |
 | 2026-08-28 | P52 | **Done — a published image, on Opus 5.** The repo gained a **Gitea origin** (`gitea` remote beside GitHub `origin`) and `.gitea/workflows/publish-image.yml`: on a push to `main`, the `docker-builder` runner (the one carrying `gitea_actions_runner_mount_docker_sock`) builds **the repository's own `Dockerfile`, unrewritten**, and pushes `gitea.nickjones.dev/nickjones/burmesepoker` at **`:latest`** (what P53's role pulls) and **`:<sha>`** (what makes a rollback possible), authenticating with `--password-stdin` against a Gitea repo secret **`REGISTRY_TOKEN`** (`write:package`, `read:package`). 🔥 **CI gates on the request that separates a working image from a perfect-looking dead one**: the last step runs the freshly-pushed tag and curls `/healthz` **and `_framework/blazor.web.js`**, because P51's `--no-restore` image passes every other check ever written here. ⚠️ **A CI file is the obvious place for that trap to return** — `--no-restore` reads like a free speed-up to anyone who has not met the finding — so `ContainerTests` fences the workflow as well: the runner label (⚠️ **a wrong label queues rather than fails**, which reads as a slow build rather than a broken one), the absence of the flag, the image path P53 pulls, and the blazor check. ✅ **Acceptance on the published artifact, not the local build**: pulled `:latest` from the registry, ran it, `/healthz` + `_framework/blazor.web.js` + `/` + a proxied `/` (with `X-Forwarded-Proto`/`-Host`) all **200**, and dealt a browser round — **the same hand as P51's local build at the same seed**, a free reproduction check on the image. ⚠️ **No credential entered the session**: Nick minted the token and stored it as a repo secret, and the local pull used a `docker login` he performed himself. 🔥 **P53 turned out not to be blocked at all** — the `read:package` token already in `inventories/my-ansible-nas/group_vars/nas.yml` as `mirroquest_registry_password` is exactly what `burmesepoker_registry_password` wants; only P52 ever needed the new one. ⚠️ **The GitHub push-mirror was deliberately not set up** (it needs a *GitHub* PAT — a different credential — and nothing depends on it); `origin` is untouched. No rules question; `RULES.md` stays rev 31. `Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical. ⚠️ **The first run was red at 913/914**: the new fence matched the workflow's own `#` comment explaining the trap — `Sources.Markup` strips `//`, `/* */`, `@* *@` and `<!-- -->` but not YAML's `#`, so the test strips it itself; re-proved able to fail on a real flag. Tree green at **914** (was 913 — one new fact). |
 | 2026-08-28 | P51 | **Done — the browser table as a container, on Opus 5 — and the standard .NET Dockerfile idiom turned out to ship a dead one.** Root `Dockerfile` (multi-stage `sdk:10.0` → `aspnet:10.0`, publishing `BurmesePoker.Web` and its three project references only, non-root, `ASPNETCORE_URLS=http://0.0.0.0:8080`, **231 MB**) and `.dockerignore`; `app.UseForwardedHeaders()` first in `Program.cs` with `KnownIPNetworks`/`KnownProxies` cleared; `MapGet("/healthz")`. 🔥 **The finding, measured not reasoned:** copy csprojs → `dotnet restore` → copy sources → `dotnet publish --no-restore` publishes an app with **no `wwwroot/_framework/blazor.web.js` at all** — the published endpoint manifest names it **zero** times against **one** when the publish restores for itself (reproduced four ways inside the SDK image to isolate the step). `MapStaticAssets` then 404s the script that starts the circuit: **P13.3's failure by a different road**, and invisible from inside the tree because the app is correct and only the image is not. The publish restores for itself and the flag is fenced. **Acceptance met by playing, not loading**: sat down through the lobby's `EditForm` (the antiforgery post — the exact failure class), claimed off the table, discarded, four bot seats took their turns, drew blind with the private event arriving over the circuit. Forwarded headers proved live — with `X-Forwarded-Proto: https` / `X-Forwarded-Host: poker.nickjones.dev` the container logs `https://poker.nickjones.dev/`. ⚠️ **The app trusts whatever forwards those headers** (a proxy container's address is assigned at run time), so port 8080 must never be published straight to the internet — P53's labels and P54's gating sit on that. Fences: `BurmesePoker.Tests/Web/ContainerTests.cs`, five facts, source scans in `JackpotSpokenTests`' idiom — the image's SDK/runtime tags against the csproj's moniker (a `net11.0` bump reddens), `EXPOSE` against `ASPNETCORE_URLS` and the host being `0.0.0.0`, `UseForwardedHeaders` **ordered before** `UseAntiforgery`/`MapStaticAssets`/`MapRazorComponents` (*present* would have passed a useless call after the endpoints), `/healthz` reading no `Lobby`, and no `--no-restore` on the publish. Docs: `README.md` gained a *Hosting it* section, CLAUDE.md, BUILD-PLAN P51 ☑ + **P52 amended** (build the Dockerfile as it stands; acceptance now includes curling `_framework/blazor.web.js` for a 200). No rules question; `RULES.md` stays rev 31. `Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical; no measurement can move. Tree green at **913** (was 908 — five new facts). |
 | 2026-08-27 | P50 | **Done — the documentation cleanup (F10), on Opus 4.8 — `STRATEGY.md`'s prose caught up with its own tables and the class was fenced.** Pure-documentation packet: the diff is `docs/STRATEGY.md`, one new `[Fact]` in `PublishedFigureTests`, and the count/state bumps in `CLAUDE.md` + `STATUS.md` — every project byte-identical, no measurement moved. 🔥 **The finding: most of the 2026-08-23 F10 list was already current**, because P43–P46's blast radius had regenerated §3/§4/§6/§12; the genuine staleness was concentrated in the top block and the sections those packets never touched. Fixed, each re-derived from the CSV (never patched by eye): **top block** (`rev 24/26/29`, `§7.4/§7.5/§3-seating unbuilt`, `235 measurements`, `Last generated … P46`) → **rev 31, all built (§7.4 measured in §15, §7.5 audited, seating/visibility cannot reach a one-round figure), 372 measurements, P46 suite + P48 readouts**; **§7's resolution floor** (four-handed `SE 0.52 / half-width 1.02 / ~34,000 games`) → **`0.41 / 0.81 / ~21,000`**; **§8's map + `cautious`/`counting` bullets** (four-handed `± 1.0`) → **`± 0.8`**; **§3's greedy/cautious/counting paragraph** (`+0.1 ± 1.0`, `30.7/30.6/30.1`) → **`+0.0 ± 0.8`, `22.4/22.2/22.2`**; **§10's "The answer"** (`+$5.32 / +$14.63 / −$0.21`) → **`+$3.99 / +$14.20 / −$0.35`** matching its own table (also the table's `3.98 → 3.99` rounding, aligning it with §16.3); **§15's deal-win summary** (`28 in 75,250`) → **`52 in 116,201`**. Plus P48's own leftover, assigned to P50 in P48's log: **§3/§4/§8/§14's forward-references to P48 as future work** (`re-read under P48 before settled`, `flagged for P48`) reworded to the settled result now in §16 (§16.5 graduated `sprinter`, §16.1 held the `opportunist` null, `angler`-`opportunist` read inside). 🔥 **Fence choice: extend, not strip.** `PublishedFigureTests.TheProseFiguresTheStrategyDocumentQuotesAreTheFiguresInTheCsv` anchors seven current-claim prose margins (§3 sprinter-over-outs, §8 map's outs/cautious/counting/refuse, §10's two money cells) plus §7's *derived* floor (half-width = the head-to-head interval, SE = it over 1.96) to their CSV rows, in the proven HOW-TO-PLAY-WELL shape — printed sign carried by the scale, tolerance from printed precision. ⚠️ **Digit-free (P49's rule for the sims doc) was rejected on purpose**: `STRATEGY.md` is the measurement authority whose voice *is* inline figures, so stripping its digits would gut it; the fence keeps the voice and reddens a stale *current-claim* margin (never the deliberately-kept historical ones — P34's newest-first rule). **Proved able to fail** (a `+2.7 → +3.5` prose mutation reddened the new fence; reverted). ⚠️ **Left alone deliberately**: clearly-historical narratives naming their packet (§9's P23 four-handed re-fit, §10/§14's "at P33 it went X→Y", the P16 neighbour figures); and one possible P48 typo out of F10 scope (§16.3's *normal* money half-widths read `±2.28`/`±4.85` where the CSV says `±2.43`/`±4.81` — the *resampled* figures are correct). README/PLAYING/RULES-PRIMER swept clean (already pointer-only / rev 31). No rules question; `RULES.md` stays rev 31. **Every planned packet is now done**; only `P40` (blocked on Nick's Burmese text) remains. Tree green at **908** (was 907 — one new `[Fact]`). |
