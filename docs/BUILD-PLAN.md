@@ -7443,6 +7443,11 @@ no historical block altered; green with `STATUS.md`'s count matching.
 
 ### P51–P55 — Taking the table online (the hosting track) ◐ — **added 2026-08-28, at Nick's direction; P55 added the same day**
 
+⚠️ **State, 2026-08-29: `P51`, `P52` and `P54` are done; `P53` is ◐ (the role is built and
+committed in `ansible-nas`, the play unrun — it needs two secrets a session cannot type); `P55` is
+not started and needs a GitHub PAT.** So **the table is still not up**, and P54's hardening is
+proved by tests rather than by a running site.
+
 > ⚠️ **A different kind of work from everything above it.** P0–P50 are the rules engine, the
 > strategy programme and the documents. **This track is ops**: no rule changes, no measurement can
 > move, and **`Domain` is not touched at all** — so the suite is not regenerated and
@@ -7614,7 +7619,7 @@ is a **`gaming`** category, with three servers already in it.
 
 ---
 
-### P54 — Long-lived-host hardening ☐ — **the one hosting packet that touches real server code**
+### P54 — Long-lived-host hardening ☑ — **done 2026-08-29 (Opus 5); the one hosting packet that touches real server code**
 
 **Goal.** A table that has been up for weeks behaves. **`HOSTING.md` §6 Step 4.**
 
@@ -7626,6 +7631,48 @@ and quietly stops opening tables); a **"create table → copy link"** affordance
 
 **Acceptance.** A table with no viewers is gone after the configured interval and its bot loop has
 stopped; the lobby affordance works in a real browser; the tree is green; **`Domain` untouched**.
+
+#### ✅ What it built, 2026-08-29 (Opus 5) — and the four things a cold session needs
+
+🔥 **(1) The leak was real, and the half of it everyone worries about was already fine.**
+`Lobby.Close` had existed since P13.6 and **only the tests ever called it**; nothing in the running
+site closed a table. So a hosted site accumulated a table per form press, hit `MostTables` (12),
+and thereafter answered every *Open it* with an error — arriving weeks after a deploy and reading
+as a broken form. ✅ **The parked bot loop was never the problem**: `HostedTable.Deal` breaks the
+moment `Ready` goes false, which the last viewer leaving makes it. What leaked was the **slot**
+and the memory behind it.
+
+🔥 **(2) `HostedTable.IdleSince` starts at construction, and `Lobby.House` is a named field.**
+A table opened by a press nobody followed up has never had a viewer to lose and is exactly the
+case that leaks, so idleness is not *"since somebody left"*. And the house table is spared: once
+tables can be closed, *the first table in the dictionary* and *the table this site was started
+with* stop being the same thing, and reaping the second would leave `dotnet run` an empty room and
+the deployed site's own URL pointing at nothing. Window **30 minutes**, sweep **5**, by
+`TableSweeper` — ⚠️ **whose registration is fenced, because a correct reaper nobody runs leaks
+exactly as much as no reaper at all**, which is the state this packet found.
+
+🔥 **(3) *Patience for real humans on flaky internet* was turned into a relation between two
+numbers rather than a taste.** A browser table's patience is **180 s** (was 90) and `Program.cs`
+sets `CircuitOptions.DisconnectedCircuitRetentionPeriod` explicitly to **2 minutes**. Inside that
+window the framework is deliberately hiding a dropped connection from the player, so **a patience
+shorter than it has the computer play the turn of somebody the framework is still expecting
+back**. The two live in two files and are fenced against each other — one read from source, one
+off the real `Lobby` — so neither can be a copy of the other. ⚠️ **The retention is the shorter
+side of a trade** (the framework's default is 3 minutes): a seat is recoverable by *name* whatever
+happens to the circuit (§3.11 C16), so retention buys convenience and costs held state.
+
+⚠️ **(4) Two things left honestly open.** **(a)** The copy-link affordance is an enhancement over
+a real `<a>` — absolute, out of `ToAbsoluteUri`, with the reveal marked on the **document** and
+the handler delegated from it, because enhanced navigation replaces the markup and per-element
+wiring dies on the second visit — but **nothing here was pressed in a real browser**, so the
+acceptance's *"works in a real browser"* is outstanding and belongs with P53's phone round.
+**(b)** `SeatChannel` never disposes its per-seat `ManualResetEventSlim`. It is not unbounded (the
+wait handle's own `SafeHandle` finaliser releases it) and disposing it is a race against the
+engine thread parked in `Ask`, which takes no cancellation token — **`Server` was left
+byte-identical**, and a packet that wants this must give `Ask` a token first.
+
+✅ **The §7 gating decision was landed by P53** (a Traefik `basicauth` middleware attached only
+when the users list is non-empty), so this packet inherited it rather than taking it.
 
 ---
 
@@ -7749,6 +7796,18 @@ the table waits for*, not which seats they get. **Do not rebuild any of that.**
 ⚠️ **Overlaps P54 deliberately.** P54 owns *create table → copy link* and the patience tuning; this
 packet owns *what is on the form*. **Whichever runs second inherits the other's lobby edits** — do
 not plan them as independent diffs.
+
+🔥 **Re-planned 2026-08-29: P54 ran first, so this packet inherits its lobby edits.** Three things
+changed under it. **(a)** Every table row in `Tables.razor` now carries a `<p class="link">` with
+the table's absolute address and a copy button — **so item 3's *waiting for N more* sentence has a
+home beside a link somebody is about to send**, and the two belong in the same row rather than in
+two passes. **(b)** `Lobby.House` exists and is never reaped, which matters to item 1: the house
+table's `people` is the one setting on the site that cannot be fixed by opening a better table.
+**(c)** The browser table's patience is **180 s** and is fenced against
+`DisconnectedCircuitRetentionPeriod` — **do not change either number in this packet without
+reading P54's remark on why they are joined.** ⚠️ **Item 4 (the form's `Seats` default) is
+unchanged and still owed**: `NewTable.Seats` still initialises to `RoundEngine.MinimumPlayers`,
+and P54 did not touch the form.
 
 **Acceptance.** A person who has never seen the site can open a table for themselves and three
 friends against two named opponents and understand, without being told, why it has not dealt yet;

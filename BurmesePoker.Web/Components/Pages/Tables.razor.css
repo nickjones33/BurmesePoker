@@ -110,6 +110,47 @@
     color: var(--on-raised-link);
 }
 
+/*
+    The table's own address, written out. ⚠️ A URL has no spaces in it and will not wrap on its
+    own, so a phone-width column would be a horizontal scrollbar without anywhere-wrapping.
+*/
+.link {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.link .url {
+    flex: 1 1 12rem;
+    overflow-wrap: anywhere;
+    color: var(--on-raised-link);
+}
+
+/*
+    🔥 Hidden unless the script that makes it work has run, and the mark is on the document
+    rather than on the button — enhanced navigation replaces this markup, and anything done to
+    the element at load would be undone by the first navigation back to the lobby.
+*/
+.link .copy {
+    display: none;
+}
+
+:global(.can-copy) .link .copy {
+    display: inline-block;
+    min-height: 40px;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 5px;
+    background: var(--raised);
+    color: var(--on-raised);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
 .opening {
     padding: 0.8rem 1rem;
     border: 1px solid var(--edge-surface);

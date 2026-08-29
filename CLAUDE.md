@@ -14,12 +14,13 @@ over ad-hoc changes.
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
 recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
-F10) was the last of them; the tree is green at 914.**
+F10) was the last of them; the tree is green at 920.**
 🔥 **A fourth track was added 2026-08-28 at Nick's direction: `P51`–`P54`, *taking the table
 online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
-no measurement can move. ✅ **`P51` (containerize) and `P52` (a published image) both shipped 2026-08-28 — see the blocks
-below**; ◐ **`P53` is half-done the same day — the role is built and committed in `ansible-nas`
+no measurement can move. ✅ **`P51` (containerize), `P52` (a published image) and `P54` (long-lived-host hardening — idle
+tables reaped, the copy-link affordance, and the patience joined to the circuit-retention window;
+2026-08-29) have all shipped — see the blocks below**; ◐ **`P53` is half-done the same day — the role is built and committed in `ansible-nas`
 (`7ffd645e`), but the table is not up**: `ansible-playbook nas.yml --tags burmesepoker --become
 --ask-become-pass` needs `ssh-add ~/ubuntuServer22key` and an interactive become password, **which a
 session cannot type**, so the WebSocket and idle-timeout assumptions are still assumptions and the
@@ -84,6 +85,38 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 ⚠️ **One P46 follow-up owned, not done**: the race-reach instrument recomputes an uncached cover
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
+
+**What P54 built, and the four things a cold session needs from it.**
+🔥 **(1) Nothing in this client had ever closed a table, and that was the leak.** `Lobby.Close`
+was written in P13.6 and **only the tests called it**, so a hosted site accumulated a table per
+form press, hit `Lobby.MostTables` (12), and thereafter answered every *Open it* with an error —
+weeks after a deploy, reading as a broken form rather than a full site. ✅ **The parked bot loop
+was never the problem**: `HostedTable.Deal` breaks the moment `Ready` goes false, which the last
+viewer leaving makes it. `TableSweeper` (a `BackgroundService`) now asks `Lobby.ReapIdleTables`
+every **5 minutes** for tables idle **30**.
+🔥 **(2) Two decisions worth carrying.** `HostedTable.IdleSince` starts **at construction** — a
+table opened by a press nobody followed up has never had a viewer to lose and is exactly the case
+that leaks. And **`Lobby.House` is a named field, never reaped**: once tables can be closed, *the
+first table in the dictionary* and *the table this site was started with* stop being the same
+thing, and reaping the second leaves `dotnet run --project BurmesePoker.Web` an empty room and the
+deployed site's own URL pointing at nothing.
+🔥 **(3) The patience number stopped being a taste.** A browser table's patience is **180 s** (was
+90) and `Program.cs` sets `CircuitOptions.DisconnectedCircuitRetentionPeriod` explicitly to **2
+minutes**. ⚠️ **Inside that window the framework is deliberately hiding a dropped connection from
+the player**, so a shorter patience has the computer play the turn of somebody the framework is
+still expecting back. **The two live in two files and are fenced against each other** — one read
+from `Program.cs`, one off the real `Lobby` — so neither is a copy of the other. **Do not move
+either without reading the other.**
+⚠️ **(4) Two things left open, said out loud.** **(a)** The copy-link affordance is an enhancement
+over a real `<a>` (absolute, `ToAbsoluteUri`; the reveal is a class on the **document** and the
+handler is delegated from it, because enhanced navigation replaces the markup and per-element
+wiring dies on the second visit) — but **it was never pressed in a browser**, and neither was a
+reaping watched on a live site. **(b)** `SeatChannel` never disposes its per-seat
+`ManualResetEventSlim`; it is bounded (the wait handle's `SafeHandle` finaliser releases it) and
+disposing it races the engine thread parked in `Ask`, which takes no cancellation token — so
+**`Server` was left byte-identical**, and a packet that wants this must give `Ask` a token first.
+Tree green at **920**, from 914; `Domain`, `Presentation`, `Server`, `Console` and `Sim`
+untouched.
 
 **What P52 built, and the three things a cold session needs from it.**
 🔥 **(1) The repository has a Gitea origin and CI publishes the image.**

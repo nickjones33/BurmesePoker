@@ -11,12 +11,37 @@ var builder = WebApplication.CreateBuilder(args);
 // table component and nowhere near the root. This is the one decision on the list that cannot
 // be walked back cheaply.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents(circuits =>
+    {
+        // 🔥 What a phone on a train needs, and what a site up for weeks can afford (P54).
+        //
+        // A dropped circuit is held so that a connection coming back finds its own board, its
+        // own scroll position and its own standing question rather than a reload. ⚠️ The
+        // framework's own default is three minutes; two is deliberate and is the shorter side
+        // of a trade, because a seat is recoverable by *name* whatever happens to the circuit
+        // (P13.6, §3.11 C16) — sitting down again under the name you used takes the seat back.
+        // So the retention buys convenience, and every minute of it is a whole page's worth of
+        // server state held for somebody who may never come back.
+        //
+        // ⚠️ It is joined to the table's own patience and must stay under it: a person whose
+        // connection drops and silently returns inside this window must still find their turn
+        // waiting. `Lobby` gives a browser table 180 seconds against the server's own 45, and
+        // `ContainerTests` fails the build if this ever climbs past it.
+        circuits.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(2);
+    });
+
+// The clock the lobby and its sweeper ask (P54), so that idle reaping can be asserted without a
+// test sleeping for the interval it is testing.
+builder.Services.AddSingleton(TimeProvider.System);
 
 // The tables this site is hosting. ⚠️ A lobby rather than one table (BUILD-PLAN P13.6): a
 // second table is a dictionary of them and a route that names one, and nothing else in the
 // client counts tables.
 builder.Services.AddSingleton<Lobby>();
+
+// ⚠️ Nothing closed a table before P54, so a site left up filled `Lobby.MostTables` and then
+// refused to open another — weeks after the deploy, and looking like a broken form.
+builder.Services.AddHostedService<TableSweeper>();
 
 // 🔥 What a TLS-terminating proxy in front of this app forwards, and nothing else can supply
 // (BUILD-PLAN P51). Behind Traefik the app sees a plain HTTP request from another container:

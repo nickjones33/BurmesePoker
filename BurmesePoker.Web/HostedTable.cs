@@ -73,13 +73,25 @@ public sealed class HostedTable : IAsyncDisposable
     private readonly SeatConnection _watcher;
     private readonly Dictionary<PlayerId, SeatBoard> _sitting = [];
     private readonly ILogger _log;
+
+    /// <summary>
+    /// What this table asks the time of.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Injected rather than <c>DateTimeOffset.UtcNow</c></b> (BUILD-PLAN P54). The one
+    /// thing worth asserting about idle reaping is <em>when</em> it happens, and a test that
+    /// asserted it against the wall clock would have to sleep for the interval it is testing.
+    /// </remarks>
+    private readonly TimeProvider _clock;
+
     private int _seen;
     private int _attending;
+    private DateTimeOffset? _idleSince;
     private bool _stopped;
     private bool _journalTrouble;
     private Task? _dealer;
 
-    public HostedTable(string id, TablePlan plan, ILogger log)
+    public HostedTable(string id, TablePlan plan, ILogger log, TimeProvider? clock = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentNullException.ThrowIfNull(plan);
@@ -87,7 +99,13 @@ public sealed class HostedTable : IAsyncDisposable
         Id = id;
         Plan = plan;
         _log = log ?? throw new ArgumentNullException(nameof(log));
+        _clock = clock ?? TimeProvider.System;
         _levels = Levelled(plan);
+
+        // 🔥 Idle from the moment it opens, and not from the moment somebody leaves (P54). A
+        // table opened by a form press nobody followed up is exactly the leak the reaper is
+        // for, and it has never had a viewer to lose.
+        _idleSince = _clock.GetUtcNow();
 
         if (plan.People < 0 || plan.People > plan.Seats)
         {
@@ -181,6 +199,27 @@ public sealed class HostedTable : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// When this table last had nobody at it, or null if somebody is here now.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>What makes a long-lived site behave</b> (BUILD-PLAN P54). Nothing in this client
+    /// closed a table before this packet, so a site left up fills <c>Lobby.MostTables</c> and
+    /// then quietly refuses to open another — a failure that arrives weeks after the deploy and
+    /// looks like a broken form. ⚠️ <b>A table is idle from the moment it opens</b>: the leak is
+    /// as much the table nobody ever arrived at as the one everybody left.
+    /// </remarks>
+    public DateTimeOffset? IdleSince
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _idleSince;
+            }
+        }
+    }
+
     /// <summary>The public game, as everything that has been said adds up to it.</summary>
     public TableBoard Board { get; private set; }
 
@@ -232,6 +271,7 @@ public sealed class HostedTable : IAsyncDisposable
         lock (_gate)
         {
             _attending++;
+            _idleSince = null;
         }
 
         Consider();
@@ -243,6 +283,10 @@ public sealed class HostedTable : IAsyncDisposable
         lock (_gate)
         {
             _attending = Math.Max(0, _attending - 1);
+
+            // ⚠️ The clock starts on the *last* viewer leaving, and a second arrival clears it
+            // again: a table two people are watching is not idle because one of them left.
+            _idleSince = _attending == 0 ? _clock.GetUtcNow() : null;
         }
 
         Changed?.Invoke();

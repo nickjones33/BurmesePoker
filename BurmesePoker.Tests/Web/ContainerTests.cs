@@ -209,4 +209,65 @@ public class ContainerTests
         // The one request that separates a working image from a perfect-looking dead one.
         Assert.Contains("_framework/blazor.web.js", Workflow, StringComparison.Ordinal);
     }
+
+    /// <summary>
+    /// ✅ <b>P54 — the seat's patience outlasts the circuit the framework is holding for it.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Two numbers in two files that only mean anything together.</b> Inside
+    /// <c>DisconnectedCircuitRetentionPeriod</c> the framework is deliberately hiding a dropped
+    /// connection from the player — the overlay is up, the board is kept, and coming back is
+    /// silent. A patience shorter than that window would have the computer play the turn of
+    /// somebody the framework is still expecting back, and they would return to a table that had
+    /// moved on for no reason they could see. A phone that loses signal in a lift is the case.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>One side is read and the other is run.</b> The retention comes off
+    /// <c>Program.cs</c>, because an option set on a builder is not reachable from a test that
+    /// does not start the host; the patience is the real <c>Lobby</c>'s. So neither number can be
+    /// a copy of the other.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task TheSeatsPatienceOutlastsTheCircuitTheFrameworkHolds()
+    {
+        var retention = Regex.Match(
+            Program,
+            @"DisconnectedCircuitRetentionPeriod\s*=\s*TimeSpan\.From(?<unit>\w+)\((?<of>[0-9.]+)\)");
+
+        Assert.True(retention.Success, "Program.cs no longer sets DisconnectedCircuitRetentionPeriod.");
+
+        var held = retention.Groups["unit"].Value switch
+        {
+            "Seconds" => TimeSpan.FromSeconds(double.Parse(retention.Groups["of"].Value, Culture)),
+            "Minutes" => TimeSpan.FromMinutes(double.Parse(retention.Groups["of"].Value, Culture)),
+            var other => throw new InvalidOperationException($"No arm here for TimeSpan.From{other}.")
+        };
+
+        await using var lobby = LobbyTests.Open();
+
+        Assert.True(
+            lobby.Opening.Patience > held,
+            $"A browser table's patience is {lobby.Opening.Patience} against a retained circuit of {held}.");
+    }
+
+    /// <summary>
+    /// ✅ <b>P54 — something actually calls the reaper.</b>
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The failure this catches is a correct method nobody runs</b>, which is the state
+    /// the packet found: <c>Lobby.Close</c> was written in P13.6 and only the tests ever called
+    /// it. A reaper that is never registered leaks exactly as much as no reaper at all, and
+    /// nothing else in the tree would notice.
+    /// </remarks>
+    [Fact]
+    public void TheSiteRunsTheSweepThatClosesIdleTables()
+    {
+        Assert.Contains("AddHostedService<TableSweeper>()", Program, StringComparison.Ordinal);
+        Assert.Contains("AddSingleton(TimeProvider.System)", Program, StringComparison.Ordinal);
+        Assert.Contains("ReapIdleTables", Sources.Read("TableSweeper.cs"), StringComparison.Ordinal);
+    }
+
+    private static System.Globalization.CultureInfo Culture => System.Globalization.CultureInfo.InvariantCulture;
 }

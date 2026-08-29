@@ -200,6 +200,132 @@ public class LobbyTests
         Assert.Throws<ArgumentOutOfRangeException>(() => lobby.Open(lobby.Opening with { Seats = 4, People = -1 }));
     }
 
+    /// <summary>
+    /// ✅ <b>P54 — a site left up for weeks behaves, because something closes the tables.</b>
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Nothing in this client closed a table before this packet</b>: <c>Close</c> existed
+    /// and only these tests called it, so a hosted site accumulated a table per form press,
+    /// reached <see cref="Lobby.MostTables"/>, and from then on answered every <em>Open it</em>
+    /// with an error — weeks after the deploy, and reading as a broken form rather than a full
+    /// site (<c>HOSTING.md</c> §8).
+    /// ⚠️ <b>A table is idle from the moment it is opened</b>, because a table opened by a press
+    /// nobody followed up has never had a viewer to lose and is exactly the leak.
+    /// </remarks>
+    [Fact]
+    public async Task ATableNobodyHasBeenAtIsClosed()
+    {
+        var clock = new StoppedClock(new DateTimeOffset(2026, 8, 29, 12, 0, 0, TimeSpan.Zero));
+        await using var lobby = Open(clock);
+
+        var house = lobby.OpenTheHouseTable();
+        var opened = lobby.Open(lobby.Opening with { Title = "Somebody's", Seed = lobby.NextSeed() });
+
+        Assert.Same(house, lobby.House);
+        Assert.Equal(clock.GetUtcNow(), opened.IdleSince);
+
+        // Not yet: a table is kept for as long as the site says it is.
+        clock.Now += Lobby.IdleTablesAreClosedAfter - TimeSpan.FromSeconds(1);
+        Assert.Empty(await lobby.ReapIdleTables());
+        Assert.Equal(2, lobby.Tables.Count);
+
+        clock.Now += TimeSpan.FromSeconds(2);
+
+        // ⚠️ The house table is spared, whatever its clock says: `dotnet run` is meant to be a
+        // game rather than an empty room, and the deployed site's own URL is that table.
+        Assert.Equal([opened.Id], await lobby.ReapIdleTables());
+        Assert.Same(house, Assert.Single(lobby.Tables));
+    }
+
+    /// <remarks>
+    /// ⚠️ <b>The clock starts on the last viewer leaving and is cleared by the next arrival</b> —
+    /// a table two people are watching is not idle because one of them left.
+    /// </remarks>
+    [Fact]
+    public async Task ATableSomebodyIsAtIsNotIdleAtAll()
+    {
+        var clock = new StoppedClock(new DateTimeOffset(2026, 8, 29, 12, 0, 0, TimeSpan.Zero));
+        await using var lobby = Open(clock);
+
+        // ⚠️ A seat still waiting for a person, deliberately: a table whose seats are all the
+        // computer's would start dealing the moment somebody arrived, and this test is about
+        // the clock rather than about a round.
+        var table = lobby.Open(lobby.Opening with { People = 1, Seed = lobby.NextSeed() });
+
+        table.Arrive();
+        table.Arrive();
+        Assert.Null(table.IdleSince);
+
+        clock.Now += TimeSpan.FromHours(1);
+        Assert.Empty(await lobby.ReapIdleTables());
+
+        table.Leave();
+        Assert.Null(table.IdleSince);
+
+        table.Leave();
+        Assert.Equal(clock.GetUtcNow(), table.IdleSince);
+
+        // …and coming back stops the clock again, rather than merely resetting it.
+        table.Arrive();
+        Assert.Null(table.IdleSince);
+        Assert.Empty(await lobby.ReapIdleTables());
+
+        table.Leave();
+        clock.Now += Lobby.IdleTablesAreClosedAfter + TimeSpan.FromSeconds(1);
+        Assert.Equal([table.Id], await lobby.ReapIdleTables());
+        Assert.Empty(lobby.Tables);
+    }
+
+    /// <remarks>
+    /// <b>The point of reaping, stated as the thing it buys</b>: the site can go on opening
+    /// tables for ever, rather than for twelve.
+    /// </remarks>
+    [Fact]
+    public async Task ClosingTheIdleOnesMakesRoomForNewTables()
+    {
+        var clock = new StoppedClock(new DateTimeOffset(2026, 8, 29, 12, 0, 0, TimeSpan.Zero));
+        await using var lobby = Open(clock);
+
+        lobby.OpenTheHouseTable();
+
+        for (var opened = lobby.Tables.Count; opened < Lobby.MostTables; opened++)
+        {
+            lobby.Open(lobby.Opening with { Seed = lobby.NextSeed() });
+        }
+
+        Assert.Throws<InvalidOperationException>(() => lobby.Open(lobby.Opening));
+
+        clock.Now += Lobby.IdleTablesAreClosedAfter + TimeSpan.FromSeconds(1);
+
+        Assert.Equal(Lobby.MostTables - 1, (await lobby.ReapIdleTables()).Count);
+        Assert.Same(lobby.House, Assert.Single(lobby.Tables));
+
+        lobby.Open(lobby.Opening with { Seed = lobby.NextSeed() });
+        Assert.Equal(2, lobby.Tables.Count);
+    }
+
+    /// <summary>A clock that only moves when a test moves it.</summary>
+    /// <remarks>
+    /// ⚠️ <b>Written here rather than taken from a package</b>: what these tests need of a
+    /// <c>TimeProvider</c> is <c>GetUtcNow</c>, and the alternative to four lines is a test
+    /// that sleeps for the interval it is asserting about.
+    /// </remarks>
+    private sealed class StoppedClock(DateTimeOffset now) : TimeProvider
+    {
+        internal DateTimeOffset Now { get; set; } = now;
+
+        public override DateTimeOffset GetUtcNow() => Now;
+    }
+
+    internal static Lobby Open(TimeProvider clock, params (string Key, string Value)[] settings) => new(
+        new ConfigurationBuilder()
+            .AddInMemoryCollection(settings.ToDictionary(
+                setting => setting.Key,
+                setting => (string?)setting.Value))
+            .Build(),
+        NullLoggerFactory.Instance,
+        clock);
+
     internal static Lobby Open(params (string Key, string Value)[] settings) => new(
         new ConfigurationBuilder()
             .AddInMemoryCollection(settings.ToDictionary(

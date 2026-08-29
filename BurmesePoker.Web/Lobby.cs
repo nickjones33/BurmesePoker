@@ -36,9 +36,30 @@ public sealed class Lobby : IAsyncDisposable
     /// </remarks>
     public const int MostTables = 12;
 
+    /// <summary>
+    /// How long a table with nobody at it is kept before the site closes it.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Long enough that a coffee is not a lost game</b> (BUILD-PLAN P54). A table stops
+    /// dealing the moment its last viewer leaves, so what is being reclaimed here is a slot out
+    /// of <see cref="MostTables"/> and the memory behind it — never a round in progress. ⚠️
+    /// <b>A player who comes back to a reaped table's URL gets the lobby's "no such table"
+    /// page</b>, which is the honest answer: the game it was holding ended when they left.
+    /// </remarks>
+    public static readonly TimeSpan IdleTablesAreClosedAfter = TimeSpan.FromMinutes(30);
+
+    /// <summary>How often the site looks for tables to close.</summary>
+    /// <remarks>
+    /// ⚠️ <b>Coarse on purpose.</b> The quantity being managed is a count of twelve, so a sweep
+    /// a minute would be twelve hundred wake-ups a day to notice something that changes hourly.
+    /// </remarks>
+    public static readonly TimeSpan SweepsForIdleTablesEvery = TimeSpan.FromMinutes(5);
+
     private readonly ConcurrentDictionary<string, HostedTable> _tables = [];
     private readonly ILoggerFactory _logs;
     private readonly Random _seeds;
+    private readonly TimeProvider _clock;
+    private readonly ILogger<Lobby> _log;
 
     /// <summary>
     /// Serialises opening. ⚠️ The dictionary is safe on its own, but the ceiling is not: the
@@ -48,11 +69,13 @@ public sealed class Lobby : IAsyncDisposable
     private readonly Lock _gate = new();
     private int _opened;
 
-    public Lobby(IConfiguration configuration, ILoggerFactory logs)
+    public Lobby(IConfiguration configuration, ILoggerFactory logs, TimeProvider? clock = null)
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
         _logs = logs ?? throw new ArgumentNullException(nameof(logs));
+        _clock = clock ?? TimeProvider.System;
+        _log = _logs.CreateLogger<Lobby>();
 
         // A table carries its seed, exactly as a console match does (P11, P14), and a seed given
         // on the command line names the *first* table — `--seed 20260819` deals it again.
@@ -71,10 +94,18 @@ public sealed class Lobby : IAsyncDisposable
             Seed = seed ?? Random.Shared.Next(),
             Pace = TimeSpan.FromMilliseconds(configuration.GetValue<int?>("pace") ?? 1100),
             BetweenRounds = TimeSpan.FromSeconds(configuration.GetValue<int?>("between") ?? 12),
-            // ⚠️ A person is given longer than the server's own default. What the clock is really
-            // catching is a table nobody is left at (P13.2), and forty-five seconds is a short
-            // time to look at fourteen cards and decide which one is worth the least.
-            Patience = TimeSpan.FromSeconds(configuration.GetValue<int?>("patience") ?? 90),
+            // ⚠️ A person is given four times the server's own default. What the clock is
+            // really catching is a table nobody is left at (P13.2), and forty-five seconds is a
+            // short time to look at fourteen cards and decide which one is worth the least.
+            //
+            // 🔥 It is longer still since P54, and the number is joined to something rather than
+            // chosen: it must exceed `CircuitOptions.DisconnectedCircuitRetentionPeriod`, which
+            // `Program` sets to two minutes. Inside that window the framework is deliberately
+            // hiding a dropped connection from the player — so a patience shorter than it would
+            // have the computer play the turn of somebody the framework is still expecting back,
+            // and they would return to a table that had moved on for no reason they could see.
+            // A phone that loses signal in a lift is the case this is for.
+            Patience = TimeSpan.FromSeconds(configuration.GetValue<int?>("patience") ?? 180),
             Hints = configuration.GetValue<bool?>("hints") ?? true,
             // ⚠️ `--journal run.jsonl` writes the house table down as it plays (P24.1), in the
             // format the console writes and `sim replay` reads. First table only — see the
@@ -122,8 +153,73 @@ public sealed class Lobby : IAsyncDisposable
     public HostedTable? Find(string? id) =>
         id is not null && _tables.TryGetValue(id, out var table) ? table : null;
 
+    /// <summary>
+    /// The table this site was started with, once it has been opened.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Named, because it is the one table the reaper may not take</b> (BUILD-PLAN P54).
+    /// <c>dotnet run --project BurmesePoker.Web</c> is meant to be a game rather than an empty
+    /// room with a form in it, and the deployed site's whole URL is a table somebody can watch —
+    /// reaping it would leave the address pointing at nothing after the first quiet half hour.
+    /// ⚠️ <b>A field rather than "the first table in the dictionary"</b>: once tables can be
+    /// closed, first-opened and first-in-the-dictionary stop being the same thing.
+    /// </remarks>
+    public HostedTable? House { get; private set; }
+
     /// <summary>Opens the table this site was started with. Idempotent, and does it once.</summary>
-    public HostedTable OpenTheHouseTable() => _tables.Values.FirstOrDefault() ?? Open(Opening);
+    public HostedTable OpenTheHouseTable()
+    {
+        // ⚠️ Nested inside Open's own gate, which System.Threading.Lock allows: the check and
+        // the open must be one step for the same reason the ceiling's are.
+        lock (_gate)
+        {
+            return House ??= Open(Opening);
+        }
+    }
+
+    /// <summary>
+    /// Closes every table nobody has been at for <see cref="IdleTablesAreClosedAfter"/>.
+    /// </summary>
+    /// <returns>The ids closed, oldest first.</returns>
+    /// <remarks>
+    /// <para>
+    /// ⚠️ <b>The house table is never reaped</b> — see <see cref="House"/>.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The window is read once, from this table's own clock, and applied to every
+    /// candidate</b>: a sweep that asked the time per table could close one and spare the next
+    /// on the same tick.
+    /// </para>
+    /// </remarks>
+    public async ValueTask<IReadOnlyList<string>> ReapIdleTables()
+    {
+        var deadline = _clock.GetUtcNow() - IdleTablesAreClosedAfter;
+        List<string> closed = [];
+
+        foreach (var table in Tables)
+        {
+            if (ReferenceEquals(table, House) || table.IdleSince is not { } since || since > deadline)
+            {
+                continue;
+            }
+
+            if (await Close(table.Id).ConfigureAwait(false))
+            {
+                closed.Add(table.Id);
+            }
+        }
+
+        if (closed.Count > 0)
+        {
+            _log.LogInformation(
+                "Closed {Count} table(s) nobody had been at for {Idle}: {Tables}.",
+                closed.Count,
+                IdleTablesAreClosedAfter,
+                string.Join(", ", closed));
+        }
+
+        return closed;
+    }
 
     /// <summary>
     /// Opens a table and gives it back. <b>Nothing is dealt until somebody is at it.</b>
@@ -144,7 +240,7 @@ public sealed class Lobby : IAsyncDisposable
             }
 
             var id = Interlocked.Increment(ref _opened).ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var table = new HostedTable(id, plan, _logs.CreateLogger<HostedTable>());
+            var table = new HostedTable(id, plan, _logs.CreateLogger<HostedTable>(), _clock);
 
             _tables[id] = table;
             return table;

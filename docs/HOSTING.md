@@ -90,10 +90,12 @@ A checklist the build sequence in §6 works through:
     P13.6 — the same failure class.)*
   - **Generous idle timeouts.** A table between rounds is a quiet socket; a proxy that closes idle
     connections after 60s will kill games.
-- **d. Table lifecycle for a long-lived host.** Today tables are opened up to `MostTables = 12`;
-  the next effort should confirm whether idle tables are ever **reaped** and, if not, add cleanup
-  (drop a table with no viewers after N minutes, and stop its parked bot loop), plus a friendly
-  "create table → copy link" affordance on the lobby page.
+- **d. Table lifecycle for a long-lived host. ✅ Done by `P54`, and the answer to the open question
+  was *no*.** Nothing closed a table: `Lobby.Close` existed from P13.6 and only the tests called it,
+  so the site filled `MostTables = 12` and thereafter refused to open another. A `TableSweeper`
+  hosted service now closes tables nobody has been at for 30 minutes (never the house table), and
+  each lobby row carries the table's absolute address with a copy button. ⚠️ **The parked bot loop
+  was never the leak** — `HostedTable.Deal` stops the moment its last viewer leaves.
 - **e. Access gating (optional).** Anyone with the URL can sit down. For invited friends a shared
   link is often enough; a **per-table code** or a **single site password** is the cheap next step;
   **Cloudflare Access** (email allow-list in front of the whole site) is near-zero-effort real auth
@@ -242,11 +244,16 @@ carried as environment), `tasks/main.yml` (fail-fast on missing registry credent
 round is played from a phone off the home network** — which is what settles §5a's WebSocket and
 idle-timeout assumptions.
 
-**Step 4 — Long-lived-host hardening (`P54`, back in this repo).** Confirm or implement **idle-table
-reaping** in `Lobby` (drop a table with no viewers after N minutes and stop its parked bot loop —
-check `HostedTable` / `TableSession` disposal), add a **"create table → copy link"** affordance to
-the lobby page, tune **patience for real humans on flaky internet**, and land the §7 gating decision
-(a Traefik `basicauth` middleware label, or Cloudflare Access).
+**Step 4 — Long-lived-host hardening (`P54`, back in this repo). ✅ Built 2026-08-29.** Idle-table
+reaping is in `Lobby` (30 minutes idle, swept every 5 by a `TableSweeper` hosted service; the house
+table is never reaped), the lobby page writes each table's absolute address out as a link with a
+copy button beside it, and patience is **180 s** against a `DisconnectedCircuitRetentionPeriod` of
+**2 minutes** — the two are fenced against each other. ✅ **The §7 gating decision was landed by
+P53** (a Traefik `basicauth` middleware). ⚠️ **The parked bot loop was never leaking**:
+`HostedTable.Deal` stops the moment its last viewer leaves. ⚠️ **`SeatChannel` still does not
+dispose its per-seat `ManualResetEventSlim`** — bounded, because the wait handle's own finaliser
+releases it, and disposing it races the engine thread parked in `Ask`, which takes no cancellation
+token. ⚠️ **Not yet verified in a browser or on a live site.**
 
 **Step 5 — (optional) Durability & observability.** Decide ephemeral vs. persistent (§7). The
 `--journal` already records every table as JSONL; *resuming* a live game from a journal after a
@@ -282,7 +289,10 @@ couple of basic metrics regardless.
   perfectly, button does nothing" failure this project has already met once (P13.6).
 - ⚠️ **In-memory state means a deploy ends everyone's game.** Communicate it, or accept it (it is
   the "simple" choice).
-- ⚠️ **Table leak:** without idle reaping the site fills `MostTables` and stops opening tables.
+- ✅ **Table leak — this was real, and it is closed (`P54`, 2026-08-29).** Nothing in the client
+  closed a table before that packet: `Lobby.Close` existed from P13.6 and only the tests called it,
+  so the site filled `MostTables` and thereafter refused every *Open it* — weeks after a deploy, and
+  looking like a broken form.
 - ⚠️ **A public URL is a public URL.** Keep it link-gated at minimum; Cloudflare Access is the
   cheapest way to make it *invited-friends-only*.
 - ⚠️ **Cost floor:** an always-on Azure instance has a small but nonzero monthly cost; the homelab

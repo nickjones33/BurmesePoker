@@ -654,4 +654,47 @@ public class MarkupStandardsTests
         Assert.Contains("aria-live=\"polite\"", live[0].Text, StringComparison.Ordinal);
         Assert.DoesNotContain("assertive", live[0].Text, StringComparison.Ordinal);
     }
+
+    /// <summary>
+    /// ✅ <b>P54 — a table's link is a real link, and copying it is only an enhancement.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>Sending somebody the address is the whole of how a friend joins this site</b>
+    /// (<c>HOSTING.md</c> §6 Step 4), and copying text is the one thing on the lobby a real
+    /// control cannot do. ⚠️ So the address is written out as an <c>&lt;a&gt;</c> — selectable,
+    /// shareable and long-pressable with no script at all (§3.11 C12, A4) — and the button is
+    /// hidden until a script that works says otherwise.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The reveal is a mark on the document, not on the button.</b> Enhanced navigation
+    /// swaps this markup out without reloading, so per-element work done at load leaves dead
+    /// buttons behind the first time somebody comes back to the lobby. Asserted because it is
+    /// invisible in a screenshot and only shows up on the second visit.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheLobbyOffersEachTablesAddressWithoutNeedingAScript()
+    {
+        var lobby = Sources.Read("Components/Pages/Tables.razor");
+        var styles = File.ReadAllText(Path.Combine(
+            Sources.Web.FullName, "Components", "Pages", "Tables.razor.css"));
+        var shell = Sources.Read("Components/App.razor");
+
+        // The address itself is a link, and the copy button carries the same address as data.
+        Assert.Contains("<a href=\"@Link(table)\"", lobby, StringComparison.Ordinal);
+        Assert.Contains("data-copy=\"@Link(table)\"", lobby, StringComparison.Ordinal);
+
+        // ⚠️ Absolute, or it is not an address anybody else can reach.
+        Assert.Contains("ToAbsoluteUri", lobby, StringComparison.Ordinal);
+
+        // Hidden by default; revealed by a class on the document rather than on the button.
+        Assert.Contains(".link .copy", styles, StringComparison.Ordinal);
+        Assert.Contains("can-copy", styles, StringComparison.Ordinal);
+        Assert.Contains("documentElement.classList.add('can-copy')", shell, StringComparison.Ordinal);
+
+        // Delegated, so the handler survives a navigation that replaces the buttons.
+        Assert.Contains("document.addEventListener('click'", shell, StringComparison.Ordinal);
+        Assert.Contains("closest('[data-copy]')", shell, StringComparison.Ordinal);
+    }
 }

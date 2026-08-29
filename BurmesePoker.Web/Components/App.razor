@@ -108,6 +108,42 @@
         })();
     </script>
 
+    @*
+        🔥 Copying a table's link — the one thing on the lobby a browser cannot do with a real
+        control (BUILD-PLAN P54). The link beside it is an <a> and works without any of this;
+        this only adds the button.
+
+        ⚠️ Delegated from the document and marked on the document, deliberately. Enhanced
+        navigation replaces the page's markup without reloading, so a script that wired each
+        button at load would leave dead buttons behind the first time somebody came back to the
+        lobby. The class is what the stylesheet reveals the buttons with, so a browser without
+        the clipboard API — or with the script blocked — shows no button rather than a broken one.
+    *@
+    <script>
+        (function () {
+            if (!navigator.clipboard) {
+                return;
+            }
+
+            document.documentElement.classList.add('can-copy');
+
+            document.addEventListener('click', function (pressed) {
+                var button = pressed.target.closest('[data-copy]');
+
+                if (!button) {
+                    return;
+                }
+
+                navigator.clipboard.writeText(button.dataset.copy).then(function () {
+                    var said = button.textContent;
+
+                    button.textContent = 'Copied';
+                    setTimeout(function () { button.textContent = said; }, 1500);
+                });
+            });
+        })();
+    </script>
+
     <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 

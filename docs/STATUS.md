@@ -10,6 +10,62 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
+🔥 **`P54` shipped 2026-08-29 on Opus 5: something closes the tables, and the number that keeps a
+phone in its seat is joined to the number the framework hides a dropped connection behind.**
+`RULES.md` stays rev 31 (no rule changed), the tree is green at **920**, and the whole diff is
+`BurmesePoker.Web` plus three test files — ⚠️ **`Domain`, `Presentation`, `Server`, `Console` and
+`Sim` are byte-identical, so no measurement can move and no suite is owed.**
+
+- 🔥 **(1) Nothing in this client had ever closed a table.** `Lobby.Close` was written in P13.6
+  and **only the tests called it**, so a hosted site accumulated a table per form press for ever,
+  reached `Lobby.MostTables` (12), and from then on answered every *Open it* with an error —
+  weeks after the deploy, and reading as **a broken form rather than a full site**
+  (`HOSTING.md` §8's *table leak*, confirmed rather than assumed). ✅ **The bot loop was already
+  fine**: `HostedTable.Deal` stops the moment `Ready` goes false, so what leaked was the slot and
+  the memory behind it, never a running round.
+- 🔥 **(2) A table is idle from the moment it opens, and the house table is never reaped.**
+  `HostedTable.IdleSince` starts at construction — a table opened by a press nobody followed up
+  has never had a viewer to lose and is exactly the leak — and is cleared by `Arrive`, restarted
+  by the **last** `Leave`. ⚠️ **`Lobby.House` is a named field rather than *the first table in the
+  dictionary***: once tables can be closed those stop being the same thing, and reaping the house
+  table would leave `dotnet run` an empty room and the deployed site's own URL pointing at
+  nothing. Window **30 minutes**, swept every **5** by `TableSweeper` (a `BackgroundService`,
+  registered — ⚠️ **fenced, because a correct reaper nobody runs leaks exactly as much as none**).
+- 🔥 **(3) The patience number stopped being a taste and became a relation.** A browser table's
+  patience went **90 s → 180 s**, and `Program.cs` now sets
+  `CircuitOptions.DisconnectedCircuitRetentionPeriod` explicitly to **2 minutes**. Inside that
+  window the framework is *deliberately hiding a dropped connection from the player* — so a
+  patience shorter than it has the computer play the turn of somebody the framework is still
+  expecting back, and they return to a table that moved on for no reason they could see. ⚠️ **The
+  two numbers live in two files and are fenced against each other**, one read from source and one
+  off the real `Lobby`, so neither is a copy of the other. **A phone in a lift is the case.**
+  ✅ **The retention is the *shorter* side of a trade on purpose** (the framework's default is 3
+  minutes): a seat is recoverable by **name** whatever happens to the circuit (P13.6, §3.11 C16),
+  so retention buys convenience while every minute of it holds a page of server state for
+  somebody who may never come back.
+- ⚠️ **(4) The copy-link affordance is an enhancement over a real link, not a control.** Each
+  lobby row now writes the table's **absolute** address out as an `<a>` (`ToAbsoluteUri`, so
+  behind Traefik it is the forwarded host — P51's `UseForwardedHeaders` doing the one job nothing
+  else can do for it), with a copy button hidden until a script says otherwise. 🔥 **The reveal is
+  a class on the *document* and the handler is delegated from it**, because enhanced navigation
+  replaces this markup without reloading — per-element work done at load leaves dead buttons the
+  first time somebody comes back to the lobby. Fenced, because it is invisible in a screenshot and
+  only shows up on the second visit.
+- ✅ **(5) The §7 gating decision was already landed by P53** (a Traefik `basicauth` middleware,
+  attached only when the users list is non-empty), so P54 inherited it rather than taking it.
+- ⚠️ **(6) One finding recorded and deliberately not acted on.** `SeatChannel` holds a
+  `ManualResetEventSlim` per seat and never disposes it. It is **not** an unbounded leak — the
+  underlying wait handle is released by its own `SafeHandle` finaliser once the channel is
+  unreachable — and disposing it properly is a race against the engine thread parked in `Ask`,
+  which takes no cancellation token and waits the whole patience. **`Server` was left
+  byte-identical**; a packet that wants this must give `Ask` a token first.
+- ⚠️ **(7) Not verified in a browser.** These are unit and source fences plus a build; **nothing
+  here was watched reaping a table on a live site**, and the copy button was not pressed in a real
+  browser. The acceptance's *"the lobby affordance works in a real browser"* is **outstanding** and
+  is one of the things P53's phone round can settle in the same sitting.
+
+---
+
 ◐ **`P53` is half-shipped, 2026-08-28 on Opus 5: the `burmesepoker` role exists in `ansible-nas`
 and is proved as far as a session can prove it — but the table is not up, because the deploy needs
 two secrets only Nick can type.** `RULES.md` stays rev 31, the tree is green at **914** (this
@@ -1123,7 +1179,17 @@ off the home wifi, with the network tab open.** Not a page that loads — a page
 does nothing is the shared symptom of a broken WebSocket path, an idle timeout, a missing
 `UseForwardedHeaders`, *and* of the new basicauth failing the `/_blazor` upgrade. ⚠️ **The login is
 `poker` and a generated passphrase, in the gitignored inventory.**
-Then `P54` (host hardening) comes back to this repo.
+✅ **`P54` (host hardening) is done — 2026-08-29, in this repo.** Idle tables are reaped, the
+copy-link affordance is on the lobby, and the patience is joined to the circuit-retention window.
+⚠️ **Two of its acceptances are outstanding and both want a browser**: *the lobby affordance works
+in a real browser*, and *a table with no viewers is gone after the interval* was proved against a
+stopped clock rather than watched on a live site. **Do them in the same sitting as P53's phone
+round.**
+
+🔥 **So the remaining work is `P53`'s deploy (Nick's two commands), `P55` (needs a GitHub PAT),
+`P56` (needs Nick's answer on personalities) and `P40` (needs Nick's vetted Burmese text).** ⚠️
+**Every open packet is now blocked on something only Nick can supply**, which is worth saying out
+loud: a session that opens this file expecting to build something should read that sentence first.
 
 🔥 **`P56` was added 2026-08-28 at Nick's direction — *opening a table you actually want*** —
 after the P53 role was written with `burmesepoker_people: "0"` and he pointed out that the
@@ -4595,6 +4661,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 | --- | --- | --- |
+| 2026-08-29 | P54 | **Done — long-lived-host hardening, on Opus 5.** 🔥 **The leak `HOSTING.md` §8 warned about was real, and confirmed rather than assumed**: `Lobby.Close` had existed since P13.6 and **only the tests ever called it**, so a hosted site accumulated a table per form press, hit `MostTables` (12), and from then on answered every *Open it* with an error — weeks after a deploy, reading as a broken form rather than a full site. ✅ **The parked bot loop was never the problem** (`HostedTable.Deal` breaks the moment `Ready` goes false, which the last viewer leaving makes it); what leaked was the slot and the memory. 🔥 **`HostedTable.IdleSince` starts at construction** — a table opened by a press nobody followed up has never had a viewer to lose and is exactly the case — cleared by `Arrive`, restarted by the **last** `Leave`; **`Lobby.House` is a named field** because once tables can be closed *the first table in the dictionary* and *the table this site was started with* stop being the same thing, and reaping the second leaves `dotnet run` an empty room and the deployed URL pointing at nothing. Window **30 min**, sweep **5**, by `TableSweeper` (a `BackgroundService`) — ⚠️ **registration fenced, because a correct reaper nobody runs leaks exactly as much as none**, which is the state this packet found. 🔥 **The patience number became a relation instead of a taste**: **90 s → 180 s**, against `CircuitOptions.DisconnectedCircuitRetentionPeriod` set explicitly to **2 minutes**, because inside that window the framework is *deliberately hiding a dropped connection from the player* — a shorter patience has the computer play the turn of somebody the framework is still expecting back. The two live in two files and are fenced against each other, one read from source and one off the real `Lobby`. ⚠️ **Copy-link is an enhancement over a real `<a>`** (absolute, `ToAbsoluteUri`, so behind Traefik it is P51's forwarded host): the reveal is a class on the **document** and the handler is delegated from it, because enhanced navigation replaces the markup and per-element wiring dies on the second visit. ✅ **The §7 gating decision was already landed by P53** and was inherited, not taken. ⚠️ **One finding recorded and not acted on**: `SeatChannel` never disposes its per-seat `ManualResetEventSlim` — not unbounded (the wait handle's `SafeHandle` finaliser releases it) and disposing it races the engine thread parked in `Ask`, which takes no cancellation token, so **`Server` was left byte-identical**. ⚠️ **Not verified in a browser** — these are unit and source fences plus a build; the acceptance's *"the lobby affordance works in a real browser"* is outstanding and belongs with P53's phone round. No rules question; `RULES.md` stays rev 31. `Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical; no measurement can move. Tree green at **920** (was 914 — six new facts). |
 | 2026-08-28 | P53 | **Partial — the `burmesepoker` Ansible role, on Opus 5. The role is built and committed; the table is not up.** Work in `~/source/repos/ansible-nas` (commit `7ffd645e`), which is why this repository's tree is untouched and still green at **914**: `roles/burmesepoker/{defaults,tasks}/main.yml` on the `mirroquest` two-file shape (fail fast on missing credentials → `docker_login` → `docker_container` with `pull: true` and the Traefik labels → the stop block), the include in `nas.yml` between `booksonic` and `calibre`, a page at `website/docs/applications/gaming/burmesepoker.md`, and the gitignored inventory enabled. `yamllint` clean, `ansible-lint` clean at that repo's `production` profile, `ansible-playbook nas.yml --syntax-check` passes. ✅ **P52's prediction held exactly**: `mirroquest_registry_password` is the `read:package` token `burmesepoker_registry_password` wants, and nothing was minted. ⚠️ **What is not done is not a judgment call**: the play needs `ssh-add ~/ubuntuServer22key` (the key is passphrase-protected — `ansible all -m ping` returns `Permission denied (publickey,password)`) **and** an interactive `--ask-become-pass`, and a session can type neither — so **the WebSocket and idle-timeout assumptions this packet exists to settle are still assumptions**, and the packet is ◐. 🔥 **The gating decision was taken — Task 5 option B, a Traefik `basicauth` middleware, which is the first auth pattern in that repo — and its shape is the finding**: the two labels are `combine`d in **only when `burmesepoker_basicauth_users` is non-empty**, because a router naming a middleware with an empty users list serves **503**, which reads as a broken deployment rather than as a locked door. Both branches proved with a throwaway play before committing (empty → six labels, set → eight); the bcrypt `$` signs survive intact, so `docker_container` needs none of compose's `$$` escaping. ⚠️ **It gives the phone round a second thing to settle**: a browser cannot set an `Authorization` header on a `WebSocket`, so the `/_blazor` upgrade depends on the browser replaying its cached basic credentials — if it does not, Blazor falls back to long polling and the table **works but feels slow**, so the acceptance is *check the network tab*, not merely *a round played*. ⚠️ **Two corrections to that repo's plan**: there is **no LAN check at `http://192.168.50.142:8080`** — this role publishes no host ports, exactly as `mirroquest` does (Traefik is `network_mode: host` and reaches containers over the bridge), and publishing 8080 is the one thing P51 forbids; and the plan's claim that there is no games category was wrong — **`gaming` exists**, with three servers in it. No rules question; `RULES.md` stays rev 31. Every project in this repository byte-identical; no measurement can move. Tree green at **914** (unchanged — **no test was added, because this packet added no code here**). |
 | 2026-08-28 | P52 | **Done — a published image, on Opus 5.** The repo gained a **Gitea origin** (`gitea` remote beside GitHub `origin`) and `.gitea/workflows/publish-image.yml`: on a push to `main`, the `docker-builder` runner (the one carrying `gitea_actions_runner_mount_docker_sock`) builds **the repository's own `Dockerfile`, unrewritten**, and pushes `gitea.nickjones.dev/nickjones/burmesepoker` at **`:latest`** (what P53's role pulls) and **`:<sha>`** (what makes a rollback possible), authenticating with `--password-stdin` against a Gitea repo secret **`REGISTRY_TOKEN`** (`write:package`, `read:package`). 🔥 **CI gates on the request that separates a working image from a perfect-looking dead one**: the last step runs the freshly-pushed tag and curls `/healthz` **and `_framework/blazor.web.js`**, because P51's `--no-restore` image passes every other check ever written here. ⚠️ **A CI file is the obvious place for that trap to return** — `--no-restore` reads like a free speed-up to anyone who has not met the finding — so `ContainerTests` fences the workflow as well: the runner label (⚠️ **a wrong label queues rather than fails**, which reads as a slow build rather than a broken one), the absence of the flag, the image path P53 pulls, and the blazor check. ✅ **Acceptance on the published artifact, not the local build**: pulled `:latest` from the registry, ran it, `/healthz` + `_framework/blazor.web.js` + `/` + a proxied `/` (with `X-Forwarded-Proto`/`-Host`) all **200**, and dealt a browser round — **the same hand as P51's local build at the same seed**, a free reproduction check on the image. ⚠️ **No credential entered the session**: Nick minted the token and stored it as a repo secret, and the local pull used a `docker login` he performed himself. 🔥 **P53 turned out not to be blocked at all** — the `read:package` token already in `inventories/my-ansible-nas/group_vars/nas.yml` as `mirroquest_registry_password` is exactly what `burmesepoker_registry_password` wants; only P52 ever needed the new one. ⚠️ **The GitHub push-mirror was deliberately not set up** (it needs a *GitHub* PAT — a different credential — and nothing depends on it); `origin` is untouched. No rules question; `RULES.md` stays rev 31. `Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical. ⚠️ **The first run was red at 913/914**: the new fence matched the workflow's own `#` comment explaining the trap — `Sources.Markup` strips `//`, `/* */`, `@* *@` and `<!-- -->` but not YAML's `#`, so the test strips it itself; re-proved able to fail on a real flag. Tree green at **914** (was 913 — one new fact). |
 | 2026-08-28 | P51 | **Done — the browser table as a container, on Opus 5 — and the standard .NET Dockerfile idiom turned out to ship a dead one.** Root `Dockerfile` (multi-stage `sdk:10.0` → `aspnet:10.0`, publishing `BurmesePoker.Web` and its three project references only, non-root, `ASPNETCORE_URLS=http://0.0.0.0:8080`, **231 MB**) and `.dockerignore`; `app.UseForwardedHeaders()` first in `Program.cs` with `KnownIPNetworks`/`KnownProxies` cleared; `MapGet("/healthz")`. 🔥 **The finding, measured not reasoned:** copy csprojs → `dotnet restore` → copy sources → `dotnet publish --no-restore` publishes an app with **no `wwwroot/_framework/blazor.web.js` at all** — the published endpoint manifest names it **zero** times against **one** when the publish restores for itself (reproduced four ways inside the SDK image to isolate the step). `MapStaticAssets` then 404s the script that starts the circuit: **P13.3's failure by a different road**, and invisible from inside the tree because the app is correct and only the image is not. The publish restores for itself and the flag is fenced. **Acceptance met by playing, not loading**: sat down through the lobby's `EditForm` (the antiforgery post — the exact failure class), claimed off the table, discarded, four bot seats took their turns, drew blind with the private event arriving over the circuit. Forwarded headers proved live — with `X-Forwarded-Proto: https` / `X-Forwarded-Host: poker.nickjones.dev` the container logs `https://poker.nickjones.dev/`. ⚠️ **The app trusts whatever forwards those headers** (a proxy container's address is assigned at run time), so port 8080 must never be published straight to the internet — P53's labels and P54's gating sit on that. Fences: `BurmesePoker.Tests/Web/ContainerTests.cs`, five facts, source scans in `JackpotSpokenTests`' idiom — the image's SDK/runtime tags against the csproj's moniker (a `net11.0` bump reddens), `EXPOSE` against `ASPNETCORE_URLS` and the host being `0.0.0.0`, `UseForwardedHeaders` **ordered before** `UseAntiforgery`/`MapStaticAssets`/`MapRazorComponents` (*present* would have passed a useless call after the endpoints), `/healthz` reading no `Lobby`, and no `--no-restore` on the publish. Docs: `README.md` gained a *Hosting it* section, CLAUDE.md, BUILD-PLAN P51 ☑ + **P52 amended** (build the Dockerfile as it stands; acceptance now includes curling `_framework/blazor.web.js` for a 200). No rules question; `RULES.md` stays rev 31. `Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical; no measurement can move. Tree green at **913** (was 908 — five new facts). |
