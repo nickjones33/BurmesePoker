@@ -220,7 +220,7 @@ docker build -t burmesepoker .
 docker run --rm -p 8080:8080 -e ASPNETCORE_URLS=http://0.0.0.0:8080 burmesepoker
 ```
 
-**Step 2 — A published image (`P52`).** Give the repo a **Gitea origin** beside GitHub — the
+**Step 2 — A published image (`P52`). ✅ Built 2026-08-28** — and `P53`'s credential turned out to exist already (`mirroquest_registry_password`), so only this step ever needed a new token. Give the repo a **Gitea origin** beside GitHub — the
 pattern every other personal repo here uses (push to `gitea.nickjones.dev`, push-mirror to GitHub) —
 and a **Gitea Actions workflow** that builds the Dockerfile and pushes
 `gitea.nickjones.dev/nickjones/burmesepoker:latest` on a push to `main`. ⚠️ **Build there, not on

@@ -14,12 +14,16 @@ over ad-hoc changes.
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
 recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
-F10) was the last of them; the tree is green at 913.**
+F10) was the last of them; the tree is green at 914.**
 🔥 **A fourth track was added 2026-08-28 at Nick's direction: `P51`–`P54`, *taking the table
 online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
-no measurement can move. ✅ **`P51` (containerize) shipped 2026-08-28 — see the block below**;
-**`P52` is the next packet** and is blocked on a Gitea PAT; **`P53` is work in a *different repository*** (`~/source/repos/ansible-nas`,
+no measurement can move. ✅ **`P51` (containerize) and `P52` (a published image) both shipped 2026-08-28 — see the blocks
+below**; **`P53` is the next packet** and is **work in `ansible-nas`**; ⚠️ **`P55` was added the same day
+— make Gitea primary and GitHub a mirror**, and its planning found that **the `pre-rewrite` tag
+this file cites does not exist on any remote** (the 2023 tree is the history before `b32d08b`,
+`P0: restructure and salvage`) — P55 settles that before configuring a mirror, because a mirror
+prunes refs the source lacks; **`P53` is work in a *different repository*** (`~/source/repos/ansible-nas`,
 plan already written at that repo's `docs/superpowers/plans/2026-08-28-burmesepoker-hosting.md`).
 🔥 **The review that reshaped it: the homelab had already solved the hard part** — `ansible-nas`
 runs Traefik with a wildcard `*.nickjones.dev` Let's Encrypt cert over Cloudflare DNS-01 and 80/443
@@ -63,6 +67,27 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 ⚠️ **One P46 follow-up owned, not done**: the race-reach instrument recomputes an uncached cover
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
+
+**What P52 built, and the three things a cold session needs from it.**
+🔥 **(1) The repository has a Gitea origin and CI publishes the image.**
+`.gitea/workflows/publish-image.yml` builds **the repository's own `Dockerfile`, unrewritten**, on
+the `docker-builder` runner (the one with the docker socket passed through), and pushes
+`gitea.nickjones.dev/nickjones/burmesepoker` at **`:latest` and `:<sha>`** — the commit tag is what
+makes a rollback possible, `:latest` is what P53's role pulls. `git push gitea main` is the trigger;
+GitHub `origin` is unchanged and the push-mirror is **not** set up (it needs a *GitHub* PAT, a
+different credential, and nothing depends on it).
+🔥 **(2) CI proves the image serves the script that starts the circuit, not just that it builds.**
+The last step runs the freshly-pushed tag and curls `/healthz` **and
+`_framework/blazor.web.js`** — P51's finding turned into a gate, because a `--no-restore` image
+passes every other check ever written. ⚠️ **A CI file is the obvious place for that trap to come
+back** (`--no-restore` reads like a free speed-up), so `ContainerTests` fences the workflow too:
+the runner label, the absence of the flag, the image path P53 pulls, and the blazor.web.js check.
+✅ **(3) Acceptance met on the *published* artifact.** Pulled `:latest` from the registry, ran it,
+`/healthz` `_framework/blazor.web.js` `/` and a proxied `/` all **200**, and a browser round dealt —
+**the same hand as P51's local build at the same seed**, which is a free reproduction check on the
+image. ⚠️ **The credential never entered this session**: the token is a Gitea repo secret named
+`REGISTRY_TOKEN`, and the local pull used a `docker login` Nick performed himself. Tree green at
+**914**, from 913; `Domain` untouched, no measurement can move.
 
 **What P51 built, and the four things a cold session needs from it.**
 🔥 **(1) There is a `Dockerfile` at the root and the browser table runs out of it** — multi-stage

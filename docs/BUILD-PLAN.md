@@ -7441,7 +7441,7 @@ no historical block altered; green with `STATUS.md`'s count matching.
 
 ---
 
-### P51–P54 — Taking the table online (the hosting track) ☐ — **added 2026-08-28, at Nick's direction**
+### P51–P55 — Taking the table online (the hosting track) ◐ — **added 2026-08-28, at Nick's direction; P55 added the same day**
 
 > ⚠️ **A different kind of work from everything above it.** P0–P50 are the rules engine, the
 > strategy programme and the documents. **This track is ops**: no rule changes, no measurement can
@@ -7465,6 +7465,7 @@ review and the three consequences.
 | P52 published image | BurmesePoker (+ Gitea) | **Sonnet 5** | mechanical CI wiring against an established in-house pattern; blocked on a PAT, not on judgment |
 | P53 the Ansible role | ansible-nas | **Sonnet 5** | copy a two-file role template and change the port; the judgment was spent choosing `mirroquest`'s shape over `nickjones-dev`'s |
 | P54 host hardening | BurmesePoker | **Opus 5** | touches `Lobby` lifetimes and a live UI affordance — real code in the server, and the one packet here that can break a running table |
+| P55 gitea primary | BurmesePoker (+ Gitea, GitHub) | **Opus 5** | mechanical in its steps but destructive if the order is wrong — pruning refs and repointing a remote is where history goes missing quietly |
 
 ---
 
@@ -7513,7 +7514,7 @@ gating decision sits on top of it.
 
 ---
 
-### P52 — A published image ☐ — **blocked on a Gitea PAT from Nick**
+### P52 — A published image ☑ — **done 2026-08-28 (Opus 5)**
 
 **Goal.** The image is built by CI and pulled by the server, never built on the server.
 **`HOSTING.md` §6 Step 2.**
@@ -7529,6 +7530,20 @@ everything else. **`roles/gitea-actions-runner` already carries an opt-in docker
 passthrough for runners that build images** (`gitea_actions_runner_mount_docker_sock`), so the
 capability exists.
 
+**What it built.** A `gitea` remote beside GitHub `origin`, and `.gitea/workflows/publish-image.yml`:
+on a push to `main` the `docker-builder` runner builds the repository's own `Dockerfile` and pushes
+`:latest` and `:<sha>`, authenticating with `--password-stdin` against the Gitea repo secret
+`REGISTRY_TOKEN`. The final step runs the pushed tag and curls `/healthz` **and
+`_framework/blazor.web.js`**. Acceptance was met on the published artifact: pulled, ran, four URLs
+200 including a proxied one, and a browser round dealt — **the same hand as P51's local build at the
+same seed**. One new fact in `ContainerTests` fences the workflow (runner label, no `--no-restore`,
+the image path P53 pulls, the blazor check). ⚠️ **The GitHub push-mirror was deliberately left
+undone** — it needs a *GitHub* PAT and nothing depends on it.
+
+🔥 **P53 was never blocked either.** The `read:package` credential it needs already exists in
+`ansible-nas` at `inventories/my-ansible-nas/group_vars/nas.yml` as `mirroquest_registry_password`;
+`burmesepoker_registry_username`/`_password` reuse it. **Only P52 ever needed a new token.**
+
 ⚠️ **Amended by P51.** The workflow must build **the repository's `Dockerfile` as it stands** —
 do not "optimise" the publish with `--no-restore`, which silently drops `blazor.web.js` and ships a
 dead table (P51's finding, fenced by `ContainerTests`). **Acceptance is not that the image builds**:
@@ -7543,6 +7558,10 @@ image from a perfect-looking dead one.
 **Goal.** `poker.nickjones.dev` serves the table, managed like every other service on the NAS.
 **`HOSTING.md` §6 Step 3**; the task-level plan is in that repo's
 `docs/superpowers/plans/2026-08-28-burmesepoker-hosting.md`.
+
+⚠️ **Amended by P52: the credential is not a blocker.** Reuse `mirroquest_registry_password`
+(`read:package`) rather than minting anything; the image is published and pullable at
+`gitea.nickjones.dev/nickjones/burmesepoker:latest`.
 
 **Build.** `roles/burmesepoker/` on the **`mirroquest` two-file template** — fail-fast on missing
 registry credentials, `docker_login`, `docker_container` with `pull: true` and the six standard
@@ -7573,6 +7592,62 @@ and quietly stops opening tables); a **"create table → copy link"** affordance
 
 **Acceptance.** A table with no viewers is gone after the configured interval and its bot loop has
 stopped; the lobby affordance works in a real browser; the tree is green; **`Domain` untouched**.
+
+---
+
+### P55 — Gitea primary, GitHub as mirror ☐ — **added 2026-08-28, at Nick's direction**
+
+**Goal.** The canonical repository is `gitea.nickjones.dev/nickjones/burmesepoker`; GitHub becomes
+a mirror kept current by Gitea rather than by a second `git push`. **Read first:** P52 above, and
+`docs/HOSTING.md` §6 Step 2.
+
+⚠️ **Ops, like the rest of this track.** No rule changes, no code, `Domain` untouched, no
+measurement can move — but it is the one packet here that can **destroy history**, so its build
+order is defensive rather than convenient.
+
+🔥 **The finding that shapes it, made while planning: the histories already agree, so nothing needs
+wiping to make them agree.** GitHub `main` is at `a12c7a3` (P50); Gitea `main` at `c20ced5` (P52);
+same lineage, Gitea two commits ahead, so a mirror push is a **fast-forward, not a rewrite**.
+*"Wipe the GitHub repo"* is therefore a decision about the **repo object** (its URL, stars,
+watchers, issue history) and about **stale refs** — never about commits. **Recommendation: keep the
+repository and let the mirror force-sync over it.** Deleting and recreating buys nothing here and
+costs the URL.
+
+🔥 **And the trap, which is why the tag step comes first.** `CLAUDE.md` says the 2023
+implementation *"survives only at the git tag `pre-rewrite`"*. **That tag does not exist** — zero
+refs under `refs/tags` locally, on GitHub, or on Gitea. The pre-rewrite tree is not lost (it is the
+history before `b32d08b`, *"P0: restructure and salvage"*), but the sentence is false, and **a
+mirror push prunes remote refs the source does not have**. Here that costs nothing because there
+are no tags to lose; the point is that this is precisely the operation where a GitHub-only ref
+disappears silently, and it must be **checked rather than assumed**.
+
+**Build.**
+
+1. **Refs first, before any mirror is configured.** Compare both remotes ref for ref
+   (`git ls-remote`). Today: GitHub carries one stale branch, `p49-simulations-doc`, **fully merged
+   into `main` (zero commits ahead)** and safe to drop; no tags anywhere.
+2. **Settle `pre-rewrite`.** Either recreate the tag at `b32d08b^` and push it to both remotes, or
+   correct `CLAUDE.md`'s sentence to say the 2023 implementation survives as history before P0.
+   **Recommendation: recreate it** — the claim is load-bearing for a cold session, and a tag is
+   cheaper than a paragraph explaining where to look.
+3. **Swap the local remotes**: `origin` → Gitea, `github` → GitHub. Sweep the tree and the
+   documentation for anything naming a remote or calling GitHub the home of the project.
+4. **Configure the push mirror** in Gitea: repo → Settings → Mirror Settings, target the GitHub
+   URL. ⚠️ **It needs a GitHub PAT** — fine-grained, `contents: write`, **that repository only**.
+   This is the third credential in the track; like the other two it goes into a settings page and
+   never into the repository or a session.
+5. **Decide what a pull request means now.** CI is already Gitea's (P52), but this project's
+   guidance still says to use the `gh` CLI for GitHub operations, and there is no `tea` equivalent
+   configured. ⚠️ **Open decision for Nick**, not something to settle silently.
+
+**Acceptance.** A commit pushed to Gitea appears on GitHub within the mirror interval **with no
+second push**; `git remote -v` names Gitea as `origin`; the stale GitHub branch is gone; either
+`pre-rewrite` resolves on both remotes or the claim about it is corrected; the tree is green.
+
+```text
+git ls-remote origin
+git ls-remote gitea
+```
 
 ---
 

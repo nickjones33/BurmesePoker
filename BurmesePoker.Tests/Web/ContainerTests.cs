@@ -29,6 +29,26 @@ public class ContainerTests
     private static string Program { get; } = Sources.Read("Program.cs");
 
     /// <summary>
+    /// The publishing workflow, with its commentary taken out.
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Written after the first version of this fence failed on the workflow's own
+    /// comment.</b> The file explains, in prose, the trap the assertion below is looking for —
+    /// so a scan that read the comments would redden on the most carefully documented file
+    /// there is. <c>Sources.Markup</c> makes exactly this point and strips <c>//</c> and
+    /// <c>&lt;!-- --&gt;</c>; YAML's <c>#</c> is a fourth comment syntax it does not know.
+    /// ⚠️ Only a <c>#</c> that starts its line is a comment here, so a <c>#</c> inside a value
+    /// survives.
+    /// </remarks>
+    private static string Workflow { get; } =
+        Regex.Replace(
+            File.ReadAllText(Path.Combine(
+                Sources.Root.FullName, ".gitea", "workflows", "publish-image.yml")),
+            @"^[ \t]*#.*$",
+            string.Empty,
+            RegexOptions.Multiline);
+
+    /// <summary>
     /// ✅ <b>The image is built and run on the framework the browser client targets.</b>
     /// </summary>
     /// <remarks>
@@ -153,5 +173,40 @@ public class ContainerTests
         Assert.True(publish.Success, "the Dockerfile publishes nothing.");
 
         Assert.DoesNotContain("--no-restore", publish.Value, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// ✅ <b>P52 — the workflow publishes <em>this</em> image, not one of its own.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠️ <b>A CI file is the obvious place for the trap to come back.</b> The publish is one
+    /// line and <c>--no-restore</c> reads like a free speed-up to anyone who has not met
+    /// P51's finding; a workflow that rewrote the build would ship a table that renders
+    /// perfectly and never moves, and the tree would stay green.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The runner label is checked because the wrong one does not fail — it queues.</b>
+    /// Only the <c>docker-builder</c> runner has the docker socket passed through; on any
+    /// other label the job waits for a runner that is never coming, which reads as a slow
+    /// build rather than a broken one.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void ThePublishingWorkflowBuildsThisRepositorysOwnImage()
+    {
+        Assert.Contains("runs-on: docker-builder", Workflow, StringComparison.Ordinal);
+
+        Assert.DoesNotContain("--no-restore", Workflow, StringComparison.Ordinal);
+
+        // The tag the Ansible role pulls (BUILD-PLAN P53). A rename here is a role that
+        // quietly goes on running last week's image.
+        Assert.Contains(
+            "gitea.nickjones.dev/nickjones/burmesepoker:latest",
+            Workflow,
+            StringComparison.Ordinal);
+
+        // The one request that separates a working image from a perfect-looking dead one.
+        Assert.Contains("_framework/blazor.web.js", Workflow, StringComparison.Ordinal);
     }
 }
