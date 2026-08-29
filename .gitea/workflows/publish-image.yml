@@ -1,0 +1,67 @@
+# The image P51 verified, built by CI and pushed to the Gitea package registry
+# (BUILD-PLAN P52, docs/HOSTING.md §6 Step 2).
+#
+# ⚠️ Built here rather than on the NAS: a .NET SDK layer plus a full restore on the Hyper-V VM
+# every time the checkout moves is exactly the cost roles/mirroquest was written to avoid.
+#
+# ⚠️ `runs-on: docker-builder` is the runner with the docker socket passed through
+# (gitea_actions_runner_mount_docker_sock). On any other label the docker CLI is absent and
+# every step below fails at once. If the job sits queued instead of failing, the label is
+# wrong — check Site Administration → Actions → Runners.
+name: publish-image
+
+"on":
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  image:
+    runs-on: docker-builder
+    steps:
+      - name: Check out the tree
+        uses: actions/checkout@v4
+
+      - name: Log in to the Gitea container registry
+        # ⚠️ --password-stdin, never -p: an argument is visible in the process list and in
+        # the runner's own logs.
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login gitea.nickjones.dev -u nickjones --password-stdin
+
+      # 🔥 The repository's Dockerfile, as it stands, and nothing rewritten for speed here.
+      # P51 measured that a `--no-restore` publish drops blazor.web.js and ships a table that
+      # renders perfectly and never moves again; ContainerTests reddens on the flag, and this
+      # workflow must not smuggle it back in through a build argument.
+      - name: Build the image
+        run: |
+          docker build \
+            -t gitea.nickjones.dev/nickjones/burmesepoker:latest \
+            -t gitea.nickjones.dev/nickjones/burmesepoker:${{ github.sha }} \
+            .
+
+      # The commit tag is what makes a rollback possible; `latest` is what the Ansible role
+      # pulls (P53).
+      - name: Push the image
+        run: |
+          docker push gitea.nickjones.dev/nickjones/burmesepoker:${{ github.sha }}
+          docker push gitea.nickjones.dev/nickjones/burmesepoker:latest
+
+      # The one request that separates a working image from a perfect-looking dead one
+      # (P51's finding). A 404 here means the published image would draw the table once and
+      # never move again.
+      - name: Prove the published image serves the script that starts the circuit
+        run: |
+          docker rm -f burmesepoker-ci-check 2>/dev/null || true
+          docker run -d --name burmesepoker-ci-check gitea.nickjones.dev/nickjones/burmesepoker:${{ github.sha }}
+          for i in $(seq 1 30); do
+            docker exec burmesepoker-ci-check dotnet --info >/dev/null 2>&1 || true
+            if docker run --rm --network container:burmesepoker-ci-check curlimages/curl:latest \
+                 -sSf http://localhost:8080/healthz >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+          docker run --rm --network container:burmesepoker-ci-check curlimages/curl:latest \
+            -sSf http://localhost:8080/healthz
+          docker run --rm --network container:burmesepoker-ci-check curlimages/curl:latest \
+            -sSf -o /dev/null http://localhost:8080/_framework/blazor.web.js
+          docker rm -f burmesepoker-ci-check

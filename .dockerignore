@@ -17,3 +17,4 @@ BurmesePoker.Tests/
 *.md
 Dockerfile
 .dockerignore
+.gitea/
