@@ -28,7 +28,15 @@ gating decision was taken: a Traefik `basicauth` middleware, attached only when
 `burmesepoker_basicauth_users` is non-empty** — a router naming a middleware with an empty users list
 serves **503**, not a login prompt — and it adds a second thing the phone round must settle, because
 a browser cannot set an `Authorization` header on a `WebSocket` and Blazor will silently fall back to
-long polling if the cached credentials are not replayed; ⚠️ **`P55` was added the same day
+long polling if the cached credentials are not replayed; 🔥 **`P56` was added the same day —
+*opening a table you actually want*, after Nick pointed out the deployed table has no seat for a
+person in it.** ⚠️ **Check before building: the lobby form already offers seats, people, the four
+levels, a mixed table and the seating policy**, so most of the ask is built; the fact that is not
+written down anywhere else is that **`TablePlan.People` is a quorum** — `HostedTable.Ready` is
+`_attending > 0 && _table.IsFull`, so a table deals only once *every* person-seat is claimed, and
+`0` is a room you can watch and never join. **Its open question — offering the eleven `BotCatalog`
+rungs as "personalities" — is Nick's, and it cuts against §3.12 and P19**, which put levels only in
+both front ends because the ladder is measured rather than stylistic; ⚠️ **`P55` was added the same day
 — make Gitea primary and GitHub a mirror**, and its planning found that **the `pre-rewrite` tag
 this file cites does not exist on any remote** (the 2023 tree is the history before `b32d08b`,
 `P0: restructure and salvage`) — P55 settles that before configuring a mirror, because a mirror

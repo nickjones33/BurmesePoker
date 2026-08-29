@@ -1125,6 +1125,24 @@ does nothing is the shared symptom of a broken WebSocket path, an idle timeout, 
 `poker` and a generated passphrase, in the gitignored inventory.**
 Then `P54` (host hardening) comes back to this repo.
 
+🔥 **`P56` was added 2026-08-28 at Nick's direction — *opening a table you actually want*** —
+after the P53 role was written with `burmesepoker_people: "0"` and he pointed out that the
+deployed table has no seat for a person in it. ⚠️ **Checking it first made the packet much
+smaller than the ask sounds**: `Tables.razor`'s open form **already** offers Called, Seats, *Of
+those, people*, the four difficulty levels, a mixed table and the seating policy, all clamped in
+`Open` — so *"X human seats and Y bot seats"* is built, bot seats being `Seats − People`.
+🔥 **The fact worth carrying out of it is what `People` means**: `HostedTable.Ready` is
+`_attending > 0 && _table.IsFull`, and `IsFull` means **every person-seat claimed** — so `People`
+is *how many people must turn up before a card is dealt*, not how many may. **`0` is a room you
+can watch and never join; `5` deals nothing until the fifth friend arrives.** ✅ **The role default
+is `1` now** (`ansible-nas` `f4fc41fe`), which is a table a visitor can sit down at alone.
+⚠️ **The open question in P56 is personalities, and it is Nick's**: §3.12 and P19 put **levels
+only** in both front ends on purpose, because the eleven rungs behind them are a **measured
+ladder and not a set of styles** — `warden` is `−9.3 ± 1.0` and `random` is a joke, so offering
+them as flavour sells a measured-worse opponent as a matter of taste. **Genuine personality rungs
+are a track, not a step**: §11's test means each one arrives measured, with a ~5 h suite behind
+it.
+
 🔥 **`P55` was added 2026-08-28 at Nick's direction: make Gitea primary and GitHub a mirror.**
 ⚠️ **The planning found two things worth knowing before anyone starts it.** **(1) The histories
 already agree** — GitHub `main` `a12c7a3` (P50), Gitea `main` `c20ced5` (P52), same lineage, Gitea

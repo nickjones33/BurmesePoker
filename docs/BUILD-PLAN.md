@@ -7685,6 +7685,78 @@ git ls-remote gitea
 
 ---
 
+### P56 — Opening a table you actually want ☐ — **added 2026-08-28, at Nick's direction**
+
+**Goal.** A person arriving at `poker.nickjones.dev` can open a table with the seats, the people and
+the opponents they want, and the table they land on is one they can sit down at.
+**Read first:** §3.11 (the UX standards a lobby control obeys), 🔥 **§3.12 — *difficulty is a dial,
+skill is a ladder, and they are not the same axis*** — P18 and P19 above, and `docs/STRATEGY.md` §8
+and §11.
+
+⚠️ **Most of this is already built, and the packet is much smaller than the ask sounds.** Checked
+2026-08-28 against `Components/Pages/Tables.razor`: the open form already offers **Called**,
+**Seats**, **Of those, people**, **The computer plays** (the four `DifficultyLadder` levels), **a
+mixed table** and **the seats are** (`SeatingPolicy`), and `Open` clamps seats to
+`[MinimumPlayers, MaximumPlayers]` and people to `[0, seats]`. **"X human seats and Y bot seats" is
+therefore built** — bot seats are `Seats − People`, and `TablePlan.People` is *the count of people
+the table waits for*, not which seats they get. **Do not rebuild any of that.**
+
+**What is actually missing — four things, and the second is a design question rather than a build.**
+
+1. 🔥 **The house table cannot be sat down at, and that is a deployment default rather than a
+   defect in the app.** P53's role ships `burmesepoker_people: "0"`, which is P13.3's room with
+   nobody in it — worth watching, impossible to join. ⚠️ **The reason it matters more than a
+   number**: `HostedTable.Ready` is `_attending > 0 && _table.IsFull`, and `IsFull` means *every
+   person-seat claimed* — so `People` is **how many humans must turn up before a card is dealt**,
+   not how many may. A table opened for five friends deals nothing until the fifth arrives.
+   **That is the fact the lobby has to teach**, in the form and in the table list, or every
+   friends-table looks broken while it waits.
+2. 🔥 **Personalities are not offered, and offering them cuts against a settled decision.** §3.12
+   and P19 put **levels only** in both front ends on purpose: a level is `BotCatalog.Hardest` with
+   a measured mistake rate, and the eleven rungs behind it are **not styles — they are a measured
+   ladder**. `warden` is `−9.3 ± 1.0` against `outs` and `random` is a joke; dressing them as
+   flavour would sell a player a measured-worse opponent as a matter of taste. ⚠️ **So this packet
+   must settle the question rather than assume it**, and the three answers are real:
+   **(a)** leave the ladder out of the front end and treat "personality" as *naming and voice*
+   (the bot seats already carry names — give them a described character and leave the play alone);
+   **(b)** offer `BotCatalog.All` behind an *advanced* control, each rung by `Name` and its
+   existing `Description`, **with its measured margin shown beside it** so the trade is stated
+   rather than hidden; **(c)** design genuine personality rungs — which, by `StrategyTests`/§11,
+   **cannot ship unmeasured**, so each one is a rung packet with a suite regeneration behind it
+   (~5 h here, and the crossing cap is at `SeatingPlan.MaximumAssignments` — see P46).
+   ⚠️ **(c) is a track, not a step. Do not start it inside this packet.**
+3. ⚠️ **Per-seat difficulty is all-or-nothing.** `Mixed` spreads the four levels strongest-first
+   across the computer's seats (`DifficultyLadder.Spread`); there is no way to say *seat 2 easy,
+   seat 3 expert*. `TablePlan.Difficulties` is already a per-seat list, so the domain and the
+   server need nothing — this is a form and a `TablePlan` fill.
+4. ⚠️ **The form's own default contradicts P32.** `Wanted.Seats` initialises to
+   `RoundEngine.MinimumPlayers` (**4**) while the house table and every published measurement are
+   `RoundEngine.DefaultPlayers` (**5**) — P32's exact confusion, one layer up, and the same fix:
+   read the default, not the floor.
+
+**Build.**
+
+1. Settle **(2)** first and write the answer into this packet before touching a control. It is the
+   only decision here that cannot be walked back cheaply, and it is Nick's.
+2. The house table's `people`, in `ansible-nas`' role defaults and inventory, and the form default
+   in **(4)**.
+3. **Say what a table is waiting for.** The open form explains that `People` is a quorum, and the
+   lobby list says *waiting for N more* rather than leaving a table that will not deal looking
+   like one that is broken. ⚠️ **`HostedTable.WaitingFor` already exposes exactly this** — it is a
+   sentence, not a mechanism.
+4. Per-seat levels, **(3)**, if (2)'s answer does not subsume it.
+
+⚠️ **Overlaps P54 deliberately.** P54 owns *create table → copy link* and the patience tuning; this
+packet owns *what is on the form*. **Whichever runs second inherits the other's lobby edits** — do
+not plan them as independent diffs.
+
+**Acceptance.** A person who has never seen the site can open a table for themselves and three
+friends against two named opponents and understand, without being told, why it has not dealt yet;
+`Domain` untouched **unless (2) lands on (c)**, in which case the rung arrives measured or not at
+all; the tree is green.
+
+---
+
 ## 6. Cold-start protocol
 
 For picking up in a fresh session with no memory of this conversation.
