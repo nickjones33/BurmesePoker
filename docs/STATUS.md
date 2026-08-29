@@ -1202,12 +1202,27 @@ those, people*, the four difficulty levels, a mixed table and the seating policy
 is *how many people must turn up before a card is dealt*, not how many may. **`0` is a room you
 can watch and never join; `5` deals nothing until the fifth friend arrives.** ✅ **The role default
 is `1` now** (`ansible-nas` `f4fc41fe`), which is a table a visitor can sit down at alone.
-⚠️ **The open question in P56 is personalities, and it is Nick's**: §3.12 and P19 put **levels
-only** in both front ends on purpose, because the eleven rungs behind them are a **measured
-ladder and not a set of styles** — `warden` is `−9.3 ± 1.0` and `random` is a joke, so offering
-them as flavour sells a measured-worse opponent as a matter of taste. **Genuine personality rungs
-are a track, not a step**: §11's test means each one arrives measured, with a ~5 h suite behind
-it.
+🔥 **P56's two open questions were both answered by Nick on 2026-08-29, and neither answer is the
+one this file recommended.** **(a) Personalities: option (b) — the rungs, behind an *advanced*
+control, each with its measured margin beside it.** ⚠️ **That is a deliberate amendment to §3.12,
+to P19 and to `DifficultyLadder`'s own doc comment**, which currently says in as many words that
+*a menu with both in it would be the mistake this design exists to avoid* — **the packet must
+rewrite those rather than quietly contradict them.** The rule becomes *levels are the menu; rungs
+are an advanced disclosure that states its price*, and **the margin is the price**: it is not
+decoration, it must be read from `measurements.csv` and fenced by `PublishedFigureTests` like every
+other published figure, and a rung with no published row must not be offerable. ✅ **The
+resolution machinery already exists** — `DifficultyLevel.Probe(rung, 0)` mints `<rung>@0` and
+**`DifficultyLadder.FindOrProbe` is public and already resolves it** — so the only change below the
+form is `Find` → `FindOrProbe` where a *seat* is being resolved (and ⚠️ **`Find` stays `Find` for
+the `--difficulty` shorthand**, or a typo silently opens a table against a research rung).
+**(b) Per-seat difficulty: build the picker.** ⚠️ **The obstacle is §3.11 C12, not `TablePlan`** —
+the lobby is static SSR on purpose and cannot grow a control per seat as the count is typed, which
+is exactly why `Mixed` is a checkbox. **Recommended shape: a two-step post** (choose the shape,
+post, choose the seats on the returned form), which keeps every control on the page a real one;
+the alternative is making the open form an interactive island, the first interactivity outside the
+table. 🔥 **The two answers are one control, not two**: a per-seat picker whose options are
+levels-plus-advanced-rungs is a single design, and building them in separate passes means
+designing that form twice.
 
 🔥 **`P55` was added 2026-08-28 at Nick's direction: make Gitea primary and GitHub a mirror.**
 ⚠️ **The planning found two things worth knowing before anyone starts it.** **(1) The histories

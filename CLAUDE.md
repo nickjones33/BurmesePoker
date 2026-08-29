@@ -35,9 +35,20 @@ person in it.** ⚠️ **Check before building: the lobby form already offers se
 levels, a mixed table and the seating policy**, so most of the ask is built; the fact that is not
 written down anywhere else is that **`TablePlan.People` is a quorum** — `HostedTable.Ready` is
 `_attending > 0 && _table.IsFull`, so a table deals only once *every* person-seat is claimed, and
-`0` is a room you can watch and never join. **Its open question — offering the eleven `BotCatalog`
-rungs as "personalities" — is Nick's, and it cuts against §3.12 and P19**, which put levels only in
-both front ends because the ladder is measured rather than stylistic; ⚠️ **`P55` was added the same day
+`0` is a room you can watch and never join. 🔥 **Its two open questions were answered by Nick on 2026-08-29.**
+**Personalities: the eleven `BotCatalog` rungs go behind an *advanced* control, each showing its
+measured margin** — ⚠️ **a deliberate amendment to §3.12, to P19 and to `DifficultyLadder`'s own
+doc comment** (which says *"a menu with both in it would be the mistake this design exists to
+avoid"* and **must be rewritten, not contradicted**). The new rule is *levels are the menu; rungs
+are an advanced disclosure that states its price*, and **the margin is the price** — read from
+`measurements.csv`, fenced by `PublishedFigureTests`, and a rung with no published row is not
+offerable. ✅ **No new resolution machinery**: `DifficultyLevel.Probe(rung, 0)` mints `<rung>@0`
+and **public `DifficultyLadder.FindOrProbe` already resolves it**, so the change below the form is
+`Find` → `FindOrProbe` where a *seat* is resolved — ⚠️ **`Find` stays `Find` for the
+`--difficulty` shorthand**. **Per-seat difficulty: build the picker** — ⚠️ **the obstacle is
+§3.11 C12** (static SSR cannot grow a control per seat as the count is typed, which is why `Mixed`
+is a checkbox); **recommended shape is a two-step post**, and **the two answers are one control,
+not two**; ⚠️ **`P55` was added the same day
 — make Gitea primary and GitHub a mirror**, and its planning found that **the `pre-rewrite` tag
 this file cites does not exist on any remote** (the 2023 tree is the history before `b32d08b`,
 `P0: restructure and salvage`) — P55 settles that before configuring a mirror, because a mirror

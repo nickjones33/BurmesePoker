@@ -7781,17 +7781,63 @@ the table waits for*, not which seats they get. **Do not rebuild any of that.**
    `RoundEngine.DefaultPlayers` (**5**) — P32's exact confusion, one layer up, and the same fix:
    read the default, not the floor.
 
+#### 🔥 Nick's answers, 2026-08-29 — both open questions settled, and neither is the recommendation
+
+**(2) Personalities: answer (b) — the rungs, behind an *advanced* control, each with its measured
+margin shown beside it.** ⚠️ **This is a deliberate amendment to §3.12 and to P19, not an
+oversight, and the packet that builds it must say so in the places that currently forbid it.**
+`DifficultyLadder`'s own remarks read *"a menu with both in it would be the mistake this design
+exists to avoid"* — that sentence is now **wrong as written** and must be rewritten rather than
+quietly contradicted: the standing rule becomes **levels are the menu; rungs are an advanced
+disclosure that states its price.** The thing §3.12 was protecting against was *selling a
+measured-worse opponent as a matter of taste*, and showing the margin beside the name is what pays
+that bill — so the margin is **not decoration and not optional**, and a rung with no published row
+must not be offerable at all.
+
+🔥 **The finding that makes this much cheaper than it sounds: the resolution machinery already
+exists and needs nothing new.** `DifficultyLevel.Probe(rung, 0)` mints the name `<rung>@0`, and
+**`DifficultyLadder.FindOrProbe` is public and already resolves it** — `--strategies` has been
+resolving both lists since P19. So an advanced control emits `sprinter@0` into
+`TablePlan.Difficulties`, and the only change below the form is that `HostedTable.Levelled` and
+`Lobby`'s two resolutions move from `Find` to `FindOrProbe`. ⚠️ **`Find` must stay `Find`
+wherever a *level* is meant** (the `--difficulty` shorthand), or a typo starts silently opening
+tables against a research rung.
+
+⚠️ **Three consequences to design for, not to discover.** **(a)** A rung is not a level, so the
+seat name — today `Mya Lay (expert)` — has to read sensibly as `Mya Lay (sprinter)`, and the
+journal's attribution column carries the level's `Name`, which would become `sprinter@0`. **(b)**
+`BotCatalog.All` includes `random`, which is a joke, and `warden`, which is `−9.3 ± 1.0`; the
+control must be **honest rather than tidy** — no hiding the bad ones, since stating the price is
+the whole justification. **(c)** The margins must be **read from `docs/strategy/measurements.csv`
+and fenced by `PublishedFigureTests`**, exactly as every other published figure is — a margin
+typed into a `.razor` file is the one thing this project has a test for precisely because prose
+has no column to disagree with.
+
+**(3) Per-seat difficulty: build the picker.** ⚠️ **It does not fall out of `TablePlan` for free,
+and the obstacle is §3.11 C12**: the lobby is static SSR on purpose, and a static page cannot grow
+a control per seat as the seat count is typed — which is the stated reason `Mixed` is a checkbox
+at all. **Two shapes, and the packet must choose before building:** a **two-step post** (choose
+the shape, post, then choose the seats on the returned form), which keeps the lobby script-free
+and costs a round trip; or **making the open form an interactive island**, which costs §3.11 C12's
+one-way door on the *lobby* page and is the first interactivity outside the table. 🔥 **Recommend
+the two-step post** — it preserves the property that every control on this page is a real one, and
+the second step is exactly where the per-seat *and* advanced-rung choices both belong, so (2) and
+(3) land on the same form rather than fighting over the first one. ⚠️ **The two answers together
+are one control, not two**: a per-seat picker whose options are levels-plus-advanced-rungs is a
+single design, and building them as separate passes would mean designing that form twice.
+
 **Build.**
 
-1. Settle **(2)** first and write the answer into this packet before touching a control. It is the
-   only decision here that cannot be walked back cheaply, and it is Nick's.
+1. ✅ **Settled — see Nick's answers above.** Rewrite `§3.12`, P19's remark and
+   `DifficultyLadder`'s doc comment to state the amended rule before building the control.
 2. The house table's `people`, in `ansible-nas`' role defaults and inventory, and the form default
    in **(4)**.
 3. **Say what a table is waiting for.** The open form explains that `People` is a quorum, and the
    lobby list says *waiting for N more* rather than leaving a table that will not deal looking
    like one that is broken. ⚠️ **`HostedTable.WaitingFor` already exposes exactly this** — it is a
    sentence, not a mechanism.
-4. Per-seat levels, **(3)**, if (2)'s answer does not subsume it.
+4. Per-seat levels, **(3)** — ⚠️ **on the same form as (2)'s advanced rungs**, because a per-seat
+   picker whose options are levels-plus-rungs is one control and not two.
 
 ⚠️ **Overlaps P54 deliberately.** P54 owns *create table → copy link* and the patience tuning; this
 packet owns *what is on the form*. **Whichever runs second inherits the other's lobby edits** — do
@@ -7811,8 +7857,10 @@ and P54 did not touch the form.
 
 **Acceptance.** A person who has never seen the site can open a table for themselves and three
 friends against two named opponents and understand, without being told, why it has not dealt yet;
-`Domain` untouched **unless (2) lands on (c)**, in which case the rung arrives measured or not at
-all; the tree is green.
+**every rung the advanced control offers shows a margin read from `measurements.csv` and fenced by
+`PublishedFigureTests`**; a per-seat choice reaches the seat that was chosen for it (asserted on
+`HostedTable.Difficulties`, not on the form); `Domain` untouched — **(2) landed on (b), so no rung
+is written and no suite is owed**; the tree is green.
 
 ---
 
