@@ -10,6 +10,55 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
+🔥 **`P58`–`P60` were planned 2026-08-30 at Nick's direction: the table on a small screen.**
+Nothing is built. ⚠️ **Front-end and ops — no rule changes, `Domain` untouched by all three, no
+suite owed, no measurement can move**; `P59` is the only one that touches server code.
+**`BUILD-PLAN.md` §5.**
+
+🔥 **The finding that shaped the track, from a survey rather than a build: the app is responsive by
+construction and completely unverified below tablet width.** ✅ The viewport meta is right; ✅
+**touch targets already exceed the standard on purpose** (§3.11 B11 took Board Game Arena's
+*recommendation* over WCAG's minimum — a pressable card is 3.4rem × 4.4rem, buttons 44px), so the
+commonest mobile defect is designed out; ✅ the hand wraps; ✅ the felt stacks on **a reading
+threshold rather than a fitting one** (*"at around 780 px the outer columns squeeze a seat panel
+until the name truncates"*). 🔥 **But there is exactly one breakpoint in the whole application and
+it is at 56rem (896 px)** — a 390 px phone and an 895 px tablet get an identical layout, and below
+the line the felt has never been looked at. 🔥 **§3.11 has seventeen UX standards and not one is
+about screen size**, and ⚠️ **the breakpoint is unfenced** — no test mentions `56rem`, while
+`MarkupStandardsTests` and `PaletteContrastTests` prove this project fences presentation
+mechanically when it decides to. ⚠️ **So the track is a verification pass, not a design pass, and
+the distinction is the point: the design reasoning is careful and load-bearing, and a redesign is
+the likeliest way to destroy it.** What is missing is a standard, a fence and evidence — never
+taste.
+
+- **`P58` — a viewport standard and a fence for the one breakpoint there is. Do this one first**,
+  or device testing finds *"it is cramped"* and needs this packet anyway, later and with the effort
+  wasted. ⚠️ **A CSS custom property cannot carry a breakpoint** (`@media` cannot read `var()`), so
+  the recommendation is **a test asserting the two files name the same width** — P54's idiom
+  exactly.
+- **`P59` — the connection that drops and comes back**, and 🔥 **the gap is precise**: P53 measured
+  an idle circuit for 7½ minutes **with keepalives flowing**, and **nobody has ever measured a
+  client that stops answering and then returns** — which is the question a screen lock, an app
+  switch and a wifi→cellular handover all ask. ⚠️ **P54's patience/retention pairing is fenced only
+  against itself and never against a real disconnect.** **The one packet here likely to find a real
+  bug, and the only one that can leave a repeatable regression test.**
+- **`P60` — real devices, and it closes `P53`.** 🔥 **The tablet is the right first device rather
+  than a consolation prize**: 896 px is the only breakpoint, **a tablet straddles it**, so one
+  device rotated exercises both sides of the only layout decision in the application — and ✅
+  **`adb` is installed here**, so the session can drive the real browser over CDP. ⚠️ **Mobile
+  Safari's basicauth behaviour on the `/_blazor` upgrade stays an iPhone question** and no
+  emulation may answer it.
+- ⚠️ **One mobile-only failure mode found while planning and not ruled out:
+  `poker.nickjones.dev` has an `A` record and no `AAAA`** (`209.128.193.153`). Carriers that are
+  IPv6-only reach it **only** via DNS64/NAT64. **No desktop test can ever see this**, and the fix,
+  if it bites, is one DNS record.
+- 🔥 **The trap the whole track must not fall into.** Every instrument in it is a way of **not being
+  a person**, and this project has the scar — `--no-restore` shipped an image that passed every
+  check ever written and was dead (*"curl is not a person"*, P52). **Emulation going green must not
+  close P53.**
+
+---
+
 🔥 **`P55` shipped 2026-08-30 on Opus 5: the canonical repository is Gitea, GitHub is a mirror
 Gitea pushes, and a command this project had been handing cold sessions since P0 was found broken.**
 `RULES.md` stays rev 31, the tree is green at **929**, and ⚠️ **not one line of code changed** —

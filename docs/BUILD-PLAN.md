@@ -8192,6 +8192,173 @@ is written and no suite is owed**; the tree is green.
 
 ---
 
+### P58–P60 — The table on a small screen (the small-screen track) ☐ — **added 2026-08-30, at Nick's direction**
+
+> ⚠️ **Front-end and ops, not the rules or strategy programme.** No rule changes, `Domain`
+> untouched by all three, **no suite regeneration owed**, and no measurement can move. **P59 is the
+> only one of the three that touches server code.**
+
+🔥 **The finding that shaped the track, made while surveying rather than while building: the app is
+responsive by construction, and completely unverified below tablet width.** The survey, 2026-08-30:
+
+- ✅ `App.razor` carries `width=device-width, initial-scale=1.0`.
+- ✅ **Touch targets already exceed the standard on purpose** (§3.11 B11): a pressable card is
+  3.4rem × 4.4rem, every answer button 44px, disclosures 40px — Board Game Arena's *recommendation*
+  rather than WCAG 2.2's minimum. **The commonest mobile defect is designed out already.**
+- ✅ `HandPanel`'s `.groups` is `flex-wrap: wrap`, so thirteen cards reflow rather than overflow.
+- ✅ The felt stacks, and **the reasoning is a reading threshold rather than a fitting one**:
+  *"at around 780 px the outer columns squeeze a seat panel until the name truncates, and a table
+  where you cannot read who is sitting where is worse than a list."*
+- ✅ `prefers-reduced-motion` and `prefers-color-scheme` are both handled.
+- 🔥 **But there is exactly one breakpoint in the whole application and it is at 56rem (896 px).**
+  A 390 px phone and an 895 px tablet get an identical layout. Below the line the felt is
+  `repeat(auto-fit, minmax(9.5rem, 1fr))` — two columns of ~171 px at 390 px, which **probably
+  works and has never been looked at.**
+- 🔥 **§3.11 has seventeen UX standards and not one is about screen size.** Touch targets are
+  there; stacking appears only as an aside in B6's ordering note. ⚠️ **And the breakpoint is
+  unfenced** — no test in the tree mentions `56rem`, while `MarkupStandardsTests` and
+  `PaletteContrastTests` prove this project fences presentation mechanically when it decides to.
+  **The comment saying the two files are "one decision" is a comment, in a codebase whose whole
+  idiom is that a fact has one home and a test proves it.**
+
+⚠️ **So this track is a verification pass and not a design pass, and the distinction is the point.**
+The design reasoning here is careful and load-bearing; **a redesign is the likeliest way to destroy
+it.** What is absent is a *standard*, a *fence* and *evidence* — never taste.
+
+| Packet | Touches | Why |
+|---|---|---|
+| P58 the viewport standard and its fence | `BUILD-PLAN` §3.11, CSS, tests | **First, or the others waste effort** — device testing without a stated width finds "it is cramped" and needs this packet anyway, later |
+| P59 circuit survival on a bad connection | `Server`/`Web` + tests | the only one that can leave a **repeatable regression test**, and the one most likely to find a real bug |
+| P60 the table on real devices | nothing — verification | closes P53's outstanding acceptance; the tablet is drivable, the phone is not |
+
+---
+
+### P58 — A viewport standard, and a fence for the one breakpoint there is ☐ — **added 2026-08-30**
+
+**Goal.** *How narrow may the table get and still be playable* is written down, has one home, and
+is proved by a test. **Read first:** §3.11 (the UX standards, and the fact that **screen size is
+not among them**), `TableView.razor.css` and `SeatPanel.razor.css` (the breakpoint, and the comment
+claiming the two are one decision).
+
+**Build.**
+
+1. **Add the missing §3.11 standard**, in the section that matches how it is checked. ⚠️ **It
+   belongs in category A (mechanically checkable) if it can be**, because §3.11's own rule is that
+   *a standard nobody can verify is a wish*. Recommended wording: **the table is playable at
+   360 px** — the narrowest phone still in real use — **and the felt is a ring only above the
+   stated breakpoint.**
+2. 🔥 **Give the breakpoint one home.** It is written twice (`TableView.razor.css`,
+   `SeatPanel.razor.css`) with a comment asserting they agree. ⚠️ **A CSS custom property cannot
+   carry it** — `@media` cannot read `var()` — so the honest options are a **build-time constant**
+   or **a test that reads both files and asserts they name the same width**. **Recommend the
+   test**: it is P54's idiom exactly (the patience and the retention window live in two files and
+   are fenced against each other rather than merged), and it keeps the CSS ordinary.
+3. **Decide whether a sub-896 px breakpoint is wanted**, and record the answer either way.
+   ⚠️ **A packet that adds one without deciding is a design pass by accident.** The question to
+   answer with evidence rather than taste: at 360–390 px, does the two-column felt still say who
+   is sitting where — which is the property the 56rem line was chosen to protect?
+
+**Acceptance.** §3.11 carries a screen-size standard; the breakpoint is named in one place or
+fenced across its two; a test fails if the two files disagree, **proved able to fail by mutating
+one of them**; the sub-896 px question is answered in writing; `Domain` untouched; the tree is
+green.
+
+---
+
+### P59 — Circuit survival: the connection that drops and comes back ☐ — **added 2026-08-30**
+
+**Goal.** What a browser table does when the connection **vanishes and returns** is measured rather
+than assumed. **Read first:** P54 (the 180 s patience and `DisconnectedCircuitRetentionPeriod`, and
+the fence that holds them against each other), P53 findings (2) and (3).
+
+🔥 **The gap this packet exists to close, and it is precise.** P53 measured an idle circuit for
+**7½ minutes with keepalives flowing** — 29 server pings, no close frame. **Nobody has ever
+measured a client that stops answering and then comes back.** Those are different questions, and
+the second is the one a phone actually asks: a screen lock, an app switch, a wifi→cellular handover.
+⚠️ **P54's pairing is currently fenced only against itself** — one number read from `Program.cs`,
+one off the real `Lobby`, each asserted to agree with the other — **and never against a real
+disconnect.** The claim it makes is that *inside the retention window the framework is deliberately
+hiding a dropped connection from the player, so a shorter patience would have the computer play the
+turn of somebody the framework is still expecting back.* **That claim has never been exercised.**
+
+**Build.**
+
+1. **Drop the connection without a close frame** — the case a lost radio produces, and the one a
+   graceful `Dispose` never reaches. Kill the socket, wait, reconnect.
+2. **Sweep the interesting boundary**: well inside the retention window, between the two numbers,
+   and past both. ⚠️ **The three answers should differ**, and if they do not, P54's pairing is
+   decorative and that is the finding.
+3. **Assert what the seat did, not what the socket did.** The question is whether the *player* lost
+   a turn — read it off the journal or the `Lobby`, never off the transport.
+4. ⚠️ **Cellular conditions are a separate axis and cheap**: `tc netem` at ~150 ms RTT with loss and
+   jitter, played through a round. **Deterministic and repeatable, which is what makes it a test
+   rather than an observation** — the only part of this track that can become a regression fence.
+
+**Acceptance.** A test in the tree that disconnects a real circuit and asserts the seat is still
+the player's when it returns inside the window, **proved able to fail by shortening the patience
+below the retention period**; the boundary behaviour is written into `STATUS.md` as three measured
+answers rather than one; `Domain` untouched; the tree is green.
+
+⚠️ **Known obstacle, recorded in advance.** P54 left `SeatChannel`'s per-seat
+`ManualResetEventSlim` undisposed on purpose, because disposing it races the engine thread parked
+in `Ask`, **which takes no cancellation token**. A packet that wants to tear a seat down cleanly
+must give `Ask` a token first — ⚠️ **that is a `Server` change and it is not free**, so decide
+whether this packet needs it before assuming it does.
+
+---
+
+### P60 — The table on real devices ☐ — **added 2026-08-30; closes P53's outstanding acceptance**
+
+**Goal.** A real round on a real small screen, over a real mobile network, observed well enough to
+be evidence. **Read first:** P53's findings (2), (7) and (8) — especially **(8): read the deployed
+commit before testing a front end against the live site.**
+
+🔥 **The tablet is the right first device rather than a consolation prize.** 896 px is the only
+breakpoint the app has, and **a tablet straddles it**: portrait sits at or under the line, landscape
+well above. **One device, rotated, exercises both sides of the only layout decision in the
+application** — no phone can do that. ✅ **And it is drivable**: `adb` is installed on this
+workstation, so `adb forward tcp:9222 localabstract:chrome_devtools_remote` gives CDP against the
+real browser, and a session can play the round itself and read the device's own console.
+⚠️ **What the tablet cannot close is mobile Safari's basicauth behaviour on the `/_blazor`
+upgrade** — P53 answered that for Chrome and it is a separate implementation. **That stays an
+iPhone question and no emulation may be allowed to answer it.**
+
+**Build.**
+
+1. **Tablet, both orientations, over `adb`** — a full round, plus the two affordances nothing has
+   ever pressed anywhere: **P54's copy-link** and **P56's advanced opponent menu**.
+2. **Split the two variables rather than testing them together.** *Mobile browser* and *mobile
+   network* are independent: a desktop tethered to a phone hotspot gives a genuine carrier path
+   with a drivable browser, and a device on cellular gives a real browser — **each can be tested
+   with the session at the controls, and together they cover what one untooled phone round does
+   not.**
+3. 🔥 **The log-side instrument, and it applies to every device.** Tail the container and Traefik
+   logs throughout. That turns *"it worked"* into P53-grade evidence: negotiate **200**, a
+   `Request starting` with **no** `Request finished` (P53's WebSocket signature), the UA string —
+   and **the source IP, which is the only way to prove the session came over the carrier rather
+   than silently over the home wifi.** ⚠️ **Without it a phone test can be a wifi test and nobody
+   would know.**
+4. ⚠️ **One mobile-only failure mode, found while planning and not yet ruled out:
+   `poker.nickjones.dev` has an `A` record and no `AAAA`** (`209.128.193.153`, IPv4 only). Several
+   carriers are IPv6-only with DNS64/NAT64, so on such a network the site is reachable **only** if
+   the carrier synthesises and translates. **No desktop test can ever reach this**, it is the most
+   plausible mechanism behind a hypothetical *"it will not load on my phone"*, and **the fix, if it
+   bites, is one DNS record.** Check it before blaming the browser.
+
+**Acceptance.** A round played through on the tablet in **both** orientations and on a phone on
+**cellular**, each with the log-side evidence recorded; **the deployed commit is stated in the
+report**; P53's acceptance is discharged or its remainder named precisely. Nothing in this
+repository need change — ⚠️ **and if that is the outcome, say so**: a verification packet whose
+diff is documents is a result, not a failure.
+
+⚠️ **The trap this track must not fall into.** Every instrument above is a way of **not being a
+person**, and this project has the scar: `--no-restore` shipped an image that passed every check
+ever written and was dead, and P52's lesson was *"curl is not a person."* **Emulation going green
+must not close P53** — the risk is not that these fail, it is that they all pass on a WebKit that
+is not Safari and a NAT that is not a carrier's. **Only a real phone closes the phone acceptance.**
+
+---
+
 ## 6. Cold-start protocol
 
 For picking up in a fresh session with no memory of this conversation.
