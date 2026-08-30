@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 
 using BurmesePoker.Domain.Agents;
+using BurmesePoker.Web;
 
 namespace BurmesePoker.Tests.Web;
 
@@ -610,10 +611,14 @@ public class MarkupStandardsTests
     /// four for ever, which is the failure P18 exists to end.
     /// </para>
     /// <para>
-    /// 🔥 <b>And that no <em>rung</em> is offered here at all</b> (BUILD-PLAN §3.12). A skill
-    /// ladder is a research instrument — unevenly spaced, entitled to be incomplete, and its
-    /// lower rungs play a different and worse idea rather than the right idea badly. A menu
-    /// with both lists in it is the one thing that design decision forbids.
+    /// 🔥 <b>Amended by P56, 2026-08-29.</b> This test used to assert that <b>no rung is offered
+    /// here at all</b>, because a skill ladder is a research instrument whose lower rungs play a
+    /// different and worse idea rather than the right idea badly. ⚠️ <b>The rungs are offered
+    /// now — under the levels, in an advanced group, each with its published margin printed
+    /// beside it</b> — and what the old assertion was protecting against is checked instead:
+    /// the levels still head the menu, both lists are still <em>generated</em>, and no name
+    /// from either is typed into the markup. <b>The price beside the name is fenced by
+    /// <c>PublishedFigureTests</c></b>, which is the assertion that makes offering them honest.
     /// </para>
     /// <para>
     /// A source scan because a static SSR page is unreachable from here any other way — the
@@ -625,16 +630,24 @@ public class MarkupStandardsTests
     {
         var lobby = Sources.Read("Components/Pages/Tables.razor");
 
-        Assert.Contains("DifficultyLadder.ByStrength", lobby, StringComparison.Ordinal);
+        Assert.Contains("OpponentMenu.Levels", lobby, StringComparison.Ordinal);
+        Assert.Contains("OpponentMenu.Advanced", lobby, StringComparison.Ordinal);
         Assert.Contains("Wanted!.Difficulty", lobby, StringComparison.Ordinal);
         Assert.DoesNotContain("BotCatalog", lobby, StringComparison.Ordinal);
 
-        // ⚠️ And no level is named in the markup, which is what makes the loop the only source
-        // of the list. `DifficultyLadder.Default` is a fallback rather than a name, so it is
-        // allowed.
+        // The dial is still the dial, and still heads the menu.
+        Assert.Same(DifficultyLadder.ByStrength, OpponentMenu.Levels);
+
+        // ⚠️ And no level and no rung is named in the markup, which is what makes the two loops
+        // the only source of the two lists. `DifficultyLadder.Default` is a fallback rather
+        // than a name, so it is allowed.
         Assert.All(
             DifficultyLadder.All,
             level => Assert.DoesNotContain($"\"{level.Name}\"", lobby, StringComparison.Ordinal));
+
+        Assert.All(
+            BotCatalog.All,
+            rung => Assert.DoesNotContain($"\"{rung.Name}\"", lobby, StringComparison.Ordinal));
     }
 
     /// <summary>

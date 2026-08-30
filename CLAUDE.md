@@ -14,7 +14,7 @@ over ad-hoc changes.
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
 recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
-F10) was the last of them; the tree is green at 920.**
+F10) was the last of them; the tree is green at 928.**
 🔥 **A fourth track was added 2026-08-28 at Nick's direction: `P51`–`P54`, *taking the table
 online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
@@ -96,6 +96,42 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 ⚠️ **One P46 follow-up owned, not done**: the race-reach instrument recomputes an uncached cover
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
+
+**What P56 built, and the five things a cold session needs from it.**
+🔥 **(1) §3.12 was amended rather than contradicted.** Nick's answer was option (b), and
+`DifficultyLadder`'s own remark said *"a menu with both in it would be the mistake this design
+exists to avoid"* — **that sentence, §3.12 and P19's remark were all rewritten** to: **levels are
+the menu; rungs are an advanced disclosure that states its price.** ⚠️ **What the rule forbade is
+unchanged** — selling a measured-worse opponent as a matter of taste — and **the margin beside the
+name is what pays that bill.** The console is untouched and still offers levels only.
+🔥 **(2) `BurmesePoker.Web/OpponentMenu.cs` is the offering, and the fence runs both ways.** Ten
+rungs under the four levels, each drawn as *`sprinter` — +1.2 ± 0.8 points of win rate against
+`outs` — measurably stronger*; `PublishedFigureTests.EveryOpponentTheLobbyOffers…` compares every
+printed sentence to `ladder.head-to-head.*` **with the sign turned round where the row is named
+the other way**, verdict word included — **and asserts that a rung with a published row against
+the reference *is* offered while one without is *not***. That is what keeps money-ranked
+`prospector`/`purist` out **by rule**, and makes a newly-measured rung the menu never heard of a
+red build.
+✅ **(3) Nothing below the form was needed.** `HostedTable`'s seat resolution went `Find` →
+`FindOrProbe` (private `Seatable`, swallowing the `ArgumentException` a malformed probe throws);
+⚠️ **`Lobby`'s `--difficulty` stays `Find`**; ⚠️ **the seat name and the journal attribution are
+deliberately different** — `Mya Lay (sprinter)` via `OpponentMenu.Called`, `sprinter@0` in the
+journal, because a person should not be shown the machinery and a replay must not lose ε.
+🔥 **(4) Per-seat difficulty is a two-step post and it cost one class.** §3.11 C12 is the
+obstacle: static SSR cannot grow a control per seat as the count is typed. `NewTable` moved out of
+`Tables.razor` into its own file — **nothing here renders a component in a test** — `SeatFill`
+replaces P19's checkbox with *same*/*mixed*/*each*, and **`NeedsSeatChoices` is a count check
+rather than a flag**, so changing the shape on the second step asks the seats again. One button;
+the second press opens.
+🔥 **(5) Found by pressing it: a post with no `Wanted.PerSeat[…]` fields sets the property to
+`null`**, not to the initialiser's empty list — a **500 on the first post of the first step**,
+invisible to the whole tree. Defended in the accessor. ✅ **Proved end to end with `curl`** (shape,
+then seats): the opened table seats `(easy)`, `(sprinter)`, `(warden)`. ⚠️ **`curl` is not a
+person** — the advanced group and the form join P54's two outstanding browser checks. The quorum
+is now said twice (a note on the form; *Waiting for two more people to sit down; it deals when
+they are all here* on each row), and the form's `Seats` default moved `MinimumPlayers` →
+**`DefaultPlayers`**. Tree green at **928**, from 920; `Domain` changed in **doc comments only**,
+`Presentation`, `Server`, `Console` and `Sim` byte-identical — no measurement can move.
 
 **What P54 built, and the four things a cold session needs from it.**
 🔥 **(1) Nothing in this client had ever closed a table, and that was the leak.** `Lobby.Close`

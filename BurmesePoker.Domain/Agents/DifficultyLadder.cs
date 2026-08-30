@@ -14,8 +14,19 @@ namespace BurmesePoker.Domain.Agents;
 /// evenly spaced, and it is entitled to be incomplete. A level is a product: it has to be
 /// monotone, fine-grained enough for somebody to ask for <em>a bit easier</em>, and to read as
 /// a weaker player rather than as a stranger. The two are built from one mechanism
-/// (<see cref="FallibleAgent"/>) and exposed as two lists, and <b>a menu with both in it would
-/// be the mistake this design exists to avoid</b>.
+/// (<see cref="FallibleAgent"/>) and exposed as two lists.
+/// </para>
+/// <para>
+/// 🔥 <b>Amended 2026-08-29 by Nick, and built by P56: levels are the menu; rungs are an
+/// advanced disclosure that states its price.</b> This paragraph used to end <em>"a menu with
+/// both in it would be the mistake this design exists to avoid"</em>, and that sentence is now
+/// wrong as written. ⚠️ <b>What it was protecting against is unchanged</b> — selling a
+/// measured-worse opponent as a matter of taste, which is what a rung dressed as a flavour
+/// would be — and <b>the margin is what pays that bill</b>: the browser lobby offers the ladder
+/// behind an advanced control with each rung's published margin beside it, read from
+/// <c>docs/strategy/measurements.csv</c> and fenced like every other published figure, and
+/// <b>a rung with no published row is not offerable at all</b>. The <em>dial</em> is still
+/// levels only, and a level is still what somebody who has not asked for the ladder gets.
 /// </para>
 /// <para>
 /// ⚠️ <b>The rung is <see cref="BotCatalog.Hardest"/> for every level, on purpose.</b>
@@ -89,9 +100,15 @@ public sealed record DifficultyLevel(string Name, string Description, BotRung Ru
     /// (§3.12's closing rule: a published figure carries the command that made it). ε is a dial
     /// that can be turned to any value, and the sweep that found the shipped values has to be
     /// re-runnable by somebody who doubts them — <c>tournament --strategies
-    /// greedy@0,greedy@0.3,greedy@0.6</c> is that command. ⚠️ <b>It is not a level and never
-    /// appears in a menu</b>: its name carries <see cref="Reserved"/> precisely so that
-    /// <see cref="Find"/> can never return one.
+    /// greedy@0,greedy@0.3,greedy@0.6</c> is that command. ⚠️ <b>It is not a level</b>: its name
+    /// carries <see cref="Reserved"/> precisely so that <see cref="Find"/> can never return one,
+    /// and a rate somebody typed is a calibration instrument rather than a difficulty setting.
+    /// <para>
+    /// ⚠️ <b>It does reach a menu since P56, in one shape only</b>: the browser lobby's advanced
+    /// control offers <c>Probe(rung, 0)</c> — a rung with no mistakes laid over it, which is the
+    /// rung itself — beside that rung's published margin. <b>No other rate is offered anywhere</b>,
+    /// and the resolution that seats one is <see cref="DifficultyLadder.FindOrProbe"/>.
+    /// </para>
     /// </remarks>
     public static DifficultyLevel Probe(BotRung rung, double mistakeRate)
     {
@@ -165,8 +182,10 @@ public sealed record DifficultyLevel(string Name, string Description, BotRung Ru
 /// <remarks>
 /// <para>
 /// <b>What a front end offers.</b> <see cref="BotCatalog"/> is the ladder and is what the
-/// harness ranks; this is the product, and the console's prompt and the lobby's form show this
-/// list and only this list (§3.12).
+/// harness ranks; this is the product, and it is what the console's prompt and the head of the
+/// lobby's opponent menu are drawn from (§3.12). ⚠️ <b>Since P56 the lobby also offers the
+/// ladder itself, behind an advanced control, with each rung's measured margin beside it</b> —
+/// see the remarks on <see cref="DifficultyLevel"/> for the amendment and what it turns on.
 /// </para>
 /// <para>
 /// 🔥 <b>Three levels rather than five, and that is a result rather than a shortage of
@@ -286,6 +305,13 @@ public static class DifficultyLadder
     /// ⚠️ <b>Named levels only.</b> A probe is not a setting, and its name carries
     /// <see cref="DifficultyLevel.Reserved"/> so that this can never return one — a form field
     /// or a query string reaching this method cannot conjure an uncalibrated opponent.
+    /// <para>
+    /// 🔥 <b>Which is exactly why P56's advanced control calls <see cref="FindOrProbe"/> instead
+    /// and this method was left alone.</b> A person who has opened the advanced group and read
+    /// a margin has asked for a rung; a name arriving where a <em>level</em> was meant — the
+    /// browser's own <c>--difficulty</c> shorthand — has not, and resolving it loosely would let
+    /// a typo open a table against a research instrument.
+    /// </para>
     /// </remarks>
     public static DifficultyLevel? Find(string? name) =>
         All.FirstOrDefault(level => string.Equals(level.Name, name, StringComparison.OrdinalIgnoreCase));

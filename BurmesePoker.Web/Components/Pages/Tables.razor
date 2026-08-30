@@ -105,15 +105,36 @@
                 <InputText id="new-title" @bind-Value="Wanted!.Title" maxlength="40" />
             </p>
 
+            @*
+                🔥 Five, not four (BUILD-PLAN P56 item 4). The default is RoundEngine's
+                DefaultPlayers, which is the table this game is played at and the table every
+                published measurement is made at — MinimumPlayers is merely the smallest legal
+                one, and reading the floor as the default is exactly the accident P32 found one
+                layer down.
+            *@
             <p>
                 <label for="new-seats">Seats</label>
                 <InputNumber id="new-seats" @bind-Value="Wanted!.Seats"
                              min="@RoundEngine.MinimumPlayers" max="@RoundEngine.MaximumPlayers" />
             </p>
 
+            @*
+                🔥 People is a quorum, and this is the one thing on the form a person cannot
+                guess (BUILD-PLAN P56 item 1). A table deals when EVERY seat held for a person
+                has somebody in it, so a table opened for four friends sits there doing nothing
+                until the fourth arrives — which is indistinguishable from a broken site unless
+                the form says so before you press the button and the list says so afterwards.
+            *@
             <p>
                 <label for="new-people">Of those, people</label>
                 <InputNumber id="new-people" @bind-Value="Wanted!.People" min="0" max="@RoundEngine.MaximumPlayers" />
+            </p>
+
+            <p class="note" id="new-people-note">
+                It waits for all of them: the first card is dealt when every seat you keep for a
+                person has somebody in it. Ask for one and you can sit down and play on your
+                own; ask for four and nothing happens until your fourth friend arrives; ask for
+                none and it is a table to watch rather than to join.
             </p>
 
             @*
@@ -123,29 +144,65 @@
                 different and worse idea rather than the right idea badly. These are levels: the
                 strongest rung there is, with a measured mistake rate (§3.12).
 
-                ⚠️ Levels only. A menu with rungs in it as well would be the one thing §3.12
-                forbids, and BotCatalog is still what the harness ranks.
+                🔥 And behind them, since P56, the ladder itself — every rung, each with the
+                margin that prices it. That is an amendment to §3.12 rather than a lapse from
+                it: the thing it forbade was selling a measured-worse opponent as a matter of
+                taste, and a rung offered WITH its measured margin is not being sold as taste.
+                Levels are the menu; rungs are an advanced disclosure that states its price.
+
+                ⚠️ The prices come out of docs/strategy/measurements.csv through OpponentMenu
+                and are fenced by PublishedFigureTests. A rung with no published row is not
+                offered at all.
             *@
             <p>
                 <label for="new-difficulty">The computer plays</label>
                 <InputSelect id="new-difficulty" @bind-Value="Wanted!.Difficulty">
-                    @foreach (var level in DifficultyLadder.ByStrength)
-                    {
-                        <option @key="level.Name" value="@level.Name">@level.Name — @level.Description</option>
-                    }
+                    @OpponentOptions
                 </InputSelect>
             </p>
 
             @*
-                🔥 Difficulty is per seat, and this is how a person asks for that (P19). A table
-                of four identical bots is the least interesting table in the game. A checkbox
-                rather than one <select> per seat, because the seat count is chosen in this same
-                form and a static SSR page cannot grow controls as you type (§3.11 C12).
+                🔥 Difficulty is per seat, and this is how a person asks for that (P19, P56). A
+                table of four identical bots is the least interesting table in the game.
+
+                ⚠️ Three answers rather than P19's checkbox, and the third takes a second post:
+                a static SSR page cannot grow a control per seat as the seat count is typed
+                (§3.11 C12), so the shape is settled first and the seats are chosen on the page
+                that comes back. Every control on this page stays a real one.
             *@
-            <p class="mixed">
-                <InputCheckbox id="new-mixed" @bind-Value="Wanted!.Mixed" />
-                <label for="new-mixed">A mixed table — a different level in each computer seat</label>
+            <p>
+                <label for="new-fill">The computer's seats</label>
+                <InputSelect id="new-fill" @bind-Value="Wanted!.Fill">
+                    @foreach (var (value, label) in SeatFill.Offered)
+                    {
+                        <option @key="value" value="@value">@label</option>
+                    }
+                </InputSelect>
             </p>
+
+            @if (_choosing && Wanted!.PerSeat.Count > 0)
+            {
+                <fieldset class="seats">
+                    <legend>Each computer seat</legend>
+
+                    <p class="note">
+                        In seating order, after the seats kept for people. Press
+                        <em>Open it</em> again when they read the way you want them to.
+                    </p>
+
+                    @for (var index = 0; index < Wanted!.PerSeat.Count; index++)
+                    {
+                        var seat = index;
+
+                        <p>
+                            <label for="@($"new-seat-{seat}")">Seat @(Wanted!.WantedPeople + seat + 1)</label>
+                            <InputSelect id="@($"new-seat-{seat}")" @bind-Value="Wanted!.PerSeat[seat]">
+                                @OpponentOptions
+                            </InputSelect>
+                        </p>
+                    }
+                </fieldset>
+            }
 
             @*
                 🔥 How long the seating holds (RULES.md §3 step 2, P36). Held is the rule and the
@@ -185,6 +242,9 @@
     private IReadOnlyList<HostedTable> _tables = [];
     private string? _problem;
 
+    /// <summary>Whether this render is the second step of an open: the seats, one by one.</summary>
+    private bool _choosing;
+
     /// <remarks>
     /// ⚠️ <b>Bound from the form, so it survives the post</b> — a static SSR page is built again
     /// from scratch on the way back, and a model held only in a field would come back empty.
@@ -204,38 +264,36 @@
             Seats = Lobby.Opening.Seats,
             People = Lobby.Opening.People,
             Difficulty = Lobby.Opening.Difficulty,
-            Mixed = Lobby.Opening.Difficulties is { Count: > 0 },
+            Fill = Lobby.Opening.Difficulties is { Count: > 0 } ? SeatFill.Mixed : SeatFill.Same,
             Seating = Lobby.Opening.Seating
         };
 
         _tables = Lobby.Tables;
     }
 
+    /// <remarks>
+    /// 🔥 <b>One button and two steps</b> (BUILD-PLAN P56). Asking for a table seat by seat
+    /// needs a control per computer seat, and a static SSR page cannot grow one as the seat
+    /// count is typed (§3.11 C12) — so a post that has settled the shape but not the seats
+    /// renders the seats instead of opening the table, and the next press opens it. ⚠️ <b>It is
+    /// the model that decides which post this is</b>, by counting: change the shape on the
+    /// second step and the seats are asked again, because the answers no longer fit the table.
+    /// </remarks>
     private void Open()
     {
         var wanted = Wanted ?? new NewTable();
-        var seats = Math.Clamp(wanted.Seats, RoundEngine.MinimumPlayers, RoundEngine.MaximumPlayers);
-        var people = Math.Clamp(wanted.People, 0, seats);
+
+        if (wanted.NeedsSeatChoices)
+        {
+            wanted.AskForSeats();
+            _choosing = true;
+            _tables = Lobby.Tables;
+            return;
+        }
 
         try
         {
-            var table = Lobby.Open(Lobby.Opening with
-            {
-                Title = string.IsNullOrWhiteSpace(wanted.Title) ? "A table" : wanted.Title.Trim(),
-                Seats = seats,
-                People = people,
-                // A name off a form is a name off a wire: resolved, never trusted (P18).
-                Difficulty = (DifficultyLadder.Find(wanted.Difficulty) ?? DifficultyLadder.Default).Name,
-                // ⚠️ The spread is strongest first and cycles, so it fits whatever the table's
-                // shape turns out to be — HostedTable takes as many of it as it has computer
-                // seats (P19).
-                Difficulties = wanted.Mixed
-                    ? [.. DifficultyLadder.Spread(seats).Select(level => level.Name)]
-                    : null,
-                // A name off a form is a name off a wire: resolved, never trusted (P18).
-                Seating = SeatingPolicy.Resolve(wanted.Seating).Name,
-                Seed = Lobby.NextSeed()
-            });
+            var table = Lobby.Open(wanted.Wanted(Lobby.Opening, Lobby.NextSeed()));
 
             Navigation.NavigateTo($"/table/{table.Id}");
         }
@@ -265,8 +323,8 @@
     {
         { Count: 0 } => "Every seat is for a person",
         { } levels when table.IsMixed =>
-            "The computer plays " + string.Join(", ", levels.Select(level => level.Name)),
-        { } levels => $"The computer plays {levels[0].Name}"
+            "The computer plays " + string.Join(", ", levels.Select(OpponentMenu.Called)),
+        { } levels => $"The computer plays {OpponentMenu.Called(levels[0])}"
     };
 
     /// <remarks>
@@ -274,32 +332,48 @@
     /// P13.4's finding, that an unanswered seat spends its whole patience on every question, is
     /// only fixable by something that knows whether anybody is there (BUILD-PLAN P13.6).
     /// </remarks>
+    /// <remarks>
+    /// 🔥 <b>A table waiting for people is not a broken one, and the sentence has to say so</b>
+    /// (BUILD-PLAN P56). <c>TablePlan.People</c> is a quorum — <c>HostedTable.Ready</c> wants
+    /// every person-seat claimed — so a table opened for five friends deals nothing at all
+    /// until the fifth arrives, and without a sentence saying which it is waiting for, a table
+    /// that is working perfectly reads as a table that is stuck.
+    /// </remarks>
     private static string State(HostedTable table) => table switch
     {
         { WaitingFor.Count: > 0 } waiting =>
-            $"Waiting for {waiting.WaitingFor.Count} more.",
+            $"Waiting for {Count(waiting.WaitingFor.Count)} to sit down; it deals when they are all here.",
         { IsDealing: true } dealing when dealing.Board.Round > 0 =>
             $"Playing round {dealing.Board.Round}. Every seat is taken; your own name takes yours back.",
         { IsDealing: true } => "Dealing.",
         _ => "Nobody here. It deals again when somebody arrives."
     };
 
-    /// <summary>A table somebody is asking for, as the form has it.</summary>
-    public sealed class NewTable
-    {
-        public string Title { get; set; } = "A table";
+    /// <summary>"one more person", "three more people" — the sentence, not the number.</summary>
+    private static string Count(int people) => people == 1 ? "one more person" : $"{people} more people";
 
-        public int Seats { get; set; } = RoundEngine.MinimumPlayers;
+    /// <summary>
+    /// Every opponent this lobby offers: the four levels, and the ladder behind an advanced
+    /// group with each rung's measured price beside it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>One list, used by the whole-table control and by every per-seat one</b>, because a
+    /// per-seat picker whose options are levels-plus-rungs is one design and not two — the
+    /// mistake it avoids is designing the same menu twice and letting the two drift.
+    /// </remarks>
+    private RenderFragment OpponentOptions => @<text>
+        @foreach (var level in OpponentMenu.Levels)
+        {
+            <option @key="level.Name" value="@level.Name">@level.Name — @level.Description</option>
+        }
 
-        public int People { get; set; } = 1;
-
-        /// <summary>Which level of <c>DifficultyLadder</c> the computer's seats play.</summary>
-        public string Difficulty { get; set; } = DifficultyLadder.Default.Name;
-
-        /// <summary>Whether to spread the dial across the computer's seats instead (P19).</summary>
-        public bool Mixed { get; set; }
-
-        /// <summary>Which <c>SeatingPolicy</c> this table holds its seats under (P36).</summary>
-        public string Seating { get; set; } = SeatingPolicy.Default.Name;
-    }
+        <optgroup label="Advanced — the measured ladder, and what each rung costs">
+            @foreach (var opponent in OpponentMenu.Advanced)
+            {
+                <option @key="opponent.Value" value="@opponent.Value">
+                    @opponent.Rung.Name — @opponent.Rung.Description — @opponent.Price
+                </option>
+            }
+        </optgroup>
+    </text>;
 }

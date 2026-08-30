@@ -71,9 +71,12 @@ dotnet run --project BurmesePoker.Console   # one table in the terminal
 
 The browser lobby seats five by default; sit down and the empty seats are filled by the
 computer. `--people 0` makes every seat a bot and just deals, which is worth watching once.
-`--difficulty easy|medium|hard|expert` decides how hard the computer plays. `docs/PLAYING.md`
-is the guide for a person at the keyboard — the prompts, the panels and what the hint arrow is
-telling you.
+`--difficulty easy|medium|hard|expert` decides how hard the computer plays. The lobby's *Open
+another table* form asks the same thing, and lets you choose the computer's seats one at a time
+— with an advanced group offering the ways of playing the simulator ranks, each shown with the
+margin it measured. ⚠️ *Of those, people* is a **quorum**: no card is dealt until every seat kept
+for a person has somebody in it. `docs/PLAYING.md` is the guide for a person at the keyboard —
+the prompts, the panels and what the hint arrow is telling you.
 
 To ask which way of playing is better rather than to play:
 

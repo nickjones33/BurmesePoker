@@ -10,6 +10,73 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
+🔥 **`P56` shipped 2026-08-29 on Opus 5: the lobby offers the ladder, every rung on it says what
+it costs, and a person can choose their opponents seat by seat.** `RULES.md` stays rev 31 (no rule
+changed), the tree is green at **928**, and ⚠️ **`Domain` changed in doc comments only** —
+`Presentation`, `Server`, `Console` and `Sim` are byte-identical, **no rung was written, no
+measurement can move and no suite is owed.**
+
+- 🔥 **(1) §3.12 was amended rather than contradicted, which is the whole shape of this packet.**
+  Nick's answer on 2026-08-29 was option (b) — the rungs, behind an *advanced* control, each with
+  its measured margin — and `DifficultyLadder`'s own remarks said in as many words that *"a menu
+  with both in it would be the mistake this design exists to avoid"*. **That sentence, §3.12 and
+  P19's remark were all rewritten**, to: **levels are the menu; rungs are an advanced disclosure
+  that states its price.** ⚠️ **What the old rule was protecting against is unchanged** — selling
+  a measured-worse opponent as a matter of taste — and **the margin is what pays that bill**, so
+  it is not decoration and not optional.
+- 🔥 **(2) `BurmesePoker.Web/OpponentMenu.cs` is the offering, and `PublishedFigureTests` fences
+  it both ways.** Ten rungs (`random` … `sprinter`), each drawn as *`sprinter` — +1.2 ± 0.8 points
+  of win rate against `outs` — measurably stronger*, transcribed from `ladder.head-to-head.*` and
+  compared back against `measurements.csv` **with the sign turned round where the row is named the
+  other way**, verdict word included. 🔥 **The half that bites is the reverse direction**: a rung
+  *with* a published head-to-head row against the reference **must** be offered, so a suite that
+  measures a new rung against a menu that never heard of it is a red build — and a rung *without*
+  one **must not** be, which is what keeps the money-ranked `prospector` and `purist` out by rule
+  rather than by hand.
+- ✅ **(3) Nothing below the form was needed, exactly as the plan predicted.** `HostedTable`'s seat
+  resolution went `Find` → `FindOrProbe` (in a new private `Seatable`, which swallows the
+  `ArgumentException` a malformed probe throws — a plan comes off a form). ⚠️ **`Lobby`'s
+  `--difficulty` stays `Find`**, so a typo there still opens the house table on a level.
+  ⚠️ **The seat name and the journal attribution were deliberately split**: a seat reads
+  `Mya Lay (sprinter)` through `OpponentMenu.Called`, and the journal keeps `sprinter@0`, because
+  a person should not be shown the machinery and a replay must not lose the mistake rate.
+- 🔥 **(4) The per-seat picker is a two-step post, and it cost one class.** `NewTable` came out of
+  `Tables.razor` into its own file — **nothing here renders a component in a test**, so a form
+  whose clamping and fill lived in markup would be the one part of the lobby nothing could assert.
+  `SeatFill` replaces P19's checkbox with three answers (*same*, *mixed*, *each*); *each* renders
+  the seats on the page that comes back. ⚠️ **`NeedsSeatChoices` is a count check rather than a
+  flag**, so changing the shape on the second step asks the seats again; there is one button and
+  the second press opens.
+- 🔥 **(5) Found by pressing it, which is this project's oldest lobby lesson.** A post carrying no
+  `Wanted.PerSeat[…]` fields sets the property to **null**, not to the initialiser's empty list —
+  a **500 on the first post of the first step**, and nothing in the tree could see it. `PerSeat`
+  is defended in its accessor now. ✅ **Proved end to end without a browser**: the site was
+  started and posted to twice with `curl` (shape, then seats), and the table it opened seats
+  `(easy)`, `(sprinter)` and `(warden)` with the lobby row reading *The computer plays easy,
+  sprinter, warden*.
+- ⚠️ **(6) The quorum is said twice, because it is the one thing on the form a person cannot
+  guess.** A note before the button (*the first card is dealt when every seat you keep for a
+  person has somebody in it*), and each lobby row now reads *Waiting for two more people to sit
+  down; it deals when they are all here* — beside P54's copy-link, which is the row somebody is
+  about to send. ✅ **The house table's `people` was already `1`** (`ansible-nas` `f4fc41fe`), and
+  the form's `Seats` default moved `MinimumPlayers` → **`DefaultPlayers`** — P32's confusion, one
+  layer up.
+- ⚠️ **(7) Still no browser.** P54's two outstanding browser acceptances are untouched, and this
+  packet adds a third: **the advanced group and the two-step form were exercised with `curl`, not
+  by a person**. Do all three in the sitting that runs P53's phone round.
+- 🔥 **(8) Three existing fences fired, and one of them is the amendment arriving from the other
+  side.** `MarkupStandardsTests.TheLobbyOffersEveryLevelAndKeepsNoListOfItsOwn` asserted **that no
+  rung is offered in the lobby at all** — §3.12 written down as a test — so the packet could not
+  quietly contradict the decision even if it had wanted to. It now asserts what the old rule was
+  protecting: both lists **generated**, the levels heading the menu, and **no level and no rung
+  named in the markup**. `StandingAnswerTests.NoFrontEndWritesOutWhatALevelIsCalled…` wanted
+  `DifficultyLadder.ByStrength` in the razor and gets `OpponentMenu.Levels` plus
+  `Assert.Same(DifficultyLadder.ByStrength, OpponentMenu.Levels)` — the chain rather than the
+  name. And `LobbyTests`' seating scan followed `SeatingPolicy.Resolve` out of the markup into
+  `NewTable.cs`.
+
+---
+
 🔥 **`P54` shipped 2026-08-29 on Opus 5: something closes the tables, and the number that keeps a
 phone in its seat is joined to the number the framework hides a dropped connection behind.**
 `RULES.md` stays rev 31 (no rule changed), the tree is green at **920**, and the whole diff is
@@ -1186,10 +1253,17 @@ in a real browser*, and *a table with no viewers is gone after the interval* was
 stopped clock rather than watched on a live site. **Do them in the same sitting as P53's phone
 round.**
 
-🔥 **So the remaining work is `P53`'s deploy (Nick's two commands), `P55` (needs a GitHub PAT),
-`P56` (needs Nick's answer on personalities) and `P40` (needs Nick's vetted Burmese text).** ⚠️
-**Every open packet is now blocked on something only Nick can supply**, which is worth saying out
-loud: a session that opens this file expecting to build something should read that sentence first.
+✅ **`P56` (opening a table you actually want) is done — 2026-08-29, in this repo**, because both
+of its open questions had been answered the same day. See the block at the top of this file.
+⚠️ **It adds a third thing to the browser sitting**: the advanced opponent group and the two-step
+open form were exercised with `curl`, which is not a person.
+
+🔥 **So the remaining work is `P53`'s deploy (Nick's two commands), `P55` (needs a GitHub PAT) and
+`P40` (needs Nick's vetted Burmese text).** ⚠️ **Every open packet is blocked on something only
+Nick can supply**, which is worth saying out loud: a session that opens this file expecting to
+build something should read that sentence first. 🔥 **The one piece of work a session could take
+unaided is the browser sitting the last three packets have each deferred** — P54's reaping and
+copy button, and P56's advanced group and two-step form, all against a running site.
 
 🔥 **`P56` was added 2026-08-28 at Nick's direction — *opening a table you actually want*** —
 after the P53 role was written with `burmesepoker_people: "0"` and he pointed out that the
@@ -1202,6 +1276,7 @@ those, people*, the four difficulty levels, a mixed table and the seating policy
 is *how many people must turn up before a card is dealt*, not how many may. **`0` is a room you
 can watch and never join; `5` deals nothing until the fifth friend arrives.** ✅ **The role default
 is `1` now** (`ansible-nas` `f4fc41fe`), which is a table a visitor can sit down at alone.
+✅ **Built 2026-08-29 — what follows is the plan it was built from, kept for the reasoning.**
 🔥 **P56's two open questions were both answered by Nick on 2026-08-29, and neither answer is the
 one this file recommended.** **(a) Personalities: option (b) — the rungs, behind an *advanced*
 control, each with its measured margin beside it.** ⚠️ **That is a deliberate amendment to §3.12,
@@ -4676,6 +4751,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 | --- | --- | --- |
+| 2026-08-29 | P56 | **Done — opening a table you actually want, on Opus 5.** 🔥 **§3.12 was amended rather than contradicted**: Nick's answer of 2026-08-29 was option (b), so `DifficultyLadder`'s remark (*"a menu with both in it would be the mistake this design exists to avoid"*), §3.12 itself and P19's remark were all rewritten to **levels are the menu; rungs are an advanced disclosure that states its price** — what the old rule forbade, *selling a measured-worse opponent as a matter of taste*, is unchanged, and **the margin beside the name is what pays that bill**. `BurmesePoker.Web/OpponentMenu.cs` offers ten rungs under the four levels, each drawn as *`sprinter` — +1.2 ± 0.8 points of win rate against `outs` — measurably stronger*. 🔥 **`PublishedFigureTests.EveryOpponentTheLobbyOffersShowsTheMarginTheCsvMeasured` fences it both ways**: each printed sentence is compared against `ladder.head-to-head.*` **with the sign turned round where the row is named the other way** (verdict word included), *and* a rung with a published row against the reference **must** be offered while one without **must not** — which keeps the money-ranked `prospector`/`purist` out by rule rather than by hand, and makes a newly-measured rung the menu never heard of a red build. ✅ **Nothing below the form was needed, as the plan predicted**: `HostedTable`'s seat resolution went `Find` → `FindOrProbe` (in a private `Seatable` that swallows the `ArgumentException` a malformed probe throws), ⚠️ **`Lobby`'s `--difficulty` stays `Find`**, and ⚠️ **the seat name and the journal attribution were split on purpose** — `Mya Lay (sprinter)` through `OpponentMenu.Called`, `sprinter@0` in the journal. 🔥 **Per-seat difficulty is a two-step post** (§3.11 C12: static SSR cannot grow a control per seat as the count is typed), and it cost one class: `NewTable` moved out of `Tables.razor` into its own file, **because nothing here renders a component in a test**; `SeatFill` replaces P19's checkbox with *same* / *mixed* / *each*, and `NeedsSeatChoices` is a **count check rather than a flag**, so changing the shape on the second step asks the seats again. 🔥 **Found by pressing the button, again**: a post with no `Wanted.PerSeat[…]` fields sets the property to **null** rather than to the initialiser's empty list — a **500 on the first post of the first step** that nothing in the tree could see; defended in the accessor now. ✅ **Proved end to end without a browser** — the site was started and posted to twice with `curl`, and the table it opened seats `(easy)`, `(sprinter)`, `(warden)` with the lobby reading *The computer plays easy, sprinter, warden*. ⚠️ **The quorum is said twice** (a note on the form, *Waiting for two more people to sit down; it deals when they are all here* on each row), the form's `Seats` default moved `MinimumPlayers` → **`DefaultPlayers`** (P32 one layer up), and the house table's `people` was already `1`. `docs/PLAYING.md` gained the advanced group and the quorum, **digit-free** — P39's one-home rule forbids a figure there. ⚠️ **Still no browser**: `curl` is not a person, so this packet adds a third outstanding browser check to P54's two. No rules question; `RULES.md` stays rev 31. `Domain` changed **in doc comments only**; `Presentation`, `Server`, `Console`, `Sim` byte-identical — no measurement can move, no suite owed. 🔥 **Three existing fences fired and were amended rather than deleted** — `MarkupStandardsTests.TheLobbyOffersEveryLevelAndKeepsNoListOfItsOwn` asserted *that no rung is offered in the lobby at all*, which is §3.12 written down as a test, so the decision could not be contradicted quietly; it now asserts what that rule was protecting (both lists generated, levels heading the menu, no level and no rung named in the markup). `StandingAnswerTests.NoFrontEndWritesOutWhatALevelIsCalled…` wanted `DifficultyLadder.ByStrength` in the razor and gets `OpponentMenu.Levels` plus `Assert.Same(DifficultyLadder.ByStrength, OpponentMenu.Levels)` — the chain rather than the name — and `LobbyTests`' seating scan followed `SeatingPolicy.Resolve` out of the markup into `NewTable.cs`. Tree green at **928** (was 920 — seven new facts and one new fence). |
 | 2026-08-29 | P54 | **Done — long-lived-host hardening, on Opus 5.** 🔥 **The leak `HOSTING.md` §8 warned about was real, and confirmed rather than assumed**: `Lobby.Close` had existed since P13.6 and **only the tests ever called it**, so a hosted site accumulated a table per form press, hit `MostTables` (12), and from then on answered every *Open it* with an error — weeks after a deploy, reading as a broken form rather than a full site. ✅ **The parked bot loop was never the problem** (`HostedTable.Deal` breaks the moment `Ready` goes false, which the last viewer leaving makes it); what leaked was the slot and the memory. 🔥 **`HostedTable.IdleSince` starts at construction** — a table opened by a press nobody followed up has never had a viewer to lose and is exactly the case — cleared by `Arrive`, restarted by the **last** `Leave`; **`Lobby.House` is a named field** because once tables can be closed *the first table in the dictionary* and *the table this site was started with* stop being the same thing, and reaping the second leaves `dotnet run` an empty room and the deployed URL pointing at nothing. Window **30 min**, sweep **5**, by `TableSweeper` (a `BackgroundService`) — ⚠️ **registration fenced, because a correct reaper nobody runs leaks exactly as much as none**, which is the state this packet found. 🔥 **The patience number became a relation instead of a taste**: **90 s → 180 s**, against `CircuitOptions.DisconnectedCircuitRetentionPeriod` set explicitly to **2 minutes**, because inside that window the framework is *deliberately hiding a dropped connection from the player* — a shorter patience has the computer play the turn of somebody the framework is still expecting back. The two live in two files and are fenced against each other, one read from source and one off the real `Lobby`. ⚠️ **Copy-link is an enhancement over a real `<a>`** (absolute, `ToAbsoluteUri`, so behind Traefik it is P51's forwarded host): the reveal is a class on the **document** and the handler is delegated from it, because enhanced navigation replaces the markup and per-element wiring dies on the second visit. ✅ **The §7 gating decision was already landed by P53** and was inherited, not taken. ⚠️ **One finding recorded and not acted on**: `SeatChannel` never disposes its per-seat `ManualResetEventSlim` — not unbounded (the wait handle's `SafeHandle` finaliser releases it) and disposing it races the engine thread parked in `Ask`, which takes no cancellation token, so **`Server` was left byte-identical**. ⚠️ **Not verified in a browser** — these are unit and source fences plus a build; the acceptance's *"the lobby affordance works in a real browser"* is outstanding and belongs with P53's phone round. No rules question; `RULES.md` stays rev 31. `Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical; no measurement can move. Tree green at **920** (was 914 — six new facts). |
 | 2026-08-28 | P53 | **Partial — the `burmesepoker` Ansible role, on Opus 5. The role is built and committed; the table is not up.** Work in `~/source/repos/ansible-nas` (commit `7ffd645e`), which is why this repository's tree is untouched and still green at **914**: `roles/burmesepoker/{defaults,tasks}/main.yml` on the `mirroquest` two-file shape (fail fast on missing credentials → `docker_login` → `docker_container` with `pull: true` and the Traefik labels → the stop block), the include in `nas.yml` between `booksonic` and `calibre`, a page at `website/docs/applications/gaming/burmesepoker.md`, and the gitignored inventory enabled. `yamllint` clean, `ansible-lint` clean at that repo's `production` profile, `ansible-playbook nas.yml --syntax-check` passes. ✅ **P52's prediction held exactly**: `mirroquest_registry_password` is the `read:package` token `burmesepoker_registry_password` wants, and nothing was minted. ⚠️ **What is not done is not a judgment call**: the play needs `ssh-add ~/ubuntuServer22key` (the key is passphrase-protected — `ansible all -m ping` returns `Permission denied (publickey,password)`) **and** an interactive `--ask-become-pass`, and a session can type neither — so **the WebSocket and idle-timeout assumptions this packet exists to settle are still assumptions**, and the packet is ◐. 🔥 **The gating decision was taken — Task 5 option B, a Traefik `basicauth` middleware, which is the first auth pattern in that repo — and its shape is the finding**: the two labels are `combine`d in **only when `burmesepoker_basicauth_users` is non-empty**, because a router naming a middleware with an empty users list serves **503**, which reads as a broken deployment rather than as a locked door. Both branches proved with a throwaway play before committing (empty → six labels, set → eight); the bcrypt `$` signs survive intact, so `docker_container` needs none of compose's `$$` escaping. ⚠️ **It gives the phone round a second thing to settle**: a browser cannot set an `Authorization` header on a `WebSocket`, so the `/_blazor` upgrade depends on the browser replaying its cached basic credentials — if it does not, Blazor falls back to long polling and the table **works but feels slow**, so the acceptance is *check the network tab*, not merely *a round played*. ⚠️ **Two corrections to that repo's plan**: there is **no LAN check at `http://192.168.50.142:8080`** — this role publishes no host ports, exactly as `mirroquest` does (Traefik is `network_mode: host` and reaches containers over the bridge), and publishing 8080 is the one thing P51 forbids; and the plan's claim that there is no games category was wrong — **`gaming` exists**, with three servers in it. No rules question; `RULES.md` stays rev 31. Every project in this repository byte-identical; no measurement can move. Tree green at **914** (unchanged — **no test was added, because this packet added no code here**). |
 | 2026-08-28 | P52 | **Done — a published image, on Opus 5.** The repo gained a **Gitea origin** (`gitea` remote beside GitHub `origin`) and `.gitea/workflows/publish-image.yml`: on a push to `main`, the `docker-builder` runner (the one carrying `gitea_actions_runner_mount_docker_sock`) builds **the repository's own `Dockerfile`, unrewritten**, and pushes `gitea.nickjones.dev/nickjones/burmesepoker` at **`:latest`** (what P53's role pulls) and **`:<sha>`** (what makes a rollback possible), authenticating with `--password-stdin` against a Gitea repo secret **`REGISTRY_TOKEN`** (`write:package`, `read:package`). 🔥 **CI gates on the request that separates a working image from a perfect-looking dead one**: the last step runs the freshly-pushed tag and curls `/healthz` **and `_framework/blazor.web.js`**, because P51's `--no-restore` image passes every other check ever written here. ⚠️ **A CI file is the obvious place for that trap to return** — `--no-restore` reads like a free speed-up to anyone who has not met the finding — so `ContainerTests` fences the workflow as well: the runner label (⚠️ **a wrong label queues rather than fails**, which reads as a slow build rather than a broken one), the absence of the flag, the image path P53 pulls, and the blazor check. ✅ **Acceptance on the published artifact, not the local build**: pulled `:latest` from the registry, ran it, `/healthz` + `_framework/blazor.web.js` + `/` + a proxied `/` (with `X-Forwarded-Proto`/`-Host`) all **200**, and dealt a browser round — **the same hand as P51's local build at the same seed**, a free reproduction check on the image. ⚠️ **No credential entered the session**: Nick minted the token and stored it as a repo secret, and the local pull used a `docker login` he performed himself. 🔥 **P53 turned out not to be blocked at all** — the `read:package` token already in `inventories/my-ansible-nas/group_vars/nas.yml` as `mirroquest_registry_password` is exactly what `burmesepoker_registry_password` wants; only P52 ever needed the new one. ⚠️ **The GitHub push-mirror was deliberately not set up** (it needs a *GitHub* PAT — a different credential — and nothing depends on it); `origin` is untouched. No rules question; `RULES.md` stays rev 31. `Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical. ⚠️ **The first run was red at 913/914**: the new fence matched the workflow's own `#` comment explaining the trap — `Sources.Markup` strips `//`, `/* */`, `@* *@` and `<!-- -->` but not YAML's `#`, so the test strips it itself; re-proved able to fail on a real flag. Tree green at **914** (was 913 — one new fact). |

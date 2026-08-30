@@ -2,7 +2,9 @@ using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
+using BurmesePoker.Domain.Agents;
 using BurmesePoker.Domain.Play;
+using BurmesePoker.Web;
 
 namespace BurmesePoker.Tests.Docs;
 
@@ -415,6 +417,98 @@ public class PublishedFigureTests
             Math.Abs(money.Mean) <= money.Interval,
             $"the claim's permission is now worth {money.Mean:+0.00;-0.00} ± {money.Interval:0.00} a round, "
             + "so AdviceRationale tells a player at the table something that has stopped being true.");
+    }
+
+    /// <summary>
+    /// ✅ <b>P56 — every rung the lobby offers as an opponent shows the margin the CSV
+    /// measured, and every rung the CSV measures is offered.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>This fence is the price of the amendment.</b> §3.12 kept the ladder out of both
+    /// front ends so that nobody could be sold a measured-worse opponent as a matter of taste;
+    /// Nick's answer on 2026-08-29 opens it behind an advanced control, <b>and what makes that
+    /// honest rather than merely permitted is the margin printed beside the name</b>. A margin
+    /// is therefore a published figure like any other — read from the CSV, never typed and
+    /// trusted.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Both directions are asserted, and the second is the one that bites.</b> A rung with
+    /// no head-to-head row against the reference <em>must not</em> be offerable — which is what
+    /// keeps the money-ranked rungs out, since a field ranked on declarations misjudges them by
+    /// construction — and a rung that <em>is</em> measured must be offered, so a suite that
+    /// measures a new rung and a menu that never heard of it is a red build rather than a
+    /// silently short list.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The verdict is fenced beside the number</b>, because a margin quoted without one
+    /// reads as a difference somebody measured when <c>opportunist</c>'s and <c>angler</c>'s are
+    /// differences nobody could find.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void EveryOpponentTheLobbyOffersShowsTheMarginTheCsvMeasured()
+    {
+        var reference = OpponentMenu.Reference;
+
+        Assert.Equal(
+            BotCatalog.All
+                .Where(rung => rung == reference || Margin(rung, reference) is not null)
+                .Select(rung => rung.Name),
+            OpponentMenu.Advanced.Select(opponent => opponent.Rung.Name));
+
+        var checks = 0;
+
+        foreach (var opponent in OpponentMenu.Advanced)
+        {
+            if (opponent.IsReference)
+            {
+                // The rung every other margin is stated against has no margin of its own.
+                Assert.Equal(0, opponent.Margin);
+                Assert.DoesNotContain('±', opponent.Price);
+                continue;
+            }
+
+            var published = Margin(opponent.Rung, reference)!.Value;
+
+            Agree(opponent.Price, published.Mean * 100, published.Interval * 100, $"{opponent.Rung.Name} as an opponent");
+
+            var separated = published.Verdict.StartsWith("separated", StringComparison.Ordinal);
+
+            Assert.Equal(separated, opponent.Separated);
+
+            Assert.Contains(
+                separated ? (published.Mean > 0 ? "measurably stronger" : "measurably weaker") : "no measurable difference",
+                opponent.Price,
+                StringComparison.Ordinal);
+
+            Assert.Contains($"against {reference.Name}", opponent.Price, StringComparison.Ordinal);
+            checks++;
+        }
+
+        // A floor rather than a total: the ladder may grow, but a parse that found nothing must
+        // fail rather than pass quietly.
+        Assert.True(checks >= 9, $"only {checks} opponents were priced, which is not the ladder.");
+    }
+
+    /// <summary>
+    /// A rung's published margin over another, in the CSV's own units, or null if the two were
+    /// never measured against each other.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The row is named for whichever came first in the field</b>, so half of them read
+    /// backwards and the sign has to be turned round rather than the row being missed.
+    /// </remarks>
+    private static (double Mean, double Interval, string Verdict)? Margin(BotRung rung, BotRung over)
+    {
+        if (Published.TryGetValue($"ladder.head-to-head.{rung.Name}-over-{over.Name}", out var forward))
+        {
+            return forward;
+        }
+
+        return Published.TryGetValue($"ladder.head-to-head.{over.Name}-over-{rung.Name}", out var backward)
+            ? (-backward.Mean, backward.Interval, backward.Verdict)
+            : null;
     }
 
     /// <summary>

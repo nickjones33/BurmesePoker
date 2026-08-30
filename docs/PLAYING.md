@@ -280,16 +280,33 @@ seats, at the same pace the console uses.
 Each card in the lobby is a table: what it is called, how many seats it has and how many of them
 are for people, and what it is doing. **Sit down** takes a seat; **Watch this table** takes none.
 *Open another table* opens a second one — and that form is where you say **how hard the computer
-is**, from the same four settings the console offers, and whether you want a **mixed table**:
-tick it and each computer seat plays at a different setting instead of all of them playing at
-one. Each open table says what its computer seats are playing, and **each computer seat is named
-for how it plays** — *Mya Lay (expert)*, *Cobra (hard)* — so you can see who the easy one is. You
-can be at both tables in two windows.
+is**, from the same four settings the console offers, and how the computer's seats are filled:
+**all the same**, **a mixed table** (each computer seat at a different setting), or **let me
+choose each seat**. Choosing each seat asks a second question rather than opening the table
+straight away: press *Open it*, and the form comes back with one menu per computer seat, set to
+the mix you would otherwise have got. Press *Open it* again when they read the way you want.
+Each open table says what its computer seats are playing, and **each computer seat is named for
+how it plays** — *Mya Lay (expert)*, *Cobra (hard)* — so you can see who the easy one is. You can
+be at both tables in two windows.
 
-⚠️ **A table waits for everybody it was opened for.** The one the site starts with has **one**
-seat for a person, so it deals as soon as you sit down; start the site with `--people 2` and it
-waits for a second of you — open another browser window and sit down again. A table with
-`--people 0` is a room full of computer players and deals as soon as anybody watches.
+⚠️ **The opponent menu has an advanced group under the four settings, and everything in it says
+what it costs.** The four settings are the *dial* — the strongest player there is, slipping more
+or less often. The advanced group is the **ladder**: the ways of playing the simulator ranks,
+each one shown with the margin it measured against the best of them, in points of win rate, and
+with whether that margin is a difference anybody could actually find. **They are not styles and
+they are not difficulties**: several of them are measurably worse players, and the figure beside
+the name is there so that you can see which before you choose it. If you just want a good game,
+take a setting from the top of the list. ⚠️ **The figures are not repeated here**: they come from
+`docs/strategy/measurements.csv`, a test holds the menu to that file, and
+`docs/HOW-TO-PLAY-WELL.md` is where they are written down and explained.
+
+⚠️ **A table waits for everybody it was opened for.** *Of those, people* is a **quorum, not a
+maximum**: no card is dealt until every seat kept for a person has somebody in it. The table the
+site starts with has **one**, so it deals as soon as you sit down; start the site with
+`--people 2`, or open a table for four friends, and nothing happens until the last of them
+arrives — the lobby says *waiting for two more people to sit down* so that you can tell that from
+a table that is broken. A table with `--people 0` is a room full of computer players and deals as
+soon as anybody watches.
 
 **Your name is how you get your seat back.** If your browser reloads, or you close the tab and
 come back, **sitting down under the same name takes that seat back off whoever was holding it** —

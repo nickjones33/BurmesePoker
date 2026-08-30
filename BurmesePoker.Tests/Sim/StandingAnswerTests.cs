@@ -235,8 +235,13 @@ public class StandingAnswerTests
                 && file.Path.StartsWith("BurmesePoker.Console", StringComparison.Ordinal)).Text,
             StringComparison.Ordinal);
 
-        Assert.Contains("DifficultyLadder.ByStrength", Sources.Read("Components/Pages/Tables.razor"),
+        // ⚠️ The browser reads the dial through OpponentMenu since P56 — which offers the levels
+        // at the head of its menu and the measured ladder in an advanced group beneath them —
+        // so the chain is asserted rather than the name: same list, same order, same default.
+        Assert.Contains("OpponentMenu.Levels", Sources.Read("Components/Pages/Tables.razor"),
             StringComparison.Ordinal);
+
+        Assert.Same(DifficultyLadder.ByStrength, BurmesePoker.Web.OpponentMenu.Levels);
     }
 
     /// <summary>

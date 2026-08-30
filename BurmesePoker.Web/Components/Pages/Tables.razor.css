@@ -192,27 +192,25 @@
 }
 
 /*
-    🔥 The one row whose control comes before its label, so the ten-rem label column above is
-    exactly wrong for it: the label is the question here rather than the caption, and squeezed
-    into that column it wrapped onto three lines. §3.11 B11's forty pixels stay on the row,
-    which is what you press — a checkbox label is part of its own target.
+    🔥 The seats, one by one — the second half of a two-step open (P56). A <fieldset> because
+    these controls are one question asked several times, and a static SSR page cannot grow them
+    as the seat count is typed (§3.11 C12), so they arrive on the page that comes back.
+
+    ⚠️ This block replaced the `.mixed` checkbox's rules. That control is gone: how the
+    computer's seats are filled is a three-way <select> now — the same, a mix, or each of them
+    chosen here.
 */
-.opening .mixed {
-    min-height: 40px;
+.opening .seats {
+    border: 1px solid var(--edge-surface);
+    border-radius: 6px;
+    padding: 0.2rem 0.8rem 0.6rem;
+    margin: 0.6rem 0;
 }
 
-.opening .mixed label {
-    flex: 1 1 auto;
-    color: var(--on-surface);
-    font-size: 1rem;
-}
-
-.opening .mixed input {
-    flex: 0 0 auto;
-    min-height: 0;
-    width: 1.1rem;
-    height: 1.1rem;
-    margin: 0;
+.opening .seats legend {
+    color: var(--on-surface-muted);
+    font-size: 0.85rem;
+    padding: 0 0.3rem;
 }
 
 .opening .note {

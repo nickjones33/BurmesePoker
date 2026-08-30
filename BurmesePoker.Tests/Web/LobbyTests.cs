@@ -79,7 +79,14 @@ public class LobbyTests
         Assert.Contains("SeatingPolicy.Offered", form, StringComparison.Ordinal);
         Assert.Contains("@bind-Value=\"Wanted!.Seating\"", form, StringComparison.Ordinal);
         Assert.Contains("<label for=\"new-seating\"", form, StringComparison.Ordinal);
-        Assert.Contains("SeatingPolicy.Resolve(wanted.Seating)", form, StringComparison.Ordinal);
+        // ⚠️ The resolution moved out of the markup in P56, along with the rest of the form's
+        // decisions — a form whose clamping and fill live in a .razor file is the one part of
+        // the lobby nothing can assert. It still has to happen, and it still has to be the
+        // domain's own.
+        Assert.Contains(
+            "SeatingPolicy.Resolve(Seating)",
+            Sources.Read("NewTable.cs"),
+            StringComparison.Ordinal);
 
         // Not a hand-typed menu: no policy is spelled out in the markup.
         foreach (var policy in SeatingPolicy.Offered)

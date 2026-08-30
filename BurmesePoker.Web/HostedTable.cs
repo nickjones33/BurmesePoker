@@ -510,7 +510,7 @@ public sealed class HostedTable : IAsyncDisposable
     /// </remarks>
     private static IReadOnlyList<DifficultyLevel> Levelled(TablePlan plan)
     {
-        var shorthand = DifficultyLadder.Find(plan.Difficulty) ?? DifficultyLadder.Default;
+        var shorthand = Seatable(plan.Difficulty) ?? DifficultyLadder.Default;
         var computers = Math.Max(0, plan.Seats - plan.People);
 
         return plan.Difficulties is not { Count: > 0 } named
@@ -518,8 +518,36 @@ public sealed class HostedTable : IAsyncDisposable
             :
             [
                 .. Enumerable.Range(0, computers)
-                    .Select(index => DifficultyLadder.Find(named[index % named.Count]) ?? shorthand)
+                    .Select(index => Seatable(named[index % named.Count]) ?? shorthand)
             ];
+    }
+
+    /// <summary>An opponent a seat can be filled with: a level, or a rung at a mistake rate.</summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b><c>FindOrProbe</c> and not <c>Find</c>, and this is the whole of what P56's
+    /// advanced control needed below the form.</b> A probe — <c>sprinter@0</c> — is a rung
+    /// named as a level, and the machinery to resolve one has been public since P19 because
+    /// <c>--strategies</c> resolves both lists. So an advanced choice travels as a name like
+    /// every other choice and nothing new had to be built to seat it.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Where a <em>level</em> is meant it is still <c>Find</c></b> — the site's
+    /// <c>--difficulty</c> shorthand in <c>Lobby</c> — or a typo there would quietly open the
+    /// house table against a research rung. And a malformed probe is caught rather than thrown:
+    /// a plan is what a table is opened with, and it comes off a form and a command line.
+    /// </para>
+    /// </remarks>
+    private static DifficultyLevel? Seatable(string? name)
+    {
+        try
+        {
+            return DifficultyLadder.FindOrProbe(name);
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
     }
 
     /// <remarks>
@@ -532,7 +560,10 @@ public sealed class HostedTable : IAsyncDisposable
         ? TableSeat.Person(new PlayerId(seat), $"Seat {seat}")
         : TableSeat.Computer(
             new PlayerId(seat),
-            $"{BotNames[(seat - 1) % BotNames.Length]} ({_levels[seat - Plan.People - 1].Name})",
+            // ⚠️ The rung's own name where a person reads it, and the level's where a replay
+            // does — a seat saying `Mya Lay (sprinter@0)` shows a person the machinery, and a
+            // journal saying `sprinter` loses the mistake rate a replay needs (P56).
+            $"{BotNames[(seat - 1) % BotNames.Length]} ({OpponentMenu.Called(_levels[seat - Plan.People - 1])})",
             // ⚠️ A seed per seat, out of the table's own (§3.9): a rung that decides anything
             // at random — only `random` does today — must still be reproducible from the one
             // number the table carries, and two seats of it must not play the same game.

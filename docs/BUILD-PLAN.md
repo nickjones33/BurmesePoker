@@ -941,6 +941,28 @@ advance:
    that throws jokers away, which no person does and which reads as broken rather than as weak.
    The mistake is the next move down the agent's own ordering.
 
+🔥 **Amended 2026-08-29, at Nick's direction, and built by P56 — the browser lobby may offer
+the ladder, and the rule it obeys is: *levels are the menu; rungs are an advanced disclosure
+that states its price*.** Until then both front ends offered levels only, and this section was
+read as forbidding anything else. ⚠️ **What it actually forbids is narrower and is unchanged**:
+selling a **measured-worse opponent as a matter of taste**. `warden` is seven points of win
+rate below the rung every level is built on and `random` is a joke, so *personalities* built by
+dressing rungs as flavours would be exactly the mistake. **A rung offered underneath the levels,
+in an advanced group, with its published margin printed beside it, is not that** — the trade is
+stated rather than hidden, and a person who reads *measurably weaker* and chooses it anyway has
+chosen it knowingly.
+
+**Three conditions make that honest rather than merely permitted, and all three are tests.**
+**(1) The margin is not decoration**: it is read from `docs/strategy/measurements.csv` and
+fenced by `PublishedFigureTests` like every other published figure, because a number typed into
+a front end has no column to disagree with. **(2) A rung with no published row is not offerable
+at all** — which is what keeps `prospector` and `purist` out, since a field ranked on
+declarations misjudges a money-ranked rung by construction. **(3) The dial is untouched**: the
+four levels are still the menu, still the default, and still what somebody who has not opened
+the advanced group gets. ⚠️ **The console still offers levels only**, and nothing here licenses a
+*flavour* menu — option (c) of P56's question, genuine personality rungs, remains a track of
+measured rung packets and not a naming exercise.
+
 **And one rule about every number this programme produces: a published figure carries the
 command that made it and the games it came from.** `RULES.md` has provenance tags because a rule
 without its source cannot be re-examined; a measurement without its origin is worse, because it
@@ -3727,6 +3749,14 @@ output.
   strong default is that the console and the lobby offer **levels only** and the harness offers
   **rungs**, with `BotRung.Strength` retired in favour of the level's own ordering. What must
   *not* happen is a menu with both in it.
+  🔥 **Amended 2026-08-29 by Nick and built by P56: the last sentence is withdrawn.** A menu may
+  have both in it, in exactly one shape — **levels are the menu; rungs are an advanced
+  disclosure that states its price**. What the sentence was protecting against was *selling a
+  measured-worse opponent as a matter of taste*, and **a rung offered with its measured margin
+  beside it is not being sold as taste**. ⚠️ **The margin is the price and it is not optional**:
+  it is read from `measurements.csv`, fenced by `PublishedFigureTests`, and **a rung with no
+  published row is not offerable at all** — which is what keeps the money-ranked rungs out. The
+  console is unchanged and still offers levels only.
 - ⚠️ **`Difficulty` on `TablePlan` is a single name today** and P19 wants it per seat. The
   single-value shorthand is therefore the *existing* field, and the assignment is the new one.
 - 🔥 **A `SelectionPrompt<T>` opens on `default(T)` if it is one of the choices.** P18 deleted an
@@ -7732,7 +7762,7 @@ git ls-remote gitea
 
 ---
 
-### P56 — Opening a table you actually want ☐ — **added 2026-08-28, at Nick's direction**
+### P56 — Opening a table you actually want ☑ — **added 2026-08-28; built 2026-08-29 on Opus 5**
 
 **Goal.** A person arriving at `poker.nickjones.dev` can open a table with the seats, the people and
 the opponents they want, and the table they land on is one they can sit down at.
@@ -7854,6 +7884,67 @@ table's `people` is the one setting on the site that cannot be fixed by opening 
 reading P54's remark on why they are joined.** ⚠️ **Item 4 (the form's `Seats` default) is
 unchanged and still owed**: `NewTable.Seats` still initialises to `RoundEngine.MinimumPlayers`,
 and P54 did not touch the form.
+
+#### ✅ What P56 built, 2026-08-29 — and the four things a cold session needs from it
+
+🔥 **(1) The lobby offers the ladder, and every rung on it says what it costs.**
+`BurmesePoker.Web/OpponentMenu.cs` is the whole of the amendment: the four levels at the head of
+the menu, then an `<optgroup>` holding **ten rungs** — `random` through `sprinter` — each drawn
+as *`sprinter` — +1.2 ± 0.8 points of win rate against `outs` — measurably stronger*. ⚠️ **The
+margins are transcribed and therefore fenced**: `PublishedFigureTests.EveryOpponentTheLobbyOffers…`
+compares each printed sentence against `ladder.head-to-head.*` in `measurements.csv`, **turning
+the sign round where the row is named the other way**, and asserts the verdict word beside the
+number. 🔥 **The fence runs both ways**, which is the half that bites: a rung with a published
+head-to-head row against the reference **must** be offered, and one without **must not** be — so
+`prospector` and `purist` are out by the rule rather than by hand, and a suite that measures a
+new rung against a menu that never heard of it is a red build.
+
+🔥 **(2) Nothing below the form was needed, exactly as the plan predicted.** `HostedTable`'s
+seat resolution moved `Find` → `FindOrProbe` (in a new `Seatable`, which swallows the
+`ArgumentException` a malformed probe throws, because a plan comes off a form), and that is the
+entire mechanism. ⚠️ **`Lobby`'s `--difficulty` stays `Find`**, so a typo on the command line
+still opens the house table on a level. ⚠️ **The seat name and the journal attribution were
+deliberately split**: a seat reads `Mya Lay (sprinter)` through `OpponentMenu.Called`, while the
+journal's column keeps `sprinter@0`, because a person should not be shown the machinery and a
+replay must not lose the mistake rate.
+
+🔥 **(3) The per-seat picker is a two-step post and it cost one class.** `NewTable` came out of
+`Tables.razor` into its own file — **nothing in this project renders a component in a test**, so
+a form whose clamping and fill lived in markup would be the one part of the lobby nothing could
+assert. `SeatFill` replaces P19's checkbox with three answers (*same*, *mixed*, *each*), and
+*each* renders the seats on the page that comes back rather than opening the table.
+⚠️ **`NeedsSeatChoices` is a count check and not a flag**, so changing the shape on the second
+step asks the seats again; there is **one button**, and the second press opens.
+🔥 **Found by pressing it** (P13.6's rule, again): a post with no `Wanted.PerSeat[…]` fields in
+it sets the property to **null**, not to the initialiser's empty list — a 500 on the *first*
+post of the *first* step that no test in the tree could see. `PerSeat` is defended in its
+accessor now.
+
+⚠️ **(4) The quorum is said twice and it is the thing a person cannot guess.** The form carries
+a note before the button (*the first card is dealt when every seat you keep for a person has
+somebody in it*), and each lobby row now reads *Waiting for two more people to sit down; it
+deals when they are all here* — beside P54's copy-link, which is the row somebody is about to
+send. ✅ **The house table's `people` was already `1`** (`ansible-nas` `f4fc41fe`), and the
+form's `Seats` default moved `MinimumPlayers` → **`DefaultPlayers`**, which was P32's confusion
+one layer up.
+
+🔥 **(5) Three existing fences fired, and one is the amendment arriving from the other side.**
+`MarkupStandardsTests.TheLobbyOffersEveryLevelAndKeepsNoListOfItsOwn` asserted **that no rung is
+offered in the lobby at all** — §3.12 as a test — so this packet could not contradict the
+decision quietly even had it wanted to; it asserts what that rule was protecting now (both lists
+generated, levels heading the menu, no name from either typed in the markup).
+`StandingAnswerTests.NoFrontEndWritesOutWhatALevelIsCalled…` wanted `DifficultyLadder.ByStrength`
+in the razor and gets `OpponentMenu.Levels` plus `Assert.Same(…)` — the chain rather than the
+name — and `LobbyTests`' seating scan followed `SeatingPolicy.Resolve` out of the markup into
+`NewTable.cs`.
+
+✅ **Proved end to end without a browser**: the site was started, the lobby posted to with
+`curl` twice — shape then seats — and the table it opened seats `(easy)`, `(sprinter)` and
+`(warden)` with the lobby row reading *The computer plays easy, sprinter, warden*.
+⚠️ **A browser was still not used**, so P54's two outstanding browser acceptances are untouched.
+Tree green at **928**, from 920; `Domain` changed **in doc comments only**, and `Presentation`,
+`Server`, `Console` and `Sim` are byte-identical — **no measurement can move and no suite is
+owed**.
 
 **Acceptance.** A person who has never seen the site can open a table for themselves and three
 friends against two named opponents and understand, without being told, why it has not dealt yet;
