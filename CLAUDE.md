@@ -14,7 +14,7 @@ over ad-hoc changes.
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
 recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
-F10) was the last of them; the tree is green at 929.**
+F10) was the last of them; the tree is green at 933.**
 🔥 **A fourth track was added 2026-08-28 at Nick's direction: `P51`–`P54`, *taking the table
 online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
@@ -134,6 +134,35 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 ⚠️ **One P46 follow-up owned, not done**: the race-reach instrument recomputes an uncached cover
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
+
+**What P58 built, and the four things a cold session needs from it.**
+🔥 **(1) The packet that was meant to add a standard found a defect, and it was not where the plan
+looked.** The survey that planned this track worried about the phone; **the phone is the safe end.**
+Measured in Chrome at eleven real viewports: **360, 375 and 390 px resolve the stacked felt to a
+*single* column** (`repeat(auto-fit, minmax(9.5rem, 1fr))` cannot fit two inside 360 − 40 page
+padding − 24 felt padding), nothing trimmed, nothing overflowing. 🔥 **The band that was broken is
+412–896 px** — the pack packs to its floor, so a column is ~158 px at 412 and ~154 px from 600 to
+896, **narrower than at 360** — and there the computer's own seat names ellipsed (*"Aung Aung
+(exp…"*). ⚠️ **That is the exact defect the 56rem line was drawn to prevent, arriving underneath
+it.**
+🔥 **(2) The fix is wrapping the name below the line, and refusing a wider column floor is the
+finding.** `Khine Myat Zin (opportunist)` — the longest name the computer can produce — measures
+183 px **in this machine's `system-ui`**, so a floor fitted from it would be ~14 rem of *this
+platform's* font: **a fence that passes where it was fitted and fails everywhere else.** ⚠️ **An
+ellipsis is honest only where the whole name is a hover away** — true above the line (`title=`, a
+person may type twenty-four characters), false below it, which is where there is no pointer.
+✅ **(3) §3.11 has an eighteenth standard, A18, and `ViewportTests` is its fence** — four facts,
+**each proved able to fail by mutating the stylesheet rather than the test.** ⚠️ **A CSS custom
+property cannot carry a breakpoint** (`@media` cannot read `var()`), so `TableView.razor.css` and
+`SeatPanel.razor.css` stay ordinary CSS and are held to naming the **same** width — P54's idiom.
+**360 px is arithmetic rather than taste**: the column floor plus the felt's padding plus the
+page's is read out of the stylesheets, so a padding raised in one file cannot push the table off
+the side of a phone.
+⚠️ **(4) It is a browser measurement, not a device one** — no phone, no tablet, no touch, no
+Mobile Safari. **P60 still owns that**, and **an iframe is not a person any more than `curl` is.**
+🔥 **P58 makes the tablet worth more**: the broken band *is* the tablet band, and the fix is a font
+decision seen only in this workstation's font. Tree green at **933**, from 929; `Domain`,
+`Presentation`, `Server`, `Console` and `Sim` byte-identical.
 
 **What P56 built, and the five things a cold session needs from it.**
 🔥 **(1) §3.12 was amended rather than contradicted.** Nick's answer was option (b), and
@@ -1011,7 +1040,7 @@ settles it, so the ladder tournament measures one set and the money sweep the ot
 ⚠️ **Before touching the browser client, read `BUILD-PLAN.md` §3.10 and §3.11.** The engine runs
 **server-side, always** (a hand is fully concealed with money on it, so a client-side engine cannot
 honour that, and it is not retrofittable), the client is **Blazor Server**, and §3.11 fixes
-seventeen UX standards — several of them mechanical tests — that a component either obeys or
+eighteen UX standards — several of them mechanical tests — that a component either obeys or
 breaks a test.
 
 **The P13 sub-packets, in order, and the finding from each that a cold context needs.**

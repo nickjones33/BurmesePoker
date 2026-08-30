@@ -160,12 +160,28 @@
     Stacked, the panel has a column's width rather than a ring's, and a name is the one thing in
     it that must never be trimmed — a table where you cannot read who is sitting where is worse
     than a list. So the bank drops to its own line and the name gets the whole width.
-    ⚠️ The breakpoint matches the felt's (TableView.razor.css): the two are one decision.
+    ⚠️ The breakpoint matches the felt's (TableView.razor.css): the two are one decision,
+    fenced by ViewportTests rather than by this comment (§3.11 A18).
+
+    🔥 And the name wraps here rather than ellipsing (P58). Above the line an over-long name is
+    trimmed on purpose — the whole of it is in `title=`, one hover away. Below it the felt is a
+    two-to-five column pack of `minmax(9.5rem, 1fr)`, a column can be as narrow as ~154px, and
+    measured at 412 px and again from 600 to 896 px the trim was firing on the computer's own
+    seat names: "Aung Aung (exp…". ⚠️ On the screens this layout exists for there is no hover,
+    so a trimmed name there is a name nobody can ever read — the exact defect the 56rem line was
+    drawn to prevent, coming back underneath it. Wrapping is the fix rather than a wider floor
+    because it holds whatever the platform's font measures.
 */
 @media (max-width: 56rem) {
     .seat {
         grid-template-columns: 1fr;
         max-width: none;
+    }
+
+    .name {
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
     }
 
     .bank {

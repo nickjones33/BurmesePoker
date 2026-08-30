@@ -808,6 +808,26 @@ are split by how they are checked, because a standard nobody can verify is a wis
    passes the first one and leaks exactly as much as no `Dispose` at all. ⚠️ **And never call
    `StateHasChanged` from `Dispose`** — scanned for, as well as stated.
 
+18. ✅ **DONE IN P58 — the table is playable at 360 px, and the felt is a ring only above one
+    stated width.** ⚠️ **Added late and numbered last on purpose**: eighteen is its identity,
+    section A is where it is checked. The screen size standard was missing from this list
+    entirely until P58 went looking for it, while the client had **one** breakpoint —
+    **56rem** — written down **twice**, in `TableView.razor.css` and `SeatPanel.razor.css`, with
+    a comment claiming the two are one decision. 🔥 **A CSS custom property cannot carry a
+    breakpoint** (`@media` cannot read `var()`), so the two files stay ordinary CSS and
+    **`ViewportTests` fences them against each other** — P54's idiom, where the patience and the
+    circuit-retention window are proved to agree rather than merged. **360 px** is the narrowest
+    phone still in real use and the arithmetic is a test rather than a claim: one column of the
+    stacked felt, plus the felt's padding, plus the page's, must fit it — read out of the
+    stylesheets, so a padding raised in one file cannot push the table off the side of a phone.
+    🔥 **And the standard has a second half, found by measuring rather than by looking**: below
+    the line **a seat's name wraps and is never trimmed.** An ellipsis is honest only where the
+    whole name is a hover away, which is true above the line and false below it — and the
+    stacked pack, `minmax(9.5rem, 1fr)`, was trimming the computer's *own* seat names at 412 px
+    and from 600 px to 896 px. ⚠️ **That is the defect the 56rem line exists to prevent,
+    arriving underneath it**; wrapping is the fix rather than a wider column floor because it
+    holds whatever the platform's font measures.
+
 #### B. Only playing it finds these — reviewed the way P11 was reviewed
 
 6. ✅ **DONE IN P13.4, and re-verified against a ring of seats in P13.5 — fully playable from
@@ -8192,7 +8212,7 @@ is written and no suite is owed**; the tree is green.
 
 ---
 
-### P58–P60 — The table on a small screen (the small-screen track) ☐ — **added 2026-08-30, at Nick's direction**
+### P58–P60 — The table on a small screen (the small-screen track) ◐ — **added 2026-08-30, at Nick's direction; P58 done**
 
 > ⚠️ **Front-end and ops, not the rules or strategy programme.** No rule changes, `Domain`
 > untouched by all three, **no suite regeneration owed**, and no measurement can move. **P59 is the
@@ -8233,7 +8253,7 @@ it.** What is absent is a *standard*, a *fence* and *evidence* — never taste.
 
 ---
 
-### P58 — A viewport standard, and a fence for the one breakpoint there is ☐ — **added 2026-08-30**
+### P58 — A viewport standard, and a fence for the one breakpoint there is ☑ done 2026-08-30 — **added 2026-08-30**
 
 **Goal.** *How narrow may the table get and still be playable* is written down, has one home, and
 is proved by a test. **Read first:** §3.11 (the UX standards, and the fact that **screen size is
@@ -8262,6 +8282,60 @@ claiming the two are one decision).
 fenced across its two; a test fails if the two files disagree, **proved able to fail by mutating
 one of them**; the sub-896 px question is answered in writing; `Domain` untouched; the tree is
 green.
+
+#### ✅ Built 2026-08-30 (Opus 5) — and the packet that was meant to add a standard found a defect
+
+🔥 **(1) The sub-896 px question is answered — no — and the evidence says the narrow end was never
+the problem.** The table was measured in Chrome at eleven widths, each a real viewport (a 360 px
+iframe is a 360 px viewport, and `@media` inside one evaluates against it; the numbers below are
+4 px short of the width asked for, which is the iframe's own scrollbar). **At 360, 375 and 390 px
+the stacked felt resolves to a *single* column** — `repeat(auto-fit, minmax(9.5rem, 1fr))` cannot
+fit two inside 360 − 40 (page padding) − 24 (felt padding) — **nothing is trimmed and nothing
+overflows.** ⚠️ **A phone is the safe end of this layout**, and a breakpoint below 56rem would have
+been a control added where nothing is wrong.
+
+🔥 **(2) What is wrong is between them, and it is the exact defect the 56rem line was drawn to
+prevent.** The stacked pack packs to its floor, so a column is ~158 px at 412 px and ~154 px from
+600 px to 896 px — **narrower than at 360 px** — and at those widths the computer's own seat names
+were ellipsed: *"Aung Aung (exp…"*. Measured before the fix:
+
+| viewport | felt columns | column | names trimmed |
+|---|---|---|---|
+| 360 / 375 / 390 | 1 | 275 / 290 / 305 px | none |
+| 412 | 2 | 158 px | **two** |
+| 430 / 480 / 540 | 2 | 167 / 192 / 222 px | none |
+| 600 | 3 | 169 px | none |
+| 720 | 4 | 154 px | **two** |
+| 896 | 5 | 156 px | **two** |
+
+The arithmetic agrees with the eye: *"Aung Aung (expert)"* measures 122.8 px in the panel's own
+font and the chrome around it costs 39.8 px, so it needs a 163 px column — which is why 158 trims
+and 167 does not.
+
+🔥 **(3) The fix is wrapping and not a wider column, because a wider column is a font metric.**
+`Khine Myat Zin (opportunist)` — the longest name the computer can give itself — measures 183 px
+here, which would put the floor at 14 rem *on this machine's `system-ui`*, and a floor fitted to
+one platform's font is a fence that passes where it was fitted and fails everywhere else.
+⚠️ **An ellipsis is honest only where the whole name is a hover away** — it is above the line
+(`title=`, and a person may type twenty-four characters) and it is not below it, because below it
+is where there is no pointer. So the stacked block sets the name to wrap. Re-measured at all six
+widths afterwards: **nothing trimmed, nothing overflowing**, and 720 px went from four columns to
+three, which is the felt asking for the width it actually needs.
+
+✅ **(4) The standard is §3.11 A18 and the fence is `ViewportTests` — four facts, each proved able
+to fail by mutating the stylesheet rather than the test.** Set `SeatPanel`'s breakpoint to 48rem
+and the two-file fence names both files and both widths; put `white-space: nowrap` back and the
+wrap fence quotes the rule; raise the stacked floor to 19.5 rem and the phone fence answers *"asks
+for 376px … and the table has to be playable at 360px"*; delete `width=device-width` and the
+viewport fence goes. ⚠️ **The arithmetic fence reads three numbers out of two stylesheets** — the
+column floor, the felt's padding and the page's — so a padding raised in one file cannot quietly
+push the table off the side of a phone.
+
+⚠️ **(5) What this packet did not do.** It is a browser measurement, not a device one: no real
+phone or tablet, no touch, no Mobile Safari. **P60 still owns that**, and the trap the track was
+written around stands — an iframe is not a person any more than `curl` is. `Domain`,
+`Presentation`, `Server`, `Console` and `Sim` are byte-identical; the whole diff is one CSS block,
+one new test file and documents, so **no measurement can move and no suite is owed.**
 
 ---
 
@@ -8327,6 +8401,14 @@ iPhone question and no emulation may be allowed to answer it.**
 
 1. **Tablet, both orientations, over `adb`** — a full round, plus the two affordances nothing has
    ever pressed anywhere: **P54's copy-link** and **P56's advanced opponent menu**.
+   🔥 **Amended by P58, and it makes the tablet more valuable rather than less.** The band a
+   tablet sits in — **roughly 400 px to 896 px** — is *exactly* where P58 measured the stacked
+   felt trimming seat names, and where P58's fix (the name wraps) has been seen only in a desktop
+   browser at a small viewport. **So the first thing to read on the tablet is a seat name**, in
+   both orientations, at a table whose bot names are long — a mixed table from P56's advanced menu
+   gives `Khine Myat Zin (opportunist)`, the longest name the computer can produce. ⚠️ **A wrap
+   is a font decision and the device's font is not this workstation's**, which is the whole reason
+   P58 refused to fix it with a column floor fitted here.
 2. **Split the two variables rather than testing them together.** *Mobile browser* and *mobile
    network* are independent: a desktop tethered to a phone hotspot gives a genuine carrier path
    with a drivable browser, and a device on cellular gives a real browser — **each can be tested
