@@ -7981,7 +7981,10 @@ git ls-remote github
   `https://github.com/nickjones33/BurmesePoker.git` with **sync-on-push** enabled, a fine-grained
   GitHub PAT (`contents: write`, that repository only) that **never entered a session** — the third
   credential in this track and the third to live only in a settings page. GitHub `main` went
-  `a12c7a3` → `b2c84c2` on the first sync.
+  `a12c7a3` → `b2c84c2` on the first sync. ✅ **And the acceptance was measured rather than read off
+  the settings page**: P55's own commit `8d619bc` was pushed to `origin` and reached GitHub **in
+  about ten seconds with no second push**. ⚠️ **A manual *Synchronize Now* proves nothing about
+  this** — the acceptance names the on-push trigger, and only a real commit exercises it.
 - 🔥 **Step 5, and the cost worth stating: a push mirror force-pushes, permanently.** Today's sync
   was a fast-forward (`a12c7a3` is a strict ancestor of `b2c84c2`, checked before the mirror was
   turned on), but from here **anything committed straight to GitHub is erased by the next sync
