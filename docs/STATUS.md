@@ -69,6 +69,21 @@ the running site.
   earlier: one browser sitting does *not* close P53, P54 and P56** — P54's and P56's acceptances
   need a deploy first. 🔥 **Read the deployed commit before testing a front end against the live
   site.**
+- 🔥 **(9) A live 500, found by pressing P56's per-seat form in a browser: `random@0` is offered
+  and cannot be built.** Choosing *let me choose each seat* and picking **`random`** for a seat
+  posts, and `HostedTable.Fill` throws — the site shows *Something went wrong*, the log shows
+  `System.ArgumentException: RandomBotAgent cannot say which card it would throw instead…`
+  🔥 **It is a contradiction between two packets' rules, not a typo.** `DifficultyLevel.Create`
+  **always** wraps its rung in a `FallibleAgent`, whose constructor demands `IRanksDiscards`;
+  `RandomBotAgent` does not implement it, because it cannot name a second-best card (P19's rule).
+  But P56's menu rule says **a rung with a published head-to-head row against the reference must be
+  offered**, and `random` has published rows — so the menu offers it, `FindOrProbe` resolves it,
+  and construction throws. ⚠️ **ε is 0 here**: the wrapper would never substitute anything, and is
+  refused anyway. ⚠️ **Nothing in the tree could see it** — no test renders the component (P56's
+  own note), and P56's `curl` proof used `easy`, `sprinter` and `warden`, never `random`. **This is
+  what *`curl` is not a person* was warning about.** ⚠️ **Only the per-seat picker reaches it**;
+  `--difficulty` uses `Find`, which never mints a probe. **Unfixed and unowned — see BUILD-PLAN
+  P57.**
 - ⚠️ **(9) The basicauth password is in the 2026-08-30 session transcript.** It was never written
   down anywhere on disk in plaintext — only the bcrypt hash, in the gitignored inventory — and it
   was recovered from a `Basic …` header Nick read off his own browser. **Rotate it with

@@ -7771,6 +7771,58 @@ when the users list is non-empty), so this packet inherited it rather than takin
 
 ---
 
+### P57 — The lobby offers an opponent it cannot build ☐ — **added 2026-08-30; a live 500, found in a browser**
+
+**Read first.** §3.12 (levels are the menu; rungs are an advanced disclosure that states its
+price), P19 (a level is a rung that can be asked for its own second-best move), P56 (the menu
+rule).
+
+**The defect.** On the deployed site, opening a table with *let me choose each seat* and picking
+**`random`** for any seat returns **500** — *Something went wrong*. The log:
+
+```text
+System.ArgumentException: RandomBotAgent cannot say which card it would throw instead, so a
+mistake rate on top of it would do nothing. (Parameter 'inner')
+  at FallibleAgent..ctor  →  DifficultyLevel.Create  →  HostedTable.Fill  →  Lobby.Open
+```
+
+🔥 **It is two packets' rules contradicting each other, not a typo.** `DifficultyLevel.Create`
+**always** wraps its rung in a `FallibleAgent`, whose constructor demands `IRanksDiscards`;
+`RandomBotAgent` does not implement it (P19's rule — a rung that cannot name a second-best card
+cannot carry a mistake rate). But P56's fence says **a rung with a published head-to-head row
+against the reference must be offered**, and `random` has published rows. So the menu offers
+`random@0`, `FindOrProbe` resolves it, and construction throws. ⚠️ **ε is 0**, so the wrapper would
+never substitute anything and is refused anyway.
+
+⚠️ **Why nothing caught it.** Nothing here renders a component in a test (P56's own note), and
+P56's `curl` proof used `easy`, `sprinter` and `warden` — never `random`. **This is exactly what
+*`curl` is not a person* was warning about.** ⚠️ **Only the per-seat picker reaches it**:
+`--difficulty` uses `Find`, which never mints a probe.
+
+**Two candidate fixes, and the choice is a rule.**
+1. **`DifficultyLevel.Create` returns the bare rung when `MistakeRate` is 0.** Smallest change and
+   arguably what ε = 0 means. ⚠️ **Check first whether `FallibleAgent` draws from its own `Random`
+   per decision** — if it does, unwrapping changes no *choice* (that generator is the agent's own,
+   not the game's), but the claim must be proved byte-identical on a seeded run before it is
+   believed, because `expert` is built through this path and is in every published measurement.
+2. **`OpponentMenu` does not offer a rung that is not `IRanksDiscards`.** More honest about P19's
+   invariant, and it extends an exclusion rule the menu already has (*no published row → not
+   offerable*) with *cannot be asked for its second-best move → not offerable*. ⚠️ **It amends
+   P56's fence**, which currently asserts the converse without qualification, and it removes the
+   wooden-spoon reference from the menu.
+
+**Recommended: 2**, with 1 as a follow-up only if some later packet actually wants an unwrapped
+level. The menu is the thing that is wrong — it is advertising a seat the engine has never been
+able to build — and P19's invariant is not in question.
+
+**Acceptance.** Picking `random` for a seat opens a table rather than a 500; a test that would have
+caught this (the menu's every offer resolved **and constructed**, not merely resolved); the fence
+amended in whichever direction is chosen, with its reasoning written down; ⚠️ **and if fix 1 is
+taken, a seeded run proved byte-identical** — `Domain` is in the blast radius and every published
+measurement is built through `DifficultyLevel.Create`.
+
+---
+
 ### P55 — Gitea primary, GitHub as mirror ☐ — **added 2026-08-28, at Nick's direction**
 
 **Goal.** The canonical repository is `gitea.nickjones.dev/nickjones/burmesepoker`; GitHub becomes
