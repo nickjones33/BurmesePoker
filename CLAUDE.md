@@ -20,16 +20,24 @@ online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the 
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
 no measurement can move. ✅ **`P51` (containerize), `P52` (a published image) and `P54` (long-lived-host hardening — idle
 tables reaped, the copy-link affordance, and the patience joined to the circuit-retention window;
-2026-08-29) have all shipped — see the blocks below**; ◐ **`P53` is half-done the same day — the role is built and committed in `ansible-nas`
-(`7ffd645e`), but the table is not up**: `ansible-playbook nas.yml --tags burmesepoker --become
---ask-become-pass` needs `ssh-add ~/ubuntuServer22key` and an interactive become password, **which a
-session cannot type**, so the WebSocket and idle-timeout assumptions are still assumptions and the
-acceptance (**a real round from a phone off the home wifi, network tab open**) is unrun. ⚠️ **The
-gating decision was taken: a Traefik `basicauth` middleware, attached only when
+2026-08-29) have all shipped — see the blocks below**; ◐ **`P53` deployed 2026-08-30 — the table is up at `poker.nickjones.dev`, and it is ◐ only for
+the browser sitting**: the role was built and committed in `ansible-nas` (`7ffd645e`), Nick ran
+`ansible-playbook nas.yml --tags burmesepoker --become --ask-become-pass`, and the session verified
+everything else. 🔥 **Both assumptions are settled as measurements**: Traefik proxies the
+`/_blazor` upgrade (**101 Switching Protocols** from Kestrel, auth middleware attached) and
+**nothing closes an idle circuit** (7½ minutes, 29 server pings at ~15.5 s, no close frame).
+⚠️ **Only one of the two recorded blockers was ever real** — the passphrase-protected key was
+already in the `ssh-agent`, so **check `ssh-add -l` before recording an SSH blocker**. ⚠️ **The
+gating decision holds: a Traefik `basicauth` middleware, attached only when
 `burmesepoker_basicauth_users` is non-empty** — a router naming a middleware with an empty users list
-serves **503**, not a login prompt — and it adds a second thing the phone round must settle, because
-a browser cannot set an `Authorization` header on a `WebSocket` and Blazor will silently fall back to
-long polling if the cached credentials are not replayed; 🔥 **`P56` was added the same day —
+serves **503**, not a login prompt — and unauthenticated `/healthz` is a **401 with
+`www-authenticate`**, a locked door. 🔥 **What the phone round still owns is one narrow question**:
+the verification handshake set its own `Authorization` header, and **a browser cannot** — if it
+does not replay cached credentials on the upgrade, Traefik 401s the WebSocket *and* the
+long-polling fallback, so the table would be **dead rather than slow**. ⚠️ **Do not read an absent
+`/_blazor` on the lobby as a fault** — the lobby is static SSR and opens no circuit; sit down at a
+table first. 🔥 **One browser sitting closes P53, P54's copy-link and P56's advanced group and
+two-step form**; 🔥 **`P56` was added the same day —
 *opening a table you actually want*, after Nick pointed out the deployed table has no seat for a
 person in it.** ⚠️ **Check before building: the lobby form already offers seats, people, the four
 levels, a mixed table and the seating policy**, so most of the ask is built; the fact that is not
@@ -1266,7 +1274,7 @@ verified bug to show for it.
 | `.claude/skills/poker/SKILL.md` | The `/poker` work cycle. |
 | `docs/STATUS.md` | Cross-session progress. Read first, update last. |
 | `docs/BUILD-PLAN.md` | The rewrite: architecture, design decisions, work packets. |
-| `docs/HOSTING.md` | **A hosting exploration and work brief** — how to take the app from LAN/single-machine to a simple hosted app for friends online. Frames the deployment problem (Blazor Server is already a networked server), the one constraint (single always-on instance — stateful circuits + a singleton `Lobby`), homelab-vs-Azure options, a shippable build sequence, and the decisions only Nick can make. ⚠️ **A plan, not a record** — nothing here is built; ops/deployment, separate from the rules/strategy programme. ⚠️ **Revised 2026-08-28**: §5a records a review of `~/source/repos/ansible-nas` and **withdraws the original Cloudflare-Tunnel recommendation** — the homelab's Traefik already has a wildcard cert and 80/443 forwarded, so the delta is a Dockerfile, an image and a role. The packets it implies are `BUILD-PLAN.md` §5 **P51–P54**. |
+| `docs/HOSTING.md` | **A hosting exploration and work brief** — how to take the app from LAN/single-machine to a simple hosted app for friends online. Frames the deployment problem (Blazor Server is already a networked server), the one constraint (single always-on instance — stateful circuits + a singleton `Lobby`), homelab-vs-Azure options, a shippable build sequence, and the decisions only Nick can make. ⚠️ **A plan, not a record** — ops/deployment, separate from the rules/strategy programme, and what is *built* is recorded in `BUILD-PLAN.md` §5 P51–P56 and `STATUS.md`, not here (as of 2026-08-30 the table is up at `poker.nickjones.dev`). ⚠️ **Revised 2026-08-28**: §5a records a review of `~/source/repos/ansible-nas` and **withdraws the original Cloudflare-Tunnel recommendation** — the homelab's Traefik already has a wildcard cert and 80/443 forwarded, so the delta is a Dockerfile, an image and a role. The packets it implies are `BUILD-PLAN.md` §5 **P51–P54**. |
 | `docs/RULES.md` | **Canonical rules.** Provenance and confidence per rule; §9 open questions. |
 | `docs/RULEBOOK.md` | **The game taught** — one document a stranger can learn to play from, in reading order, with a generated worked round and a house-readings appendix. Derived from `RULES.md` and decides nothing; stamps the rev it was derived from, bound by `RulebookTests`. |
 | `docs/HOW-TO-PLAY-WELL.md` | **How to get better** — the strategy guide for a player: what has actually been measured, organised by decision, with the nulls given as much room as the margins. Every figure it quotes is CSV-fenced by `PublishedFigureTests`, and it is the **only** home of the player-facing figures — `PLAYING.md` points here rather than quoting any. |

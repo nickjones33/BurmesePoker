@@ -7473,10 +7473,14 @@ no historical block altered; green with `STATUS.md`'s count matching.
 
 ### P51–P55 — Taking the table online (the hosting track) ◐ — **added 2026-08-28, at Nick's direction; P55 added the same day**
 
-⚠️ **State, 2026-08-29: `P51`, `P52` and `P54` are done; `P53` is ◐ (the role is built and
-committed in `ansible-nas`, the play unrun — it needs two secrets a session cannot type); `P55` is
-not started and needs a GitHub PAT.** So **the table is still not up**, and P54's hardening is
-proved by tests rather than by a running site.
+⚠️ **State, 2026-08-30: `P51`, `P52`, `P54` and `P56` are done; `P53` is ◐ — the play ran and
+**the table is up at `poker.nickjones.dev`**, but its acceptance names a real round from a phone
+and no person has been in a browser yet; `P55` is not started and needs a GitHub PAT.** 🔥 **Both
+assumptions this track carried since 2026-08-28 are settled**: Traefik proxies the `/_blazor`
+WebSocket (**101 Switching Protocols** from Kestrel, auth middleware attached) and nothing closes
+an idle circuit (**7½ minutes, 29 server pings, no close**). ⚠️ **P54's hardening is still proved
+by tests rather than watched on a live site**, and the one browser sitting that remains closes
+P53, P54 and P56 together.
 
 > ⚠️ **A different kind of work from everything above it.** P0–P50 are the rules engine, the
 > strategy programme and the documents. **This track is ops**: no rule changes, no measurement can
@@ -7588,7 +7592,7 @@ image from a perfect-looking dead one.
 
 ---
 
-### P53 — The `burmesepoker` Ansible role ◐ — **work in `ansible-nas`, not in this repo; role built 2026-08-28, deploy outstanding**
+### P53 — The `burmesepoker` Ansible role ◐ — **work in `ansible-nas`, not in this repo; role built 2026-08-28, deployed 2026-08-30, one browser acceptance outstanding**
 
 **Goal.** `poker.nickjones.dev` serves the table, managed like every other service on the NAS.
 **`HOSTING.md` §6 Step 3**; the task-level plan is in that repo's
@@ -7637,6 +7641,53 @@ intact — Ansible's `docker_container` needs none of compose's `$$` escaping.
 replaying its cached credentials for the origin. If it does not, Blazor falls back to long polling
 and the table **works but feels slow** — so the acceptance is *check the network tab*, not merely
 *a round played*.
+
+**What the deploy proved, 2026-08-30 (Opus 5).** ✅ **The play ran** — Nick typed
+`ansible-playbook nas.yml --tags burmesepoker --become --ask-become-pass`, the session did every
+check — and ⚠️ **only one of the two recorded blockers was ever real**: the passphrase-protected
+key was **already loaded in the `ssh-agent`** (`ansible nas -m ping` → pong first try, fingerprint
+matching `ssh-keygen -lf ~/ubuntuServer22key.pub`), so this packet's own note that
+`ansible all -m ping` returns `Permission denied (publickey,password)` had stopped being true.
+🔥 **Check `ssh-add -l` before recording an SSH blocker.**
+
+🔥 **Both assumptions are now measurements.** **(1) The WebSocket**: a raw TLS handshake against
+`https://poker.nickjones.dev/_blazor?id=<token>` returns **`101 Switching Protocols`** from
+**Kestrel**, through Traefik, with the basicauth middleware attached; negotiate offers
+`WebSockets`, `ServerSentEvents`, `LongPolling`. ⚠️ **That handshake set its own `Authorization`
+header** — so what is proved is that *nothing in the path objects to an authenticated upgrade*,
+**not** that a browser replays cached credentials on one, which is the single question the phone
+round still owns. **(2) The idle timeout**: the same socket completed the SignalR handshake and
+sat still for **7½ minutes — 29 server pings at ~15.5 s, no close frame, no reset** — the harsher
+case, a connection carrying nothing but keepalives. ⚠️ **The hub speaks `blazorpack`, not `json`**:
+a `json` handshake is refused by the *app* with `"The protocol 'json' is not supported."`, which
+reads exactly like a proxy fault and is not one.
+
+✅ **`UseForwardedHeaders` proved through the real proxy** rather than P51's synthetic headers: the
+container logs `Request finished HTTP/1.1 GET https://poker.nickjones.dev/…` for requests arriving
+over the bridge at `172.17.0.13:8080`. ⚠️ **`Request starting` still shows `http://`** — hosting
+diagnostics logs it before the middleware runs — so **read the *finished* line**, or a working
+forwarder looks broken. ✅ **Every role decision confirmed on the running container**: memory
+`536870912` (**512 MiB**, not the `64m` both hand-written roles use), `restart=unless-stopped`,
+**`ports=map[]`** (no published host port, which is what keeps P51's empty `KnownProxies` safe),
+non-root uid **1654**, all **eight** labels with the bcrypt `$2b$10$…` intact; 42 MiB resident of
+512. ✅ **The gating branch is right rather than merely present**: unauthenticated `/healthz` is
+**401** with `www-authenticate: Basic realm="traefik"` — **a locked door, not the 503 an empty
+users list produces** — and with credentials `/healthz`, `/_framework/blazor.web.js` and `/` are
+all **200** on the wildcard `CN=nickjones.dev` certificate.
+
+⚠️ **Why it is still ◐.** The acceptance names **a real round played from a phone off the home
+network**, and nobody has been in a browser. What that sitting decides is now narrow — whether the
+browser replays its basic credentials on the `/_blazor` upgrade (if it does not, Traefik 401s the
+upgrade *and* the long-polling fallback, so the table would be **dead rather than slow** — a
+sharper prediction than the one this packet was written with). 🔥 **One sitting closes three
+packets**: this, P54's copy-link button and P56's advanced opponent group and two-step per-seat
+form. ⚠️ **Do not read an absent `/_blazor` on the lobby as a fault** — the lobby is static SSR and
+legitimately opens no circuit; sit down at a table before judging.
+
+⚠️ **The basicauth password entered the 2026-08-30 session transcript.** It exists on disk only as
+the bcrypt hash in the gitignored inventory, and was recovered from a `Basic …` header Nick read
+off his own browser. Rotate with `htpasswd -nbB poker <new password>` and re-run the play if that
+matters; nothing in either repository needs to change.
 
 ⚠️ **One amendment to the plan's own acceptance, made while building: there is no LAN check at
 `http://192.168.50.142:8080`, on purpose.** `mirroquest` publishes no host ports and neither does
