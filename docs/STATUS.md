@@ -82,8 +82,10 @@ the running site.
   refused anyway. ⚠️ **Nothing in the tree could see it** — no test renders the component (P56's
   own note), and P56's `curl` proof used `easy`, `sprinter` and `warden`, never `random`. **This is
   what *`curl` is not a person* was warning about.** ⚠️ **Only the per-seat picker reaches it**;
-  `--difficulty` uses `Find`, which never mints a probe. **Unfixed and unowned — see BUILD-PLAN
-  P57.**
+  `--difficulty` uses `Find`, which never mints a probe. 🔥 **`P57` is the next packet and the fix is decided — Nick chose
+  option 2 on 2026-08-30: the menu stops offering a rung that cannot be asked for its second-best
+  move.** ⚠️ **Not option 1** (unwrapping `DifficultyLevel.Create` at ε = 0), which would put
+  `Domain` and every published measurement in the blast radius for a defect that lives in the menu.
 - ⚠️ **(9) The basicauth password is in the 2026-08-30 session transcript.** It was never written
   down anywhere on disk in plaintext — only the bcrypt hash, in the gitignored inventory — and it
   was recovered from a `Basic …` header Nick read off his own browser. **Rotate it with

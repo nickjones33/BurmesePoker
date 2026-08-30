@@ -39,9 +39,18 @@ polling), and a round was played with the claim refused and the blind draw arriv
 no circuit; sit down at a table first. 🔥 **The finding that cost the most: the deployed image is
 not built from `main`** — `:latest` is from `860fb13` (**P52**), `gitea/main` is **six commits
 behind**, so the running site predates **P54** and **P56** and still draws P19's *mixed table*
-checkbox. ⚠️ **`git push gitea main` is the CI trigger and has not been run**, so a packet marked
-done here is not thereby a packet that is running, and **P54's and P56's browser acceptances cannot
-be attempted until it is**; 🔥 **`P56` was added the same day —
+checkbox. ✅ **Pushed and redeployed 2026-08-30** — `:latest` is built from `f309a9d` and the site now has
+P54 and P56; the copy-link renders the **forwarded** host, the opponent menu shows ten rungs with
+their margins, and the two-step per-seat form works. 🔥 **But pressing it found a live 500 and
+`P57` is now the next packet**: the lobby offers **`random@0`** and cannot build it —
+`DifficultyLevel.Create` always wraps its rung in a `FallibleAgent`, which demands
+`IRanksDiscards`, and `RandomBotAgent` has none (P19), while P56's fence says a rung with a
+published row **must** be offered. ⚠️ **Two packets' rules contradicting, not a typo**, and ε is 0
+so the wrapper would never fire. **Nick decided option 2 on 2026-08-30: the menu stops offering a
+rung that cannot name its second-best move** — ⚠️ **not** option 1 (unwrapping `Create` at ε = 0),
+which would put `Domain` and every measurement in the blast radius. ⚠️ **`git push gitea main` is
+the CI trigger and the role's `pull: true` takes the image on the next play** — a packet marked
+done here is not thereby a packet that is running; 🔥 **`P56` was added the same day —
 *opening a table you actually want*, after Nick pointed out the deployed table has no seat for a
 person in it.** ⚠️ **Check before building: the lobby form already offers seats, people, the four
 levels, a mixed table and the seating policy**, so most of the ask is built; the fact that is not

@@ -7799,7 +7799,13 @@ P56's `curl` proof used `easy`, `sprinter` and `warden` — never `random`. **Th
 *`curl` is not a person* was warning about.** ⚠️ **Only the per-seat picker reaches it**:
 `--difficulty` uses `Find`, which never mints a probe.
 
-**Two candidate fixes, and the choice is a rule.**
+🔥 **The choice was Nick's and it is made: option 2, 2026-08-30.** Fix the menu, not the
+invariant — the lobby is advertising a seat the engine has never been able to build, and P19's rule
+that a level is a rung which can name its own second-best move is not in question. ⚠️ **Do not
+take option 1** (below, kept for its reasoning): it puts `Domain` and every published measurement in
+the blast radius to solve a problem that lives in the menu.
+
+**The two candidates, for the record.**
 1. **`DifficultyLevel.Create` returns the bare rung when `MistakeRate` is 0.** Smallest change and
    arguably what ε = 0 means. ⚠️ **Check first whether `FallibleAgent` draws from its own `Random`
    per decision** — if it does, unwrapping changes no *choice* (that generator is the agent's own,
@@ -7811,15 +7817,33 @@ P56's `curl` proof used `easy`, `sprinter` and `warden` — never `random`. **Th
    P56's fence**, which currently asserts the converse without qualification, and it removes the
    wooden-spoon reference from the menu.
 
-**Recommended: 2**, with 1 as a follow-up only if some later packet actually wants an unwrapped
-level. The menu is the thing that is wrong — it is advertising a seat the engine has never been
-able to build — and P19's invariant is not in question.
+✅ **Option 2 is the decision.** Keep 1 in mind only if some later packet actually wants an
+unwrapped level; it is not this packet's work.
 
-**Acceptance.** Picking `random` for a seat opens a table rather than a 500; a test that would have
-caught this (the menu's every offer resolved **and constructed**, not merely resolved); the fence
-amended in whichever direction is chosen, with its reasoning written down; ⚠️ **and if fix 1 is
-taken, a seeded run proved byte-identical** — `Domain` is in the blast radius and every published
-measurement is built through `DifficultyLevel.Create`.
+**Build.** `OpponentMenu` gains a second exclusion beside *no published row → not offerable*:
+**a rung whose agent is not `IRanksDiscards` is not offerable either**, because a level is a rung
+that can be asked for its own second-best move (P19). ⚠️ **`PublishedFigureTests.EveryOpponentThe
+LobbyOffers…` asserts the converse without qualification today** — *every rung with a published
+head-to-head row against the reference **is** offered — so the fence must be amended in the same
+breath, and the amendment is the deliverable as much as the code is: write down that the menu now
+excludes on two grounds, and why the second one is P19 rather than taste. ⚠️ **Amending a fence to
+make a build go green is the move this project distrusts most**, so the new assertion must be
+stronger than the old one, not weaker — see acceptance.
+
+**Acceptance.** 🔥 **The test that would have caught this is the point of the packet**: every
+opponent the lobby offers must be **resolved *and constructed*** — `FindOrProbe` then `Create` —
+not merely resolved, because resolution is exactly the step that succeeded here while construction
+threw. Proved able to fail by putting `random` back in the menu. Plus: the amended fence still
+asserts that a rung *with* a published row and *able* to rank **is** offered (so a newly-measured
+rung the menu never heard of is still a red build); `random` is gone from the menu and `sprinter`,
+`warden` and the rest remain; ⚠️ **`Domain` untouched** — this is a `BurmesePoker.Web` change and
+**no measurement can move**, so no suite is owed; and the tree is green with `STATUS.md`'s count
+updated.
+
+⚠️ **Verify on the deployed site, not only in the tree** — this defect existed for a day in a green
+tree. After the packet: `git push gitea main`, re-run the `burmesepoker` play, and pick `random`
+for a seat in a browser. **`git push gitea main` is the CI trigger** and the role's `pull: true`
+takes the new image on the next play.
 
 ---
 
