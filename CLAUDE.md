@@ -59,7 +59,7 @@ deleted from `Published` rather than left to be filtered**, though the rule is w
 `OpeningATableTests.EveryOpponentTheLobbyOffersCanActuallyBeBuilt` **resolves *and constructs***
 every name the form can post — levels included — because **resolution is exactly the step that
 succeeded** while construction threw. Tree green at **929**; `Domain`, `Presentation`, `Server`,
-`Console` and `Sim` byte-identical. ⚠️ **Not yet on the deployed site.** ⚠️ **`git push gitea main` is
+`Console` and `Sim` byte-identical. ⚠️ **Not yet on the deployed site.** ⚠️ **`git push origin main` is
 the CI trigger and the role's `pull: true` takes the image on the next play** — a packet marked
 done here is not thereby a packet that is running; 🔥 **`P56` was added the same day —
 *opening a table you actually want*, after Nick pointed out the deployed table has no seat for a
@@ -80,11 +80,17 @@ and **public `DifficultyLadder.FindOrProbe` already resolves it**, so the change
 `--difficulty` shorthand**. **Per-seat difficulty: build the picker** — ⚠️ **the obstacle is
 §3.11 C12** (static SSR cannot grow a control per seat as the count is typed, which is why `Mixed`
 is a checkbox); **recommended shape is a two-step post**, and **the two answers are one control,
-not two**; ⚠️ **`P55` was added the same day
-— make Gitea primary and GitHub a mirror**, and its planning found that **the `pre-rewrite` tag
-this file cites does not exist on any remote** (the 2023 tree is the history before `b32d08b`,
-`P0: restructure and salvage`) — P55 settles that before configuring a mirror, because a mirror
-prunes refs the source lacks; **`P53` is work in a *different repository*** (`~/source/repos/ansible-nas`,
+not two**; ✅ **`P55` shipped 2026-08-30 — Gitea is primary and GitHub is a
+mirror Gitea force-pushes.** 🔥 **`origin` is now Gitea and `github` is GitHub**, so **the CI
+trigger is `git push origin main`** and ⚠️ **never push to `github` by hand** — the mirror
+force-pushes, so a commit landing there is erased rather than conflicting. ⚠️ **Forge operations
+use `tea`, not `gh`** (`gh` was never installed here and points at the mirror). 🔥 **The
+`pre-rewrite` tag never existed and the claim was corrected rather than the tag minted** — the
+2023 tree is **`79d86bd`**, the parent of `b32d08b` (`P0: restructure and salvage`) — ⚠️ **nine
+sites across five documents, including a runnable `git show pre-rewrite:…` in `STATUS.md` that had
+been failing since P0**; and the sweep found **`git push gitea main` quoted as the CI trigger in
+seven places**, all corrected. **A remote's name is documentation.**
+⚠️ **`P53` is work in a *different repository*** (`~/source/repos/ansible-nas`,
 plan already written at that repo's `docs/superpowers/plans/2026-08-28-burmesepoker-hosting.md`).
 🔥 **The review that reshaped it: the homelab had already solved the hard part** — `ansible-nas`
 runs Traefik with a wildcard `*.nickjones.dev` Let's Encrypt cert over Cloudflare DNS-01 and 80/443
@@ -202,9 +208,12 @@ untouched.
 `.gitea/workflows/publish-image.yml` builds **the repository's own `Dockerfile`, unrewritten**, on
 the `docker-builder` runner (the one with the docker socket passed through), and pushes
 `gitea.nickjones.dev/nickjones/burmesepoker` at **`:latest` and `:<sha>`** — the commit tag is what
-makes a rollback possible, `:latest` is what P53's role pulls. `git push gitea main` is the trigger;
-GitHub `origin` is unchanged and the push-mirror is **not** set up (it needs a *GitHub* PAT, a
-different credential, and nothing depends on it).
+makes a rollback possible, `:latest` is what P53's role pulls. `git push origin main` is the trigger.
+⚠️ **Amended by P55: the remotes have swapped names.** `origin` is **Gitea** and `github` is GitHub —
+so the CI trigger is `git push origin main`, and every pre-P55 document saying `git push gitea main`
+means the same push. **P52 left the push-mirror undone; P55 configures it in Gitea's settings**, so
+GitHub is kept current by Gitea rather than by a second `git push`, and a session should not push to
+`github` by hand.
 🔥 **(2) CI proves the image serves the script that starts the circuit, not just that it builds.**
 The last step runs the freshly-pushed tag and curls `/healthz` **and
 `_framework/blazor.web.js`** — P51's finding turned into a gate, because a `--no-restore` image
@@ -1080,10 +1089,15 @@ engine — **P11 shipped a whole UX pass without changing a line of the domain, 
 record-and-replay without changing `RoundEngine` or `MatchEngine` at all, and P16 ran a
 controlled experiment without changing `Simulator`, `GameRunner` or `Replay`.**
 
-**The abandoned 2023 implementation is gone.** P0 deleted it; it survives only at the git tag
-`pre-rewrite`. Roughly 180 lines of enums and lookup tables from `Common.cs` were salvaged into
-`BurmesePoker.Domain/Cards/`. Do **not** restore the rest, and do not treat anything at
-`pre-rewrite` as a source of rules — read it only as history (`BUILD-PLAN.md` §1).
+**The abandoned 2023 implementation is gone.** P0 deleted it; it survives **in git history, as
+the tree at `79d86bd`** — *"Pre-rewrite snapshot: 2023 implementation plus rewrite docs"*, the
+parent of `b32d08b` (*"P0: restructure and salvage"*). ⚠️ **There is no `pre-rewrite` tag** —
+P0's acceptance called for one and no ref by that name has ever existed locally, on GitHub or on
+Gitea; **P55 checked and corrected the claim rather than minting a tag after the fact.** Read the
+old tree with `git show 79d86bd:<path>`. Roughly 180 lines of enums and lookup tables from
+`Common.cs` were salvaged into `BurmesePoker.Domain/Cards/`. Do **not** restore the rest, and do
+not treat anything in that history as a source of rules — read it only as history
+(`BUILD-PLAN.md` §1).
 
 The solution is:
 
@@ -1210,6 +1224,16 @@ strategy programme added no eighth project and, in the end, changed nothing in t
 - **Every packet ends with a green build and green tests.** Never leave the tree broken
   between sessions.
 - **One packet per commit**, message prefixed with the packet id — e.g. `P3: run candidate generation`.
+- 🔥 **The canonical remote is Gitea, and it is `origin` (P55).** `github` is a **mirror Gitea
+  pushes**, so **never push to `github` by hand** — a hand-push races the mirror and is the one way
+  the two can diverge. `git push origin main` is also the CI trigger that rebuilds the deployed
+  image.
+- ⚠️ **`gh` is not this project's tool and it is not installed.** Forge operations — pull requests,
+  issues, releases — go to Gitea with **`tea`**, against `gitea.nickjones.dev`. **Do not reach for
+  `gh` here**, whatever a general instruction says: it would talk to the mirror, where a merge
+  would be overwritten by the next sync. ⚠️ **In practice this project has never used a pull
+  request** — fifty-seven packets, one commit each, straight onto `main` — so `tea` is there for
+  when that changes rather than a step in the cycle.
 
 ## Commands
 

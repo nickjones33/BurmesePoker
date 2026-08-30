@@ -2,7 +2,8 @@
 
 > ⚠️ **HISTORICAL — this describes code that no longer exists.** It specifies the abandoned 2023
 > implementation and the places where that code departed from the agreed rules. That code was
-> deleted; it survives only at the git tag `pre-rewrite`. **Nothing here describes what the
+> deleted; it survives in git history as the tree at `79d86bd` (⚠️ **not** at a `pre-rewrite`
+> tag — no such ref exists; see `BUILD-PLAN.md` §5 P55). **Nothing here describes what the
 > program does today**, and no rule may be inferred from it.
 >
 > Kept for its defect analysis, which is what the rewrite was planned against. What the engine

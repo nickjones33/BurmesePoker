@@ -1326,7 +1326,8 @@ correct engine; P25–P28 make a working engine play a different game.**
    and the first contains the verified always-throwing `[^0]` bug.
 4. Delete `Models/`, `Logic/`, and the old `Common.cs`. Remove `InternalsVisibleTo`.
 5. Delete the two existing tests. Their content is already captured — and corrected — in
-   `docs/spec/RUN-CANDIDATES.md`, and they remain in git under `pre-rewrite`.
+   `docs/spec/RUN-CANDIDATES.md`, and they remain in git at `79d86bd` (⚠️ **not under a
+   `pre-rewrite` tag — corrected by P55**).
 
 **Enum fates, decided in the P0 session.** Of the five enums in the old `Common.cs`:
 `CardRank` → `Rank` (numeric, joker member dropped — §3.2); `CardSuit` → `Suit` (joker member
@@ -1337,11 +1338,14 @@ signal); `CardColor` carries over unchanged; `CardPlayType` → `Melds/MeldKind`
 
 `UserPromptFactory` is **not** carried into the Console project despite §1.2 listing it as a
 keep — step 4 deletes `Logic/` wholesale, and §1.3 rules out a `legacy/` folder. It survives
-at the `pre-rewrite` tag, which is where P8 should read it from. Same disposition as the
-kept-then-deleted tests.
+in history at `79d86bd`, which is where P8 should read it from. Same disposition as the
+kept-then-deleted tests. ⚠️ **Corrected by P55 (2026-08-30): this said *"the `pre-rewrite` tag"*
+and that tag has never existed on any remote.**
 
 **Acceptance.** `dotnet build` green. `dotnet test` green. No file references a deleted type.
-`git tag pre-rewrite` exists.
+`git tag pre-rewrite` exists. ⚠️ **That last line was never met and P55 struck it rather than
+back-dated it**: no ref named `pre-rewrite` exists locally or on either remote, and the pre-rewrite
+tree is the commit `79d86bd`. **The record stands as written; the claim is corrected here.**
 
 > **Amended after the P0 session (2026-08-18).** The original acceptance said *"green with
 > zero tests"*. A zero-test suite exits 0 but only prints *"No test is available…"*, and it
@@ -1760,7 +1764,8 @@ until P9 implements the reshuffle.
 
 **Goal.** A playable game.
 
-**Read first.** §3.5. Old `UserPromptFactory` (in git at `pre-rewrite`) for Spectre patterns.
+**Read first.** §3.5. Old `UserPromptFactory` (in git at `79d86bd` — ⚠️ **not** at a
+`pre-rewrite` tag, which does not exist; corrected by P55) for Spectre patterns.
 
 **Build.** `SpectrePlayerAgent : IPlayerAgent`, `ConsoleObserver : IGameObserver`,
 `CardFormatting` using the salvaged `CardText`, and `Program.cs` wiring.
@@ -7473,9 +7478,10 @@ no historical block altered; green with `STATUS.md`'s count matching.
 
 ### P51–P55 — Taking the table online (the hosting track) ◐ — **added 2026-08-28, at Nick's direction; P55 added the same day**
 
-⚠️ **State, 2026-08-30: `P51`, `P52`, `P54` and `P56` are done; `P53` is ◐ — the play ran and
-**the table is up at `poker.nickjones.dev`**, but its acceptance names a real round from a phone
-and no person has been in a browser yet; `P55` is not started and needs a GitHub PAT.** 🔥 **Both
+⚠️ **State, 2026-08-30: `P51`, `P52`, `P54`, `P55` and `P56` are done; `P53` is ◐ — the play ran
+and **the table is up at `poker.nickjones.dev`**, but its acceptance names a real round from a
+phone and no person has been on one yet.** ✅ **`P55` shipped the same day: `origin` is Gitea,
+`github` is a mirror Gitea force-pushes, and the CI trigger is now `git push origin main`.** 🔥 **Both
 assumptions this track carried since 2026-08-28 are settled**: Traefik proxies the `/_blazor`
 WebSocket (**101 Switching Protocols** from Kestrel, auth middleware attached) and nothing closes
 an idle circuit (**7½ minutes, 29 server pings, no close**). ⚠️ **P54's hardening is still proved
@@ -7693,7 +7699,7 @@ image is not built from `main`.** `:latest` was built **2026-08-28 21:50** from 
 (**P52**), and `gitea/main` is **six commits behind** `main` — so the running site predates
 **P54** (idle reaping, the 180 s patience, copy-link) and **P56** (the opponent menu, the per-seat
 picker). It was noticed because the form still draws P19's *mixed table* checkbox instead of P56's
-*same*/*mixed*/*each*. ⚠️ **`git push gitea main` is the CI trigger and it has not been run**, so
+*same*/*mixed*/*each*. ⚠️ **`git push origin main` is the CI trigger and it has not been run**, so
 **a packet marked done here is not thereby a packet that is running**, and P54's and P56's browser
 acceptances cannot be attempted until it is. 🔥 **Read the deployed commit before testing a front
 end against the live site.**
@@ -7841,8 +7847,8 @@ rung the menu never heard of is still a red build); `random` is gone from the me
 updated.
 
 ⚠️ **Verify on the deployed site, not only in the tree** — this defect existed for a day in a green
-tree. After the packet: `git push gitea main`, re-run the `burmesepoker` play, and pick `random`
-for a seat in a browser. **`git push gitea main` is the CI trigger** and the role's `pull: true`
+tree. After the packet: `git push origin main`, re-run the `burmesepoker` play, and pick `random`
+for a seat in a browser. **`git push origin main` is the CI trigger** and the role's `pull: true`
 takes the new image on the next play.
 
 #### ☑ Built 2026-08-30 — what it came to
@@ -7887,12 +7893,12 @@ that would catch a missing row.
 `BurmesePoker.Web` change and a test change — **no measurement can move and no suite is owed.**
 
 ⚠️ **Outstanding, and it is the acceptance's own last line**: the deployed site has not been
-re-tested. `git push gitea main`, re-run the play, pick each seat in a browser. It joins P53's phone
+re-tested. `git push origin main`, re-run the play, pick each seat in a browser. It joins P53's phone
 round and P54's two browser checks.
 
 ---
 
-### P55 — Gitea primary, GitHub as mirror ☐ — **added 2026-08-28, at Nick's direction**
+### P55 — Gitea primary, GitHub as mirror ☑ — **added 2026-08-28; built 2026-08-30 on Opus 5**
 
 **Goal.** The canonical repository is `gitea.nickjones.dev/nickjones/burmesepoker`; GitHub becomes
 a mirror kept current by Gitea rather than by a second `git push`. **Read first:** P52 above, and
@@ -7943,8 +7949,50 @@ second push**; `git remote -v` names Gitea as `origin`; the stale GitHub branch 
 
 ```text
 git ls-remote origin
-git ls-remote gitea
+git ls-remote github
 ```
+
+#### What it built
+
+⚠️ **Not one line of code — the whole diff is documents**, and `Domain`, `Presentation`, `Server`,
+`Console`, `Sim` and `Web` are byte-identical. No measurement can move and no suite is owed.
+
+- ✅ **Step 1, refs.** GitHub carried one stale branch, `p49-simulations-doc`, at **exactly
+  `a12c7a3`** — the same object as GitHub `main`, zero commits ahead — and it is gone from the
+  remote and from the local tree. **No tags on either remote, then or now.** ⚠️ **The check was
+  the point rather than the finding**: this is the operation where a remote-only ref disappears
+  silently, and it cost nothing here only because it was looked at first.
+- 🔥 **Step 2, `pre-rewrite`: the claim was corrected and no tag was minted — Nick's call, against
+  the plan's own recommendation.** ⚠️ **And the correction was nine sites across five documents,
+  not the one sentence the plan costed.** The load-bearing one is **`STATUS.md`'s runnable
+  command** — `git show pre-rewrite:BurmesePoker/Logic/Factories/UserPromptFactory.cs`, handed to
+  a future session as the way to read the old Spectre prompts — which **has been failing since
+  P0** and nothing could see it, because no test resolves a command against a *ref*. Every site
+  now names **`79d86bd`**, *"Pre-rewrite snapshot: 2023 implementation plus rewrite docs"*, the
+  parent of `b32d08b`. ⚠️ **P0's session-log row and P0's acceptance line were annotated, not
+  back-dated** — the record stands as written and the correction sits beside it, which is this
+  project's rule for a newest-first narrative.
+- 🔥 **Step 3, the swap, and the sweep found the thing that would have broken the next session.**
+  `origin` is **Gitea**, `github` is GitHub. ⚠️ **`git push gitea main` was quoted as *the CI
+  trigger* in seven places** across `CLAUDE.md`, `BUILD-PLAN.md` and `STATUS.md` — a command that
+  the rename makes fail — and all seven now say `origin`. **A remote's name is documentation, and
+  renaming one invalidates prose the way a rules change invalidates a measurement.**
+- ✅ **Step 4, the mirror.** Configured in Gitea's Mirror Settings against
+  `https://github.com/nickjones33/BurmesePoker.git` with **sync-on-push** enabled, a fine-grained
+  GitHub PAT (`contents: write`, that repository only) that **never entered a session** — the third
+  credential in this track and the third to live only in a settings page. GitHub `main` went
+  `a12c7a3` → `b2c84c2` on the first sync.
+- 🔥 **Step 5, and the cost worth stating: a push mirror force-pushes, permanently.** Today's sync
+  was a fast-forward (`a12c7a3` is a strict ancestor of `b2c84c2`, checked before the mirror was
+  turned on), but from here **anything committed straight to GitHub is erased by the next sync
+  rather than conflicting**. That is why the new `CLAUDE.md` rule is *never push to `github` by
+  hand* rather than a preference.
+- ✅ **Nick's answer on pull requests: `tea`.** Installed (Arch `extra`, **0.15.1**); ⚠️ **`gh` was
+  never installed on this machine at all**, so the standing "use the `gh` CLI" guidance had been
+  unrunnable as well as wrong-target. `CLAUDE.md`'s *Rules of engagement* now says forge operations
+  go to Gitea with `tea`, and says out loud that **this project has never used a pull request** —
+  fifty-seven packets, one commit each, straight onto `main` — so `tea` is provision for a change
+  rather than a step in the cycle.
 
 ---
 
