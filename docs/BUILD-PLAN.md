@@ -7675,14 +7675,28 @@ non-root uid **1654**, all **eight** labels with the bcrypt `$2b$10$…` intact;
 users list produces** — and with credentials `/healthz`, `/_framework/blazor.web.js` and `/` are
 all **200** on the wildcard `CN=nickjones.dev` certificate.
 
-⚠️ **Why it is still ◐.** The acceptance names **a real round played from a phone off the home
-network**, and nobody has been in a browser. What that sitting decides is now narrow — whether the
-browser replays its basic credentials on the `/_blazor` upgrade (if it does not, Traefik 401s the
-upgrade *and* the long-polling fallback, so the table would be **dead rather than slow** — a
-sharper prediction than the one this packet was written with). 🔥 **One sitting closes three
-packets**: this, P54's copy-link button and P56's advanced opponent group and two-step per-seat
-form. ⚠️ **Do not read an absent `/_blazor` on the lobby as a fault** — the lobby is static SSR and
-legitimately opens no circuit; sit down at a table before judging.
+✅ **A real browser played a real round, and the credential question is answered: yes.** Chrome,
+through the proxy, past the basicauth dialog: `_blazor/negotiate` returns **200** — the browser
+**does** replay its cached credentials — and the server log shows `GET /_blazor?id=…` with a
+`Request starting` and **no `Request finished`**, an open connection, which is a WebSocket rather
+than the repeated start/finish pairs long polling would leave. Sat down, the claim was **refused**
+(§4.5 working), the blind draw arrived privately over the circuit, a card was thrown and four bot
+seats took their turns by server push. ⚠️ **Do not read an absent `/_blazor` on the lobby as a
+fault** — the lobby is static SSR and legitimately opens no circuit; sit down at a table first.
+
+⚠️ **Why it is still ◐.** The acceptance names a round **from a phone off the home network**, and
+this was desktop Chrome on the LAN. Carrier NAT and mobile Safari are untested; the transport and
+credential questions the packet was written around are not.
+
+🔥 **The finding that cost the most, and it was found by pressing the lobby form: the deployed
+image is not built from `main`.** `:latest` was built **2026-08-28 21:50** from `860fb13`
+(**P52**), and `gitea/main` is **six commits behind** `main` — so the running site predates
+**P54** (idle reaping, the 180 s patience, copy-link) and **P56** (the opponent menu, the per-seat
+picker). It was noticed because the form still draws P19's *mixed table* checkbox instead of P56's
+*same*/*mixed*/*each*. ⚠️ **`git push gitea main` is the CI trigger and it has not been run**, so
+**a packet marked done here is not thereby a packet that is running**, and P54's and P56's browser
+acceptances cannot be attempted until it is. 🔥 **Read the deployed commit before testing a front
+end against the live site.**
 
 ⚠️ **The basicauth password entered the 2026-08-30 session transcript.** It exists on disk only as
 the bcrypt hash in the gitignored inventory, and was recovered from a `Basic …` header Nick read

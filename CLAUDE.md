@@ -31,13 +31,17 @@ already in the `ssh-agent`, so **check `ssh-add -l` before recording an SSH bloc
 gating decision holds: a Traefik `basicauth` middleware, attached only when
 `burmesepoker_basicauth_users` is non-empty** — a router naming a middleware with an empty users list
 serves **503**, not a login prompt — and unauthenticated `/healthz` is a **401 with
-`www-authenticate`**, a locked door. 🔥 **What the phone round still owns is one narrow question**:
-the verification handshake set its own `Authorization` header, and **a browser cannot** — if it
-does not replay cached credentials on the upgrade, Traefik 401s the WebSocket *and* the
-long-polling fallback, so the table would be **dead rather than slow**. ⚠️ **Do not read an absent
-`/_blazor` on the lobby as a fault** — the lobby is static SSR and opens no circuit; sit down at a
-table first. 🔥 **One browser sitting closes P53, P54's copy-link and P56's advanced group and
-two-step form**; 🔥 **`P56` was added the same day —
+`www-authenticate`**, a locked door. ✅ **The credential question is answered — a real browser
+replays them**: Chrome past the basicauth dialog gets `_blazor/negotiate` **200** and an open
+`GET /_blazor?id=…` (a `Request starting` with **no** `Request finished` — a WebSocket, not long
+polling), and a round was played with the claim refused and the blind draw arriving privately.
+⚠️ **Do not read an absent `/_blazor` on the lobby as a fault** — the lobby is static SSR and opens
+no circuit; sit down at a table first. 🔥 **The finding that cost the most: the deployed image is
+not built from `main`** — `:latest` is from `860fb13` (**P52**), `gitea/main` is **six commits
+behind**, so the running site predates **P54** and **P56** and still draws P19's *mixed table*
+checkbox. ⚠️ **`git push gitea main` is the CI trigger and has not been run**, so a packet marked
+done here is not thereby a packet that is running, and **P54's and P56's browser acceptances cannot
+be attempted until it is**; 🔥 **`P56` was added the same day —
 *opening a table you actually want*, after Nick pointed out the deployed table has no seat for a
 person in it.** ⚠️ **Check before building: the lobby form already offers seats, people, the four
 levels, a mixed table and the seating policy**, so most of the ask is built; the fact that is not
