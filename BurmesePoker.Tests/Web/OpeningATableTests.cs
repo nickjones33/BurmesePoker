@@ -235,6 +235,55 @@ public class OpeningATableTests
     }
 
     /// <summary>
+    /// 🔥 <b>P57 — every opponent the lobby offers can be resolved <em>and built</em>.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>This is the test that would have caught the defect, and the distinction it draws is
+    /// the whole of it.</b> The menu offered <c>random@0</c>;
+    /// <see cref="DifficultyLadder.FindOrProbe"/> resolved it perfectly — resolution is exactly
+    /// the step that succeeded — and <see cref="DifficultyLevel.Create"/> then threw
+    /// <c>ArgumentException</c> inside <c>HostedTable.Fill</c>, so a person choosing that seat got
+    /// <b>500</b> on a green tree. ⚠️ <b>A test that stops at resolution is the test this project
+    /// already had.</b>
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Both lists, because the dial goes through the same constructor</b> — every level is
+    /// <c>BotCatalog.Hardest</c> wrapped in a <c>FallibleAgent</c>, so a future rung promoted to
+    /// <c>Hardest</c> without <c>IRanksDiscards</c> would break all four levels at once and not
+    /// merely the advanced group.
+    /// </para>
+    /// <para>
+    /// ✅ <b>Proved able to fail</b> by putting <c>random</c> back into the menu: the offering is
+    /// asserted here to be seatable, and <c>random@0</c> throws on construction rather than
+    /// returning something useless.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void EveryOpponentTheLobbyOffersCanActuallyBeBuilt()
+    {
+        foreach (var name in OpponentMenu.Advanced
+            .Select(opponent => opponent.Value)
+            .Concat(OpponentMenu.Levels.Select(level => level.Name)))
+        {
+            Assert.True(OpponentMenu.Offers(name), $"{name} is offered by the lobby's own form.");
+
+            var level = DifficultyLadder.FindOrProbe(name);
+
+            Assert.NotNull(level);
+
+            // 🔥 Resolution is not construction. This is the line the packet exists for.
+            Assert.NotNull(level!.Create(seed: 1));
+        }
+
+        // ⚠️ And the excluded one really would have thrown, so the exclusion is not superstition.
+        var joke = DifficultyLevel.Probe(BotCatalog.Resolve("random"), 0);
+
+        Assert.False(OpponentMenu.Offers(joke.Name));
+        Assert.Throws<ArgumentException>(() => joke.Create(seed: 1));
+    }
+
+    /// <summary>
     /// ✅ <b>The lobby offers what this packet built, and quotes no figure of its own.</b>
     /// </summary>
     /// <remarks>

@@ -7771,7 +7771,7 @@ when the users list is non-empty), so this packet inherited it rather than takin
 
 ---
 
-### P57 — The lobby offers an opponent it cannot build ☐ — **added 2026-08-30; a live 500, found in a browser**
+### P57 — The lobby offers an opponent it cannot build ☑ — **added and built 2026-08-30 on Opus 5**
 
 **Read first.** §3.12 (levels are the menu; rungs are an advanced disclosure that states its
 price), P19 (a level is a rung that can be asked for its own second-best move), P56 (the menu
@@ -7844,6 +7844,51 @@ updated.
 tree. After the packet: `git push gitea main`, re-run the `burmesepoker` play, and pick `random`
 for a seat in a browser. **`git push gitea main` is the CI trigger** and the role's `pull: true`
 takes the new image on the next play.
+
+#### ☑ Built 2026-08-30 — what it came to
+
+✅ **The whole change is `OpponentMenu`, and it is one predicate.**
+`OpponentMenu.CanBeAskedForItsSecondBestMove(rung)` is `rung.Create(0) is IRanksDiscards` —
+⚠️ **asked of the agent rather than declared on the rung**, because the constructor that threw asks
+the same question of the same object, and anything shorter would be a second opinion able to drift
+away from the one that matters. `Advanced` filters on it beside the published-row rule, so the menu
+now excludes on **two grounds of different kinds**: *no published row → not offerable* is about
+honesty (a price that cannot be stated must not be charged), *cannot name a second-best move → not
+offerable* is P19's invariant (the lobby must not advertise a seat the engine cannot build).
+⚠️ **The `random` row was deleted from `Published` rather than left to be filtered** — a row that
+can never be reached is dead data — and the rule is what keeps it out, not the deletion.
+
+🔥 **The fence was amended in the same breath and the amendment is stronger, not weaker.**
+`PublishedFigureTests.EveryOpponentTheLobbyOffersShowsTheMarginTheCsvMeasured` now qualifies its
+converse with the same predicate, and — ⚠️ **because amending a fence to make a build go green is
+the move this project distrusts most** — it asserts the exclusion **about `random` by its inability
+rather than by its name**: the rung *has* a published row against the reference, *cannot* be asked
+for a second-best move, is *not* offered, and `Offers("random@0")` is false.
+
+🔥 **The new test is the point of the packet, and it is the distinction the old one missed.**
+`OpeningATableTests.EveryOpponentTheLobbyOffersCanActuallyBeBuilt` takes every name the form can
+post — **the advanced rungs and the four levels** — and **resolves it and then constructs it**:
+`FindOrProbe` *then* `Create`. **Resolution is exactly the step that succeeded** while construction
+threw, so a test that stopped at resolution is the test that was already here. It closes with the
+converse — `random@0` is not offered **and** `Create` on it still throws `ArgumentException` — so
+the exclusion is proved to be about a real failure rather than superstition, and putting `random`
+back in the menu is a red build.
+
+⚠️ **Both lists, not just the advanced one**: every level is `BotCatalog.Hardest` through the same
+`FallibleAgent` constructor, so a rung promoted to `Hardest` without `IRanksDiscards` would break
+all four levels at once.
+
+⚠️ **One existing assertion in the fence moved with the list**: its *at least nine opponents were
+priced* floor is **eight** now. That floor tracks **what the menu may show**, not what the CSV
+measured — the CSV's own coverage is asserted by the equality above it, which is the assertion
+that would catch a missing row.
+
+✅ **`Domain`, `Presentation`, `Server`, `Console` and `Sim` are byte-identical** — a
+`BurmesePoker.Web` change and a test change — **no measurement can move and no suite is owed.**
+
+⚠️ **Outstanding, and it is the acceptance's own last line**: the deployed site has not been
+re-tested. `git push gitea main`, re-run the play, pick each seat in a browser. It joins P53's phone
+round and P54's two browser checks.
 
 ---
 

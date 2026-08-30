@@ -441,6 +441,18 @@ public class PublishedFigureTests
     /// silently short list.
     /// </para>
     /// <para>
+    /// 🔥 <b>P57 qualified that second direction, and the qualification is the packet.</b> The
+    /// menu excludes on <em>two</em> grounds now: no published row, and — new —
+    /// <see cref="OpponentMenu.CanBeAskedForItsSecondBestMove"/>, because a level is a rung
+    /// wrapped in a <c>FallibleAgent</c> and that wrapper demands a second-best card (P19).
+    /// <c>random</c> has published rows and cannot answer that question, so the menu offered a
+    /// seat the engine has never been able to build and the site answered <b>500</b>.
+    /// ⚠️ <b>Amending a fence to make a build go green is the move this project distrusts most</b>,
+    /// so the exclusion is asserted <em>about <c>random</c> by its inability rather than by its
+    /// name</em>, and <see cref="EveryOpponentTheLobbyOffersCanActuallyBeBuilt"/> is the stronger
+    /// assertion that arrives with it.
+    /// </para>
+    /// <para>
     /// ⚠️ <b>The verdict is fenced beside the number</b>, because a margin quoted without one
     /// reads as a difference somebody measured when <c>opportunist</c>'s and <c>angler</c>'s are
     /// differences nobody could find.
@@ -454,8 +466,24 @@ public class PublishedFigureTests
         Assert.Equal(
             BotCatalog.All
                 .Where(rung => rung == reference || Margin(rung, reference) is not null)
+                .Where(OpponentMenu.CanBeAskedForItsSecondBestMove)
                 .Select(rung => rung.Name),
             OpponentMenu.Advanced.Select(opponent => opponent.Rung.Name));
+
+        // ⚠️ The exclusion is real rather than vacuous, and it is about the inability rather
+        // than about the name: `random` is measured against the reference, cannot be asked for a
+        // second-best move, and is therefore not offered.
+        var joke = BotCatalog.Resolve("random");
+
+        Assert.NotNull(Margin(joke, reference));
+        Assert.False(OpponentMenu.CanBeAskedForItsSecondBestMove(joke));
+        Assert.DoesNotContain(OpponentMenu.Advanced, opponent => opponent.Rung == joke);
+        Assert.False(OpponentMenu.Offers(DifficultyLevel.Probe(joke, 0).Name));
+
+        // …and every other rung the menu drops on that ground would also have thrown.
+        Assert.All(
+            OpponentMenu.Advanced,
+            opponent => Assert.True(OpponentMenu.CanBeAskedForItsSecondBestMove(opponent.Rung)));
 
         var checks = 0;
 
@@ -487,8 +515,9 @@ public class PublishedFigureTests
         }
 
         // A floor rather than a total: the ladder may grow, but a parse that found nothing must
-        // fail rather than pass quietly.
-        Assert.True(checks >= 9, $"only {checks} opponents were priced, which is not the ladder.");
+        // fail rather than pass quietly. ⚠️ It came down from 9 at P57, when `random` stopped
+        // being offerable — the floor tracks what the menu may show, not what the CSV measured.
+        Assert.True(checks >= 8, $"only {checks} opponents were priced, which is not the ladder.");
     }
 
     /// <summary>

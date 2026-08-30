@@ -291,8 +291,10 @@ be at both tables in two windows.
 
 ⚠️ **The opponent menu has an advanced group under the four settings, and everything in it says
 what it costs.** The four settings are the *dial* — the strongest player there is, slipping more
-or less often. The advanced group is the **ladder**: the ways of playing the simulator ranks,
-each one shown with the margin it measured against the best of them, in points of win rate, and
+or less often. The advanced group is the **ladder**: the ways of playing the simulator ranks —
+less any that cannot be asked how it would have played *instead*, since a difficulty setting is
+built out of exactly that question — each one shown with the margin it measured against the best
+of them, in points of win rate, and
 with whether that margin is a difference anybody could actually find. **They are not styles and
 they are not difficulties**: several of them are measurably worse players, and the figure beside
 the name is there so that you can see which before you choose it. If you just want a good game,

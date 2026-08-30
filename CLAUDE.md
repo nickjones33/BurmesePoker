@@ -14,7 +14,7 @@ over ad-hoc changes.
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
 recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
-F10) was the last of them; the tree is green at 928.**
+F10) was the last of them; the tree is green at 929.**
 🔥 **A fourth track was added 2026-08-28 at Nick's direction: `P51`–`P54`, *taking the table
 online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
@@ -48,7 +48,18 @@ their margins, and the two-step per-seat form works. 🔥 **But pressing it foun
 published row **must** be offered. ⚠️ **Two packets' rules contradicting, not a typo**, and ε is 0
 so the wrapper would never fire. **Nick decided option 2 on 2026-08-30: the menu stops offering a
 rung that cannot name its second-best move** — ⚠️ **not** option 1 (unwrapping `Create` at ε = 0),
-which would put `Domain` and every measurement in the blast radius. ⚠️ **`git push gitea main` is
+which would put `Domain` and every measurement in the blast radius. ✅ **`P57` shipped the same day
+and it is one predicate**: `OpponentMenu.CanBeAskedForItsSecondBestMove(rung)` is
+`rung.Create(0) is IRanksDiscards`, ⚠️ **asked of the agent rather than declared on the rung**
+(the constructor that threw asks that exact question of that exact object). 🔥 **The menu excludes
+on two grounds now** — *no published row* (honesty: a price that cannot be stated must not be
+charged) and *cannot name a second-best move* (**P19's invariant**) — ⚠️ **and `random`'s row was
+deleted from `Published` rather than left to be filtered**, though the rule is what keeps it out.
+🔥 **The test that would have caught it is the packet**:
+`OpeningATableTests.EveryOpponentTheLobbyOffersCanActuallyBeBuilt` **resolves *and constructs***
+every name the form can post — levels included — because **resolution is exactly the step that
+succeeded** while construction threw. Tree green at **929**; `Domain`, `Presentation`, `Server`,
+`Console` and `Sim` byte-identical. ⚠️ **Not yet on the deployed site.** ⚠️ **`git push gitea main` is
 the CI trigger and the role's `pull: true` takes the image on the next play** — a packet marked
 done here is not thereby a packet that is running; 🔥 **`P56` was added the same day —
 *opening a table you actually want*, after Nick pointed out the deployed table has no seat for a

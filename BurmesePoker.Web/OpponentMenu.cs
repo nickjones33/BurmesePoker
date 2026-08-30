@@ -23,7 +23,10 @@ namespace BurmesePoker.Web;
 /// what pays that bill</b>, so <see cref="Opponent.Margin"/> is not decoration and not
 /// optional: it is read from <c>docs/strategy/measurements.csv</c> and fenced by
 /// <c>PublishedFigureTests</c> exactly as every other published figure is, and
-/// <b>a rung with no published row is not offerable at all</b>.
+/// <b>a rung with no published row is not offerable at all</b>. ⚠️ <b>P57 added a second
+/// exclusion beside that one</b> — a rung that cannot be asked for its second-best move is not
+/// offerable either, because a level is built out of exactly that question (P19); see
+/// <see cref="CanBeAskedForItsSecondBestMove"/>.
 /// </para>
 /// <para>
 /// ✅ <b>Nothing new was needed below the form.</b> <see cref="DifficultyLevel.Probe"/> mints
@@ -50,13 +53,19 @@ public static class OpponentMenu
     /// </para>
     /// <para>
     /// 🔥 <b>The bad ones are here on purpose.</b> Stating the price is the whole justification
-    /// for offering the ladder at all, so hiding <c>random</c> and <c>warden</c> would keep the
-    /// menu tidy by giving up the only thing that makes it honest.
+    /// for offering the ladder at all, so hiding <c>warden</c> — seven points of win rate worse
+    /// than the reference — would keep the menu tidy by giving up the only thing that makes it
+    /// honest.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b><c>random</c> has a published row and is deliberately not in this list</b>, which is
+    /// the one exclusion that is not about the measurement: see
+    /// <see cref="CanBeAskedForItsSecondBestMove"/>. <b>A row here that cannot pass that test is
+    /// dead data</b>, so the row was removed rather than left to be filtered.
     /// </para>
     /// </remarks>
     private static readonly (string Rung, double Margin, double Interval, bool Separated)[] Published =
     [
-        ("random", -39.8, 0.3, true),
         ("simple", -10.8, 0.8, true),
         ("greedy", -2.7, 0.8, true),
         ("cautious", -2.9, 0.8, true),
@@ -80,13 +89,52 @@ public static class OpponentMenu
     public static IReadOnlyList<Opponent> Advanced { get; } =
     [
         .. Published
-            .Where(row => BotCatalog.Find(row.Rung) is not null)
+            .Select(row => (Rung: BotCatalog.Find(row.Rung), row.Margin, row.Interval, row.Separated))
+            .Where(row => row.Rung is not null && CanBeAskedForItsSecondBestMove(row.Rung))
             .Select(row => new Opponent(
-                BotCatalog.Resolve(row.Rung),
+                row.Rung!,
                 row.Margin,
                 row.Interval,
                 row.Separated))
     ];
+
+    /// <summary>
+    /// Whether this rung can be asked which card it would throw <em>instead</em> — the question
+    /// P19 built a difficulty level out of, and the second ground on which this menu excludes.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>P57, and it was a live 500 before it was a rule.</b> The menu offered
+    /// <c>random@0</c>, <see cref="DifficultyLadder.FindOrProbe"/> resolved it, and
+    /// <see cref="DifficultyLevel.Create"/> threw: a level is <em>always</em> a rung wrapped in a
+    /// <c>FallibleAgent</c>, and that wrapper demands <see cref="IRanksDiscards"/> because a
+    /// mistake is the rung's own second choice. <see cref="RandomBotAgent"/> has no second choice
+    /// to name, so it cannot be a level — <b>and it therefore cannot be an opponent this lobby
+    /// offers, whatever the CSV measured about it</b>.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>So the menu now excludes on two grounds, and they are different in kind.</b>
+    /// <em>No published row → not offerable</em> is about honesty: a rung whose price cannot be
+    /// stated must not be sold. <em>Cannot be asked for its second-best move → not offerable</em>
+    /// is about P19's invariant: the lobby must not advertise a seat the engine has never been
+    /// able to build. ⚠️ <b>The fix is the menu rather than
+    /// <see cref="DifficultyLevel.Create"/></b> — unwrapping at ε = 0 would put
+    /// <c>BurmesePoker.Domain</c> and every published measurement in the blast radius for a defect
+    /// that lives here (Nick's decision, 2026-08-30).
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Asked of the agent rather than declared on the rung</b>: the constructor that throws
+    /// asks the same question of the same object, so anything shorter would be a second opinion
+    /// able to drift away from the one that matters. The seed is irrelevant — no rung decides
+    /// which interfaces it implements by it — and this runs once, at type initialisation.
+    /// </para>
+    /// </remarks>
+    public static bool CanBeAskedForItsSecondBestMove(BotRung rung)
+    {
+        ArgumentNullException.ThrowIfNull(rung);
+
+        return rung.Create(0) is IRanksDiscards;
+    }
 
     /// <summary>Whether a name off the form is one this menu actually offered.</summary>
     /// <remarks>
