@@ -10,6 +10,82 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
+🔥 **`P60` shipped 2026-08-30 on Opus 5: the table was played on a real tablet, in both
+orientations, and pressing the two affordances nothing had ever pressed found a defect that has
+been invisible since P54.** `RULES.md` stays **rev 31**, the tree is green at **938**, and
+⚠️ **nothing in the repository changed** — the whole diff is documents, which for a verification
+packet is a result rather than a failure. **The deployed commit was `62ed294` (P59), verified on
+the box before anything was touched**; the tablet half of P53's acceptance is discharged and
+**the phone-on-cellular half is not** — with a named instrument missing before it can be.
+
+- ✅ **(1) The device, and why it was the right one.** Samsung Galaxy Tab S9 FE (`SM-X510`),
+  Android 16, Chrome 151, 1440×2304 at **1.75 dppx** — so **823 CSS px portrait and 1316
+  landscape**. 🔥 **One device rotated really does exercise both sides of the only breakpoint the
+  application has**, exactly as the packet predicted, and portrait lands *inside* P58's 600–896 px
+  defect band. Driven over `adb forward tcp:9222 localabstract:chrome_devtools_remote` with the
+  container log tailed throughout.
+- ✅ **(2) P58's fix holds on a real device, in a font this workstation has never rendered.** At
+  823 px the felt stacks to four 181 px columns; every seat name is `white-space: normal`, **not
+  one is clipped** (`scrollWidth == clientWidth` on all six), and the long ones wrap to two lines —
+  `Khine Myat Zin (opportunist)` at 141 px over 44.6 px of height, in the device's own
+  `ui-sans-serif` at 14.4 px. `documentElement.scrollWidth == clientWidth == 823`: no horizontal
+  overflow. ⚠️ **This is the fence P58 refused to fit to one platform's font, and it survived the
+  change of platform.**
+- 🔥 **(3) The defect P58 left behind is above the line, not below it, and a tablet is where it
+  lives.** In landscape the ring returns and the name reverts to `nowrap` + `text-overflow:
+  ellipsis` — **and three of six names are actually clipped**: *"Su Htwe (oppo…"* (77% shown),
+  *"Myat Htwe (op…"* (70%), *"Khine Myat Zin (oppo…"* (80%). ⚠️ **P58's honesty argument for the
+  ellipsis is that the whole name is a hover away**, and this device answers
+  `(hover: none)`, `(any-hover: none)`, `(pointer: coarse)`, `maxTouchPoints: 5` — **at 1316 px.**
+  🔥 **So A18 is fitted to *width* while the argument that justifies it depends on *hover*, and a
+  tablet in landscape is the counterexample.** The `title=` is present and unreachable.
+- 🔥 **(4) P54's copy-link has never been visible in any browser, and this is why nobody noticed.**
+  `Tables.razor.css` reveals the button with **`:global(.can-copy) .link .copy`** — but `:global()`
+  is a **CSS-Modules** construct, not Blazor scoped CSS (which has `::deep`), and the Razor
+  rewriter emits it **verbatim**. The browser discards the whole rule as an invalid selector, so
+  only `.link .copy { display: none }` survives: **live CSSOM on the device contains exactly one
+  `.copy` rule and it is the hiding one.** ⚠️ **Nothing is broken for a player** — the `<a
+  class="url">` beside it is P54's designed fallback and works — **the enhancement simply never
+  appears.** ✅ **The handler itself is sound**: revealed by an injected style and pressed
+  physically, the delegated listener fires and the clipboard receives
+  `https://poker.nickjones.dev/table/3` — the correct **forwarded** absolute URL.
+- 🔥 **(5) A synthesized touch is not a person either, and it was measured in passing.** The same
+  press dispatched through CDP `Input.dispatchTouchEvent` fired the click handler but **silently
+  failed the clipboard write** (no user activation); the physical `adb input tap` succeeded.
+  ⚠️ **This project's scar has a third instance now** — after `--no-restore` and `curl` — and it
+  argues for physical input wherever a capability gate is involved.
+- ✅ **(6) A whole round was played from the tablet, and the rules behaved.** Opened through
+  **P56's two-step per-seat form** — which grew its four `Wanted.PerSeat[…]` selects on the device
+  and produced a table of `opportunist, sprinter, easy, warden`, shown as such on the lobby card —
+  then sat down with a **physical tap and the on-screen keyboard**. The claim on the turned-up 3♠
+  was **refused**: *"Myat Htwe (warden) refused Nick the turned-up card — which they may only by
+  holding that rank"* (P28, on a tablet), the blind draw arrived privately, and the round settled
+  after **47 turns** with melds and money on screen. **Rotated mid-turn**: the circuit survived,
+  the ring came back and the standing discard question was still standing.
+- ✅ **(7) Log-side evidence, P53's grade.** `_blazor/negotiate` **200**; three circuits opened,
+  each closing **101**, the playing one alive **243 s** across the whole round; touch targets
+  measured on the device at **44 px** buttons and **66 × 76 px** cards (§3.11 B11, confirmed
+  rather than assumed).
+- ⚠️ **(8) What is NOT discharged, and the instrument that is missing.** **No phone, no cellular,
+  no Mobile Safari** — the tablet was on home wifi throughout. 🔥 **And the packet's item 3 cannot
+  be satisfied today even with a phone in hand: nothing logs the client IP.** Traefik has **no
+  `accessLog` configured** (checked on the box) and the app logs no remote address, so *"prove the
+  session came over the carrier rather than silently over the home wifi"* has **no instrument**.
+  ⚠️ **That is a prerequisite for the phone half and it lives in `ansible-nas`, not here.**
+- ✅ **(9) The IPv6 question is answered without a device**: `poker.nickjones.dev` resolves to
+  `209.128.193.153` and has **no `AAAA` record**. The DNS64/NAT64 failure mode is live and
+  unmitigated; **check it before blaming the browser**, and the fix is one record.
+- 🔥 **(10) Found before the device was touched, and worth more than it looks: pulled is not
+  running.** The NAS had `:latest` = `2881b65` **pulled four hours earlier** while the container
+  was still serving **`f309a9d`** — the role fetched the image and never recreated the container.
+  ⚠️ **P53's finding (8) is not "read the deployed tag", it is "read what the running container is
+  built from"**, and `docker ps` alone would have said `:latest` and been wrong.
+
+**`P61` is proposed and is the next packet** — the two defects above, each with a fence. See
+`BUILD-PLAN.md` §5.
+
+---
+
 🔥 **`P59` shipped 2026-08-30 on Opus 5: a real Blazor circuit can be held from a test, killed
 without a close frame, and asked for back — and what a table does in that gap is measured rather
 than assumed.** `RULES.md` stays **rev 31**, the tree is green at **938**, and ⚠️ **not one line of
@@ -3198,6 +3274,54 @@ harness prints today would be a guess wearing a number.
 
 ## Notes for the next session
 
+### What P60 leaves for P61 (2026-08-30)
+
+🔥 **(1) Two defects, both found by pressing a thing on a device, and neither is a layout
+redesign.**
+
+**(a) The copy-link reveal is a dead rule.** `BurmesePoker.Web/Components/Pages/Tables.razor.css`
+line ~141 says `:global(.can-copy) .link .copy { … }`. **`:global()` is CSS Modules; Blazor scoped
+CSS has `::deep`**, and the Razor rewriter passes `:global(...)` through untouched, so the browser
+discards the selector and only `.link .copy { display: none }` survives. ⚠️ **`::deep` is not the
+fix either** — it scopes *descendants of the component's own root*, and `.can-copy` is on
+`<html>`, outside any component. **Recommended shape: move the reveal rule into the unscoped
+stylesheet** (`wwwroot/app.css`) beside the other document-level rules, leaving the `display:none`
+default in the scoped file, **or** drop the class mechanism and have the script set the style it
+needs. 🔥 **The fence is the packet, and it must not be a screenshot**: a test that reads the
+**generated** scoped CSS (`obj/.../scopedcss/**`) and fails on any `:global(` is one line and
+catches the whole class of mistake; a second that asserts a rule revealing `.copy` exists somewhere
+in the served CSS is the positive twin. ⚠️ **This is only one site today** — `::deep` is used
+correctly in `MainLayout.razor.css` and `TableView.razor.css`.
+
+**(b) A18 is fitted to width and its argument depends on hover.** Above 56rem the seat name
+ellipses on the stated grounds that `title=` puts the whole name a hover away; **a tablet in
+landscape is 1316 px with `(any-hover: none)`**, so three of six names were unreadable with no way
+to reach them. ⚠️ **Do not simply widen the ring's name column** — that is the platform-font trap
+P58 refused, and it is the same mistake one axis over. **Recommended shape: make the wrap follow
+the *capability* rather than the width** — `@media (any-hover: none) { .name { white-space: normal;
+text-overflow: clip } }` — and **amend A18 to say so**, because the standard is what makes the fence
+honest. ⚠️ **`@media` can read `(any-hover)` but still cannot read `var()`**, so P54's
+same-width-named-twice idiom is unaffected.
+
+⚠️ **(2) The phone half of P53/P60 has a prerequisite that is not in this repository.** Item 3's
+source-IP evidence has **no instrument**: Traefik runs with no `accessLog` and the app logs no
+remote address. **Enable Traefik's access log in `ansible-nas` before a cellular test**, or the
+test cannot distinguish a carrier path from home wifi — which is the one thing it exists to prove.
+✅ **The IPv6 half is already answered** (no `AAAA`; one record fixes it if it bites).
+
+⚠️ **(3) Operational note for any future device or deploy check.** `docker ps` shows the **tag**,
+which is not the same as what the container is **running**: read
+`docker inspect <container> --format '{{.Image}}'` and match it against
+`docker images … --format '{{.Tag}} {{.ID}}'`. **P60 found the running container five commits
+behind a `:latest` that had already been pulled.**
+
+⚠️ **(4) How the tablet was driven, so the next session does not rediscover it.** USB debugging,
+`adb forward tcp:9222 localabstract:chrome_devtools_remote`, then CDP over
+`http://localhost:9222/json/list`. **The device must be unlocked and awake** — dozing Chrome
+answers `ERR_INTERNET_DISCONNECTED` while the OS pings fine, which reads exactly like a network
+fault. For physical taps, device px = CSS px × 1.75 + **222** (portrait, this device's browser
+chrome); measure it again after a rotation rather than assuming.
+
 ### What P59 leaves for P60 (2026-08-30)
 
 🔥 **(1) There is a circuit client in the test project now, and it is reusable.**
@@ -5108,6 +5232,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 | --- | --- | --- |
+| 2026-08-30 | P60 | **Done — the table on real devices, on Opus 5.** ⚠️ **A verification packet, and the whole diff is documents** — nothing in the repository changed, no measurement can move, no suite owed; tree green at **938** (unchanged: no test was added, and none of what this packet establishes is reachable from the test project). ✅ **The deployed commit was read off the running container before anything was touched and is stated: `62ed294` (P59).** 🔥 **Found on the way there and worth more than it looks — *pulled* is not *running***: the NAS held `:latest` = `2881b65` **pulled four hours earlier** while the container still served **`f309a9d`**, so the role had fetched an image and never recreated the container. ⚠️ **P53's finding (8) is not “read the deployed tag”, it is “read what the running container is built from”**. ✅ **The device did what the packet said it would**: Samsung Galaxy Tab S9 FE (`SM-X510`), Android 16, Chrome 151, 1.75 dppx — **823 CSS px portrait, 1316 landscape** — so **one device rotated exercised both sides of the only breakpoint the application has**, with portrait landing *inside* P58's 600–896 defect band. ✅ **P58's fix holds in a font this workstation has never rendered**: four 181 px columns, every name `white-space: normal`, **none clipped** (`scrollWidth == clientWidth` on all six), `Khine Myat Zin (opportunist)` wrapping to two lines, and no horizontal overflow. 🔥 **The defect it found is above the line, and a tablet is where it lives**: in landscape the ring returns, the name reverts to `nowrap` + `ellipsis`, and **three of six are clipped** — *“Su Htwe (oppo…”* 77%, *“Myat Htwe (op…”* 70%, *“Khine Myat Zin (oppo…”* 80% — while the device answers `(hover: none)`, `(any-hover: none)`, `(pointer: coarse)` **at 1316 px**. ⚠️ **A18 is fitted to *width* while the argument that justifies the ellipsis depends on *hover*, and the `title=` is present and unreachable.** 🔥 **P54's copy-link has never been visible in any browser**: `Tables.razor.css` reveals it with **`:global(.can-copy) .link .copy`**, but `:global()` is a **CSS-Modules** construct rather than Blazor scoped CSS (which has `::deep`), the Razor rewriter emits it **verbatim**, and the browser drops the whole rule as an invalid selector — **the live CSSOM on the device holds exactly one `.copy` rule and it is `display: none`.** ⚠️ **Nothing is broken for a player** (the `<a class="url">` beside it is P54's designed fallback) — **the enhancement simply never appears**, which is precisely why *“it was never pressed in a browser”* never turned into a bug report. ✅ **The handler is sound**: revealed by an injected style and pressed **physically**, the delegated listener fires and the clipboard receives the correct **forwarded** absolute URL. 🔥 **And a synthesized touch is not a person either** — the identical press through CDP `Input.dispatchTouchEvent` fired the click handler but **silently failed the clipboard write** (no user activation) where `adb input tap` succeeded: a third instance of this project's scar, after `--no-restore` and `curl`. ✅ **A whole round was played from the tablet** — opened through **P56's two-step per-seat form**, which grew its four `Wanted.PerSeat[…]` selects on the device and produced `opportunist, sprinter, easy, warden`; sat down with a physical tap and the on-screen keyboard; **the claim on the turned-up 3♠ was refused** (*“Myat Htwe (warden) refused Nick the turned-up card — which they may only by holding that rank”*, P28 on a tablet); the blind draw arrived privately; **rotated mid-turn** without losing the circuit or the standing question; settled after **47 turns**. ✅ **Log-side evidence, P53's grade**: `negotiate` **200**, three circuits each closing **101**, the playing one alive **243 s**; touch targets measured on the device at **44 px** buttons and **66 × 76 px** cards (§3.11 B11 confirmed rather than assumed). ⚠️ **The phone half is NOT discharged and now has a named blocker**: no phone, no cellular, no Mobile Safari — **and item 3 cannot be satisfied even with a phone in hand, because nothing logs the client IP.** Traefik has **no `accessLog` configured** (checked on the box) and the app logs no remote address, so *“prove the session came over the carrier rather than silently over the home wifi”* has **no instrument**; that is a prerequisite living in `ansible-nas`. ✅ **The IPv6 question is answered without a device**: `poker.nickjones.dev` is `209.128.193.153` with **no `AAAA` record**, so the DNS64/NAT64 mode is live and unmitigated — **check it before blaming the browser**. No rules question; `RULES.md` stays rev 31. **`P61` is proposed: the two defects, each with a fence.** |
 | 2026-08-30 | P59 | **Done — circuit survival: the connection that drops and comes back, on Opus 5.** ⚠️ **Tests and one package only**: `Domain`, `Presentation`, `Server`, `Console`, `Sim` **and `Web`** byte-identical, no measurement can move, no suite owed. Tree green at **938**, from 933. 🔥 **A real Blazor circuit can now be held from a test** — `AddInteractiveServerComponents` narrows `/_blazor` to **`blazorpack`**, which no client library speaks, so `BlazorPack.cs` writes down the slice of it a circuit's opening needs and `BlazorCircuit.cs` starts one from **the page's own component markers**, kills the socket with **no close frame**, and asks for the circuit back by name. ✅ **The instrument proves itself**: `TableView` sits down only when it is *really* interactive (§3.11 C13), so the person-seat ceasing to wait is proof a circuit started and rendered rather than that a page was fetched. 🔥 **Three answers and they differ** (retention 3 s against patience 8 s, the shipped ordering shrunk): *inside the window* the reconnection succeeds and nothing is lost; *past the window, inside the patience* the reconnection **fails** and the seat is **given up** — `TableView.Dispose` stands the player up — **while the turn is not**, and sitting down again by name takes the seat back with the question still standing; *past both* the computer has played the turn. 🔥 **So a seat and a turn are recovered by different mechanisms** — the seat by name (P13.6), the turn by the patience — and **losing the circuit is not losing the game.** 🔥 **P54's claim is exercised rather than asserted against itself**: with the patience **below** the retention period the computer plays the turn of somebody **the framework is still holding**, the reconnection still succeeds, and **nothing on screen says anything happened.** ✅ **Proved able to fail the way the packet asked** — shortening the patience below the window turns the *inside the window* test red. 🔥 **`TableBoard.Turn` turned out to be the wrong instrument and measuring found it**: a seat is asked **twice** in a turn, so a turn sits on a seat for **two** patiences; `StoodInFor` is the fact itself. ⚠️ **`tc netem` not done** — `TestServer`'s socket is in-memory pipes and shaping a real one needs root; **latency is P60's**. ⚠️ **The recorded obstacle (`SeatChannel`'s undisposed wait handle, `Ask` taking no token) was never reached** — nothing here tears a seat down. |
 | 2026-08-30 | P58 | **Done — a viewport standard, a fence for the one breakpoint there is, and a defect the standard found, on Opus 5.** ⚠️ **Front-end only**: `Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical, no measurement can move, no suite owed. Tree green at **933**, from 929. 🔥 **The sub-896 px question is answered *no*, and the evidence says the narrow end was never the problem**: measured in Chrome at eleven real viewports, **360/375/390 px resolve the stacked felt to a *single* column** — `minmax(9.5rem, 1fr)` cannot fit two inside 360 − 40 page padding − 24 felt padding — with nothing trimmed and nothing overflowing. **A phone is the safe end of this layout.** 🔥 **What was broken is the band above it, and it is the exact defect the 56rem line was drawn to prevent**: the pack packs to its floor, so a column is ~158 px at 412 px and ~154 px from 600 to 896 px — **narrower than at 360** — and there the computer's own seat names ellipsed (*“Aung Aung (exp…”*, which Nick saw on screen mid-session). The arithmetic agrees with the eye: the name measures 122.8 px and its chrome 39.8, so it needs a 163 px column — 158 trims, 167 does not. 🔥 **Fixed by wrapping and not by a wider floor**: `Khine Myat Zin (opportunist)` measures 183 px *in this machine's `system-ui`*, and **a floor fitted to one platform's font is a fence that passes where it was fitted**; ⚠️ **an ellipsis is honest only where the whole name is a hover away**, true above the line and false below it. Re-measured after: nothing trimmed at any width, no overflow, and 720 px went 4 columns → 3. ✅ **§3.11 gained item **A18** and `ViewportTests` is four facts, each proved able to fail by mutating the stylesheet rather than the test** — the two files disagreeing, `nowrap` put back, the floor raised to 19.5 rem (*“asks for 376px … has to be playable at 360px”*), and `width=device-width` deleted. ⚠️ **Not a device test**: no phone, no tablet, no touch, no Mobile Safari — **P60 still owns that**, and an iframe is not a person any more than `curl` is. |
 | 2026-08-30 | P55 | **Done — Gitea primary, GitHub a mirror, on Opus 5.** ⚠️ **Ops, and the whole diff is documents** — `Domain`, `Presentation`, `Server`, `Console`, `Sim` and `Web` byte-identical, no measurement can move, no suite owed. ✅ **Refs first, and the check is the deliverable**: GitHub's one stale branch `p49-simulations-doc` was at **exactly `a12c7a3`**, the same object as GitHub `main` and zero commits ahead, so dropping it lost nothing — ⚠️ *“there was nothing to lose” is a measurement here rather than an assumption*, because this is the operation where a remote-only ref vanishes silently. No tags on either remote, before or after. 🔥 **`pre-rewrite` was settled by correcting the claim rather than minting the tag — Nick's call, against the plan's own recommendation — and it was nine sites across five documents, not the one sentence the plan costed**: `CLAUDE.md`, `RULES-TECHNICAL.md`'s HISTORICAL banner, three in `BUILD-PLAN.md` (**including P0's own acceptance line, *“`git tag pre-rewrite` exists”*, which was never met**) and three in `STATUS.md`. 🔥 **The one with teeth is `STATUS.md`'s runnable command** — `git show pre-rewrite:BurmesePoker/Logic/Factories/UserPromptFactory.cs`, written for P8 as the way to read the old Spectre prompts — **failing since P0 and never noticed, because P8 read the file before it was deleted.** All nine now name **`79d86bd`** (*“Pre-rewrite snapshot”*, the parent of `b32d08b`). ⚠️ **P0's log row and acceptance were annotated, not back-dated** — the record stands with the correction beside it, which is the rule for a newest-first narrative. 🔥 **The swap found the thing that would have broken the next session: a remote's name is documentation.** `origin` is Gitea, `github` is GitHub — and **`git push gitea main` was quoted as *the CI trigger* in seven places** across `CLAUDE.md`, `BUILD-PLAN.md` and `STATUS.md`, every one a command the rename makes fail. All seven now say `git push origin main`. ⚠️ **Nothing in the tree could have caught it**: `DocumentationTests` resolves a `bash`-fenced command against the parser that would accept it, and **a ref has no parser**. ✅ **The mirror is configured with sync-on-push** (`8h` interval as a backstop) against `github.com/nickjones33/BurmesePoker`, PAT fine-grained, `contents: write`, that repository only, ⚠️ **never entering a session** — the third credential in this track and the third to live only in a settings page. ✅ **Acceptance is a measurement rather than a settings-page claim**: P55's own commit `8d619bc` was pushed to `origin` and reached GitHub **in about ten seconds, with no second push** — ⚠️ **which is exactly what a manual *Synchronize Now* does not establish**, and the half the acceptance actually asks for. 🔥 **Its cost is stated rather than discovered later: a push mirror force-pushes, permanently.** The first sync was a fast-forward (`a12c7a3` is a strict ancestor of `b2c84c2`, checked *before* enabling it), but from here **a commit made straight on GitHub is erased by the next sync rather than conflicting** — which is why `CLAUDE.md`'s new rule is **never push to `github` by hand**, a rule and not a preference. ✅ **Nick's answer on pull requests: `tea`**, installed from Arch `extra` at **0.15.1**. ⚠️ **`gh` was never installed on this machine at all**, so the standing *“use the `gh` CLI”* guidance was unrunnable as well as aimed at the wrong forge — **and aiming it at the mirror is the dangerous half**, since a merge landing on GitHub would be overwritten by the next sync. `CLAUDE.md` now carries both rules and says out loud that **this project has never used a pull request**: fifty-seven packets, one commit each, straight onto `main`. ⚠️ **`git push origin main` ran during the packet**, so the deployed image is built from `b2c84c2` and **P57's deploy check is the only thing left of it**. No rules question; `RULES.md` stays rev 31. Tree green at **929** (unchanged — ⚠️ **no test was added, and none could be**: every fact here is about refs, remotes and a settings page, none of which the test project can reach). |

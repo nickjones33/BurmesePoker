@@ -135,6 +135,51 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
 
+**What P60 built, and the five things a cold session needs from it.**
+🔥 **(1) The whole diff is documents, and that is the result.** A real round was played on a real
+tablet — Galaxy Tab S9 FE (`SM-X510`), Android 16, Chrome 151, 1.75 dppx, so **823 CSS px portrait
+and 1316 landscape** — driven over `adb forward tcp:9222 localabstract:chrome_devtools_remote`.
+⚠️ **The deployed commit is stated: `62ed294` (P59)**, read off the running container first.
+🔥 **And reading it that way is a finding: *pulled* is not *running*.** The NAS held `:latest` =
+`2881b65` **pulled four hours earlier** while the container still served **`f309a9d`**. ⚠️ **P53's
+finding (8) sharpens to: read what the running container is *built from*** — `docker inspect <c>
+--format '{{.Image}}'` against `docker images … '{{.Tag}} {{.ID}}'`; `docker ps` shows the tag and
+the tag lies.
+✅ **(2) P58's fix holds in a font this workstation has never rendered** — four 181 px columns,
+every seat name `white-space: normal`, **none clipped**, `Khine Myat Zin (opportunist)` wrapping to
+two lines, no horizontal overflow. **The fence P58 refused to fit to one platform's `system-ui` was
+right to refuse.**
+🔥 **(3) The defect found is above the line, and it is A18's *argument* rather than its number.**
+In landscape the ring returns, the name reverts to `nowrap` + `ellipsis`, and **three of six names
+are clipped** (77%, 70%, 80% shown) while the device answers `(hover: none)`, `(any-hover: none)`,
+`(pointer: coarse)` **at 1316 px**. ⚠️ **An ellipsis is honest only where the whole name is a hover
+away, and a tablet is a wide screen with no pointer** — so the standard is fitted to *width* while
+what justifies it is *hover*.
+🔥 **(4) P54's copy-link has never been visible in any browser.** `Tables.razor.css` reveals it
+with **`:global(.can-copy) .link .copy`** — but **`:global()` is CSS Modules, not Blazor scoped CSS**
+(which has `::deep`), the Razor rewriter emits it **verbatim**, and the browser discards the whole
+rule: **the live CSSOM holds exactly one `.copy` rule and it is `display: none`.** ⚠️ **Nothing is
+broken for a player** — the `<a class="url">` beside it is P54's designed fallback — **the
+enhancement simply never appears**, which is why *"it was never pressed in a browser"* never became
+a bug report. ✅ **The handler is sound**: pressed physically once revealed, it writes the correct
+**forwarded** absolute URL. 🔥 **And a synthesized touch is not a person either** — the same press
+through CDP `Input.dispatchTouchEvent` fired the click handler but **silently failed the clipboard
+write** (no user activation) where `adb input tap` succeeded. **Third instance of this project's
+scar, after `--no-restore` and `curl`.**
+⚠️ **(5) The phone half is NOT discharged and its blocker is not a phone.** No cellular, no Mobile
+Safari — **and the source-IP evidence has no instrument**: Traefik runs with **no `accessLog`** and
+the app logs no remote address, so a cellular test cannot be told from a wifi one. **Enable
+Traefik's access log in `ansible-nas` first.** ✅ **The IPv6 question is answered without a device**:
+`poker.nickjones.dev` is `209.128.193.153` with **no `AAAA` record**, so the DNS64/NAT64 mode is
+live and unmitigated — **check it before blaming the browser.** ✅ **The round itself behaved**:
+opened through P56's two-step per-seat form, sat down by physical tap and on-screen keyboard, the
+claim **refused** by `warden` holding the rank (P28), the blind draw private, **rotated mid-turn
+without losing the circuit or the standing question**, settled in 47 turns; `negotiate` **200**,
+three circuits each closing **101**, the playing one alive **243 s**; §3.11 B11 measured on the
+device at **44 px** buttons and **66 × 76 px** cards. 🔥 **`P61` is the next packet: the two
+defects, each with a fence.** Tree green at **938**, unchanged — no test was added and none could
+be, because nothing here is reachable from the test project.
+
 **What P59 built, and the four things a cold session needs from it.**
 🔥 **(1) A real Blazor circuit can be held from a test now, and writing the protocol down was the
 price.** A circuit is reached over SignalR and `AddInteractiveServerComponents` narrows that hub to

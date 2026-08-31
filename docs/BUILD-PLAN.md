@@ -8212,7 +8212,7 @@ is written and no suite is owed**; the tree is green.
 
 ---
 
-### P58–P60 — The table on a small screen (the small-screen track) ◐ — **added 2026-08-30, at Nick's direction; P58 and P59 done**
+### P58–P60 — The table on a small screen (the small-screen track) ☑ — **added 2026-08-30, at Nick's direction; all three done, and P60 found two defects that become `P61`**
 
 > ⚠️ **Front-end and ops, not the rules or strategy programme.** No rule changes, `Domain`
 > untouched by all three, **no suite regeneration owed**, and no measurement can move. **P59 was
@@ -8251,7 +8251,7 @@ it.** What is absent is a *standard*, a *fence* and *evidence* — never taste.
 |---|---|---|
 | P58 the viewport standard and its fence | `BUILD-PLAN` §3.11, CSS, tests | **First, or the others waste effort** — device testing without a stated width finds "it is cramped" and needs this packet anyway, later |
 | P59 circuit survival on a bad connection ☑ | tests only, in the event | the only one that can leave a **repeatable regression test** — and it did, without a line of production code |
-| P60 the table on real devices | nothing — verification | closes P53's outstanding acceptance; the tablet is drivable, the phone is not |
+| P60 the table on real devices ☑ | nothing — documents only, as costed | **the tablet half of P53 is discharged; the phone half is not, and now has a named blocker** — and the packet found two defects, `P61` |
 
 ---
 
@@ -8426,7 +8426,7 @@ reference.
 
 ---
 
-### P60 — The table on real devices ☐ — **added 2026-08-30; closes P53's outstanding acceptance**
+### P60 — The table on real devices ☑ done 2026-08-30 — **added 2026-08-30; closes the tablet half of P53's acceptance**
 
 **Goal.** A real round on a real small screen, over a real mobile network, observed well enough to
 be evidence. **Read first:** P53's findings (2), (7) and (8) — especially **(8): read the deployed
@@ -8493,6 +8493,85 @@ person**, and this project has the scar: `--no-restore` shipped an image that pa
 ever written and was dead, and P52's lesson was *"curl is not a person."* **Emulation going green
 must not close P53** — the risk is not that these fail, it is that they all pass on a WebKit that
 is not Safari and a NAT that is not a carrier's. **Only a real phone closes the phone acceptance.**
+
+**What it found (2026-08-30).** ⚠️ **The diff is documents, exactly as costed** — nothing in the
+repository changed, no measurement can move, tree green at **938** unchanged.
+
+1. ✅ **The deployed commit was `62ed294` (P59)**, read off the running container before anything
+   was touched. 🔥 **And reading it that way is the finding**: the NAS held `:latest` = `2881b65`
+   **pulled four hours earlier** while the container still served **`f309a9d`** — the role fetched
+   an image and never recreated the container. ⚠️ **P53's finding (8) sharpens to: read what the
+   running container is *built from*, not what tag it wears.** `docker inspect <c> --format
+   '{{.Image}}'` against `docker images … '{{.Tag}} {{.ID}}'`.
+2. ✅ **The tablet premise held exactly.** Galaxy Tab S9 FE (`SM-X510`), Android 16, Chrome 151,
+   1.75 dppx → **823 CSS px portrait / 1316 landscape**. **One device rotated exercised both sides
+   of the only breakpoint there is**, and portrait fell *inside* P58's 600–896 band.
+3. ✅ **P58's fix survived the change of platform font** — four 181 px columns, every name
+   `white-space: normal`, **none clipped**, `Khine Myat Zin (opportunist)` wrapping to two lines,
+   no horizontal overflow. **The fence P58 refused to fit to one machine's `system-ui` was right to
+   refuse.**
+4. 🔥 **The defect is above the line, and it is A18's argument rather than its number.** In
+   landscape the ring returns, the name reverts to `nowrap` + `ellipsis`, and **three of six names
+   are clipped** (77%, 70%, 80% shown) — while the device reports `(hover: none)`,
+   `(any-hover: none)`, `(pointer: coarse)` **at 1316 px**. ⚠️ **The ellipsis is honest only where
+   the name is a hover away; a tablet is a wide screen with no pointer.** → **`P61`**.
+5. 🔥 **P54's copy-link has never been visible in any browser.** `:global(.can-copy) .link .copy`
+   is a **CSS-Modules** selector, not Blazor scoped CSS; the rewriter emits it verbatim and the
+   browser drops the rule. **Live CSSOM on the device: one `.copy` rule, `display: none`.**
+   ✅ The handler is sound — pressed physically once revealed, it writes the correct **forwarded**
+   absolute URL to the clipboard. → **`P61`**.
+6. 🔥 **A synthesized touch is not a person either.** The same press through CDP
+   `Input.dispatchTouchEvent` fired the click handler but **silently failed the clipboard write**
+   (no user activation) where `adb input tap` succeeded. ⚠️ **A capability gate is the place where
+   emulation quietly diverges** — the third instance of this project's scar.
+7. ✅ **A whole round was played**, through **P56's two-step per-seat form** (its four
+   `Wanted.PerSeat[…]` selects grew on the device), sat down by physical tap and on-screen
+   keyboard, **claim refused by `warden` holding the rank** (P28), blind draw private, **rotated
+   mid-turn without losing the circuit or the standing question**, settled in 47 turns.
+   Log-side: `negotiate` **200**, three circuits each closing **101**, the playing one **243 s**.
+   §3.11 B11 measured on the device at **44 px** buttons and **66 × 76 px** cards.
+8. ⚠️ **The phone half is not discharged, and it has a blocker that is not a phone.** Item 3's
+   source-IP evidence has **no instrument**: Traefik runs with **no `accessLog`** and the app logs
+   no remote address, so a cellular test cannot be distinguished from a wifi one — **which is the
+   only thing it exists to prove.** **Enable Traefik's access log in `ansible-nas` first.**
+   ✅ Item 4 is answered without a device: **no `AAAA` record** (`209.128.193.153` only), so the
+   DNS64/NAT64 mode is live and unmitigated.
+
+---
+
+### P61 — The two defects a real device found ☐ — **added 2026-08-30 by P60**
+
+**Goal.** The copy-link is visible where it works, and the seat name is readable where there is no
+pointer — each with a fence that fails for the right reason. **Read first:** P60's *What it found*
+above, §3.11 **A18**, `Tables.razor.css` (the `:global` rule) and `SeatPanel.razor.css` (the
+`nowrap` above the line).
+
+**Build.**
+
+1. **Make the copy-link reveal a rule the browser accepts.** ⚠️ **`::deep` is not the fix** — it
+   scopes descendants of the component's own root and `.can-copy` sits on `<html>`. Recommended:
+   **move the reveal into the unscoped stylesheet** (`wwwroot/app.css`), leaving the scoped
+   `display: none` default where it is; the alternative is to drop the class mechanism and have the
+   script set the style itself. ⚠️ **Keep the fallback intact** — the `<a class="url">` is what
+   makes the button an enhancement rather than the only way to get the link.
+2. 🔥 **Fence the whole class of mistake, not the one line.** A test that reads the **generated**
+   scoped CSS under `obj/**/scopedcss/**` and fails on any `:global(` is one assertion and catches
+   every future instance; the positive twin asserts that a rule revealing `.copy` exists in the
+   served CSS. ⚠️ **Prove it able to fail by mutating the stylesheet, not the test** — this
+   project's rule, and here it is the only way to tell a live rule from a discarded one.
+3. **Make the name's wrap follow the capability rather than the width.** Recommended:
+   `@media (any-hover: none) { … white-space: normal; text-overflow: clip }` beside the existing
+   breakpoint rule. ⚠️ **Do not widen the ring's name column** — a floor fitted to this
+   workstation's font is exactly the trap P58 refused, one axis over.
+4. **Amend §3.11 A18 to say what it actually depends on**, and extend `ViewportTests` to it. The
+   standard today is fitted to *width*; the argument underneath it is *hover*. ⚠️ **Amend the
+   standard rather than contradicting it** — P56's precedent.
+
+**Acceptance.** The copy button is visible and copies on a real device; the longest seat name is
+readable at 1316 px with no pointer; both fences proved able to fail by mutating the stylesheet;
+`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical, **no suite owed**.
+⚠️ **A redeploy is part of it** — `git push origin main` and a play, then re-read the running
+container, because P60 established that a pulled image is not a running one.
 
 ---
 
