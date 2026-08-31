@@ -8626,7 +8626,7 @@ container, because P60 established that a pulled image is not a running one.
 
 ---
 
-### P62 — The table on a phone, on a carrier ☐ — **added 2026-08-30 by P60; closes the remainder of P53's acceptance**
+### P62 — The table on a phone, on a carrier ◐ — **added 2026-08-30 by P60; closes the remainder of P53's acceptance. Step 0 built 2026-08-31; the rest needs a person with a phone.**
 
 **Goal.** A round played on a real phone, over a real carrier, **proved to have come over the
 carrier**. **Read first:** P60's *What it found* (8) — the instrument that does not exist — and the
@@ -8640,7 +8640,22 @@ phone**: they will pass, and passing them is not evidence about any of the three
 
 **Build.**
 
-1. 🔥 **Step 0, and it is in a different repository — without it the packet cannot conclude
+1. ✅ **Step 0 is built — `ansible-nas` commit `c57a9ea4`, 2026-08-31 — and ⚠️ it is built but not
+   deployed.** `traefik.toml` carries `[accessLog]` in JSON to the container's stdout, gated on a
+   new `traefik_access_log_enabled` defaulting **on**; `User-Agent` is kept **explicitly**, because
+   Traefik's `fields.headers.defaultMode` is `drop` and step 4 below is a question about WebKit
+   specifically — unanswerable unless the log names the engine. The template was Jinja-rendered and
+   TOML-parsed **both ways** (a malformed `traefik.toml` takes the whole proxy down), and the
+   role's `molecule/default/verify.yml` slurps the templated config back and fails without it.
+   ⚠️ **What remains is not optional**: run `ansible-playbook nas.yml --tags traefik --become
+   --ask-become-pass` (after `ssh-add ~/ubuntuServer22key`) and **read `docker logs traefik` for a
+   request from a known device**, confirming `ClientHost` is a real client address. 🔥 **An empty
+   or bridge-local `ClientHost` is the failure this step exists to catch** — Traefik runs
+   `network_mode: host`, which is the reason to expect a real one, and `UseForwardedHeaders` in the
+   app means the app and the proxy can still disagree. ⚠️ **P61's redeploy is owed on the same
+   trip** (`git push origin main` is the CI trigger, and *pulled is not running*). *The original
+   statement of this step follows.*
+   🔥 **Step 0, and it is in a different repository — without it the packet cannot conclude
    anything.** ⚠️ **Nothing logs the client IP today**: Traefik runs with **no `accessLog`**
    configured and the app logs no remote address, so *"this came over the carrier"* and *"this came
    over the house wifi"* produce **identical evidence**. Enable Traefik's access log in
