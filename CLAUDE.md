@@ -14,7 +14,7 @@ over ad-hoc changes.
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
 recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
-F10) was the last of them; the tree is green at 933.**
+F10) was the last of them; the tree is green at 938.**
 🔥 **A fourth track was added 2026-08-28 at Nick's direction: `P51`–`P54`, *taking the table
 online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
@@ -134,6 +134,43 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 ⚠️ **One P46 follow-up owned, not done**: the race-reach instrument recomputes an uncached cover
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
+
+**What P59 built, and the four things a cold session needs from it.**
+🔥 **(1) A real Blazor circuit can be held from a test now, and writing the protocol down was the
+price.** A circuit is reached over SignalR and `AddInteractiveServerComponents` narrows that hub to
+**one protocol, `blazorpack`**, which no client library speaks — so
+`BurmesePoker.Tests/Web/BlazorPack.cs` writes down the slice of it a circuit's opening needs and
+`BlazorCircuit.cs` starts one from **the page's own component markers**, exactly as
+`blazor.web.js` does, kills the socket **with no close frame**, and asks for the circuit back by
+name. ⚠️ **`Microsoft.AspNetCore.Mvc.Testing` is now referenced by the test project** — the first
+package here that is not the test framework. ✅ **The instrument proves itself before it is used**:
+`TableView` sits down **only when it is really interactive** (§3.11 C13), so the table's one
+person-seat ceasing to wait is proof a circuit **started and rendered**, not that a page was
+fetched. ⚠️ **It does not draw and cannot press anything** — render batches are acknowledged and
+thrown away.
+🔥 **(2) Three answers and they differ**, at the shipped ordering shrunk to seconds (retention
+**3 s**, patience **8 s**): *inside the window* the reconnection succeeds and nothing is lost;
+*past the window, inside the patience* the reconnection **fails** and the seat is **given up** —
+`TableView.Dispose` stands the player up — **while the turn is not lost**, and sitting down again
+under the same name takes the seat back with the question still standing; *past both* the computer
+has played the turn. 🔥 **So a seat and a turn are recovered by two different mechanisms** — the
+seat **by name** (P13.6), the turn **by the patience** — and ⚠️ **losing the circuit is not losing
+the game**, which nothing had ever said.
+🔥 **(3) P54's pairing is exercised instead of asserted against itself.** With the patience **below**
+the retention period the computer plays the turn of somebody **the framework is still holding** —
+the reconnection still succeeds — and **nothing on screen says anything was decided in the gap.**
+✅ Proved able to fail as the packet asked: shortening the patience below the window turns the
+*inside the window* test red. ⚠️ **Do not move either number without reading the other** is now a
+measurement rather than a comment.
+🔥 **(4) `TableBoard.Turn` is the wrong instrument for *did the player lose a turn*, and measuring
+found it**: a seat is asked **twice** in one turn — take, then throw — so a turn sits on a seat for
+**two** patiences and a turn the computer has already played still reads as that seat's.
+**`TableBoard.StoodInFor` is the fact itself.** ⚠️ **Two things deliberately not done**: the
+`tc netem` arm (**no socket to shape** — `TestServer` is in-memory pipes, and shaping a real one
+needs root; **latency is P60's**), and the recorded `SeatChannel`/`Ask`-token obstacle, which
+**was never reached** because nothing here tears a seat down. Tree green at **938**, from 933;
+⚠️ **`Domain`, `Presentation`, `Server`, `Console`, `Sim` and `Web` are byte-identical** — the whole
+diff is the test project.
 
 **What P58 built, and the four things a cold session needs from it.**
 🔥 **(1) The packet that was meant to add a standard found a defect, and it was not where the plan

@@ -10,11 +10,67 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
+🔥 **`P59` shipped 2026-08-30 on Opus 5: a real Blazor circuit can be held from a test, killed
+without a close frame, and asked for back — and what a table does in that gap is measured rather
+than assumed.** `RULES.md` stays **rev 31**, the tree is green at **938**, and ⚠️ **not one line of
+production code changed** — `Domain`, `Presentation`, `Server`, `Console`, `Sim` **and `Web`** are
+byte-identical, so **no measurement can move and no suite is owed**. **`P60` is the next packet,
+and it is the last of the small-screen track.**
+
+- 🔥 **(1) The instrument is the packet's real cost, and it is one new class plus one new
+  package.** A circuit is reached over SignalR, and `AddInteractiveServerComponents` narrows that
+  hub to **one protocol — `blazorpack`** — which no client library speaks. So
+  `BurmesePoker.Tests/Web/BlazorPack.cs` writes down the slice of it a circuit's opening needs
+  (SignalR's length-prefixed framing, the MessagePack shapes on it) and
+  `BurmesePoker.Tests/Web/BlazorCircuit.cs` starts a circuit from **the page's own component
+  markers**, exactly as `blazor.web.js` does. ⚠️ **`Microsoft.AspNetCore.Mvc.Testing` is now
+  referenced by the test project** — the first package here that is not the test framework — for
+  `WebApplicationFactory` and `TestServer`.
+- ✅ **The instrument proves itself before it is used.** `TableView` claims the seat in
+  `OnInitialized` **and only when it is really interactive** (§3.11 C13), so *the table's one
+  person-seat ceasing to wait* is proof that a circuit started, rendered and ran the component —
+  **not** that a page was fetched. That is `ARealCircuitSitsDownInTheSeat`, and it is the answer to
+  P52's *"`curl` is not a person"* at the only level a test can give one.
+- 🔥 **(2) The three answers differ, so P54's pairing is load-bearing rather than decorative.**
+  At the test's scale (retention **3 s**, patience **8 s** — the shipped ordering, shrunk):
+  **inside the window** the reconnection succeeds, the seat is still theirs and the turn is still
+  theirs; **past the window but inside the patience** the reconnection **fails** and the seat is
+  **given up** — `TableView.Dispose` stands the player up — **while the turn is not lost**, and
+  sitting down again under the same name takes the seat back with the question still standing;
+  **past both** the computer has played the turn.
+- 🔥 **The finding inside that: a seat and a turn are recovered by two different mechanisms.**
+  The seat comes back **by name** (P13.6); the turn comes back **because the patience has not run
+  out**. ⚠️ **Losing the circuit is not losing the game**, and nothing had ever said so.
+- 🔥 **(3) P54's claim is now exercised instead of asserted against itself.** Run the identical
+  disconnection with the patience **below** the retention period and the computer plays the turn of
+  somebody **the framework is still holding** — the reconnection succeeds, and the player comes
+  back to a table that decided something in the gap **with nothing on screen to say so.** ⚠️ **That
+  is why the two numbers must not be moved independently**, and it is the failure `ContainerTests`
+  can only assert the absence of.
+- ✅ **Proved able to fail exactly as the packet asked**: shortening the patience below the
+  retention period turns the *inside the window* test red.
+- 🔥 **(4) `TableBoard.Turn` is the wrong instrument for "did the player lose a turn", and
+  measuring is what found it.** A seat is asked **twice** in one turn — whether to take, then what
+  to throw — so **a turn sits on a seat for two patiences**, and a turn the computer has already
+  played still reads as that seat's. (Measured: with a 12 s patience the stand-in played at ~13 s
+  and the next seat's turn only began at ~25 s.) **`TableBoard.StoodInFor` is the fact itself** and
+  is what the tests read.
+- ⚠️ **(5) Two things deliberately not done, said out loud.** **(a)** The packet costed a
+  `tc netem` arm at ~150 ms RTT with loss and jitter; **there is no socket to shape** — `TestServer`'s
+  WebSocket is a pair of in-memory pipes — and shaping a real one needs root on an interface, which
+  is not a thing a test may take. **Latency is P60's, on a real network.** **(b)** The obstacle
+  recorded in advance — `SeatChannel`'s undisposed `ManualResetEventSlim` and `Ask` taking no
+  cancellation token — **was never reached**: nothing here tears a seat down, the window is observed
+  from outside, and `Server` is byte-identical. **Decide whether a packet needs that before assuming
+  it does** — this one did not.
+
+---
+
 🔥 **`P58` shipped 2026-08-30 on Opus 5, and the packet that was meant to add a standard found a
 defect.** `RULES.md` stays **rev 31**, the tree is green at **933**, and ⚠️ **`Domain`,
 `Presentation`, `Server`, `Console` and `Sim` are byte-identical** — the whole diff is one CSS
 block, `BurmesePoker.Tests/Web/ViewportTests.cs` and documents, **so no measurement can move and
-no suite is owed.** **`P59` is the next packet, then `P60`.**
+no suite is owed.** **`P59` is the next packet, then `P60`.** *(Both since: `P59` is done — see the block at the top; `P60` is next.)*
 
 - 🔥 **The sub-896 px question is answered — *no* — and the narrow end was never the problem.**
   Measured in Chrome at eleven real viewports: **at 360, 375 and 390 px the stacked felt resolves
@@ -47,7 +103,7 @@ no suite is owed.** **`P59` is the next packet, then `P60`.**
 
 🔥 **`P58`–`P60` were planned 2026-08-30 at Nick's direction: the table on a small screen.**
 ⚠️ **Front-end and ops — no rule changes, `Domain` untouched by all three, no
-suite owed, no measurement can move**; `P59` is the only one that touches server code.
+suite owed, no measurement can move**; `P59` was expected to be the only one that touches server code — ⚠️ **and in the event it touched none**, because the window it measures is observed from outside the seat.
 **`BUILD-PLAN.md` §5.**
 
 🔥 **The finding that shaped the track, from a survey rather than a build: the app is responsive by
@@ -71,7 +127,7 @@ taste.
   wasted. ⚠️ **A CSS custom property cannot carry a breakpoint** (`@media` cannot read `var()`), so
   the recommendation is **a test asserting the two files name the same width** — P54's idiom
   exactly.
-- **`P59` — the connection that drops and comes back**, and 🔥 **the gap is precise**: P53 measured
+- ☑ **`P59` — the connection that drops and comes back. Done 2026-08-30 — see the block at the top.** 🔥 **The gap it closed was precise**: P53 measured
   an idle circuit for 7½ minutes **with keepalives flowing**, and **nobody has ever measured a
   client that stops answering and then returns** — which is the question a screen lock, an app
   switch and a wifi→cellular handover all ask. ⚠️ **P54's patience/retention pairing is fenced only
@@ -3142,6 +3198,31 @@ harness prints today would be a guess wearing a number.
 
 ## Notes for the next session
 
+### What P59 leaves for P60 (2026-08-30)
+
+🔥 **(1) There is a circuit client in the test project now, and it is reusable.**
+`BurmesePoker.Tests/Web/BlazorCircuit.cs` starts a real circuit, holds it, kills the socket with
+no close frame, and asks for it back by name; `BlazorPack.cs` is the wire format it does that
+over. ⚠️ **It is deliberately partial** — only what a circuit's opening needs is written down, and
+everything else is *skipped by shape* so an unexpected message cannot desynchronise the stream. A
+test that needs a message this cannot write should add it here rather than work around it. ⚠️ **It
+does not draw**: render batches are acknowledged and thrown away, so **it cannot press a button** —
+a UI event needs the handler ids inside a render batch, which is a decoder this does not have and
+did not need.
+
+⚠️ **(2) What P59 measured is a browser's *connection*, not a browser.** No layout, no font, no
+touch, no Mobile Safari, and the socket was a pair of in-memory pipes rather than a radio. **P60's
+trap is unchanged and P59 does not soften it**: emulation going green must not close P53.
+
+🔥 **(3) The one number P60 should carry over.** The turn a person is asked about is **two**
+questions, not one — take, then throw — so *the computer taking over* costs a patience and *the
+turn moving on* costs two. **A device test watching a timeout should expect twice the patience**,
+and `TableBoard.StoodInFor` is what says the computer answered for you.
+
+⚠️ **(4) The deployed site does not have any of this**, and it does not need it: P59's diff is the
+test project. **But P58 and P59 both shipped after the last deploy**, so P60's first job is still
+P53 finding (8) — **read the deployed commit before testing a front end against the live site.**
+
 ### What P34 built, for the session that opens whatever comes next (2026-08-23)
 
 **Five things a cold session needs.**
@@ -5027,6 +5108,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 | --- | --- | --- |
+| 2026-08-30 | P59 | **Done — circuit survival: the connection that drops and comes back, on Opus 5.** ⚠️ **Tests and one package only**: `Domain`, `Presentation`, `Server`, `Console`, `Sim` **and `Web`** byte-identical, no measurement can move, no suite owed. Tree green at **938**, from 933. 🔥 **A real Blazor circuit can now be held from a test** — `AddInteractiveServerComponents` narrows `/_blazor` to **`blazorpack`**, which no client library speaks, so `BlazorPack.cs` writes down the slice of it a circuit's opening needs and `BlazorCircuit.cs` starts one from **the page's own component markers**, kills the socket with **no close frame**, and asks for the circuit back by name. ✅ **The instrument proves itself**: `TableView` sits down only when it is *really* interactive (§3.11 C13), so the person-seat ceasing to wait is proof a circuit started and rendered rather than that a page was fetched. 🔥 **Three answers and they differ** (retention 3 s against patience 8 s, the shipped ordering shrunk): *inside the window* the reconnection succeeds and nothing is lost; *past the window, inside the patience* the reconnection **fails** and the seat is **given up** — `TableView.Dispose` stands the player up — **while the turn is not**, and sitting down again by name takes the seat back with the question still standing; *past both* the computer has played the turn. 🔥 **So a seat and a turn are recovered by different mechanisms** — the seat by name (P13.6), the turn by the patience — and **losing the circuit is not losing the game.** 🔥 **P54's claim is exercised rather than asserted against itself**: with the patience **below** the retention period the computer plays the turn of somebody **the framework is still holding**, the reconnection still succeeds, and **nothing on screen says anything happened.** ✅ **Proved able to fail the way the packet asked** — shortening the patience below the window turns the *inside the window* test red. 🔥 **`TableBoard.Turn` turned out to be the wrong instrument and measuring found it**: a seat is asked **twice** in a turn, so a turn sits on a seat for **two** patiences; `StoodInFor` is the fact itself. ⚠️ **`tc netem` not done** — `TestServer`'s socket is in-memory pipes and shaping a real one needs root; **latency is P60's**. ⚠️ **The recorded obstacle (`SeatChannel`'s undisposed wait handle, `Ask` taking no token) was never reached** — nothing here tears a seat down. |
 | 2026-08-30 | P58 | **Done — a viewport standard, a fence for the one breakpoint there is, and a defect the standard found, on Opus 5.** ⚠️ **Front-end only**: `Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical, no measurement can move, no suite owed. Tree green at **933**, from 929. 🔥 **The sub-896 px question is answered *no*, and the evidence says the narrow end was never the problem**: measured in Chrome at eleven real viewports, **360/375/390 px resolve the stacked felt to a *single* column** — `minmax(9.5rem, 1fr)` cannot fit two inside 360 − 40 page padding − 24 felt padding — with nothing trimmed and nothing overflowing. **A phone is the safe end of this layout.** 🔥 **What was broken is the band above it, and it is the exact defect the 56rem line was drawn to prevent**: the pack packs to its floor, so a column is ~158 px at 412 px and ~154 px from 600 to 896 px — **narrower than at 360** — and there the computer's own seat names ellipsed (*“Aung Aung (exp…”*, which Nick saw on screen mid-session). The arithmetic agrees with the eye: the name measures 122.8 px and its chrome 39.8, so it needs a 163 px column — 158 trims, 167 does not. 🔥 **Fixed by wrapping and not by a wider floor**: `Khine Myat Zin (opportunist)` measures 183 px *in this machine's `system-ui`*, and **a floor fitted to one platform's font is a fence that passes where it was fitted**; ⚠️ **an ellipsis is honest only where the whole name is a hover away**, true above the line and false below it. Re-measured after: nothing trimmed at any width, no overflow, and 720 px went 4 columns → 3. ✅ **§3.11 gained item **A18** and `ViewportTests` is four facts, each proved able to fail by mutating the stylesheet rather than the test** — the two files disagreeing, `nowrap` put back, the floor raised to 19.5 rem (*“asks for 376px … has to be playable at 360px”*), and `width=device-width` deleted. ⚠️ **Not a device test**: no phone, no tablet, no touch, no Mobile Safari — **P60 still owns that**, and an iframe is not a person any more than `curl` is. |
 | 2026-08-30 | P55 | **Done — Gitea primary, GitHub a mirror, on Opus 5.** ⚠️ **Ops, and the whole diff is documents** — `Domain`, `Presentation`, `Server`, `Console`, `Sim` and `Web` byte-identical, no measurement can move, no suite owed. ✅ **Refs first, and the check is the deliverable**: GitHub's one stale branch `p49-simulations-doc` was at **exactly `a12c7a3`**, the same object as GitHub `main` and zero commits ahead, so dropping it lost nothing — ⚠️ *“there was nothing to lose” is a measurement here rather than an assumption*, because this is the operation where a remote-only ref vanishes silently. No tags on either remote, before or after. 🔥 **`pre-rewrite` was settled by correcting the claim rather than minting the tag — Nick's call, against the plan's own recommendation — and it was nine sites across five documents, not the one sentence the plan costed**: `CLAUDE.md`, `RULES-TECHNICAL.md`'s HISTORICAL banner, three in `BUILD-PLAN.md` (**including P0's own acceptance line, *“`git tag pre-rewrite` exists”*, which was never met**) and three in `STATUS.md`. 🔥 **The one with teeth is `STATUS.md`'s runnable command** — `git show pre-rewrite:BurmesePoker/Logic/Factories/UserPromptFactory.cs`, written for P8 as the way to read the old Spectre prompts — **failing since P0 and never noticed, because P8 read the file before it was deleted.** All nine now name **`79d86bd`** (*“Pre-rewrite snapshot”*, the parent of `b32d08b`). ⚠️ **P0's log row and acceptance were annotated, not back-dated** — the record stands with the correction beside it, which is the rule for a newest-first narrative. 🔥 **The swap found the thing that would have broken the next session: a remote's name is documentation.** `origin` is Gitea, `github` is GitHub — and **`git push gitea main` was quoted as *the CI trigger* in seven places** across `CLAUDE.md`, `BUILD-PLAN.md` and `STATUS.md`, every one a command the rename makes fail. All seven now say `git push origin main`. ⚠️ **Nothing in the tree could have caught it**: `DocumentationTests` resolves a `bash`-fenced command against the parser that would accept it, and **a ref has no parser**. ✅ **The mirror is configured with sync-on-push** (`8h` interval as a backstop) against `github.com/nickjones33/BurmesePoker`, PAT fine-grained, `contents: write`, that repository only, ⚠️ **never entering a session** — the third credential in this track and the third to live only in a settings page. ✅ **Acceptance is a measurement rather than a settings-page claim**: P55's own commit `8d619bc` was pushed to `origin` and reached GitHub **in about ten seconds, with no second push** — ⚠️ **which is exactly what a manual *Synchronize Now* does not establish**, and the half the acceptance actually asks for. 🔥 **Its cost is stated rather than discovered later: a push mirror force-pushes, permanently.** The first sync was a fast-forward (`a12c7a3` is a strict ancestor of `b2c84c2`, checked *before* enabling it), but from here **a commit made straight on GitHub is erased by the next sync rather than conflicting** — which is why `CLAUDE.md`'s new rule is **never push to `github` by hand**, a rule and not a preference. ✅ **Nick's answer on pull requests: `tea`**, installed from Arch `extra` at **0.15.1**. ⚠️ **`gh` was never installed on this machine at all**, so the standing *“use the `gh` CLI”* guidance was unrunnable as well as aimed at the wrong forge — **and aiming it at the mirror is the dangerous half**, since a merge landing on GitHub would be overwritten by the next sync. `CLAUDE.md` now carries both rules and says out loud that **this project has never used a pull request**: fifty-seven packets, one commit each, straight onto `main`. ⚠️ **`git push origin main` ran during the packet**, so the deployed image is built from `b2c84c2` and **P57's deploy check is the only thing left of it**. No rules question; `RULES.md` stays rev 31. Tree green at **929** (unchanged — ⚠️ **no test was added, and none could be**: every fact here is about refs, remotes and a settings page, none of which the test project can reach). |
 | 2026-08-30 | P57 | **Done — the lobby stops offering an opponent it cannot build, on Opus 5.** 🔥 **Nick's option 2**: fix the menu, not the invariant. `OpponentMenu.CanBeAskedForItsSecondBestMove(rung)` is `rung.Create(0) is IRanksDiscards` — ⚠️ **asked of the agent rather than declared on the rung**, because the `FallibleAgent` constructor that threw asks that exact question of that exact object — and `Advanced` filters on it beside the published-row rule. 🔥 **The menu now excludes on two grounds of different kinds**: *no published row → not offerable* is honesty (a price that cannot be stated must not be charged, which is what keeps `prospector` and `purist` out), *cannot name a second-best move → not offerable* is **P19's invariant** (a level is a rung wrapped in a mistake rate). ⚠️ **`random`'s row was deleted from `Published` rather than left to be filtered** — a row that can never be reached is dead data — **but the rule is what keeps it out**, not the deletion. 🔥 **The fence was amended in the same breath and is stronger, not weaker**: ⚠️ *amending a fence to make a build go green is the move this project distrusts most*, so `PublishedFigureTests.EveryOpponentTheLobbyOffersShowsTheMarginTheCsvMeasured` asserts the exclusion **about `random` by its inability rather than by its name** — it *has* a published row against the reference, *cannot* be asked for a second-best move, is *not* offered, and `Offers("random@0")` is false — while every rung that **is** offered must be able to answer. 🔥 **The new test is the packet**: `OpeningATableTests.EveryOpponentTheLobbyOffersCanActuallyBeBuilt` takes every name the form can post — the advanced rungs **and the four levels** — and **resolves it and then constructs it** (`FindOrProbe` *then* `Create`), because **resolution is exactly the step that succeeded** while construction threw; a test that stopped at resolution is the test that was already here. ✅ **Proved able to fail**: `random@0` is not offered **and** `Create` on it still throws `ArgumentException`, so putting it back in the menu is a red build. ⚠️ **Both lists, not just the advanced one** — every level is `BotCatalog.Hardest` through the same constructor. ⚠️ **Not verified on the deployed site**: the acceptance's last line wants `git push origin main`, the play re-run and each seat picked in a browser — it joins P53's phone round and P54's two browser checks. No rules question; `RULES.md` stays rev 31. `Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical — no measurement can move, no suite owed. ⚠️ **One existing assertion moved with the list**: the fence's *at least nine opponents were priced* floor came down to **eight**, because it tracks what the menu may show rather than what the CSV measured. Tree green at **929** (was 928 — one new fact). |

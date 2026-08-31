@@ -13,6 +13,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- 🔥 P59, and it is the only package here that is not the test framework. What a browser
+         table does when the connection drops is a question about a *circuit*, which is held by
+         the framework and not by anything in this tree — so the site has to be started for
+         real and reached over a real socket. This brings WebApplicationFactory and TestServer;
+         the protocol on the socket is written down in BlazorPack, because no client speaks the
+         one the component hub accepts. -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.11" />
     <PackageReference Include="xunit.v3" Version="4.0.0" />
   </ItemGroup>
 

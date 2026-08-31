@@ -8212,11 +8212,13 @@ is written and no suite is owed**; the tree is green.
 
 ---
 
-### P58–P60 — The table on a small screen (the small-screen track) ◐ — **added 2026-08-30, at Nick's direction; P58 done**
+### P58–P60 — The table on a small screen (the small-screen track) ◐ — **added 2026-08-30, at Nick's direction; P58 and P59 done**
 
 > ⚠️ **Front-end and ops, not the rules or strategy programme.** No rule changes, `Domain`
-> untouched by all three, **no suite regeneration owed**, and no measurement can move. **P59 is the
-> only one of the three that touches server code.**
+> untouched by all three, **no suite regeneration owed**, and no measurement can move. **P59 was
+> expected to be the only one of the three that touches server code** — ⚠️ **in the event it touched
+> none**: the retention window is observable from outside the seat, so P59's whole diff is the test
+> project and one package.
 
 🔥 **The finding that shaped the track, made while surveying rather than while building: the app is
 responsive by construction, and completely unverified below tablet width.** The survey, 2026-08-30:
@@ -8248,7 +8250,7 @@ it.** What is absent is a *standard*, a *fence* and *evidence* — never taste.
 | Packet | Touches | Why |
 |---|---|---|
 | P58 the viewport standard and its fence | `BUILD-PLAN` §3.11, CSS, tests | **First, or the others waste effort** — device testing without a stated width finds "it is cramped" and needs this packet anyway, later |
-| P59 circuit survival on a bad connection | `Server`/`Web` + tests | the only one that can leave a **repeatable regression test**, and the one most likely to find a real bug |
+| P59 circuit survival on a bad connection ☑ | tests only, in the event | the only one that can leave a **repeatable regression test** — and it did, without a line of production code |
 | P60 the table on real devices | nothing — verification | closes P53's outstanding acceptance; the tablet is drivable, the phone is not |
 
 ---
@@ -8339,7 +8341,7 @@ one new test file and documents, so **no measurement can move and no suite is ow
 
 ---
 
-### P59 — Circuit survival: the connection that drops and comes back ☐ — **added 2026-08-30**
+### P59 — Circuit survival: the connection that drops and comes back ☑ done 2026-08-30 — **added 2026-08-30**
 
 **Goal.** What a browser table does when the connection **vanishes and returns** is measured rather
 than assumed. **Read first:** P54 (the 180 s patience and `DisconnectedCircuitRetentionPeriod`, and
@@ -8378,6 +8380,49 @@ answers rather than one; `Domain` untouched; the tree is green.
 in `Ask`, **which takes no cancellation token**. A packet that wants to tear a seat down cleanly
 must give `Ask` a token first — ⚠️ **that is a `Server` change and it is not free**, so decide
 whether this packet needs it before assuming it does.
+
+**Outcome, 2026-08-30.** ✅ **Built as specified, with build item 4 refused for a stated reason and
+the recorded obstacle never reached.** Tree green at **938**, from 933; ⚠️ **`Domain`,
+`Presentation`, `Server`, `Console`, `Sim` and `Web` are byte-identical** — the whole diff is
+`BurmesePoker.Tests/Web/{BlazorPack,BlazorCircuit,CircuitSurvivalTests}.cs` and one package
+reference.
+
+- 🔥 **The instrument cost the packet.** A circuit is reached over SignalR and
+  `AddInteractiveServerComponents` narrows that hub to **`blazorpack`**, a protocol no client
+  library speaks — so it is written down in `BlazorPack.cs` (SignalR's length-prefixed framing and
+  the MessagePack shapes on it) and driven by `BlazorCircuit.cs`, which starts a circuit from **the
+  page's own component markers**, exactly as `blazor.web.js` does. ⚠️ **`Microsoft.AspNetCore.Mvc.Testing`
+  is now referenced by the test project**, the first package here that is not the test framework.
+- ✅ **The instrument proves itself before it is used.** `TableView` claims the seat in
+  `OnInitialized` and **only when it is really interactive** (§3.11 C13), so the table's one
+  person-seat ceasing to wait is proof a circuit **started, rendered and ran the component** rather
+  than that a page was fetched.
+- 🔥 **Three answers, and they differ** — retention **3 s** against patience **8 s**, the shipped
+  ordering shrunk to something a test may wait out. *Inside the window*: the reconnection succeeds,
+  the seat is still theirs, the turn is still theirs. *Past the window, inside the patience*: the
+  reconnection **fails** and the seat is **given up** (`TableView.Dispose` stands the player up),
+  **while the turn is not lost** — sitting down again under the same name takes the seat back with
+  the question still standing. *Past both*: the computer has played the turn.
+- 🔥 **So a seat and a turn are recovered by two different mechanisms** — the seat **by name**
+  (P13.6), the turn **by the patience not having run out**. ⚠️ **Losing the circuit is not losing
+  the game**, and nothing in this project had ever said so.
+- 🔥 **P54's pairing is exercised rather than fenced against itself.** The identical disconnection
+  with the patience **below** the retention period has the computer play the turn of somebody **the
+  framework is still holding** — the reconnection still succeeds — and **nothing on screen says
+  anything was decided.** ✅ Proved able to fail exactly as the acceptance asked: shortening the
+  patience below the window turns the *inside the window* test red.
+- 🔥 **`TableBoard.Turn` is the wrong instrument for *did the player lose a turn*, and measuring
+  found it.** A seat is asked **twice** in one turn — whether to take, then what to throw — so a
+  turn sits on a seat for **two** patiences and a turn the computer has already played still reads
+  as that seat's. **`TableBoard.StoodInFor` is the fact itself.**
+- ⚠️ **Build item 4 (`tc netem`) was refused, with a reason.** There is no socket to shape:
+  `TestServer`'s WebSocket is a pair of in-memory pipes, and shaping a real one needs root on an
+  interface, which is not a thing a test may take. **Latency belongs to P60, on a real network.**
+- ⚠️ **The obstacle recorded in advance was never reached.** Nothing here tears a seat down — the
+  window is observed from outside — so `SeatChannel`'s undisposed wait handle and `Ask`'s missing
+  cancellation token stayed exactly where P54 left them. **Deciding whether a packet needs that
+  before assuming it does was the right instruction**, and the answer here was no.
+
 
 ---
 
@@ -8426,6 +8471,16 @@ iPhone question and no emulation may be allowed to answer it.**
    the carrier synthesises and translates. **No desktop test can ever reach this**, it is the most
    plausible mechanism behind a hypothetical *"it will not load on my phone"*, and **the fix, if it
    bites, is one DNS record.** Check it before blaming the browser.
+
+5. 🔥 **Amended by P59, and it is two facts and a warning.** **(a)** A person's turn is **two**
+   questions — whether to take, then what to throw — so *the computer taking over* costs one
+   patience and *the turn moving on* costs two. **A device test watching a timeout should expect
+   twice the patience**, and `TableBoard.StoodInFor` is the board's own word for *the computer
+   answered for you*. **(b)** `BurmesePoker.Tests/Web/BlazorCircuit.cs` exists now and will start,
+   drop and reconnect a real circuit from a test — ⚠️ **but it does not draw and cannot press
+   anything**, so it replaces nothing P60 is for. **(c)** ⚠️ **P59 does not soften this track's
+   trap**: what it measured is a connection over in-memory pipes, not a radio, and not a browser.
+   **Only a real phone closes the phone acceptance.**
 
 **Acceptance.** A round played through on the tablet in **both** orientations and on a phone on
 **cellular**, each with the log-side evidence recorded; **the deployed commit is stated in the
