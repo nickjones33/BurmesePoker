@@ -310,7 +310,9 @@ public class HostedTableTests
         int patienceSeconds = 0,
         string? difficulty = null,
         IReadOnlyList<string>? difficulties = null,
-        string? journal = null) => new(
+        string? journal = null,
+        TimeSpan? roundTimeLimit = null,
+        Microsoft.Extensions.Logging.ILogger? log = null) => new(
         "test",
         new TablePlan
         {
@@ -329,7 +331,10 @@ public class HostedTableTests
             // that wants a question to *stand* in front of a seat has to give it time to.
             Patience = TimeSpan.FromSeconds(patienceSeconds),
             Difficulty = difficulty ?? DifficultyLadder.Default.Name,
-            Difficulties = difficulties
+            Difficulties = difficulties,
+            // ⚠️ The plan's own default, restated: a null here means *no limit at all*, which is
+            // not what a caller that passed nothing meant (P65).
+            RoundTimeLimit = roundTimeLimit ?? TimeSpan.FromHours(2)
         },
-        Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance);
+        log ?? Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance);
 }

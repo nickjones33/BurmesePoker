@@ -46,6 +46,17 @@ public sealed record TablePlan
     public bool Hints { get; init; } = true;
 
     /// <summary>
+    /// How long one round may run before the table gives up on it, or null for no limit.
+    /// </summary>
+    /// <remarks>
+    /// <b>The host's own setting, and it was unreachable from a plan until P65.</b> Only a
+    /// declaration ends a round (RULES.md §7.1), so a table nobody answers at never finishes on
+    /// its own and the limit is what stops it; the default is the session's own.
+    /// ⚠️ <b>It is not the patience</b> — that is one question's wait, this is the whole round's.
+    /// </remarks>
+    public TimeSpan? RoundTimeLimit { get; init; } = TimeSpan.FromHours(2);
+
+    /// <summary>
     /// Where to write this table down as it plays, or null to keep no journal (P24.1).
     /// </summary>
     /// <remarks>

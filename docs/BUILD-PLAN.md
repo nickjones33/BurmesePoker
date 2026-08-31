@@ -8866,7 +8866,7 @@ here would have been comic.
 
 ---
 
-### P65 — The hosted table's journal, switched on ☐ — **added 2026-08-31 by P63**
+### P65 — The hosted table's journal, switched on ☑ — **added 2026-08-31 by P63; done 2026-08-31 (Opus 5), with build item 1 withdrawn on a measurement**
 
 **Goal.** Make a stall on the deployed table diagnosable. **Read first:** P24.1 (the hosted table's
 journal, already built) and P63's finding (7).
@@ -8897,6 +8897,71 @@ zero* are indistinguishable from outside the process.
 observation is either reproduced with a cause named or **written down as not reproduced**. ⚠️ **A
 stall recorded once and never chased is the failure mode this packet exists to prevent** — and if it
 does not reproduce, that is a result, not a reason to delete the note.
+
+#### What it turned out to be
+
+🔥 **Build item 1 was measured and withdrawn, and the measurement is the packet's main finding.** A
+hosted journal keeps **every decision of the match in memory** and **rewrites the whole file after
+every settled round** — **~5.2 KB and ~55 lines a round** (259,777 bytes and 2,815 lines for 50
+five-handed rounds). ⚠️ **The house table plays a round about every two minutes and never ends**, so
+a month of uptime is a **~110 MB file rewritten every two minutes** and a heap that never stops
+growing, against `burmesepoker_memory: 512m` — **an OOM-kill restart loop, not an instrument.**
+**P24.1's whole-file rewrite is right for a console match and wrong for a table that never ends**,
+and that is a property of the format rather than a bug in it.
+
+✅ **What went in instead is four log lines that cannot grow**, all in `HostedTable`:
+`is dealing round N`, `settled round N in T turns`, `gave up on round N after L`, and
+`is not dealing: W watching, S seat(s) still to be claimed, closed: C`. **A silence between the
+first two is the engine parked in `Ask`** and is now the only silence there is — which is exactly
+the discrimination the packet said could not be made from outside.
+
+🔥 **The case the dealer's own line cannot cover was found by writing the test**: `Consider` starts
+no dealer unless `Ready`, so **a table whose person-seat nobody has claimed runs no loop and said
+nothing at all**. The sentence is **said in one place and called from two**, and never while holding
+`_gate`.
+
+✅ **Build item 3's discriminating experiment was run where it can be run, and eliminated its
+hypothesis**: `StandUp` → `Leave` → `Arrive` → `SitDown` leaves the table dealing, so `_attending`
+is not leaked by the stand-up/re-sit. ⚠️ **`Leave`'s `Math.Max(0, …)` clamp means a counter
+assertion cannot see an over-count at one viewer** — a mutation subtracting two stayed green, and
+that is recorded rather than hidden.
+
+⚠️ **Both halves that need somebody else are outstanding.** The `ansible-nas` role carries the
+journal wiring **switched off by default** with the arithmetic in the comment, and **the play has
+not been run**; and **the stall is neither reproduced nor explained**, because nothing here is on
+the deployed site — a work cycle does not push, and `pull: true` takes the image on the next play.
+
+---
+
+### P66 — The stall, chased with the instrument that now exists ☐ — **added 2026-08-31 by P65**
+
+**Goal.** Close P63's observation: reproduce the deployed table's three-minute stall with a cause
+named, or write it down as not reproduced. **Read first:** P63's finding (7) and P65 above.
+
+⚠️ **This packet cannot start until the deployed site is built from a commit containing P65** —
+`git push origin main` is the CI trigger and the role's `pull: true` takes the image on the next
+play, neither of which a work cycle does. **It is Nick's two commands and then a sitting.**
+
+**Build.**
+
+1. **Read the running container's log for the four lines**, and confirm they appear at all — the
+   image has no `appsettings.json`, so the default minimum level is Information and nothing filters
+   `BurmesePoker.Web.HostedTable`; ⚠️ **confirm rather than assume**, because a filter added by the
+   base image would make the whole instrument silent and everything else in this packet vacuous.
+2. **Sit at the table and watch a round boundary**, then drop the circuit past the retention window
+   so the seat is stood up and re-sat, and watch another. The four lines say which of the three
+   hypotheses is live.
+3. **If it stalls: name the cause from the last line said.** *is dealing* with no *settled* is the
+   engine parked on a seat's answer; *is not dealing* names what is missing; *gave up on round* is
+   the round time limit. **If it does not stall in the sitting, write that down** — ⚠️ **and do not
+   delete the note**, which is P65's own rule.
+4. **Only if the log is not enough**, switch `burmesepoker_journal_enabled: true` for that sitting
+   and off again after. ⚠️ **Never leave it on** — the arithmetic is in the role's comment and in
+   P65 above.
+
+**Acceptance.** The four lines are seen in the deployed container's log; a round boundary is watched
+either side of a circuit drop; and the P63 observation is either attributed or recorded as not
+reproduced.
 
 ---
 

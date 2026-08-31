@@ -14,7 +14,7 @@ over ad-hoc changes.
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
 recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
-F10) was the last of them; the tree is green at 949.**
+F10) was the last of them; the tree is green at 954.**
 🔥 **A fourth track was added 2026-08-28 at Nick's direction: `P51`–`P54`, *taking the table
 online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
@@ -134,6 +134,44 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 ⚠️ **One P46 follow-up owned, not done**: the race-reach instrument recomputes an uncached cover
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
+
+**What P65 built, and the five things a cold session needs from it.**
+🔥 **(1) The packet asked for the journal and measuring it withdrew that half.** `--journal` on a
+hosted table keeps **every decision of the match in memory** and **rewrites the whole file after
+every settled round** — measured at **~5.2 KB and ~55 lines a round** (50 five-handed rounds =
+260 KB, `sim --games 50 --seats 5`). ⚠️ **The house table plays a round about every two minutes and
+never ends**, so a month of uptime is a **~110 MB file rewritten every two minutes** and a heap that
+never stops growing, against the role's **512m**. 🔥 **Switching it on unattended is an OOM-kill
+restart loop**, which the role's own comment says *"looks like a networking fault"*. **P24.1's
+whole-file rewrite is right for a console match and wrong for a table that never ends.**
+🔥 **(2) So the instrument is four log lines, and they cost nothing.** `HostedTable` says
+**`is dealing round N`**, **`settled round N in T turns`**, **`gave up on round N after L`** and
+**`is not dealing: W watching, S seat(s) still to be claimed, closed: C`**. ⚠️ **The application
+logged requests and never turns** (P63 (7)), which is the whole reason the stall could not be
+attributed; **a silence between *is dealing* and *settled* is the engine parked in `Ask`**, and it
+is now the only silence there is.
+🔥 **(3) Writing the test found the case the dealer's own line cannot cover: a table that never
+started.** `Consider` starts no dealer unless `Ready`, so a table whose person-seat nobody has
+claimed ran **no loop and said nothing at all**. **The sentence is therefore said in one place and
+called from two** — `Consider` when it declines, and `Deal` when it stops — ⚠️ **never holding
+`_gate`**, because a log sink is somebody else's code.
+✅ **(4) P63's third hypothesis is eliminated by test rather than left open.**
+`StandingUpAndSittingDownAgainLeavesTheTableDealing` runs the drop-past-retention cycle
+(`StandUp` → `Leave` → `Arrive` → `SitDown`) and the table comes back dealing with `Attending` 1 —
+**`_attending` is not leaked by the stand-up/re-sit**, ✅ proved able to fail by making `StandUp`
+stop freeing the seat. ⚠️ **But a counter assertion cannot see an over-count**: `Leave`'s
+`Math.Max(0, …)` clamps, so subtracting two instead of one is **indistinguishable at one viewer** —
+a mutation that stayed green, recorded rather than papered over.
+⚠️ **(5) What is still owed, and it is the same list as P64's.** **The ops half is written and
+switched off**: the `burmesepoker` role gains `burmesepoker_journal_enabled` (**default false**,
+with the arithmetic in the comment), a uid-owned directory and a conditional mount —
+⚠️ **`ansible-nas` `roles/burmesepoker`, a different repository**, ansible-lint clean, **not run**.
+And **the stall itself is neither reproduced nor explained**: nothing here has run on the deployed
+site, because **a work cycle does not push** and the role's `pull: true` takes the image on the next
+play. **`TablePlan.RoundTimeLimit` is new** — the host's round limit was unreachable from a plan
+until now, which is what a test needed to abandon a round. Tree green at **954**, from 949;
+`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical — the diff is `Web`, the test
+project and documents.
 
 **What P64 built, and the five things a cold session needs from it.**
 🔥 **(1) The defect P63 measured is fixed by moving a clock, and neither constant moved.**

@@ -121,6 +121,7 @@ public sealed class HostedTable : IAsyncDisposable
             {
                 Seed = plan.Seed,
                 Patience = plan.Patience,
+                RoundTimeLimit = plan.RoundTimeLimit,
                 Hints = plan.Hints,
                 Journal = plan.Journal,
                 // A stand-in is paced too, so a seat the computer took over reads as a seat
@@ -383,14 +384,58 @@ public sealed class HostedTable : IAsyncDisposable
     /// </summary>
     private void Consider()
     {
+        var watching = 0;
+        var closed = false;
+        var idle = false;
+
         lock (_gate)
         {
-            if (_dealer is null && Ready)
+            if (_dealer is null)
             {
-                _dealer = Task.Run(Deal);
+                if (Ready)
+                {
+                    _dealer = Task.Run(Deal);
+                }
+                else
+                {
+                    idle = true;
+                    watching = _attending;
+                    closed = _stopped;
+                }
             }
         }
+
+        if (idle)
+        {
+            // ⚠️ <b>A table that never started dealing is the same silence as one that stopped</b>
+            // (P65), and it was the one case the dealer's own line could not cover — somebody
+            // arriving at a table whose person-seat nobody has claimed makes this call and no
+            // other. Bounded by viewers' own actions: <c>Consider</c> is reached from arriving
+            // and from sitting down, and from nowhere else.
+            SaysWhyItIsNotDealing(watching, closed);
+        }
     }
+
+    /// <summary>
+    /// The one sentence for <em>this table is not taking turns, and here is what would make it</em>
+    /// (P65).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Said in one place because it is one fact.</b> From outside the process a table that
+    /// never started, one whose last viewer left, and one whose engine is parked on a seat's
+    /// answer are the same silence — which is why P63's three-minute stall could not be
+    /// attributed. These three facts separate the first two from each other, and the round
+    /// boundary in <see cref="Deal"/> separates them both from the third.
+    /// ⚠️ <b>Never called holding <c>_gate</c></b>: a log sink is somebody else's code.
+    /// </remarks>
+    private void SaysWhyItIsNotDealing(int watching, bool closed) =>
+        _log.LogInformation(
+            "Table {Table} is not dealing: {Watching} watching, {Waiting} seat(s) still to be "
+                + "claimed, closed: {Closed}.",
+            Id,
+            watching,
+            _table.WaitingFor.Count,
+            closed);
 
     /// <summary>The dealing rule. Call under the lock.</summary>
     private bool Ready => _attending > 0 && _table.IsFull && !_stopped;
@@ -401,6 +446,10 @@ public sealed class HostedTable : IAsyncDisposable
 
         while (true)
         {
+            var watching = 0;
+            var closed = false;
+            var enough = true;
+
             lock (_gate)
             {
                 // ⚠️ The decision and the handover are one critical section: a viewer arriving
@@ -408,24 +457,55 @@ public sealed class HostedTable : IAsyncDisposable
                 if (!Ready)
                 {
                     _dealer = null;
-                    break;
+                    enough = false;
+                    watching = _attending;
+                    closed = _stopped;
                 }
+            }
+
+            if (!enough)
+            {
+                SaysWhyItIsNotDealing(watching, closed);
+                break;
             }
 
             try
             {
-                await _table.PlayRoundAsync(token).ConfigureAwait(false);
+                // 🔥 The round boundary, said out loud (P65). Between this line and the next
+                // the process is inside <c>PlayRound</c>: a table that has said it is dealing and
+                // then says nothing for minutes is parked on a seat's answer, which is a different
+                // fault from one that stopped dealing and from one whose round ran out of time.
+                // ⚠️ <b>This is the only thing in the process that logs a turn rather than a
+                // request</b>, and its absence is what left P63's stall unattributable.
+                _log.LogInformation("Table {Table} is dealing round {Round}.", Id, _table.RoundsPlayed + 1);
+
+                var round = await _table.PlayRoundAsync(token).ConfigureAwait(false);
                 WriteJournal();
+
+                _log.LogInformation(
+                    "Table {Table} settled round {Round} in {Turns} turns.",
+                    Id,
+                    round.Result.Round,
+                    round.Result.Turns);
             }
             catch (OperationCanceledException)
             {
                 break;
             }
-            catch (TableAbandonedException)
+            catch (TableAbandonedException abandoned)
             {
                 // Announced to the table before it was thrown (P13.2); the board says so and
                 // the next round is dealt on top of it.
                 WriteJournal();
+
+                // ⚠️ <b>An abandoned round used to look exactly like a quiet one</b> (P65). The
+                // table says so on the connections of whoever happens to be watching and nowhere
+                // else, so a round given up on at four in the morning left no trace at all.
+                _log.LogWarning(
+                    "Table {Table} gave up on round {Round} after {Limit}.",
+                    Id,
+                    abandoned.Round,
+                    abandoned.Limit);
             }
             catch (Exception problem)
             {

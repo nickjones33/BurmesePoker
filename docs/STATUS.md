@@ -10,6 +10,62 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
+🔥 **`P65` shipped 2026-08-31 on Opus 5: the hosted table says when it is dealing, when it settled,
+when it gave up and when it is not dealing at all — and the journal half of the packet was withdrawn
+on a measurement.** `RULES.md` stays **rev 31**, the tree is green at **954**, from 949 —
+⚠️ **`Domain`, `Presentation`, `Server`, `Console` and `Sim` are byte-identical**, so no measurement
+can move; the diff is `Web`, the test project and documents.
+
+- 🔥 **(1) The packet's build item 1 was measured and withdrawn, and the arithmetic is the
+  finding.** `--journal` on a hosted table keeps **every decision of the match in memory** and
+  **rewrites the whole file after every settled round** (`HostedTable.WriteJournal`, P24.1).
+  Measured with `sim --games 50 --seats 5 --journal`: **259,777 bytes and 2,815 lines for 50
+  rounds — ~5.2 KB and ~55 lines a round.** ⚠️ **The house table plays a round roughly every two
+  minutes and never ends**, so thirty days of uptime is a **~110 MB file rewritten every two
+  minutes** and a heap that never stops growing, against `burmesepoker_memory: 512m`. 🔥 **Switching
+  it on unattended is an OOM-kill restart loop** — which the role's own comment already warns
+  *"looks like a networking fault"*. **P24.1's whole-file rewrite is right for a console match and
+  wrong for a table that never ends**, and that is a property of the format rather than a bug.
+- 🔥 **(2) What went in instead is four log lines that cannot grow.** `HostedTable` now says
+  **`is dealing round N`**, **`settled round N in T turns`**, **`gave up on round N after L`**, and
+  **`is not dealing: W watching, S seat(s) still to be claimed, closed: C`**. ⚠️ **The application
+  logged requests and never turns**, which is exactly P63's finding (7); with these, **a silence
+  between *is dealing* and *settled* is the engine parked in `Ask`** and is the only silence left.
+  An abandoned round used to be announced on the connections of whoever happened to be watching and
+  **nowhere else**, so one at four in the morning left no trace at all.
+- 🔥 **(3) Writing the test found the one case the dealer's own line cannot cover.** `Consider`
+  starts no dealer unless `Ready`, so **a table whose person-seat nobody has claimed runs no loop
+  and said nothing at all** — the commonest shape of *the site looks stuck*. The sentence is
+  therefore **said in one place and called from two**: `Consider` when it declines to start, `Deal`
+  when it stops. ⚠️ **Never called holding `_gate`** — a log sink is somebody else's code.
+- ✅ **(4) P63's third hypothesis is eliminated by test rather than left open.**
+  `StallDiagnosisTests.StandingUpAndSittingDownAgainLeavesTheTableDealing` runs the
+  drop-past-retention cycle exactly as `TableView` does it — `StandUp` → `Leave` → `Arrive` →
+  `SitDown` — and the table comes back with `Attending` 1 and `ShouldDeal` true. **`_attending` is
+  not leaked by the stand-up/re-sit.** ✅ Proved able to fail by making `StandUp` stop freeing the
+  seat server-side. ⚠️ **But the fence cannot see an over-count**: `Leave` clamps with
+  `Math.Max(0, …)`, so a mutation subtracting **two** instead of one is **indistinguishable at one
+  viewer** and stayed green. Recorded rather than papered over — a counter that cannot go negative
+  cannot report that it was asked to.
+- ✅ **(5) All five facts were proved able to fail**, each by mutating `HostedTable` rather than the
+  test: the abandoned line renamed, `Consider`'s call removed, `Deal`'s call removed, the round
+  boundary removed, and the seat left occupied.
+- ⚠️ **(6) `TablePlan.RoundTimeLimit` is new, and it is a gap rather than a convenience.** The
+  host's round limit is `TableOptions`' and **a plan could not reach it**, so a hosted round could
+  not be abandoned from a test at all. It defaults to the session's own two hours, so nothing moves.
+- ⚠️ **(7) The ops half is written and deliberately switched off.** `ansible-nas`
+  `roles/burmesepoker` gains **`burmesepoker_journal_enabled` (default `false`)** with the
+  arithmetic above in the comment, a journal directory owned by the image's `APP_UID` (**not root**
+  — the container runs non-root and a journal it cannot write is said once and then played over),
+  and a mount and `journal:` env merged in only when it is enabled. ⚠️ **Different repository**,
+  ansible-lint clean, both Jinja expressions render-checked, **and the play has not been run.**
+- ⚠️ **(8) The stall is neither reproduced nor explained, and that is the honest state.** Nothing
+  here has run on the deployed site: **a work cycle does not push**, `git push origin main` is the
+  CI trigger and the role's `pull: true` takes the image on the next play. **The instrument exists;
+  the observation stays open**, which is what P65 said must not be allowed to happen quietly.
+
+---
+
 🔥 **`P64` shipped 2026-08-31 on Opus 5: the two clocks P54 fenced against each other now start at
 the same event, and a player who comes back is told what was played for them.** `RULES.md` stays
 **rev 31**, the tree is green at **949**, from 941 — ⚠️ **`Domain`, `Presentation`, `Console` and
@@ -1838,6 +1894,21 @@ unasserted altogether.
 ---
 
 ## What is next
+
+🔥 **As of 2026-08-31, the open work is `P66`, the WebKit half of `P53`, and `P40` — and every one
+of them is blocked on something only Nick can supply.** ⚠️ **`P66` (the stall, chased) cannot start
+until the deployed site is built from a commit containing `P65`**: `git push origin main` is the CI
+trigger and the role's `pull: true` takes the image on the next play, and **a work cycle does
+neither**. ⚠️ **The WebKit half of `P53` needs an iPhone** (P62: an Android phone cannot answer for
+a third engine). ⚠️ **`P40` needs Nick's vetted Burmese text**, re-run against the rev-31 rulebook.
+🔥 **And the browser sitting the last five packets have each deferred is still owed** — P54's
+reaping and copy button, P56's advanced group and two-step form, P57's per-seat `random`, P61's
+touch-screen name column, and **P64's *played for you while away* notice, which has never been drawn
+on a screen at all**. ⚠️ **`ansible-nas` also carries an unrun change**: `roles/burmesepoker` has the
+journal wiring, switched off, committed but never played.
+
+⚠️ **What follows was written before P62–P65 and is kept for its reasoning; where it says P53's
+phone round or P55 is open, read the block above.**
 
 🔥 **The plan grew a fourth track on 2026-08-28, at Nick's direction: `P51`–`P54`, *taking the
 table online* (`BUILD-PLAN.md` §5, `docs/HOSTING.md`).** Every packet P0–P50 is done, so this and
@@ -5475,6 +5546,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 | --- | --- | --- |
+| 2026-08-31 | P65 | **Done — the hosted table says why it is not taking turns, on Opus 5.** Tree green at **954**, from 949; ⚠️ **`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical** — the diff is `Web`, the test project and documents, so **no measurement can move**. 🔥 **The packet's journal half was measured and withdrawn**: a hosted journal keeps the whole match in memory and rewrites the whole file every round — **~5.2 KB and ~55 lines a round**, so a month of house table is a **~110 MB file rewritten every two minutes** against a **512m** container, an **OOM-kill restart loop** rather than an instrument. 🔥 **What went in is four log lines that cannot grow** — `is dealing round N`, `settled round N in T turns`, `gave up on round N after L`, `is not dealing: W watching, S seat(s) still to be claimed, closed: C` — so **a silence between the first two is the engine parked in `Ask`**, and it is the only silence left. 🔥 **Writing the test found the case the dealer's line cannot cover**: a table nobody has sat down at starts no dealer and said nothing, so **the sentence is said in one place and called from two** (`Consider` declining, `Deal` stopping), never holding the gate. ✅ **P63's `_attending`-leak hypothesis is eliminated by test**, proved able to fail by making `StandUp` stop freeing the seat — ⚠️ **though `Leave`'s clamp makes an over-count invisible at one viewer**, a mutation that stayed green and is recorded. ⚠️ **`TablePlan.RoundTimeLimit` is new** (a hosted round could not be abandoned from a test before). ⚠️ **The ops half is in `ansible-nas`, default off, not run**, and **the stall is neither reproduced nor explained** — nothing here is on the deployed site. No rules question; `RULES.md` stays rev 31. |
 | 2026-08-31 | P64 | **Done — the patience clock joined to the circuit, on Opus 5.** Tree green at **949**, from 941; ⚠️ **`Domain`, `Presentation`, `Console` and `Sim` byte-identical** — the diff is `Server`, `Web`, the test project and documents, so **no measurement can move**. 🔥 **The fix is one deadline**: `SeatChannel.Ask` waits to a deadline it re-reads rather than for a duration, and `CircuitDropped` moves that deadline to *now* plus the patience — **a restart, not a hold**, because a frozen tab runs no timers (P63 (4)) and a circuit the framework abandons never says so. 🔥 **What tells the seat is `SeatPresence`, a scoped `CircuitHandler` registered twice** — the page hands it the seat, the framework calls it — **the only thing in this client that knows a socket exists.** ✅ **The inequality is a `[Theory]` today's code passes half of**: the same drop at **0.0** and **0.6** of a patience, read back at **+0.8**, with the early case green and the late one red — **P63's finding (6) as a build failure** — and ✅ **an end-to-end twin over a real socket**, proved able to fail by un-registering the handler. ⚠️ **Identity, not presence**, because a seat is asked twice a turn (P59). ✅ **The silence is broken for the retained circuit**: `SeatBoard.PlayedForYouWhileAway` counts `SeatPlayedByTheComputer` between the drop and the return and `YourSeat` draws a `role="status"` notice put down by pressing it — ⚠️ **and *not* for the re-sit past the window**, where a fresh `SeatBoard` has heard nothing (P13.6) and the round log is the record. ⚠️ **A ceiling of twice the patience**, derived rather than a second constant, or a flapping client would stop the round. ⚠️ **`ContainerTests`' constants fence is kept and joined** by one that says the wiring exists — deleting the handler would leave the old fence passing over nothing. 🔥 **Neither constant moved**, as P63 instructed. ⚠️ **Owed: the notice has never been drawn in a browser** — `curl` is not a person, a synthesized touch is not a person, a headless engine answers its own media queries. No rules question; `RULES.md` stays rev 31. |
 | 2026-08-31 | P63 | **Done — the backgrounded tab measured on a phone on a carrier, and neither number moved, on Opus 5.** Tree green at **941**, unchanged; ⚠️ **no test was added and none could be** — the whole diff is documents. ⚠️ **Deployed commit read off the *running* container**: image `a7b9b7187dfb`, tagged **both `97230e3` and `be1056e`** (HEAD) — 🔥 **a documents-only commit rebuilds a byte-identical image, so one digest carries two tags.** 🔥 **The measurement: backgrounding the tab kills the circuit in 5.56 s** (`57889.6996ms` lifetime, Kestrel logging *the application aborted the connection*), **reproduced at 5.55 s** — ⚠️ **so P62's 4 min 26 s carrier idle timeout is not the binding constraint and is irrelevant to the pocket case.** ✅ **Attribution clean**: the close preceded the screen going off, and the rest of the window ran screen-on and `Awake`. 🔥 **A hidden tab never reconnects — zero `negotiate` in 5 min 51 s — which refutes P63's own keepalive option outright**, a frozen tab running no timers; the reconnect fires **1.69 s / 0.49 s** after foregrounding. ✅ **Inside the window nothing is lost** (62 s → identical board, no stand-in, no stand-up); **past it two stand-ins**, then the seat recovered **by name** with the round intact — P59's *losing the circuit is not losing the game* against a real radio — ⚠️ **and nothing on the returning screen said anything had been decided in the gap.** 🔥 **The decision is that neither constant moves, because the fence compares two clocks that start at different events**: retention starts at the drop, the patience started at the question, so the believed 60 s margin is 60 s only if you vanish the instant you are asked. ⚠️ **Run 1 shows it failing live — `ran out of time` is logged *before* `left the table`**, the computer playing the turn of a player the framework was still holding, which is precisely what P54's pairing exists to prevent. **No pair of constants can satisfy it**, and raising retention is fenced to raising the patience, **which taxes every other player rather than the absent one**. Successor `P64`. ⚠️ **A stall was observed and is recorded as unexplained**: ~3 min with no seat taking a turn, two independent reads, `/healthz` 200, zero exceptions, cleared on reload into Round 5 — 🔥 **the cause cannot be established because the app logs requests and never turns**, and **P24.1's hosted-table journal is the instrument that exists and was not switched on** (`P65`). ⚠️ **Carrier NAT rotated the source address within one session** (`172.59.190.202` → `.242`) and **`VPN by Google` armed itself the moment wifi went off** — two more reasons P62's *not the home range* test was weak. 🔥 **The APN is IPv6-only with 464XLAT** (`clat RUNNING`), so **P62's finding (7) does not generalise even to the same carrier and phone**; CLAT hides the missing `AAAA`. ✅ **P61's copy-link is visible on a real device** — its owed redeploy-and-device check. ⚠️ **A18 still unstressed** (a levels table has short names) and **the WebKit half of P53 still open.** No rules question; `RULES.md` stays rev 31. |
 | 2026-08-31 | P62 | **Done — the table on a phone, on a carrier, on Opus 5.** Tree green at **941**, unchanged; ⚠️ **nothing in this repository changed but documents**, the one code change being Traefik's access log in `ansible-nas` (`c57a9ea4`, step 0). ✅ **Path proved**: `ClientHost` **`172.58.164.115`** (T-Mobile), `/table/1` **200**, `negotiate` **200**, `/_blazor?id=` **101**; deployed commit verified *running* (image `a7b9b7187dfb` = tag `97230e3` = HEAD), not merely pulled. 🔥 **The packet's own check was wrong and was satisfied twice by things that are not a carrier**: a phone on house wifi behind a VPN is off the home range, and **a phone VPN survives a wifi→cellular handover**, so switching to 5G left the exit address identical. **The criterion is that `ClientHost` *changes* into the carrier's range**, not that it differs from the house. 🔥 **The engine was Gecko** (Firefox 154 / Android 17) — a third implementation after two Blink runs; basicauth replays past the page on it, ⚠️ **but WebKit stays open and an Android phone cannot answer for it.** 🔥 **A carrier closes an idle circuit at 4 min 26 s** where P53's desktop wifi held 7½ minutes with no close frame; the reconnect was immediate and nothing was lost, ⚠️ **but 4:26 is past P54's 2-minute retention window and the reconnect only runs in a foreground tab** — written up as `P63`, deliberately not changed on one measurement. 🔥 **A handover was measured live**: dropping the VPN killed the circuit at 36.9 s, Blazor renegotiated over the carrier, **no overlay appeared and the seat, round and standing question survived** — P59's lab result holding against a real radio. ⚠️ **Instrument note**: Traefik logs `DownstreamStatus: 0` for a hijacked connection, so **the `101` and the lifetime exist only in the app log.** ✅ IPv6 answered for this carrier (IPv4 throughout, DNS64/NAT64 never engaged); layout held at the Pixel's width, ⚠️ **though a levels table makes every name short, so A18's long-name case went unstressed.** |
