@@ -8626,7 +8626,33 @@ container, because P60 established that a pulled image is not a running one.
 
 ---
 
-### P62 — The table on a phone, on a carrier ◐ — **added 2026-08-30 by P60; closes the remainder of P53's acceptance. Step 0 built 2026-08-31; the rest needs a person with a phone.**
+### P62 — The table on a phone, on a carrier ☑ — **added 2026-08-30 by P60; done 2026-08-31, except the WebKit half, which no Android phone can close**
+
+🔥 **What it found, and the first item is about this packet's own acceptance.** ⚠️ **Step 2's
+check — *`ClientHost` is not on the home range* — is wrong, and it was satisfied twice by something
+that is not a carrier.** A phone on the house wifi behind a **VPN** reads as an off-home address;
+and **a phone VPN survives a wifi→cellular handover**, so turning wifi off and switching to 5G
+changed the path underneath and left the exit address *identical*. **The criterion is that
+`ClientHost` changes and lands in the carrier's range**, corroborated by the phone's own network
+state. ✅ **Proved once the VPN was off**: `172.58.164.115` (T-Mobile), `/table/1` **200**,
+`negotiate` **200**, `/_blazor?id=` **101**, deployed commit verified *running* (`a7b9b7187dfb` =
+`97230e3` = HEAD).
+
+⚠️ **Step 4 is only half answered.** The browser was **Gecko** (Firefox 154 on Android 17) — a
+third engine after P53's and P60's Blink, and basicauth replays past the page on it — **but WebKit
+is a separate implementation and an Android phone cannot answer for it.** That half needs an iPhone
+and is the one piece of P53's acceptance still open.
+
+🔥 **Step 6 returned a number and it is new**: a carrier closes an idle circuit at **4 min 26 s**
+where P53's desktop wifi held **7½ minutes with no close frame at all**. The reconnect was
+immediate and nothing was lost. ⚠️ **That is past P54's 2-minute retention window**, and it is
+`P63`. ⚠️ **Instrument note for anyone re-reading this evidence**: Traefik logs
+`DownstreamStatus: 0` for a hijacked connection, so **the `101` and the circuit's lifetime exist
+only in the application log.**
+
+*The packet as written follows.*
+
+### P62 — the packet as written
 
 **Goal.** A round played on a real phone, over a real carrier, **proved to have come over the
 carrier**. **Read first:** P60's *What it found* (8) — the instrument that does not exist — and the
@@ -8702,6 +8728,50 @@ need change; if a DNS record or an Ansible change is the outcome, **say which an
 responsive-mode viewport and a tablet are all ways of **not being a person on a phone**. This
 project's scar is `--no-restore`: an image that passed every check ever written and was dead.
 **Only a real phone on a real carrier closes this.**
+
+---
+
+### P63 — The patience and the retention window, against a real idle timeout ☐ — **added 2026-08-31 by P62**
+
+**Goal.** Decide whether P54's pairing is fitted to the wrong network, and either move it with a
+reason or write down why it stands. **Read first:** P54's finding (3) — the two numbers and why they
+are fenced against each other — and P59's findings (2) and (3), which are the only measurements of
+what losing a circuit actually costs a player.
+
+🔥 **What P62 measured that changes the question.** A T-Mobile path closed an **idle** circuit at
+**4 min 26 s**; P53's desktop wifi held one for **7½ minutes with no close frame at all**. So the
+idle timeout is a property of the **path**, and the deployed table is reached over paths nobody
+measured. ⚠️ **P54 set `DisconnectedCircuitRetentionPeriod` to 2 minutes and a browser table's
+patience to 180 s, and both were chosen against a network that never dropped anything.**
+
+⚠️ **The exposure, stated precisely, because it is narrower than it first looks.** In P62's run the
+reconnect fired **immediately** and the seat, the round and the standing question all survived — so
+**a foreground tab is fine** and this is not a bug report. The gap is that **the reconnect loop runs
+in the page**: a phone with the screen off, or the browser backgrounded, does not run it, and past
+the retention window `TableView.Dispose` stands the player up (P59). **A phone in a pocket for three
+minutes is the case, and it is the ordinary case for a game played on a phone.**
+
+**Build.**
+
+1. **Measure the thing that was assumed, first.** Does a backgrounded mobile tab reconnect at all,
+   and when? ⚠️ **Do not reason about it from the framework's documentation** — P62's whole value
+   was that a real path behaved unlike the desktop one. Background the tab for a known interval,
+   foreground it, and read the app log for whether a `negotiate` happened while it was hidden.
+2. **Then decide, and the options are not symmetric.** Raising the retention period costs memory on
+   a long-lived host (P54's leak is what `TableSweeper` exists for); raising the patience costs a
+   player waiting on a seat the computer should have played. ⚠️ **P54's two numbers are fenced
+   against each other in two files** — one read from `Program.cs`, one off the real `Lobby` — so
+   **moving either without reading the other is a red build**, which is the fence working.
+3. ⚠️ **Consider that the answer may be neither.** A client-side keepalive that holds the socket
+   open under a NAT is a third option and it is **not** a change to either number; so is accepting
+   the stand-up and making the *return* seamless, which P13.6's seat-by-name already half does.
+   **A packet that only moves a constant has probably not understood the measurement.**
+
+**Acceptance.** The backgrounded-tab behaviour **measured on a real phone on a carrier**, not
+inferred; a decision recorded with its reason; and if a number moves, **both numbers re-read
+together** and the fence still failing when they disagree. ⚠️ **If the decision is that nothing
+should change, that is a result and must be written into `STATUS.md` with the measurement behind
+it** — an unexamined constant and a deliberately-kept one look identical in the code.
 
 ---
 

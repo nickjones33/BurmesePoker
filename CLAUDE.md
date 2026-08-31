@@ -135,6 +135,44 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
 
+**What P62 built, and the six things a cold session needs from it.**
+🔥 **(1) The packet's own acceptance test was wrong, and that is the finding.** P62 said to check
+that `ClientHost` is **not on the home range**. ⚠️ **That was satisfied twice by something that is
+not a carrier**: a phone on the house wifi behind a **VPN** reads as an off-home address, and
+🔥 **a phone VPN survives a wifi→cellular handover**, so turning wifi off and switching to 5G
+changed the path underneath and left the exit address **identical**. **The criterion is that
+`ClientHost` *changes* and lands in the carrier's range**, corroborated by the phone's own network
+state. ✅ **Proved once the VPN was off**: `172.58.164.115` (T-Mobile), `/table/1` **200**,
+`negotiate` **200**, `/_blazor?id=` **101**; deployed commit verified **running** —
+`docker inspect` image `a7b9b7187dfb` = tag `97230e3` = HEAD.
+🔥 **(2) A carrier closes an idle circuit at 4 min 26 s; the house wifi does not.** P53 held one
+for **7½ minutes with no close frame at all**. ⚠️ **The idle timeout is a property of the *path***,
+so the desktop figure does not generalise — and **4:26 is past P54's 2-minute
+`DisconnectedCircuitRetentionPeriod`.** The reconnect fired at once and the seat, round and standing
+question all survived, **because a foreground tab runs the reconnect loop**; a phone with the screen
+off does not. **That is `P63`, and P54's numbers were deliberately not moved on one measurement.**
+🔥 **(3) A network handover was measured live, which P59 could not.** Dropping the VPN killed the
+circuit mid-round at **36.9 s**; Blazor renegotiated **over the carrier** and opened a new one,
+✅ **no reconnect overlay appeared and the round carried on.** P59's *inside the window nothing is
+lost* now holds against a real radio rather than `TestServer`'s in-memory pipes.
+⚠️ **(4) The engine was Gecko, so step 4 is only half answered.** Firefox 154 on Android 17 — a
+third implementation after P53's and P60's Blink — and **basicauth replays past the page on it**
+(`/` 401, then `ClientUsername: "poker"` throughout). ⚠️ **WebKit is a separate implementation and
+an Android phone cannot answer for it**; that half of P53's acceptance stands open and needs an
+iPhone.
+⚠️ **(5) An instrument note, or the evidence reads wrong.** Traefik logs **`DownstreamStatus: 0`**
+for a hijacked connection — **the proxy's own log cannot tell you an upgrade succeeded.** The
+`101` and the circuit's lifetime exist **only** in the application log, and because Kestrel logs a
+request when it *completes*, a closed circuit states its own lifetime — a better instrument than
+P53's *starts-and-does-not-finish* signature.
+⚠️ **(6) Step 0 is the one code change and it is in `ansible-nas`** (`c57a9ea4`): Traefik's
+`[accessLog]`, JSON to stdout, gated on `traefik_access_log_enabled`. **`User-Agent` is kept
+explicitly** because Traefik drops headers by default and step 4 is a question about a browser
+engine. ✅ **IPv6 answered for this carrier** (IPv4 throughout; DNS64/NAT64 never engaged).
+⚠️ **The layout held at the Pixel's width but it is a weak test of A18** — the table was opened on
+*levels*, so every name is short and the long-name case was never drawn. Tree green at **941**,
+unchanged; **the whole diff in this repository is documents.**
+
 **What P61 built, and the four things a cold session needs from it.**
 🔥 **(1) The copy-link's fix needed nothing in `:global()`'s place, and that is the finding.** The
 packet recommended moving the reveal into the unscoped `app.css`; ⚠️ **it was not needed**, because
@@ -208,7 +246,7 @@ opened through P56's two-step per-seat form, sat down by physical tap and on-scr
 claim **refused** by `warden` holding the rank (P28), the blind draw private, **rotated mid-turn
 without losing the circuit or the standing question**, settled in 47 turns; `negotiate` **200**,
 three circuits each closing **101**, the playing one alive **243 s**; §3.11 B11 measured on the
-device at **44 px** buttons and **66 × 76 px** cards. 🔥 **`P61` shipped the same day (above); `P62` is the next packet: the table on a phone, on a carrier.** Tree green at **938**, unchanged — no test was added and none could
+device at **44 px** buttons and **66 × 76 px** cards. 🔥 **`P61` and `P62` both shipped (above); `P63` — the retention window against a real idle timeout — is the packet P62 wrote.** Tree green at **938**, unchanged — no test was added and none could
 be, because nothing here is reachable from the test project.
 
 **What P59 built, and the four things a cold session needs from it.**

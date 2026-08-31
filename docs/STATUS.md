@@ -10,106 +10,70 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
-◐ **`P62` is in progress, and what is done is its step 0 — in a different repository.**
-`RULES.md` stays **rev 31**, the tree is green at **941**, and ⚠️ **nothing in *this* repository
-changed at all** — no code, no test, no measurement, and no suite is owed. 🔥 **The rest of P62
-cannot be done from a session**: it is a round played on a real phone over a real carrier, and
-emulation, a simulator, a responsive-mode viewport and a tablet are all named in the packet as ways
-of *not being a person on a phone*. **It needs Nick, a phone and a train.**
+🔥 **`P62` shipped 2026-08-31 on Opus 5: a round was played on a phone on T-Mobile, and the
+packet's own test for *"this came over the carrier"* turned out to accept two things that are not a
+carrier.** `RULES.md` stays **rev 31**, the tree is green at **941**, and ⚠️ **nothing in this
+repository changed but documents** — the one code change is Traefik's access log, in `ansible-nas`.
+The remainder of P53's acceptance is discharged **except the WebKit half**, which no Android phone
+can close.
 
-- 🔥 **(1) The instrument P60 found missing now exists in source: Traefik has an access log.**
-  `~/source/repos/ansible-nas` commit **`c57a9ea4`** — `traefik.toml` gains `[accessLog]` in JSON
-  to the container's stdout, gated on a new `traefik_access_log_enabled` defaulting **on**.
-  ⚠️ **Without it a carrier request and a house-wifi request leave *identical* evidence**, which is
-  the single most likely way P62 returns a false pass: a phone with wifi accidentally left on.
-- 🔥 **(2) `User-Agent` is kept explicitly, and that is not a detail.** Traefik's default is
-  `fields.headers.defaultMode = "drop"`, so the header that names the browser engine is the one
-  field the packet needs that the defaults throw away — and **P62 step 4 is a question about
-  WebKit specifically**, answerable only if the log says which browser made the request.
-  `ClientHost`, `RequestPath` and `DownstreamStatus` are kept by the `defaultMode = "keep"` that
-  covers ordinary fields.
-- ✅ **(3) The template was rendered and parsed rather than eyeballed.** Jinja-rendered both ways
-  and parsed as TOML: on, it yields the `accessLog` table above; off, the key is absent and the
-  document still parses. **A malformed `traefik.toml` takes the whole proxy down**, so this is the
-  cheapest possible fence for the one change that could.
-- ✅ **(4) There is a fence in the only place that repository has one.** The traefik role's
-  `molecule/default/verify.yml` slurps the **templated** config back off the host and fails if it
-  does not carry `[accessLog]`, `format = "json"` and `User-Agent = "keep"`.
-- ⚠️ **(5) What is owed before travelling, said out loud.** **The playbook has not been run** —
-  `ansible-playbook nas.yml --tags traefik --become --ask-become-pass`, after `ssh-add
-  ~/ubuntuServer22key` — and **`ClientHost` has not been seen populated on the real box.** 🔥 **A
-  log line with an empty or bridge-local `ClientHost` is exactly the failure step 0 exists to
-  catch**, so read `docker logs traefik` for a request from a known device *before* trusting the
-  field. Traefik runs `network_mode: host`, which is the reason to expect a real address, and
-  `UseForwardedHeaders` in the app means the app and the proxy can still disagree.
-- ⚠️ **(6) P61 is still owed a redeploy, and it is the same trip.** `git push origin main` is the
-  CI trigger and a work cycle does not push, so the tablet fixes P61 shipped **are not on the
-  deployed site**. P60's *pulled is not running* applies: read what the running container is
-  **built from** (`docker inspect <c> --format '{{.Image}}'` against
-  `docker images … '{{.Tag}} {{.ID}}'`), never the tag `docker ps` prints.
-- ✅ **(7) One P62 question is already answered and does not need the trip.** `poker.nickjones.dev`
-  is `209.128.193.153` with **no `AAAA` record** (P60), so on an IPv6-only carrier the site loads
-  only if DNS64/NAT64 synthesises — ⚠️ **and if that bites, the fix is one DNS record rather than
-  anything in this repository.** Check the phone's network before blaming Safari.
+- ✅ **(1) The path is proved, which is the whole point of the packet.** `ClientHost`
+  **`172.58.164.115`** — T-Mobile, confirmed by Nick — against a house that appears as
+  `192.168.50.1` and a WAN of `209.128.193.153`. From that address: `GET /table/1?you=NickOnPhone`
+  **200**, `POST /_blazor/negotiate` **200**, and `GET /_blazor?id=…` **101**. ⚠️ **The deployed
+  commit was verified *running* rather than pulled**: `docker inspect` gave image `a7b9b7187dfb`,
+  which `docker images` tags both `97230e3` and `latest` — P61 and P62 included.
+- 🔥 **(2) The finding that cost the most: P62 step 2's stated check is wrong, and it was
+  satisfied twice by things that are not a carrier.** The packet said *the check is that
+  `ClientHost` is not on the home range*. ⚠️ **A phone on the house wifi behind a VPN produces
+  exactly that** — the first round of evidence read `136.23.63.30`, off the home range, off the
+  house WAN, and it was a VPN exit. 🔥 **Worse, a phone VPN survives a wifi→cellular handover**, so
+  *turning wifi off and switching to 5G changed the path underneath and left the address
+  identical*, and a second round of evidence read the same `136.23.63.30`. **The correct criterion
+  is that `ClientHost` *changes* and lands in the carrier's range**, corroborated by the phone's own
+  network state — not that it differs from the house. ⚠️ **Not being on the home range is a
+  property a VPN has too.**
+- 🔥 **(3) The engine is Gecko, and that is a third implementation rather than the one the
+  packet wanted.** `Mozilla/5.0 (Android 17; Mobile; rv:154.0) Gecko/154.0 Firefox/154.0` — P53 and
+  P60 both drove Blink. ✅ **basicauth replays past the page on it**: `/` **401**, then every
+  request carries `ClientUsername: "poker"`, `negotiate` **200**, upgrade **101**, so the failure
+  P62 step 4 was written to catch does not happen here. ⚠️ **It does not close step 4** — WebKit is
+  a separate implementation and **an Android phone cannot answer for it.** That half stands open and
+  needs an iPhone.
+- 🔥 **(4) A carrier closes an idle circuit and the house wifi does not, and now there is a
+  number.** The idle socket died at **266,462.9 ms — 4 min 26 s** — against **P53's 7½ minutes on
+  desktop wifi with no close frame at all**. Blazor reconnected at once, a fresh circuit opened, and
+  the seat, the round and the standing question all survived. ⚠️ **The exposure this creates is
+  real and is not fixed here: 4:26 is well past P54's 2-minute
+  `DisconnectedCircuitRetentionPeriod`.** The reconnect only fires while the tab is in the
+  foreground; **a phone with the screen off will not run it**, and past the window
+  `TableView.Dispose` stands the player up. **First evidence that P54's pairing may be fitted to
+  the wrong network** — written up as a candidate, deliberately not changed on one measurement.
+- 🔥 **(5) A network handover was measured live, which is the thing P59 could not.** Turning the
+  VPN off killed the circuit mid-round — it closed at **36.9 s** — and Blazor negotiated afresh
+  **over the carrier** and opened a new one. ✅ **No reconnect overlay appeared and the round carried
+  on.** P59 proved *inside the window nothing is lost* against `TestServer`'s in-memory pipes;
+  **it now holds against a real radio changing underneath a live round.**
+- ⚠️ **(6) An instrument note that cost a wrong reading.** Traefik logs **`DownstreamStatus: 0`**
+  for both `/_blazor?id=…` lines: **a hijacked connection has no downstream status**, so the
+  proxy's own log cannot tell you an upgrade succeeded. **The `101` and the circuit's lifetime exist
+  only in the application log** — and because Kestrel logs a request when it *completes*, a closed
+  circuit reports its lifetime for free, which is a better instrument than P53's
+  *starts-and-does-not-finish* signature. Read both logs or read neither.
+- ✅ **(7) The IPv6 question is answered for this carrier without an experiment.** The request
+  arrived over **IPv4**, so DNS64/NAT64 never engaged and the missing `AAAA` record never mattered.
+  ⚠️ **Answered for T-Mobile only** — another carrier may be IPv6-only, and the fix would still be
+  one DNS record rather than anything in this repository.
+- ✅ **(8) The layout held, with a caveat stated rather than glossed.** At the Pixel's width the
+  felt stacks to two columns, nothing overflows sideways, no seat name is clipped, and the round was
+  played by touch throughout. ⚠️ **It is a weak test of A18**: the table was opened on *levels*,
+  so every generated name is short (`Su Htwe (hard)`), and the long-name case P58 and P61 were
+  fitted to — `Khine Myat Zin (opportunist)` — never appeared. **A rung-named table is what would
+  stress it.**
 
----
-
-🔥 **`P61` shipped 2026-08-30 on Opus 5: the two defects a real device found are fixed, each with a
-fence that fails for the right reason — and the copy-link's fix turned out to need nothing at all
-in `:global()`'s place.** `RULES.md` stays **rev 31**, the tree is green at **941** (from 938), and
-⚠️ **`Domain`, `Presentation`, `Server`, `Console` and `Sim` are byte-identical** — the whole diff
-is two stylesheets, one new test class and one extended one, so **no measurement can move and no
-suite is owed.**
-
-- 🔥 **(1) The copy-link reveal is one selector shorter, not one file over.** P61's plan
-  recommended moving the rule into the unscoped `app.css`; ⚠️ **that is not what shipped, and the
-  reason is the finding**: Blazor's rewriter appends the scope attribute to the **last compound
-  selector only**, so `.can-copy .link .copy` is emitted as `.can-copy .link .copy[b-…]` and an
-  ancestor outside the component was never constrained in the first place. **`:global()` was not
-  solving a problem — it was the problem.** ✅ **The rule stays beside the `display: none` default
-  it overrides**, which is where the ordering that makes it win can be seen, and `app.css` did not
-  have to learn a component's internals. ✅ **`::deep` rejected for the reason the packet gave** —
-  it scopes descendants of the component's own root and `.can-copy` is on `<html>` — and the
-  `<a class="url">` fallback is untouched.
-- ✅ **(2) Measured in a browser engine, which is the only place this defect was ever visible.**
-  Headless Chromium driven over CDP against the running client: `can-copy` on `<html>`, the button
-  present, computed **`display: block`** (a flex item blockifies `inline-block`) at **82 px** wide,
-  and the live CSSOM holding **two** `.copy` rules where P60's tablet held exactly one. The same
-  run reads the served bundle at `/BurmesePoker.Web.styles.css` and finds both rules in it.
-- 🔥 **(3) The scoped-CSS fence is the class of mistake, and it reads the rewriter's output.**
-  `ScopedCssTests` is new: one fact fails on **any** `:global(` under
-  `obj/<config>/net10.0/scopedcss/**` — the configuration taken from where the test assembly is
-  running, so a stale `obj/Release` cannot fail a Debug build — and its positive twin reads the
-  **served bundle** and asserts the reveal exists **and is declared after** the default that hides
-  it, because the two weigh exactly the same and order is the whole of why one wins. ⚠️ **The scan
-  strips comments first**: `Tables.razor.css` now names the construct in a comment beside the rule,
-  and a scan that read the prose would fail on the one file that had learned the lesson — P13.3's
-  rule, arriving in a stylesheet.
-- 🔥 **(4) A18 is amended, and the amendment is that it was fitted to the wrong axis.** The
-  argument for ellipsing is *the whole name is one hover away*; the rule carrying it was
-  `max-width: 56rem`. **Those are two axes and a tablet in landscape is where they come apart** —
-  1316 px, `(any-hover: none)`. `SeatPanel.razor.css` now carries a second `@media`, on
-  `(any-hover: none)`, **declared after the width one** because on a narrow touch screen both match
-  and they weigh the same. ⚠️ **Amended rather than contradicted** (P56's precedent): what A18
-  forbade — a name nobody can read — is unchanged, and P58's width half stands as written.
-  ⚠️ **Widening the ring's name column is the fix this rejects**, because a floor fitted from what
-  the longest generated name measures in *this* machine's font passes only where it was fitted.
-- ⚠️ **(5) Four mutations, all of the stylesheets and none of the tests.** `:global()` put back
-  (both scoped-CSS facts red); the reveal moved above the default (the ordering fact red); the
-  capability block's `normal` turned back to `nowrap` (the hover fact red); the capability block
-  moved above the width one (its ordering fact red). **This project's rule, and here it is the only
-  way to tell a live rule from a discarded one.**
-- ⚠️ **(6) What is owed, said out loud.** **The redeploy and the device are not done.**
-  `git push origin main` is the CI trigger and a work cycle does not push, so **nothing here is
-  proved on a real tablet until the image is rebuilt and the running container re-read** —
-  P60's *pulled is not running*. ⚠️ **And headless Chromium answers `(any-hover: none)` by
-  default**, so the browser measurement exercised the **no-hover branch only**; the hover branch is
-  fenced in source and unmeasured in a browser here.
-
-**`P62` is the next packet — the table on a phone, on a carrier**, the remainder of P53's
-acceptance. ⚠️ **It has a step 0 in a different repository** (`ansible-nas`): **Traefik must be
-given an access log first**, because without a client IP a carrier path and the house wifi produce
-identical evidence. See `BUILD-PLAN.md` §5.
+**The next packet is Nick's call**, and `BUILD-PLAN.md` §5 now carries **`P63` — the retention
+window against a real idle timeout**, written from (4). Behind it stand `P40` (the Burmese rulebook,
+blocked on Nick's vetted text) and the WebKit half of step 4, which needs a device nobody here owns.
 
 ---
 
@@ -5341,7 +5305,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 | --- | --- | --- |
-| 2026-08-31 | P62 | **Partial — step 0 only, and it is in another repository.** ⚠️ **Nothing in this repository changed**; the tree is green at **941**, unchanged, and no measurement can move. 🔥 **The rest of the packet cannot be executed from a session** — it is a round on a real phone over a real carrier, and the packet itself names emulation, a simulator, a responsive viewport and a tablet as ways of not being a person on a phone. ✅ **Built: Traefik's access log** (`ansible-nas` `c57a9ea4`) — `[accessLog]` in JSON to stdout, gated on a new `traefik_access_log_enabled` defaulting on. ⚠️ **Without it, a carrier request and a house-wifi request leave identical evidence**, which is the way P62 returns a false pass. 🔥 **`User-Agent` is kept explicitly** because Traefik drops headers by default and step 4 is a question about **WebKit specifically** — unanswerable if the log cannot say which browser made the request. ✅ The template was **rendered and TOML-parsed both ways** rather than eyeballed (a malformed `traefik.toml` takes the proxy down), and the role's molecule verify slurps the templated config back and fails without the access log. ⚠️ **Owed before travelling: run the playbook and see `ClientHost` populated on the real box** — an empty or bridge-local value is the failure step 0 exists to catch. ⚠️ **P61's redeploy is owed on the same trip.** |
+| 2026-08-31 | P62 | **Done — the table on a phone, on a carrier, on Opus 5.** Tree green at **941**, unchanged; ⚠️ **nothing in this repository changed but documents**, the one code change being Traefik's access log in `ansible-nas` (`c57a9ea4`, step 0). ✅ **Path proved**: `ClientHost` **`172.58.164.115`** (T-Mobile), `/table/1` **200**, `negotiate` **200**, `/_blazor?id=` **101**; deployed commit verified *running* (image `a7b9b7187dfb` = tag `97230e3` = HEAD), not merely pulled. 🔥 **The packet's own check was wrong and was satisfied twice by things that are not a carrier**: a phone on house wifi behind a VPN is off the home range, and **a phone VPN survives a wifi→cellular handover**, so switching to 5G left the exit address identical. **The criterion is that `ClientHost` *changes* into the carrier's range**, not that it differs from the house. 🔥 **The engine was Gecko** (Firefox 154 / Android 17) — a third implementation after two Blink runs; basicauth replays past the page on it, ⚠️ **but WebKit stays open and an Android phone cannot answer for it.** 🔥 **A carrier closes an idle circuit at 4 min 26 s** where P53's desktop wifi held 7½ minutes with no close frame; the reconnect was immediate and nothing was lost, ⚠️ **but 4:26 is past P54's 2-minute retention window and the reconnect only runs in a foreground tab** — written up as `P63`, deliberately not changed on one measurement. 🔥 **A handover was measured live**: dropping the VPN killed the circuit at 36.9 s, Blazor renegotiated over the carrier, **no overlay appeared and the seat, round and standing question survived** — P59's lab result holding against a real radio. ⚠️ **Instrument note**: Traefik logs `DownstreamStatus: 0` for a hijacked connection, so **the `101` and the lifetime exist only in the app log.** ✅ IPv6 answered for this carrier (IPv4 throughout, DNS64/NAT64 never engaged); layout held at the Pixel's width, ⚠️ **though a levels table makes every name short, so A18's long-name case went unstressed.** |
 | 2026-08-30 | P61 | **Done — the two defects a real device found, on Opus 5.** Tree green at **941**, from 938; ⚠️ **`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical** — the diff is two stylesheets, one new test class and one extended one, so **no measurement can move and no suite is owed.** 🔥 **The copy-link's fix needed nothing in `:global()`'s place**: the packet recommended moving the reveal into the unscoped `app.css`, and it was not needed, because Blazor's rewriter appends the scope attribute to the **last compound selector only** — `.can-copy .link .copy` is emitted as `.can-copy .link .copy[b-…]`, and an ancestor outside the component was never constrained. **`:global()` was not solving a problem; it was the problem.** ✅ The rule stays beside the `display: none` default it overrides, where the ordering that makes it win is visible; `::deep` was rejected for the packet's own reason; the `<a class="url">` fallback is untouched. ✅ **Measured in a browser engine** — headless Chromium over CDP against the running client: `can-copy` on `<html>`, computed **`display: block`** (a flex item blockifies `inline-block`) at **82 px**, and the live CSSOM holding **two** `.copy` rules where P60's tablet held exactly one. 🔥 **`ScopedCssTests` fences the class of mistake and reads the rewriter's output**: one fact fails on any `:global(` under `obj/<config>/net10.0/scopedcss/**` (configuration taken from where the assembly runs, so a stale `obj/Release` cannot fail a Debug build), the twin reads the **served bundle** and asserts the reveal exists **and is declared after** the default — the two weigh the same, so order is the whole of why one wins. ⚠️ **The scan strips comments first**, or it would fail on the one file that had learned the lesson. 🔥 **§3.11 A18 amended, not contradicted**: the argument for the ellipsis is *the whole name is a hover away* and the rule carrying it was `max-width: 56rem` — two axes, and a tablet in landscape (1316 px, `(any-hover: none)`) is where they come apart. `SeatPanel.razor.css` gains a second `@media` on `(any-hover: none)`, **after** the width one because on a narrow touch screen both match and weigh the same; `ViewportTests` gains the fact. ⚠️ **Widening the ring's name column is the fix this rejects** — P58's trap, one axis over. ⚠️ **Four mutations, all of the stylesheets and none of the tests**, each turning the right fact red. ⚠️ **Owed and said out loud: the redeploy and the device.** A work cycle does not push, so nothing here is proved on a real tablet until the image is rebuilt and the running container re-read (P60's *pulled is not running*); and **headless Chromium answers `(any-hover: none)` by default**, so only the no-hover branch was exercised in a browser. |
 | 2026-08-30 | P60 | **Done — the table on real devices, on Opus 5.** ⚠️ **A verification packet, and the whole diff is documents** — nothing in the repository changed, no measurement can move, no suite owed; tree green at **938** (unchanged: no test was added, and none of what this packet establishes is reachable from the test project). ✅ **The deployed commit was read off the running container before anything was touched and is stated: `62ed294` (P59).** 🔥 **Found on the way there and worth more than it looks — *pulled* is not *running***: the NAS held `:latest` = `2881b65` **pulled four hours earlier** while the container still served **`f309a9d`**, so the role had fetched an image and never recreated the container. ⚠️ **P53's finding (8) is not “read the deployed tag”, it is “read what the running container is built from”**. ✅ **The device did what the packet said it would**: Samsung Galaxy Tab S9 FE (`SM-X510`), Android 16, Chrome 151, 1.75 dppx — **823 CSS px portrait, 1316 landscape** — so **one device rotated exercised both sides of the only breakpoint the application has**, with portrait landing *inside* P58's 600–896 defect band. ✅ **P58's fix holds in a font this workstation has never rendered**: four 181 px columns, every name `white-space: normal`, **none clipped** (`scrollWidth == clientWidth` on all six), `Khine Myat Zin (opportunist)` wrapping to two lines, and no horizontal overflow. 🔥 **The defect it found is above the line, and a tablet is where it lives**: in landscape the ring returns, the name reverts to `nowrap` + `ellipsis`, and **three of six are clipped** — *“Su Htwe (oppo…”* 77%, *“Myat Htwe (op…”* 70%, *“Khine Myat Zin (oppo…”* 80% — while the device answers `(hover: none)`, `(any-hover: none)`, `(pointer: coarse)` **at 1316 px**. ⚠️ **A18 is fitted to *width* while the argument that justifies the ellipsis depends on *hover*, and the `title=` is present and unreachable.** 🔥 **P54's copy-link has never been visible in any browser**: `Tables.razor.css` reveals it with **`:global(.can-copy) .link .copy`**, but `:global()` is a **CSS-Modules** construct rather than Blazor scoped CSS (which has `::deep`), the Razor rewriter emits it **verbatim**, and the browser drops the whole rule as an invalid selector — **the live CSSOM on the device holds exactly one `.copy` rule and it is `display: none`.** ⚠️ **Nothing is broken for a player** (the `<a class="url">` beside it is P54's designed fallback) — **the enhancement simply never appears**, which is precisely why *“it was never pressed in a browser”* never turned into a bug report. ✅ **The handler is sound**: revealed by an injected style and pressed **physically**, the delegated listener fires and the clipboard receives the correct **forwarded** absolute URL. 🔥 **And a synthesized touch is not a person either** — the identical press through CDP `Input.dispatchTouchEvent` fired the click handler but **silently failed the clipboard write** (no user activation) where `adb input tap` succeeded: a third instance of this project's scar, after `--no-restore` and `curl`. ✅ **A whole round was played from the tablet** — opened through **P56's two-step per-seat form**, which grew its four `Wanted.PerSeat[…]` selects on the device and produced `opportunist, sprinter, easy, warden`; sat down with a physical tap and the on-screen keyboard; **the claim on the turned-up 3♠ was refused** (*“Myat Htwe (warden) refused Nick the turned-up card — which they may only by holding that rank”*, P28 on a tablet); the blind draw arrived privately; **rotated mid-turn** without losing the circuit or the standing question; settled after **47 turns**. ✅ **Log-side evidence, P53's grade**: `negotiate` **200**, three circuits each closing **101**, the playing one alive **243 s**; touch targets measured on the device at **44 px** buttons and **66 × 76 px** cards (§3.11 B11 confirmed rather than assumed). ⚠️ **The phone half is NOT discharged and now has a named blocker**: no phone, no cellular, no Mobile Safari — **and item 3 cannot be satisfied even with a phone in hand, because nothing logs the client IP.** Traefik has **no `accessLog` configured** (checked on the box) and the app logs no remote address, so *“prove the session came over the carrier rather than silently over the home wifi”* has **no instrument**; that is a prerequisite living in `ansible-nas`. ✅ **The IPv6 question is answered without a device**: `poker.nickjones.dev` is `209.128.193.153` with **no `AAAA` record**, so the DNS64/NAT64 mode is live and unmitigated — **check it before blaming the browser**. No rules question; `RULES.md` stays rev 31. **`P61` is proposed: the two defects, each with a fence.** |
 | 2026-08-30 | P59 | **Done — circuit survival: the connection that drops and comes back, on Opus 5.** ⚠️ **Tests and one package only**: `Domain`, `Presentation`, `Server`, `Console`, `Sim` **and `Web`** byte-identical, no measurement can move, no suite owed. Tree green at **938**, from 933. 🔥 **A real Blazor circuit can now be held from a test** — `AddInteractiveServerComponents` narrows `/_blazor` to **`blazorpack`**, which no client library speaks, so `BlazorPack.cs` writes down the slice of it a circuit's opening needs and `BlazorCircuit.cs` starts one from **the page's own component markers**, kills the socket with **no close frame**, and asks for the circuit back by name. ✅ **The instrument proves itself**: `TableView` sits down only when it is *really* interactive (§3.11 C13), so the person-seat ceasing to wait is proof a circuit started and rendered rather than that a page was fetched. 🔥 **Three answers and they differ** (retention 3 s against patience 8 s, the shipped ordering shrunk): *inside the window* the reconnection succeeds and nothing is lost; *past the window, inside the patience* the reconnection **fails** and the seat is **given up** — `TableView.Dispose` stands the player up — **while the turn is not**, and sitting down again by name takes the seat back with the question still standing; *past both* the computer has played the turn. 🔥 **So a seat and a turn are recovered by different mechanisms** — the seat by name (P13.6), the turn by the patience — and **losing the circuit is not losing the game.** 🔥 **P54's claim is exercised rather than asserted against itself**: with the patience **below** the retention period the computer plays the turn of somebody **the framework is still holding**, the reconnection still succeeds, and **nothing on screen says anything happened.** ✅ **Proved able to fail the way the packet asked** — shortening the patience below the window turns the *inside the window* test red. 🔥 **`TableBoard.Turn` turned out to be the wrong instrument and measuring found it**: a seat is asked **twice** in a turn, so a turn sits on a seat for **two** patiences; `StoodInFor` is the fact itself. ⚠️ **`tc netem` not done** — `TestServer`'s socket is in-memory pipes and shaping a real one needs root; **latency is P60's**. ⚠️ **The recorded obstacle (`SeatChannel`'s undisposed wait handle, `Ask` taking no token) was never reached** — nothing here tears a seat down. |
