@@ -14,7 +14,7 @@ over ad-hoc changes.
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
 recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
-F10) was the last of them; the tree is green at 938.**
+F10) was the last of them; the tree is green at 941.**
 🔥 **A fourth track was added 2026-08-28 at Nick's direction: `P51`–`P54`, *taking the table
 online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
@@ -135,6 +135,38 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
 
+**What P61 built, and the four things a cold session needs from it.**
+🔥 **(1) The copy-link's fix needed nothing in `:global()`'s place, and that is the finding.** The
+packet recommended moving the reveal into the unscoped `app.css`; ⚠️ **it was not needed**, because
+Blazor's rewriter appends the scope attribute to the **last compound selector only** —
+`.can-copy .link .copy` is emitted as `.can-copy .link .copy[b-…]`, and an ancestor outside the
+component was never constrained. **`:global()` was not solving a problem; it was the problem.**
+✅ The rule stays beside the `display: none` default it overrides, where the ordering that makes it
+win is visible; ⚠️ **`::deep` is not the fix** (it scopes descendants of the component's own root
+and `.can-copy` is on `<html>`); the `<a class="url">` fallback is untouched.
+✅ **(2) Measured in a browser engine, the only place this defect has ever been visible.** Headless
+Chromium over CDP against the running client: `can-copy` on `<html>`, computed **`display: block`**
+(a flex item blockifies `inline-block`) at **82 px** wide, and the live CSSOM holding **two**
+`.copy` rules where P60's tablet held exactly one.
+🔥 **(3) `ScopedCssTests` fences the class of mistake by reading the rewriter's output.** One fact
+fails on **any** `:global(` under `obj/<config>/net10.0/scopedcss/**` — the configuration taken
+from where the test assembly runs, so a stale `obj/Release` cannot fail a Debug build — and the
+positive twin reads the **served bundle** and asserts the reveal exists **and is declared after**
+the default that hides it, because the two weigh the same and order is the whole of why one wins.
+⚠️ **The scan strips comments first**, or it would fail on the one file that had learned the lesson.
+🔥 **(4) §3.11 A18 is amended, and the amendment is that it was fitted to the wrong axis.** The
+argument for the ellipsis is *the whole name is a hover away*; the rule carrying it was
+`max-width: 56rem`. **A tablet in landscape — 1316 px, `(any-hover: none)` — is where the two come
+apart.** `SeatPanel.razor.css` gains a second `@media` on `(any-hover: none)`, **declared after**
+the width one because on a narrow touch screen both match and weigh the same; `ViewportTests` gains
+the fact. ⚠️ **Widening the ring's name column is the fix this rejects** — a floor fitted from this
+machine's font is P58's trap, one axis over. ⚠️ **Four mutations, all of the stylesheets and none
+of the tests.** ⚠️ **Owed and not done: the redeploy and the device** — a work cycle does not push,
+so nothing here is proved on a real tablet until the image is rebuilt and the running container
+re-read; and **headless Chromium answers `(any-hover: none)` by default**, so only the no-hover
+branch was exercised in a browser. Tree green at **941**, from 938; `Domain`, `Presentation`,
+`Server`, `Console` and `Sim` byte-identical.
+
 **What P60 built, and the five things a cold session needs from it.**
 🔥 **(1) The whole diff is documents, and that is the result.** A real round was played on a real
 tablet — Galaxy Tab S9 FE (`SM-X510`), Android 16, Chrome 151, 1.75 dppx, so **823 CSS px portrait
@@ -176,8 +208,7 @@ opened through P56's two-step per-seat form, sat down by physical tap and on-scr
 claim **refused** by `warden` holding the rank (P28), the blind draw private, **rotated mid-turn
 without losing the circuit or the standing question**, settled in 47 turns; `negotiate` **200**,
 three circuits each closing **101**, the playing one alive **243 s**; §3.11 B11 measured on the
-device at **44 px** buttons and **66 × 76 px** cards. 🔥 **`P61` is the next packet: the two
-defects, each with a fence.** Tree green at **938**, unchanged — no test was added and none could
+device at **44 px** buttons and **66 × 76 px** cards. 🔥 **`P61` shipped the same day (above); `P62` is the next packet: the table on a phone, on a carrier.** Tree green at **938**, unchanged — no test was added and none could
 be, because nothing here is reachable from the test project.
 
 **What P59 built, and the four things a cold session needs from it.**

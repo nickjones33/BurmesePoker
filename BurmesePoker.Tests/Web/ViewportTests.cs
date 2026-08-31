@@ -97,6 +97,40 @@ public class ViewportTests
         Assert.Contains("overflow: visible", stacked, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// 🔥 <b>A name is trimmed only where something can hover, whatever the screen is wide.</b>
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>This is A18's argument, and until P61 the standard was fitted to the wrong axis.</b>
+    /// The ellipsis above the breakpoint is defended by the whole name being one hover away — a
+    /// claim about pointers — while the line that decides it is drawn in pixels. A Galaxy Tab S9
+    /// FE in landscape is 1316 CSS px and answers <c>(any-hover: none)</c>, and three of six seat
+    /// names were measured clipped on it with the <c>title=</c> unreachable. So the capability
+    /// carries its own rule, above the line as well as below it.
+    /// </remarks>
+    [Fact]
+    public void ANameIsTrimmedOnlyWhereSomethingCanHover()
+    {
+        var panel = Sources.Read("Components/Table/SeatPanel.razor.css");
+
+        var touch = Block(panel, "any-hover: none");
+
+        var name = Rule(touch, ".name");
+
+        Assert.True(
+            name.Contains("white-space: normal", StringComparison.Ordinal),
+            "Where nothing can hover, an over-long seat name has to wrap: the title= that makes the trim "
+                + $"honest is unreachable there. The rule says: {name}");
+
+        Assert.Contains("text-overflow: clip", name, StringComparison.Ordinal);
+        Assert.Contains("overflow: visible", name, StringComparison.Ordinal);
+
+        Assert.True(
+            panel.IndexOf(touch, StringComparison.Ordinal) > panel.IndexOf(Stacked(panel), StringComparison.Ordinal),
+            "On a narrow touch screen both blocks match and they weigh the same, so the capability rule has "
+                + "to be declared after the width one for wrapping to be what happens.");
+    }
+
     [Fact]
     public void ThePageIsLaidOutForTheDeviceItIsOn()
     {
@@ -118,11 +152,19 @@ public class ViewportTests
     ];
 
     /// <summary>The body of a stylesheet's width-breakpoint block.</summary>
-    private static string Stacked(string css)
+    private static string Stacked(string css) => Block(css, "max-width");
+
+    /// <summary>The whole of the first <c>@media</c> block whose condition says this.</summary>
+    private static string Block(string css, string condition)
     {
         var start = css.IndexOf("@media", StringComparison.Ordinal);
 
-        Assert.True(start >= 0, "There is no breakpoint in this stylesheet at all.");
+        while (start >= 0 && !css[start..css.IndexOf('{', start)].Contains(condition, StringComparison.Ordinal))
+        {
+            start = css.IndexOf("@media", start + 1, StringComparison.Ordinal);
+        }
+
+        Assert.True(start >= 0, $"There is no @media ({condition}) block in this stylesheet at all.");
 
         var depth = 0;
 
@@ -136,7 +178,7 @@ public class ViewportTests
             }
         }
 
-        throw new InvalidOperationException("The breakpoint block is never closed.");
+        throw new InvalidOperationException($"The @media ({condition}) block is never closed.");
     }
 
     /// <summary>One declaration block, by selector, out of a stretch of CSS.</summary>

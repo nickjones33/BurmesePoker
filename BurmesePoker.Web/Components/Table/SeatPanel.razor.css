@@ -192,6 +192,31 @@
 }
 
 /*
+    🔥 The same trim, decided by the capability rather than by the width (P61, §3.11 A18).
+
+    ⚠️ The argument for ellipsing above the breakpoint is that the whole name is one hover
+    away, in `title=`. That is an argument about *pointers*, and the line above it is drawn in
+    *pixels* — so a tablet in landscape is a counterexample the width alone cannot see. Measured
+    on a Galaxy Tab S9 FE at 1316 CSS px answering `(any-hover: none)` and `(pointer: coarse)`:
+    three of six seat names clipped, with the whole of each unreachable.
+
+    So wherever nothing can hover, the name wraps — above the line as well as below it. Declared
+    after the width block deliberately: the two say the same thing about `.name`, and on a narrow
+    touch screen both apply, so equal specificity has to resolve toward wrapping.
+
+    ⚠️ Widening the ring's name column would be the other fix and is the wrong one: a floor fitted
+    from what `Khine Myat Zin (opportunist)` measures in *this* machine's font is a fence that
+    passes where it was fitted and fails everywhere else — P58's refusal, one axis over.
+*/
+@media (any-hover: none) {
+    .name {
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+    }
+}
+
+/*
     A seat the computer is standing in at (§3.11 C16). ⚠️ Dimmed *and* labelled: a tint on its
     own says nothing to a screen reader and nothing at all to somebody who cannot tell it from
     the felt (§3.11 A2), so the words are in the markup and this only agrees with them.

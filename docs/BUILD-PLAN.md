@@ -828,6 +828,23 @@ are split by how they are checked, because a standard nobody can verify is a wis
     arriving underneath it**; wrapping is the fix rather than a wider column floor because it
     holds whatever the platform's font measures.
 
+    🔥 **AMENDED IN P61 — the second half is about pointers, not about pixels, and a tablet is
+    the counterexample that shows the difference.** The argument above is *an ellipsis is honest
+    only where the whole name is a hover away*; the rule that carried it was `max-width: 56rem`.
+    ⚠️ **Those are two different axes and P60 found where they come apart**: a Galaxy Tab S9 FE
+    in landscape is **1316 CSS px** — comfortably above the line, so the ring returns and the
+    name reverts to `nowrap` — and answers `(hover: none)`, `(any-hover: none)`,
+    `(pointer: coarse)`. **Three of six seat names measured clipped on it, with the `title=`
+    present and unreachable.** So the standard now reads: **the felt is a ring above one stated
+    width, and a name is trimmed only where something can hover** — a second `@media`, on
+    `(any-hover: none)`, beside the width one in `SeatPanel.razor.css` and declared after it,
+    since on a narrow touch screen both match and they weigh the same. ⚠️ **Amended rather than
+    contradicted** (P56's precedent): what A18 forbade is unchanged — a name nobody can read —
+    and the width half of it stands exactly as P58 wrote it. ⚠️ **Widening the ring's name column
+    is the fix this rejects**: a floor fitted from what the longest generated name measures in
+    *this workstation's* font is a fence that passes where it was fitted, which is the trap P58
+    refused one axis over.
+
 #### B. Only playing it finds these — reviewed the way P11 was reviewed
 
 6. ✅ **DONE IN P13.4, and re-verified against a ring of seats in P13.5 — fully playable from
@@ -8212,7 +8229,7 @@ is written and no suite is owed**; the tree is green.
 
 ---
 
-### P58–P60 — The table on a small screen (the small-screen track) ☑ — **added 2026-08-30, at Nick's direction; all three done, and P60 found two defects that become `P61`**
+### P58–P60 — The table on a small screen (the small-screen track) ☑ — **added 2026-08-30, at Nick's direction; all three done, and P60 found two defects that became `P61`, shipped the same day**
 
 > ⚠️ **Front-end and ops, not the rules or strategy programme.** No rule changes, `Domain`
 > untouched by all three, **no suite regeneration owed**, and no measurement can move. **P59 was
@@ -8539,7 +8556,7 @@ repository changed, no measurement can move, tree green at **938** unchanged.
 
 ---
 
-### P61 — The two defects a real device found ☐ — **added 2026-08-30 by P60**
+### P61 — The two defects a real device found ☑ — **added 2026-08-30 by P60; shipped 2026-08-30**
 
 **Goal.** The copy-link is visible where it works, and the seat name is readable where there is no
 pointer — each with a fence that fails for the right reason. **Read first:** P60's *What it found*
@@ -8572,6 +8589,40 @@ readable at 1316 px with no pointer; both fences proved able to fail by mutating
 `Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical, **no suite owed**.
 ⚠️ **A redeploy is part of it** — `git push origin main` and a play, then re-read the running
 container, because P60 established that a pulled image is not a running one.
+
+**What it found (2026-08-30).** ⚠️ **The whole diff is two stylesheets and two test files** —
+`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical, no measurement can move,
+**no suite owed.** Tree green at **941**, from 938.
+
+1. 🔥 **The copy-link needed *nothing* in `:global()`'s place, and that is the finding.** The
+   recommendation above was to move the reveal into the unscoped stylesheet; it is not what
+   shipped, because the rewriter appends the scope attribute to the **last compound selector
+   only** — `.can-copy .link .copy` becomes `.can-copy .link .copy[b-…]`, and an ancestor outside
+   the component was never constrained in the first place. ⚠️ **So the rule stays beside the
+   `display: none` default it overrides**, where the ordering that makes it win is visible, and
+   `app.css` did not have to learn about a component's internals. ✅ **`::deep` was rejected for
+   the reason the packet stated** and the fallback `<a class="url">` is untouched.
+2. ✅ **Measured in a real browser engine, which is the only place this defect has ever been
+   visible.** Headless Chromium over CDP against the running client: `can-copy` on `<html>`, the
+   button found, computed `display: block` (a flex item blockifies `inline-block`), 82 px wide —
+   and the live CSSOM now holds **two** `.copy` rules where P60's device held exactly one.
+3. 🔥 **The fence is the class of mistake and it reads the rewriter's output.**
+   `ScopedCssTests.NoScopedStylesheetAsksTheBrowserToParseSomethingItWillDiscard` fails on any
+   `:global(` in `obj/<config>/net10.0/scopedcss/**`; the positive twin reads the **served
+   bundle** and asserts the reveal exists *and is declared after* the default that hides it,
+   because the two weigh the same and order is the whole of why one wins. ⚠️ **The scan strips
+   comments first** — `Tables.razor.css` now names the construct in a comment beside the rule,
+   and a scan that read the prose would fail on the file that had learned the lesson.
+4. ⚠️ **Both fences proved able to fail by mutating the stylesheet, never the test** — four
+   mutations: `:global()` put back (both scoped-CSS facts red), the reveal moved above the
+   default (the ordering fact red), the capability block's `normal` turned back to `nowrap`, and
+   the capability block moved above the width one (the ordering fact red).
+5. ⚠️ **What is owed and was not done here: the redeploy and the device.** `git push origin main`
+   is the CI trigger and this cycle does not push. **Nothing is proved on a real tablet until the
+   image is rebuilt and the running container re-read** — P60's *pulled is not running*.
+   ⚠️ **And headless Chromium answers `(any-hover: none)` by default**, so the browser
+   measurement above exercised the **no-hover branch only**; the hover branch is fenced in source
+   and unmeasured in a browser here.
 
 ---
 

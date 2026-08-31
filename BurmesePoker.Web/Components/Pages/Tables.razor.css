@@ -138,7 +138,19 @@
     display: none;
 }
 
-:global(.can-copy) .link .copy {
+/*
+    ⚠️ No `:global()` here, and that is the fix rather than a simplification (P61). `:global()`
+    is a CSS-Modules construct; Blazor's scoped CSS has no such thing, and the Razor rewriter
+    emits it verbatim — so a browser dropped the whole rule as an invalid selector and this
+    button was never once visible in any browser between P54 and P61.
+
+    🔥 It needs nothing in its place. The rewriter appends the scope attribute to the *last*
+    compound selector only, so this becomes `.can-copy .link .copy[b-…]`: an ancestor outside
+    the component is already unconstrained. `::deep` would be the wrong reach for the same
+    reason — it scopes descendants of this component's own root, and `.can-copy` is on <html>.
+    Declared after the hiding rule, so equal specificity resolves the way it reads.
+*/
+.can-copy .link .copy {
     display: inline-block;
     min-height: 40px;
     padding: 0.3rem 0.7rem;
