@@ -81,8 +81,11 @@ the box before anything was touched**; the tablet half of P53's acceptance is di
   ⚠️ **P53's finding (8) is not "read the deployed tag", it is "read what the running container is
   built from"**, and `docker ps` alone would have said `:latest` and been wrong.
 
-**`P61` is proposed and is the next packet** — the two defects above, each with a fence. See
-`BUILD-PLAN.md` §5.
+**`P61` is the next packet** — the two defects above, each with a fence — **and `P62` stands
+behind it: the table on a phone, on a carrier**, which is the remainder of P53's acceptance.
+⚠️ **`P62` has a step 0 in a different repository** (`ansible-nas`): **Traefik must be given an
+access log before a cellular test can conclude anything**, because without a client IP a carrier
+path and the house wifi produce identical evidence. See `BUILD-PLAN.md` §5.
 
 ---
 
@@ -3308,6 +3311,9 @@ source-IP evidence has **no instrument**: Traefik runs with no `accessLog` and t
 remote address. **Enable Traefik's access log in `ansible-nas` before a cellular test**, or the
 test cannot distinguish a carrier path from home wifi — which is the one thing it exists to prove.
 ✅ **The IPv6 half is already answered** (no `AAAA`; one record fixes it if it bites).
+🔥 **This is now written up as `P62` and it is that packet's step 0** — ⚠️ **a packet that skips it
+cannot be marked done**, because an unproved path is the failure mode rather than a missing
+nicety.
 
 ⚠️ **(3) Operational note for any future device or deploy check.** `docker ps` shows the **tag**,
 which is not the same as what the container is **running**: read

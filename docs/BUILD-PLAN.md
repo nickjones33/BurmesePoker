@@ -8575,6 +8575,70 @@ container, because P60 established that a pulled image is not a running one.
 
 ---
 
+### P62 — The table on a phone, on a carrier ☐ — **added 2026-08-30 by P60; closes the remainder of P53's acceptance**
+
+**Goal.** A round played on a real phone, over a real carrier, **proved to have come over the
+carrier**. **Read first:** P60's *What it found* (8) — the instrument that does not exist — and the
+trap at the end of the P58–P60 track, which this packet is the last and most exposed to.
+
+🔥 **What makes this packet different from P60: every hard part is something a tablet on wifi could
+not test.** P60 established that the *application* is fine on a real mobile browser — layout,
+touch, circuit, a whole round. **What is untested is the path and the browser vendor**, and neither
+is a thing a device on the home LAN can speak to. ⚠️ **So resist re-running P60's checks on a
+phone**: they will pass, and passing them is not evidence about any of the three risks below.
+
+**Build.**
+
+1. 🔥 **Step 0, and it is in a different repository — without it the packet cannot conclude
+   anything.** ⚠️ **Nothing logs the client IP today**: Traefik runs with **no `accessLog`**
+   configured and the app logs no remote address, so *"this came over the carrier"* and *"this came
+   over the house wifi"* produce **identical evidence**. Enable Traefik's access log in
+   `~/source/repos/ansible-nas` (JSON to stdout is enough; `ClientHost`, `RequestPath`,
+   `DownstreamStatus`, `request_User-Agent`) and redeploy. ⚠️ **Prove the field is populated before
+   travelling** — a log line with an empty or bridge-local `ClientHost` is the failure this step
+   exists to catch, and `UseForwardedHeaders` sitting in front of it means the app and the proxy
+   can disagree.
+2. **Turn wifi off on the phone and prove it, from the log rather than from the phone.** ⚠️ **A
+   phone with wifi on is a wifi test that looks like a cellular one** — the single most likely way
+   this packet returns a false pass. The check is that `ClientHost` is **not** on the home range;
+   record the address and the carrier.
+3. 🔥 **The IPv6 question, first, because it is the one that can stop the site loading at all.**
+   `poker.nickjones.dev` has an **`A` record and no `AAAA`** (`209.128.193.153`, measured by P60).
+   On an IPv6-only carrier with DNS64/NAT64 the site is reachable **only** if the carrier
+   synthesises and translates. ⚠️ **Check whether the phone's network is IPv6-only before
+   concluding anything about Safari** — and **the fix, if it bites, is one DNS record**, not an
+   application change.
+4. 🔥 **Mobile Safari's basicauth on the `/_blazor` upgrade — the one question no other device can
+   answer.** P53 answered it for Chrome and P60 for Chrome on Android; **WebKit is a separate
+   implementation**, and the specific risk is that credentials accepted for the page are **not**
+   replayed on the WebSocket upgrade, which presents as a table that renders perfectly and never
+   moves — **P13.3's symptom exactly**. Evidence: `negotiate` **200**, then a `GET /_blazor?id=…`
+   that **starts and does not finish** (P53's signature), with the UA in the access log to prove
+   which browser produced it. ⚠️ **An Android phone does not close this** — it is the same engine
+   P60 already drove.
+5. **Then, and only then, a round.** Claim, discard, a settlement. ⚠️ **Expect twice the patience**
+   when watching a timeout: P59 established a person's turn is **two** questions, and
+   `TableBoard.StoodInFor` is the board's own word for *the computer answered for you*.
+6. ⚠️ **Record what a carrier does to a circuit, which is the thing P59 could not.** P59's
+   measurement ran over `TestServer`'s in-memory pipes; a radio has latency, loss and **NAT
+   idle-timeout**, and a middlebox dropping an idle WebSocket is the mechanism P53's 7½-minute
+   desktop test could not see. **Leave the table idle for several minutes and watch whether the
+   circuit is reconnected** — against P54's pairing (retention **2 minutes**, patience **180 s**).
+
+**Acceptance.** A round played on a phone on cellular with the **access-log line quoted in the
+report** — client IP off the home range, UA naming the browser, `negotiate` 200 and an unfinished
+`/_blazor` GET; **the deployed commit stated**; the Safari answer recorded either way; and the
+IPv6 question answered for that carrier. ⚠️ **If step 1 was not done, the packet cannot be marked
+done** — an unproved path is the failure mode, not a missing nicety. Nothing in this repository
+need change; if a DNS record or an Ansible change is the outcome, **say which and where**.
+
+⚠️ **The trap, restated because this is the packet it was written for.** Emulation, a simulator, a
+responsive-mode viewport and a tablet are all ways of **not being a person on a phone**. This
+project's scar is `--no-restore`: an image that passed every check ever written and was dead.
+**Only a real phone on a real carrier closes this.**
+
+---
+
 ## 6. Cold-start protocol
 
 For picking up in a fresh session with no memory of this conversation.
