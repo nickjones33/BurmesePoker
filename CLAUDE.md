@@ -135,6 +135,42 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
 
+**What P63 built, and the five things a cold session needs from it.**
+🔥 **(1) The packet was reasoned from the wrong number, and measuring it found one 45× worse.**
+P62 wrote P63 from a **4 min 26 s** carrier idle timeout. ⚠️ **That is not the binding constraint.**
+Backgrounding a Chrome tab on Android killed the circuit in **5.56 s**, reproduced at **5.55 s** —
+`Request finished … wss://…/_blazor?id=… - 101 - - 57889.6996ms`, Kestrel logging *"the application
+aborted the connection"*. ✅ **Attribution is clean**: the first close **preceded the screen going
+off**, and the rest of the window ran screen-on and `Awake`, so this is *tab hidden*, not *device
+asleep*.
+🔥 **(2) A hidden tab never reconnects, which kills one of the packet's own three options.**
+**Zero `negotiate` in 5 min 51 s**; the reconnect fires **1.69 s / 0.49 s** after foregrounding.
+⚠️ **So a client-side keepalive cannot work** — a frozen tab runs no timers — **and the retention
+window is the only lever that governs loss.** ✅ Inside it (62 s) **nothing is lost**; past it the
+seat is stood in for, stood up, and recovered **by name** with the round intact. ⚠️ **Nothing on the
+returning screen says anything was decided in the gap.**
+🔥 **(3) The decision is that neither constant moves, and the reason is that the fence compares two
+clocks that start at different events.** Retention starts when the circuit **drops**; the patience
+started when the question was **asked**. The believed 60 s margin (180 − 120) exists only if a
+player vanishes the instant they are asked. ⚠️ **Observed failing live: `ran out of time` is logged
+*before* `left the table`** — the computer playing the turn of a player the framework was still
+holding, exactly what P54's pairing exists to prevent. **No pair of constants can satisfy it**, and
+raising retention is fenced to raising the patience, **which taxes every other player rather than
+the absent one.** That is **`P64`**.
+⚠️ **(4) A stall was seen on the deployed table and is recorded as unexplained.** ~3 min with no
+seat taking a turn, two independent reads, `/healthz` **200**, **zero exceptions**, cleared on
+reload into the next round. 🔥 **The cause cannot be established because the app logs requests and
+never turns** — *engine parked*, *round abandoned on its time limit* and *`_attending` leaked* are
+indistinguishable from outside. ⚠️ **P24.1's hosted-table journal is the instrument that exists and
+was not switched on.** That is **`P65`**.
+⚠️ **(5) Three carrier facts that correct P62.** `ClientHost` **rotated within one session**
+(`172.59.190.202` → `.242`), **`VPN by Google` armed itself the moment wifi went off**, and the APN
+is **IPv6-only with 464XLAT** (`clat RUNNING`) where P62 recorded IPv4 throughout — **so finding (7)
+does not generalise even to the same carrier and phone**; CLAT hides the missing `AAAA`.
+✅ **P61's copy-link is visible on a real device** (its owed check). ⚠️ **A18 is still unstressed**
+(a levels table has short names) and **the WebKit half of P53 is still open.** Tree green at **941**,
+unchanged; **the whole diff in this repository is documents.**
+
 **What P62 built, and the six things a cold session needs from it.**
 🔥 **(1) The packet's own acceptance test was wrong, and that is the finding.** P62 said to check
 that `ClientHost` is **not on the home range**. ⚠️ **That was satisfied twice by something that is

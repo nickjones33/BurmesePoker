@@ -8731,7 +8731,7 @@ project's scar is `--no-restore`: an image that passed every check ever written 
 
 ---
 
-### P63 — The patience and the retention window, against a real idle timeout ☐ — **added 2026-08-31 by P62**
+### P63 — The patience and the retention window, against a real idle timeout ☑ — **added 2026-08-31 by P62, done 2026-08-31**
 
 **Goal.** Decide whether P54's pairing is fitted to the wrong network, and either move it with a
 reason or write down why it stands. **Read first:** P54's finding (3) — the two numbers and why they
@@ -8772,6 +8772,95 @@ inferred; a decision recorded with its reason; and if a number moves, **both num
 together** and the fence still failing when they disagree. ⚠️ **If the decision is that nothing
 should change, that is a result and must be written into `STATUS.md` with the measurement behind
 it** — an unexamined constant and a deliberately-kept one look identical in the code.
+
+---
+
+**What P63 measured, recorded here because the packet's own framing was wrong.** P62 wrote this
+packet from a 4 min 26 s carrier idle timeout. ⚠️ **That is not the binding constraint.**
+Backgrounding a Chrome tab on Android killed the circuit in **5.56 s**, reproduced at **5.55 s**,
+with the screen still on — 45× faster than the number the packet was reasoned from — and **a hidden
+tab never reconnects at all** (zero `negotiate` in 5 min 51 s, device awake). ✅ **Inside the 120 s
+retention window nothing is lost**; past it the seat is stood in for and then stood up, and comes
+back **by name** with the round intact. 🔥 **The decision was that neither constant moves**, and the
+reason is `P64`.
+
+---
+
+### P64 — The patience clock, and what happened while you were gone ☐ — **added 2026-08-31 by P63**
+
+**Goal.** Make the premise of P54's fence true, and stop the return being silent. **Read first:**
+P54's finding (3), P59's findings (2) and (3), and P63's finding (6) — which is the whole argument.
+
+🔥 **What P63 found, stated as the defect.**
+`ContainerTests.TheSeatsPatienceOutlastsTheCircuitTheFrameworkHolds` asserts patience (180 s) >
+retention (120 s) and reads the margin as 60 s. ⚠️ **The two clocks do not start at the same
+event**: the retention period starts when the circuit **drops**, the patience started when the
+question was **asked**. So the margin is 60 s only if a player vanishes the instant they are asked,
+and **zero if they vanish 60 s into it**. 🔥 **Observed live in P63's run 1**: the round log carries
+`ran out of time — the computer is playing this seat` **before** `left the table`, which is the
+computer playing the turn of a player **the framework was still holding** — exactly the case P54's
+pairing exists to prevent. ⚠️ **No pair of constants can satisfy the condition**, which is why P63
+moved neither.
+
+**Build.**
+
+1. **Make the clocks start together.** The recommended shape is that a seat's patience **restarts
+   when that seat's circuit drops** (or, equivalently, that the standing question is held while the
+   framework is still retaining the circuit). ⚠️ **Prefer the smaller change**: the question is
+   already standing on the `SeatChannel`, and P37 established that a standing answer is consumed by
+   the engine rather than pushed to it.
+2. **Then fix the fence so it can express the real condition.** ⚠️ **The current assertion is not
+   wrong so much as under-specified** — keep it, and add the fact P63 could not: that the time a
+   seat is given **after its circuit drops** exceeds the retention period. **A fence that compares
+   two constants cannot see this**, so the new one has to observe the ordering of the two events.
+3. **Say what was decided in the gap.** ⚠️ **P54's finding (3) and P59's finding (3) both recorded
+   the silence and neither fixed it, and P63 confirmed it on hardware**: a player returns to a board
+   the computer has moved for them with nothing on screen saying so. The round log holds the facts
+   already (`… ran out of time — the computer is playing this seat`); what is missing is that the
+   returning player is not shown them. **A count and a pointer into the log is enough** — this is
+   not a new event type.
+
+**Acceptance.** A seat whose circuit drops immediately after being asked and one whose circuit drops
+just before its patience expires are **given the same protection**, proved by a test that fails on
+today's code; the fence extended so that a future constant cannot re-open the gap, **proved able to
+fail**; and a returning player told what was played for them. ⚠️ **P59's `BlazorCircuit` is the
+instrument** — it can drop a socket with no close frame and ask for the circuit back — so this is
+testable without a device. ⚠️ **Do not move either constant to make a test pass**: P63's measurement
+says the constants are not the defect.
+
+---
+
+### P65 — The hosted table's journal, switched on ☐ — **added 2026-08-31 by P63**
+
+**Goal.** Make a stall on the deployed table diagnosable. **Read first:** P24.1 (the hosted table's
+journal, already built) and P63's finding (7).
+
+⚠️ **The motivating observation is deliberately recorded as unexplained.** P63 watched the deployed
+table take **no turn by any seat for about three minutes** while the circuit was open and the seat
+claimed — confirmed by two independent reads, with `/healthz` **200** and **zero exceptions** in the
+container log — after which it cleared coincident with a page reload, arriving in the next round.
+🔥 **The cause could not be established, and the reason is an instrument gap rather than a hard
+bug**: the application logs **requests, never turns**, so *the engine is parked in `Ask`*, *the
+round was abandoned on its time limit* and *the table stopped dealing because `_attending` reached
+zero* are indistinguishable from outside the process.
+
+**Build.**
+
+1. **Switch the instrument on.** `--journal` on `BurmesePoker.Web` exists (P24.1) and writes every
+   decision every seat made. ⚠️ **The deployed table runs without it**, so the work is in the
+   `burmesepoker` role in `ansible-nas` — a path, a mount and a rotation — **not in this
+   repository**, which is what makes this a small packet with an ops half.
+2. **Add the one thing a journal cannot carry**: a log line when a round is **abandoned** on its
+   time limit or turn cap. ⚠️ **An abandoned round currently looks exactly like a quiet one.**
+3. **Then reproduce, or record that it did not reproduce.** The discriminating experiment is named
+   by P63: drop the circuit past the retention window so the seat is stood up and re-sat, then
+   **watch a round boundary** — if the table does not deal again with a viewer attending and the
+   seat claimed, `_attending` is being leaked by the stand-up/re-sit cycle.
+
+**Acceptance.** The deployed table writes a journal; an abandoned round says so; and the P63
+observation is either reproduced with a cause named or **written down as not reproduced**. ⚠️ **A
+stall recorded once and never chased is the failure mode this packet exists to prevent** — and if it
+does not reproduce, that is a result, not a reason to delete the note.
 
 ---
 
