@@ -43,6 +43,9 @@ public sealed class SeatBoard : IDisposable
     private readonly SeatConnection _connection;
     private int _seen;
     private bool _left;
+    private int _playedForYou;
+    private int _awayAt;
+    private bool _away;
 
     public SeatBoard(SeatConnection connection)
     {
@@ -82,6 +85,32 @@ public sealed class SeatBoard : IDisposable
     public int Answered { get; private set; }
 
     /// <summary>
+    /// How many turns the computer played for you while your connection was away, or 0 when
+    /// nothing was decided in the gap (P64).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The silence three packets recorded and none fixed.</b> P54 finding (4), P59 finding
+    /// (3) and P63 finding (5) all say the same thing: a player whose connection drops comes back
+    /// to a board the computer has moved for them <em>with nothing on screen saying so</em>. The
+    /// facts were in the round log the whole time — <c>… ran out of time — the computer is playing
+    /// this seat</c> — and nobody was pointed at them.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Counted off the public narration, not off a new event.</b>
+    /// <c>TableEvent.SeatPlayedByTheComputer</c> is already broadcast once a turn and this seat's
+    /// own connection already hears it; all that was missing was a mark for <em>where you
+    /// were</em> when it happened.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>It is about the connection, not about the seat.</b> A seat given up past the
+    /// retention window is re-taken as a fresh <see cref="SeatBoard"/> which has heard nothing
+    /// (P13.6) — that return is a sit-down and the round log is where it reads its history.
+    /// </para>
+    /// </remarks>
+    public int PlayedForYouWhileAway { get; private set; }
+
+    /// <summary>
     /// Whether the table is waiting on you.
     /// </summary>
     /// <remarks>
@@ -95,6 +124,70 @@ public sealed class SeatBoard : IDisposable
 
     /// <summary>Raised whenever any of the above changed. May arrive on any thread.</summary>
     public event Action? Changed;
+
+    /// <summary>
+    /// Says that the circuit drawing this seat has dropped: the standing question is given its
+    /// patience again, and what is played for you from here is counted (P64).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Nothing is raised.</b> There is nobody to draw a board for — that is what has
+    /// happened — and a render asked for from a circuit the framework is tearing down is the
+    /// P13.5 defect that killed circuits for a whole packet.
+    /// </remarks>
+    public void ConnectionLost()
+    {
+        lock (_gate)
+        {
+            if (_left || _away)
+            {
+                return;
+            }
+
+            _away = true;
+            _awayAt = _playedForYou;
+            PlayedForYouWhileAway = 0;
+        }
+
+        _connection.ConnectionLost();
+    }
+
+    /// <summary>
+    /// Says that the circuit drawing this seat is back, and works out what was decided while it
+    /// was gone (P64).
+    /// </summary>
+    public void ConnectionBack()
+    {
+        lock (_gate)
+        {
+            if (_left || !_away)
+            {
+                return;
+            }
+
+            _away = false;
+            PlayedForYouWhileAway = _playedForYou - _awayAt;
+        }
+
+        Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// Puts down what was played for you while you were away, once you have seen it.
+    /// </summary>
+    public void SeenWhatWasPlayedForYou()
+    {
+        lock (_gate)
+        {
+            if (PlayedForYouWhileAway == 0)
+            {
+                return;
+            }
+
+            PlayedForYouWhileAway = 0;
+        }
+
+        Changed?.Invoke();
+    }
 
     /// <summary>Take the discard, or draw blind (RULES.md §5).</summary>
     public bool Take(TurnAction action) => Answer(new SeatAnswer.Take(action));
@@ -263,6 +356,13 @@ public sealed class SeatBoard : IDisposable
             if (events[index] is TableEvent.RoundStarted or TableEvent.Settled or TableEvent.TableAbandoned)
             {
                 Hand = null;
+            }
+
+            // What the computer played for this seat, whether anybody was here to see it or not
+            // (P64). The count is the whole record; where you were is the mark taken against it.
+            if (events[index] is TableEvent.SeatPlayedByTheComputer stoodIn && stoodIn.Player == Player)
+            {
+                _playedForYou++;
             }
         }
 

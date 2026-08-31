@@ -29,6 +29,7 @@
 *@
 @implements IDisposable
 @inject Lobby Lobby
+@inject SeatPresence Presence
 
 @if (_table is null)
 {
@@ -156,6 +157,11 @@ else
         if (!string.IsNullOrWhiteSpace(You))
         {
             _seat = _table.SitDown(You.Trim());
+
+            // ⚠️ The circuit's own handler is told which seat it is playing, so that a dropped
+            // connection restarts this seat's patience rather than silently spending it (P64).
+            // It is told here and nowhere else: what the handler cannot reach, it cannot move.
+            Presence.Holds(_seat);
         }
 
         Take();
@@ -209,6 +215,7 @@ else
 
         if (_seat is not null)
         {
+            Presence.Holds(null);
             _table.StandUp(_seat);
             _seat = null;
         }

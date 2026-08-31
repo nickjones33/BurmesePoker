@@ -185,6 +185,47 @@ public class CircuitSurvivalTests
     }
 
     /// <summary>
+    /// 🔥 <b>P64 — the clock the framework's window is compared against starts when the circuit
+    /// drops, and this is that measured over a real one.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>What <c>ContainerTests</c> cannot see.</b> Its fence compares two constants —
+    /// patience against <c>DisconnectedCircuitRetentionPeriod</c> — and reads the difference as
+    /// the protection a dropped player has. ⚠️ <b>It is not</b>, because the patience started
+    /// when the question was asked and the retention starts when the circuit drops: a player who
+    /// vanishes with most of their patience spent had almost none of that margin. <b>Only a test
+    /// that watches the two events in order can state the real condition</b>, which is what this
+    /// one does — the socket is killed <em>late</em> in the patience, and the turn is read back
+    /// past the moment the old deadline would have fallen.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The seat is given up in the middle of this and that is expected</b> (P59's answer
+    /// two): the framework hands the circuit back at <see cref="Retention"/> and
+    /// <c>TableView.Dispose</c> stands the player up, while the question goes on standing. <b>The
+    /// turn is what is being asserted, not the seat.</b>
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task AConnectionThatDropsLateInItsPatienceStillGetsAWholeOneAfterTheDrop()
+    {
+        await using var site = new Site(Patience, Retention);
+        var (table, seat) = site.Table();
+        await using var circuit = await site.SitDownAsync(table, "Nick");
+
+        await Site.WaitUntil(() => table.Board.Turn == seat, "it was never this seat's turn");
+
+        // Most of the way through the patience, and then the connection goes.
+        await Task.Delay(Patience * 0.6);
+        circuit.KillTheSocket();
+
+        // Past where the patience would have run out had it gone on running from the question.
+        await Task.Delay(Patience * 0.8);
+
+        Assert.DoesNotContain(seat, table.Board.StoodInFor);
+    }
+
+    /// <summary>
     /// 🔥 <b>P54's claim, exercised — and this is the test that can go red.</b>
     /// </summary>
     /// <remarks>

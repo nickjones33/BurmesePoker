@@ -14,7 +14,7 @@ over ad-hoc changes.
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
 recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
-F10) was the last of them; the tree is green at 941.**
+F10) was the last of them; the tree is green at 949.**
 🔥 **A fourth track was added 2026-08-28 at Nick's direction: `P51`–`P54`, *taking the table
 online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
@@ -134,6 +134,39 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 ⚠️ **One P46 follow-up owned, not done**: the race-reach instrument recomputes an uncached cover
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
+
+**What P64 built, and the five things a cold session needs from it.**
+🔥 **(1) The defect P63 measured is fixed by moving a clock, and neither constant moved.**
+`SeatChannel.Ask` no longer waits for a *duration*: it waits to a **deadline** it re-reads under
+the gate, and `CircuitDropped` moves that deadline to *now* plus the patience the question was
+asked with. ⚠️ **A restart rather than a hold** — a frozen tab runs no timers (P63 (4)) and a
+circuit the framework abandons never says so, so **a deadline that only moves forward is correct
+under all of them**. ⚠️ **Reset the wait handle *before* reading the answer, never after.**
+🔥 **(2) The event had no route to the seat, and now has exactly one: `BurmesePoker.Web/SeatPresence.cs`.**
+A `CircuitHandler`, **scoped because a circuit is a scope**, **registered twice** — the page hands
+it the seat (`TableView`), the framework calls it — and **the only thing in this client that knows
+a socket exists**. ⚠️ **Blazor tells a dropped circuit's components nothing**, which is exactly why
+the patience went on being spent on somebody who could not answer.
+✅ **(3) The acceptance is a `[Theory]` today's code passes half of.**
+`PatienceClockTests` runs the same drop at **0.0** and **0.6** of one patience and reads the prompt
+back at **+0.8** — early green, late red — **P63's finding (6) as a build failure**; and
+`CircuitSurvivalTests.AConnectionThatDropsLateInItsPatienceStillGetsAWholeOneAfterTheDrop` does it
+over P59's real socket, ✅ **proved able to fail by un-registering the handler** (the whole chain in
+one assertion). ⚠️ **`Assert.Same` on the prompt, because a seat is asked twice a turn** (P59) and a
+non-null `Pending` proves nothing.
+🔥 **(4) The silence is broken for the retained circuit and *not* for the re-sit.**
+`SeatBoard.PlayedForYouWhileAway` counts `TableEvent.SeatPlayedByTheComputer` for this seat between
+the drop and the return — ⚠️ **not a new event; it has been broadcast once a turn since P13.2** —
+and `YourSeat` draws a visible `role="status"` notice, put down by pressing *Got it*. ⚠️ **Past the
+retention window the component is disposed and the seat comes back as a fresh `SeatBoard` that has
+heard nothing** (P13.6): **the round log is what that return reads.**
+⚠️ **(5) One bound the packet did not ask for, and the thing still owed.** A question is never held
+past **twice** its patience however often the connection drops — **derived** from the number already
+chosen, because a second constant to keep in step is the mistake P63 diagnosed. And ⚠️ **the notice
+has never been drawn in a browser**: `curl` is not a person (P56), a synthesized touch is not a
+person (P60), a headless engine answers its own media queries (P61). **A redeploy and a look are
+owed.** Tree green at **949**, from 941; `Domain`, `Presentation`, `Console` and `Sim`
+byte-identical — the diff is `Server`, `Web`, the test project and documents.
 
 **What P63 built, and the five things a cold session needs from it.**
 🔥 **(1) The packet was reasoned from the wrong number, and measuring it found one 45× worse.**

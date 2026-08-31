@@ -1,6 +1,7 @@
 using BurmesePoker.Web;
 using BurmesePoker.Web.Components;
 
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +30,14 @@ builder.Services.AddRazorComponents()
         // `ContainerTests` fails the build if this ever climbs past it.
         circuits.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(2);
     });
+
+// 🔥 What tells a seat that the connection playing it has gone (P64). A dropped circuit is
+// invisible to the components inside it — the framework holds them, undisposed and undrawn —
+// so until this handler existed a standing question went on spending its patience on somebody
+// who could not answer it. ⚠️ Scoped, because a circuit is a scope: the handler and the object
+// the page talks to are one instance, registered twice.
+builder.Services.AddScoped<SeatPresence>();
+builder.Services.AddScoped<CircuitHandler>(services => services.GetRequiredService<SeatPresence>());
 
 // The clock the lobby and its sweeper ask (P54), so that idle reaping can be asserted without a
 // test sleeping for the interval it is testing.

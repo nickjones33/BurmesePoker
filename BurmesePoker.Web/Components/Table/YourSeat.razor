@@ -36,6 +36,28 @@
             </p>
         </header>
 
+        @*
+            🔥 What was decided while you were gone (P64). P54, P59 and P63 each recorded the
+            same silence — a player whose connection drops returns to a board the computer has
+            moved for them, with nothing on screen saying so — and each left it. The facts were
+            already in the round log; what was missing was somebody pointing at them.
+
+            ⚠️ Visible, not a hidden live region: P13.5's finding is that a hidden live region
+            announces nothing. role="status" is polite on purpose — it must not interrupt a
+            question the returning player can now answer.
+
+            ⚠️ It is put down by pressing it, and by nothing else. A notice that cleared itself
+            on the next render would be gone before somebody who has been away has looked up.
+        *@
+        @if (_seat.PlayedForYouWhileAway > 0)
+        {
+            <p class="away" role="status">
+                <span class="glyph" aria-hidden="true">↩</span>
+                <span>While you were away, @Played — see the round log.</span>
+                <button type="button" @onclick="Seen">Got it</button>
+            </p>
+        }
+
         <HandPanel @ref="_hand"
                    Hand="_seat.Hand"
                    Hints="_hints"
@@ -181,6 +203,22 @@
     private void Answer(SeatAnswer answer) => _seat?.Answer(answer);
 
     private void Throw(Card card) => _seat?.Throw(card);
+
+    /// <summary>Puts down the notice of what was played while this seat's connection was away.</summary>
+    private void Seen() => _seat?.SeenWhatWasPlayedForYou();
+
+    /// <summary>
+    /// What the computer played for this seat while its connection was away, in words.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Built here rather than in the markup</b> (§3.11, <c>NoParagraphOnTheTableIsAWallOfText</c>):
+    /// the budget measures the longest unbroken run of literal text, and a ternary written inline
+    /// reads as prose to the scanner and to nobody else.
+    /// </remarks>
+    private string Played =>
+        _seat is { PlayedForYouWhileAway: var played } && played > 0
+            ? $"the computer played {played} {(played == 1 ? "turn" : "turns")} for you"
+            : string.Empty;
 
     /// <remarks>
     /// A refusal is not an error here either: a seat that has stood up says nothing, and the

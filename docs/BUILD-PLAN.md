@@ -8786,7 +8786,7 @@ reason is `P64`.
 
 ---
 
-### P64 — The patience clock, and what happened while you were gone ☐ — **added 2026-08-31 by P63**
+### P64 — The patience clock, and what happened while you were gone ☑ — **added 2026-08-31 by P63, done 2026-08-31 (Opus 5)**
 
 **Goal.** Make the premise of P54's fence true, and stop the return being silent. **Read first:**
 P54's finding (3), P59's findings (2) and (3), and P63's finding (6) — which is the whole argument.
@@ -8827,6 +8827,42 @@ fail**; and a returning player told what was played for them. ⚠️ **P59's `Bl
 instrument** — it can drop a socket with no close frame and ask for the circuit back — so this is
 testable without a device. ⚠️ **Do not move either constant to make a test pass**: P63's measurement
 says the constants are not the defect.
+
+---
+
+✅ **Built 2026-08-31, and the four things it settled.**
+
+1. 🔥 **The clock moved into `SeatChannel` and became a deadline.** `Ask` waits to a deadline it
+   re-reads under the gate rather than for a duration, and `CircuitDropped(handle)` moves that
+   deadline to *now* plus the patience the question was asked with. ⚠️ **A restart rather than a
+   hold, and the reason is P63's own finding (4)**: a frozen tab runs no timers, so nothing can be
+   relied on to say *resume* — and a circuit the framework gives up on never says anything at all.
+   **A deadline that only moves forward is correct under all of them.** ⚠️ **The wait handle is
+   reset before the answer is read, never after**, or an answer latched in between loses its signal.
+2. 🔥 **The event had no way to reach the seat and now has exactly one: `SeatPresence`.** A scoped
+   `CircuitHandler` — the only thing in the browser client that knows a socket exists — registered
+   twice, because the page hands it a seat and the framework calls it. **Blazor tells a dropped
+   circuit's components nothing**, which is precisely why the patience went on being spent.
+3. ✅ **The acceptance's *same protection* is a `[Theory]` over where in the patience the drop
+   falls** (0.0 and 0.6, read back at +0.8), which **today's code passes at 0.0 and fails at 0.6** —
+   the inequality itself, not a proxy for it. Its end-to-end twin kills P59's real socket late in a
+   patience, and **un-registering the circuit handler turns it red**, which is the whole chain in
+   one assertion. ⚠️ **`Assert.Same` on the prompt, because a seat is asked twice a turn** and a
+   non-null `Pending` proves nothing.
+4. ⚠️ **The gap is spoken for the retained circuit only, and that limit is by construction.**
+   `SeatBoard.PlayedForYouWhileAway` counts the stand-ins between a drop and a return; **past the
+   retention window the component is disposed and the seat comes back as a fresh board that has
+   heard nothing** (P13.6). **The round log is what that return reads**, and no count can be
+   invented for it without inventing history the connection never had.
+
+⚠️ **One bound added that the packet did not ask for and needed**: a question is never held past
+**twice** the patience it was asked with, however often the connection drops. Without it the restart
+is a denial of service written into the server. **It is derived from the number already chosen**
+rather than a second constant to keep in step — which is the mistake P63 diagnosed, and repeating it
+here would have been comic.
+
+⚠️ **Neither constant moved**, and **the notice has never been drawn in a browser** — see
+`STATUS.md`'s notes.
 
 ---
 

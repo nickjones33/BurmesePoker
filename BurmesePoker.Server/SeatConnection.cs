@@ -177,6 +177,32 @@ public sealed class SeatConnection
             : _channel.Ask(prompt, patience);
     }
 
+    /// <summary>
+    /// Says that the connection playing this seat has dropped, so that a question standing in
+    /// front of it is given its patience again — measured from now (P64).
+    /// </summary>
+    /// <returns>
+    /// False for a watcher, for a connection that no longer occupies its seat, when nothing is
+    /// standing, and once the question has been held as long as it may be.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The one thing a seat is told about its own transport</b>, and it is told rather
+    /// than asked because nothing here can see a socket (BUILD-PLAN §3.10 item 4). What drops is
+    /// a Blazor circuit; what the framework then does with it — hold it for
+    /// <c>DisconnectedCircuitRetentionPeriod</c> and give the seat back, or give up and dispose
+    /// the component, which stands the player up — is none of this object's business. All that
+    /// is claimed is that <b>the clock on the standing question restarts when the player stops
+    /// being able to answer it.</b>
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>There is deliberately no counterpart for the connection coming back.</b> A returning
+    /// player finds the question still standing, which is all they needed; a clock that had to be
+    /// resumed would need a signal that a frozen tab cannot send (P63 finding 4).
+    /// </para>
+    /// </remarks>
+    public bool ConnectionLost() => _channel is not null && _channel.CircuitDropped(this);
+
     /// <summary>Reads this seat's standing opinion and clears it — the engine's half.</summary>
     internal SeatingOpinion TakeSeatingOpinion() =>
         _channel?.TakeSeatingOpinion() ?? SeatingOpinion.Consent;

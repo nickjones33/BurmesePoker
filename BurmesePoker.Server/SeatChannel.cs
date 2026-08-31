@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 using BurmesePoker.Domain.Play;
 
 namespace BurmesePoker.Server;
@@ -39,6 +41,9 @@ internal sealed class SeatChannel
     private SeatAnswer? _answer;
     private SeatConnection? _current;
     private SeatingOpinion _seating = SeatingOpinion.Consent;
+    private long _deadline;
+    private long _ceiling;
+    private TimeSpan _patience;
 
     /// <summary>The connection currently occupying the seat.</summary>
     internal SeatConnection Current
@@ -170,10 +175,81 @@ internal sealed class SeatChannel
     }
 
     /// <summary>
+    /// Tells the seat that the connection playing it has dropped, so that the question standing
+    /// in front of it is given its patience again — measured from the drop (P64).
+    /// </summary>
+    /// <returns>
+    /// True if a standing question's clock was restarted; false if there was nothing standing,
+    /// this handle is not the occupant, or the ceiling below has been reached.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>The two clocks did not start at the same event, and that is the defect P63
+    /// measured.</b> <c>CircuitOptions.DisconnectedCircuitRetentionPeriod</c> starts when the
+    /// circuit <em>drops</em>; the patience started when the question was <em>asked</em>. P54
+    /// paired the two constants and read the difference as a margin — but that margin is the
+    /// whole of it only for a player who vanishes the instant they are asked, and <b>zero for
+    /// one who vanishes with a patience's worth already spent</b>. P63 watched the failure on a
+    /// real phone: <c>ran out of time</c> was logged <em>before</em> <c>left the table</c>, the
+    /// computer playing the turn of somebody the framework was still holding. ⚠️ <b>No pair of
+    /// constants can express the condition</b>, which is why the fix is here and neither
+    /// constant moved.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>It restarts the clock rather than holding it.</b> A held clock would need a
+    /// resumption, and nothing reliably tells this seat that a circuit came back — a browser
+    /// tab that is frozen runs no timers (P63 finding 4), and a circuit the framework gives up
+    /// on never says so to the seat at all. A deadline that only ever moves forward is correct
+    /// under every one of those.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The ceiling is why a flapping connection cannot hold the table.</b> A question is
+    /// never held past twice the patience it was asked with — a bound derived from the number
+    /// already chosen rather than a second constant to keep in step with it.
+    /// </para>
+    /// </remarks>
+    internal bool CircuitDropped(SeatConnection handle)
+    {
+        lock (_gate)
+        {
+            if (!ReferenceEquals(handle, _current) || _pending is null)
+            {
+                return false;
+            }
+
+            var restarted = Stopwatch.GetTimestamp() + (long)(_patience.TotalSeconds * Stopwatch.Frequency);
+
+            if (restarted >= _ceiling)
+            {
+                restarted = _ceiling;
+            }
+
+            if (restarted <= _deadline)
+            {
+                return false;
+            }
+
+            _deadline = restarted;
+        }
+
+        // The wait is sitting on a timeout it must now recompute. Setting the gate wakes it;
+        // it finds no answer, reads the new deadline and waits again.
+        _answered.Set();
+        return true;
+    }
+
+    /// <summary>
     /// Puts a question to the seat and blocks until it is answered or the patience runs out.
     /// The engine-facing half: it does not care who occupies the seat, or whether the occupant
     /// changes while it waits.
     /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The patience is a deadline rather than a duration</b>, because
+    /// <see cref="CircuitDropped"/> may move it: the wait is retaken until the deadline it reads
+    /// under the gate has passed or an answer is latched. <b>A spurious wake costs one extra
+    /// pass round the loop and decides nothing</b> — what is latched under the gate is the
+    /// truth either way (review R19).
+    /// </remarks>
     internal SeatAnswer? Ask(SeatPrompt prompt, TimeSpan patience)
     {
         SeatConnection? current;
@@ -183,12 +259,40 @@ internal sealed class SeatChannel
             _answered.Reset();
             _answer = null;
             _pending = prompt;
+            _patience = patience;
+            _deadline = Stopwatch.GetTimestamp() + (long)(patience.TotalSeconds * Stopwatch.Frequency);
+            _ceiling = Stopwatch.GetTimestamp() + (long)(2 * patience.TotalSeconds * Stopwatch.Frequency);
             current = _current;
         }
 
         current?.NotifyUpdated();
 
-        _answered.Wait(patience);
+        while (true)
+        {
+            TimeSpan left;
+
+            // ⚠️ Reset *before* reading, never after: an answer latched between the read and a
+            // reset would have its signal thrown away and the seat would wait out a patience it
+            // had already answered.
+            _answered.Reset();
+
+            lock (_gate)
+            {
+                if (_answer is not null)
+                {
+                    break;
+                }
+
+                left = Stopwatch.GetElapsedTime(Stopwatch.GetTimestamp(), _deadline);
+            }
+
+            if (left <= TimeSpan.Zero)
+            {
+                break;
+            }
+
+            _answered.Wait(left);
+        }
 
         lock (_gate)
         {

@@ -114,3 +114,27 @@ h2 {
     cursor: default;
     opacity: 1;
 }
+
+/*
+    What the computer played for you while your connection was away (P64). It sits above the
+    hand because it is about the hand you have come back to.
+*/
+.away {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin: 0 0 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--edge-raised);
+    border-radius: 8px;
+    background: var(--raised);
+}
+
+.away .glyph {
+    font-size: 1.1rem;
+}
+
+.away span:not(.glyph) {
+    flex: 1 1 12rem;
+}

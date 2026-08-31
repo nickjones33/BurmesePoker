@@ -10,6 +10,63 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
+🔥 **`P64` shipped 2026-08-31 on Opus 5: the two clocks P54 fenced against each other now start at
+the same event, and a player who comes back is told what was played for them.** `RULES.md` stays
+**rev 31**, the tree is green at **949**, from 941 — ⚠️ **`Domain`, `Presentation`, `Console` and
+`Sim` are byte-identical**, so no measurement can move; the diff is `Server`, `Web`, the test
+project and documents. 🔥 **Neither constant moved**, which is what P63's measurement instructed.
+
+- 🔥 **(1) The fix is one deadline, and it is in `SeatChannel`.** `Ask` no longer waits for a
+  *duration*; it waits to a **deadline** it re-reads under the gate, and `CircuitDropped` moves that
+  deadline to *now* plus the patience the question was asked with. ⚠️ **A restart rather than a
+  hold**, deliberately: a held clock would need a resumption signal, and **a frozen tab runs no
+  timers** (P63 finding 4) while a circuit the framework gives up on never says so at all — a
+  deadline that only moves forward is correct under every one of those. ⚠️ **The reset of the wait
+  handle is taken *before* the answer is read, never after**: the other order throws away the signal
+  of an answer latched in between and makes the seat wait out a patience it had already answered.
+- 🔥 **(2) What tells the seat is `BurmesePoker.Web/SeatPresence.cs`, the only thing in this client
+  that knows a socket exists.** A `CircuitHandler`, **scoped because a circuit is a scope**, and
+  **registered twice** — once as itself, because `TableView` hands it the seat it sat down in, and
+  once as `CircuitHandler`, because the framework is what calls it. ⚠️ **Nothing else could have
+  learned this**: Blazor holds a dropped circuit's components undisposed and undrawn and tells them
+  nothing, which is exactly why the patience went on being spent on somebody who could not answer.
+- 🔥 **(3) The inequality is stated as a `[Theory]`, and today's code passes half of it.**
+  `PatienceClockTests.AConnectionThatDropsIsGivenItsPatienceAgainWhereverInItTheDropFalls` runs the
+  same drop at **0.0** and at **0.6** of one patience and reads the prompt back **four fifths of a
+  patience after the drop** — ✅ **proved able to fail** by dropping the deadline assignment, where
+  the early case passes and the late one fails. **That is P63's finding (6) as a red build.**
+  ⚠️ **Identity, not presence**: a seat is asked twice a turn (P59), so a non-null `Pending` is no
+  evidence — `Assert.Same` on the prompt is.
+- ✅ **(4) And over a real socket, end to end.**
+  `CircuitSurvivalTests.AConnectionThatDropsLateInItsPatienceStillGetsAWholeOneAfterTheDrop` kills
+  P59's socket late in the patience and reads `TableBoard.StoodInFor` past where the old deadline
+  fell. ✅ **Proved able to fail by un-registering the circuit handler** — which is the whole chain
+  in one assertion: handler → seat → channel → the turn a person keeps.
+- 🔥 **(5) The silence is broken for the retained circuit, and *not* for the re-sit — said out
+  loud.** `SeatBoard.PlayedForYouWhileAway` counts `TableEvent.SeatPlayedByTheComputer` for this
+  seat between the drop and the return, and `YourSeat` draws a visible `role="status"` notice above
+  the hand, put down by pressing *Got it*. ⚠️ **Not a new event**: the fact has been broadcast once
+  a turn since P13.2 and this seat's own connection always heard it — what was missing was a mark
+  for *where the player was*. ⚠️ **Past the retention window the component is disposed and the seat
+  is re-taken as a fresh `SeatBoard` that has heard nothing** (P13.6); that return reads the round
+  log, and this notice cannot speak for it.
+- ⚠️ **(6) The ceiling, because a restart without one is a denial of service written into the
+  server.** A question is never held past **twice** the patience it was asked with, however often
+  the connection drops — a bound **derived** from the number already chosen rather than a second
+  constant that would have to be kept in step with it. Fenced by
+  `AConnectionThatKeepsDroppingStillRunsOutOfPatienceInTheEnd`.
+- ⚠️ **(7) `ContainerTests`' fence is kept and joined, not replaced.** The constants test still says
+  the two numbers are the right way round; the new `TheSeatIsToldWhenTheCircuitPlayingItDrops` says
+  the wiring that makes them comparable exists. **Delete the handler and the old fence goes on
+  passing while the guarantee is gone** — P54's `Lobby.Close` defect exactly, one layer over.
+- ⚠️ **(8) Owed and not done: the notice has never been drawn in a browser.** It is tested at the
+  board and never seen on a screen, which is this project's own scar three times over — `curl` is
+  not a person (P56), a synthesized touch is not a person (P60), and a headless engine answers its
+  own media queries (P61). **The redeploy and the look are outstanding**, along with `P65`, the
+  WebKit half of `P53`, and `P40`.
+
+---
+
 🔥 **`P63` shipped 2026-08-31 on Opus 5: the backgrounded tab was measured on a real phone on a
 carrier, and the answer is that **neither constant moves** — because the two clocks P54 fenced
 against each other do not start at the same event.** `RULES.md` stays **rev 31**, the tree is green
@@ -3434,6 +3491,29 @@ harness prints today would be a guess wearing a number.
 
 ## Notes for the next session
 
+### What P64 leaves behind (2026-08-31)
+
+⚠️ **(1) The next packet is Nick's call, and `P65` is the one this work did not touch.** P63's
+three-minute stall on the deployed table is still unexplained and the instrument for it —
+P24.1's `--journal` on the hosted table — is still switched off. **Nothing in P64 makes that
+diagnosable**; a stall is a table that takes no turn, and this packet is about a seat that is
+asked and cannot answer.
+
+⚠️ **(2) Two things this packet deliberately did not do.** The **retention period and the
+patience are untouched** (P63's measurement says the constants are not the defect), and
+**`SeatChannel` still has no `TimeProvider`** — the wait is a real one on a round's own thread
+(§3.6), so `PatienceClockTests` scales the patience down to seconds and runs in the wall-clock
+collection rather than faking a clock. ⚠️ **A packet that wants a fake clock here has to give the
+engine's blocking wait one, which is a different packet.**
+
+⚠️ **(3) What is not proved.** The returning-player notice is asserted at the `SeatBoard` and has
+**never been drawn on a screen** — this project's own scar three times over (`curl` is not a
+person, a synthesized touch is not a person, a headless engine answers its own media queries).
+**A redeploy and a look are owed**, and the honest way to see it is P63's own procedure:
+background the tab for under two minutes and come back. ⚠️ **`SeatPresence` is exercised only
+through `TestServer`'s in-memory socket** — `OnConnectionDownAsync` firing on a real dropped radio
+is what P63 observed indirectly and nothing has watched directly.
+
 ### What P60 leaves for P61 (2026-08-30)
 
 🔥 **(1) Two defects, both found by pressing a thing on a device, and neither is a layout
@@ -5395,6 +5475,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 | --- | --- | --- |
+| 2026-08-31 | P64 | **Done — the patience clock joined to the circuit, on Opus 5.** Tree green at **949**, from 941; ⚠️ **`Domain`, `Presentation`, `Console` and `Sim` byte-identical** — the diff is `Server`, `Web`, the test project and documents, so **no measurement can move**. 🔥 **The fix is one deadline**: `SeatChannel.Ask` waits to a deadline it re-reads rather than for a duration, and `CircuitDropped` moves that deadline to *now* plus the patience — **a restart, not a hold**, because a frozen tab runs no timers (P63 (4)) and a circuit the framework abandons never says so. 🔥 **What tells the seat is `SeatPresence`, a scoped `CircuitHandler` registered twice** — the page hands it the seat, the framework calls it — **the only thing in this client that knows a socket exists.** ✅ **The inequality is a `[Theory]` today's code passes half of**: the same drop at **0.0** and **0.6** of a patience, read back at **+0.8**, with the early case green and the late one red — **P63's finding (6) as a build failure** — and ✅ **an end-to-end twin over a real socket**, proved able to fail by un-registering the handler. ⚠️ **Identity, not presence**, because a seat is asked twice a turn (P59). ✅ **The silence is broken for the retained circuit**: `SeatBoard.PlayedForYouWhileAway` counts `SeatPlayedByTheComputer` between the drop and the return and `YourSeat` draws a `role="status"` notice put down by pressing it — ⚠️ **and *not* for the re-sit past the window**, where a fresh `SeatBoard` has heard nothing (P13.6) and the round log is the record. ⚠️ **A ceiling of twice the patience**, derived rather than a second constant, or a flapping client would stop the round. ⚠️ **`ContainerTests`' constants fence is kept and joined** by one that says the wiring exists — deleting the handler would leave the old fence passing over nothing. 🔥 **Neither constant moved**, as P63 instructed. ⚠️ **Owed: the notice has never been drawn in a browser** — `curl` is not a person, a synthesized touch is not a person, a headless engine answers its own media queries. No rules question; `RULES.md` stays rev 31. |
 | 2026-08-31 | P63 | **Done — the backgrounded tab measured on a phone on a carrier, and neither number moved, on Opus 5.** Tree green at **941**, unchanged; ⚠️ **no test was added and none could be** — the whole diff is documents. ⚠️ **Deployed commit read off the *running* container**: image `a7b9b7187dfb`, tagged **both `97230e3` and `be1056e`** (HEAD) — 🔥 **a documents-only commit rebuilds a byte-identical image, so one digest carries two tags.** 🔥 **The measurement: backgrounding the tab kills the circuit in 5.56 s** (`57889.6996ms` lifetime, Kestrel logging *the application aborted the connection*), **reproduced at 5.55 s** — ⚠️ **so P62's 4 min 26 s carrier idle timeout is not the binding constraint and is irrelevant to the pocket case.** ✅ **Attribution clean**: the close preceded the screen going off, and the rest of the window ran screen-on and `Awake`. 🔥 **A hidden tab never reconnects — zero `negotiate` in 5 min 51 s — which refutes P63's own keepalive option outright**, a frozen tab running no timers; the reconnect fires **1.69 s / 0.49 s** after foregrounding. ✅ **Inside the window nothing is lost** (62 s → identical board, no stand-in, no stand-up); **past it two stand-ins**, then the seat recovered **by name** with the round intact — P59's *losing the circuit is not losing the game* against a real radio — ⚠️ **and nothing on the returning screen said anything had been decided in the gap.** 🔥 **The decision is that neither constant moves, because the fence compares two clocks that start at different events**: retention starts at the drop, the patience started at the question, so the believed 60 s margin is 60 s only if you vanish the instant you are asked. ⚠️ **Run 1 shows it failing live — `ran out of time` is logged *before* `left the table`**, the computer playing the turn of a player the framework was still holding, which is precisely what P54's pairing exists to prevent. **No pair of constants can satisfy it**, and raising retention is fenced to raising the patience, **which taxes every other player rather than the absent one**. Successor `P64`. ⚠️ **A stall was observed and is recorded as unexplained**: ~3 min with no seat taking a turn, two independent reads, `/healthz` 200, zero exceptions, cleared on reload into Round 5 — 🔥 **the cause cannot be established because the app logs requests and never turns**, and **P24.1's hosted-table journal is the instrument that exists and was not switched on** (`P65`). ⚠️ **Carrier NAT rotated the source address within one session** (`172.59.190.202` → `.242`) and **`VPN by Google` armed itself the moment wifi went off** — two more reasons P62's *not the home range* test was weak. 🔥 **The APN is IPv6-only with 464XLAT** (`clat RUNNING`), so **P62's finding (7) does not generalise even to the same carrier and phone**; CLAT hides the missing `AAAA`. ✅ **P61's copy-link is visible on a real device** — its owed redeploy-and-device check. ⚠️ **A18 still unstressed** (a levels table has short names) and **the WebKit half of P53 still open.** No rules question; `RULES.md` stays rev 31. |
 | 2026-08-31 | P62 | **Done — the table on a phone, on a carrier, on Opus 5.** Tree green at **941**, unchanged; ⚠️ **nothing in this repository changed but documents**, the one code change being Traefik's access log in `ansible-nas` (`c57a9ea4`, step 0). ✅ **Path proved**: `ClientHost` **`172.58.164.115`** (T-Mobile), `/table/1` **200**, `negotiate` **200**, `/_blazor?id=` **101**; deployed commit verified *running* (image `a7b9b7187dfb` = tag `97230e3` = HEAD), not merely pulled. 🔥 **The packet's own check was wrong and was satisfied twice by things that are not a carrier**: a phone on house wifi behind a VPN is off the home range, and **a phone VPN survives a wifi→cellular handover**, so switching to 5G left the exit address identical. **The criterion is that `ClientHost` *changes* into the carrier's range**, not that it differs from the house. 🔥 **The engine was Gecko** (Firefox 154 / Android 17) — a third implementation after two Blink runs; basicauth replays past the page on it, ⚠️ **but WebKit stays open and an Android phone cannot answer for it.** 🔥 **A carrier closes an idle circuit at 4 min 26 s** where P53's desktop wifi held 7½ minutes with no close frame; the reconnect was immediate and nothing was lost, ⚠️ **but 4:26 is past P54's 2-minute retention window and the reconnect only runs in a foreground tab** — written up as `P63`, deliberately not changed on one measurement. 🔥 **A handover was measured live**: dropping the VPN killed the circuit at 36.9 s, Blazor renegotiated over the carrier, **no overlay appeared and the seat, round and standing question survived** — P59's lab result holding against a real radio. ⚠️ **Instrument note**: Traefik logs `DownstreamStatus: 0` for a hijacked connection, so **the `101` and the lifetime exist only in the app log.** ✅ IPv6 answered for this carrier (IPv4 throughout, DNS64/NAT64 never engaged); layout held at the Pixel's width, ⚠️ **though a levels table makes every name short, so A18's long-name case went unstressed.** |
 | 2026-08-30 | P61 | **Done — the two defects a real device found, on Opus 5.** Tree green at **941**, from 938; ⚠️ **`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical** — the diff is two stylesheets, one new test class and one extended one, so **no measurement can move and no suite is owed.** 🔥 **The copy-link's fix needed nothing in `:global()`'s place**: the packet recommended moving the reveal into the unscoped `app.css`, and it was not needed, because Blazor's rewriter appends the scope attribute to the **last compound selector only** — `.can-copy .link .copy` is emitted as `.can-copy .link .copy[b-…]`, and an ancestor outside the component was never constrained. **`:global()` was not solving a problem; it was the problem.** ✅ The rule stays beside the `display: none` default it overrides, where the ordering that makes it win is visible; `::deep` was rejected for the packet's own reason; the `<a class="url">` fallback is untouched. ✅ **Measured in a browser engine** — headless Chromium over CDP against the running client: `can-copy` on `<html>`, computed **`display: block`** (a flex item blockifies `inline-block`) at **82 px**, and the live CSSOM holding **two** `.copy` rules where P60's tablet held exactly one. 🔥 **`ScopedCssTests` fences the class of mistake and reads the rewriter's output**: one fact fails on any `:global(` under `obj/<config>/net10.0/scopedcss/**` (configuration taken from where the assembly runs, so a stale `obj/Release` cannot fail a Debug build), the twin reads the **served bundle** and asserts the reveal exists **and is declared after** the default — the two weigh the same, so order is the whole of why one wins. ⚠️ **The scan strips comments first**, or it would fail on the one file that had learned the lesson. 🔥 **§3.11 A18 amended, not contradicted**: the argument for the ellipsis is *the whole name is a hover away* and the rule carrying it was `max-width: 56rem` — two axes, and a tablet in landscape (1316 px, `(any-hover: none)`) is where they come apart. `SeatPanel.razor.css` gains a second `@media` on `(any-hover: none)`, **after** the width one because on a narrow touch screen both match and weigh the same; `ViewportTests` gains the fact. ⚠️ **Widening the ring's name column is the fix this rejects** — P58's trap, one axis over. ⚠️ **Four mutations, all of the stylesheets and none of the tests**, each turning the right fact red. ⚠️ **Owed and said out loud: the redeploy and the device.** A work cycle does not push, so nothing here is proved on a real tablet until the image is rebuilt and the running container re-read (P60's *pulled is not running*); and **headless Chromium answers `(any-hover: none)` by default**, so only the no-hover branch was exercised in a browser. |

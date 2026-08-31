@@ -223,6 +223,14 @@ public class ContainerTests
     /// moved on for no reason they could see. A phone that loses signal in a lift is the case.
     /// </para>
     /// <para>
+    /// ⚠️ <b>What this cannot see, and P63 measured</b>: the two clocks do not start at the same
+    /// event, so the difference is a margin only for a player who vanishes the instant they are
+    /// asked. P64 makes the premise true — a seat's patience restarts when its circuit drops —
+    /// and the fact below fences the wiring that does it. <b>Keep both</b>: this one says the
+    /// constants are the right way round, that one says the clocks are compared from the same
+    /// moment.
+    /// </para>
+    /// <para>
     /// ⚠️ <b>One side is read and the other is run.</b> The retention comes off
     /// <c>Program.cs</c>, because an option set on a builder is not reachable from a test that
     /// does not start the host; the patience is the real <c>Lobby</c>'s. So neither number can be
@@ -250,6 +258,40 @@ public class ContainerTests
         Assert.True(
             lobby.Opening.Patience > held,
             $"A browser table's patience is {lobby.Opening.Patience} against a retained circuit of {held}.");
+    }
+
+    /// <summary>
+    /// 🔥 <b>P64 — the seat is told when the circuit playing it drops, which is what makes the
+    /// comparison above mean anything.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠️ <b>Two constants cannot state the condition</b> (P63 finding 6). The margin the test
+    /// above reads is real only if the patience is measured from the drop, and it is measured
+    /// from the drop only because a circuit handler says so. <b>Delete the handler and the fence
+    /// above goes on passing while the guarantee is gone</b> — which is exactly the shape of
+    /// defect P54's <c>Lobby.Close</c> was: a correct method nobody called.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>A scan, in <c>JackpotSpokenTests</c>' idiom, because the ordering of the two events
+    /// is asserted where it can be watched</b> — <c>CircuitSurvivalTests</c> kills a real socket
+    /// late in a patience and reads the turn back. This is the belt: the wiring that test proves
+    /// end to end cannot be quietly unhooked.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheSeatIsToldWhenTheCircuitPlayingItDrops()
+    {
+        // Registered twice on purpose: the page talks to it, and the framework calls it.
+        Assert.Contains("AddScoped<SeatPresence>()", Program, StringComparison.Ordinal);
+        Assert.Contains("AddScoped<CircuitHandler>", Program, StringComparison.Ordinal);
+
+        var presence = Sources.Read("SeatPresence.cs");
+        Assert.Contains("OnConnectionDownAsync", presence, StringComparison.Ordinal);
+        Assert.Contains("ConnectionLost()", presence, StringComparison.Ordinal);
+
+        // And something has to hand it the seat, or it holds nothing and says nothing.
+        Assert.Contains("Presence.Holds(", Sources.Read("Components/Table/TableView.razor"), StringComparison.Ordinal);
     }
 
     /// <summary>
