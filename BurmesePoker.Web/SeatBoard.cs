@@ -288,6 +288,44 @@ public sealed class SeatBoard : IDisposable
             return false;
         }
 
+        Settled(asked, answer);
+
+        Changed?.Invoke();
+        return true;
+    }
+
+    /// <summary>
+    /// The bookkeeping that follows an answer the seat accepted: the question is done with, and
+    /// the hand is the one you kept.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 🔥 <b>It is a separate step because the answer is handed over outside this gate, and the
+    /// gap is real</b> (P66). <see cref="Answer"/> lets go of <c>_gate</c> to hand the answer to
+    /// the connection; the engine thread parked in <c>SeatChannel.Ask</c> wakes, latches it and —
+    /// for take-then-throw, on the same thread microseconds later — <b>asks the next question at
+    /// once</b>, which <see cref="OnTold"/> installs here. The answering thread then arrives
+    /// with the gate and, until P67, wiped it: the server held a <em>Throw one away</em> nobody
+    /// was ever shown, the action bar read <c>It is not your turn</c>, and the turn cost a whole
+    /// patience. ⚠️ <b>The fourteen-card hand is what proved it</b> — only the throw prompt
+    /// carries fourteen, so <see cref="Read"/> had run and only <see cref="Asking"/> was lost.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>So the question is put down only if it is still the question that was answered.</b>
+    /// <b>Not <see cref="Read"/></b>: between the answer latching and <c>Ask</c> returning the
+    /// channel's pending prompt is still the <em>answered</em> one, so re-reading would put a
+    /// control back that has already been pressed — which is the thing clearing it eagerly exists
+    /// to prevent.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Internal so that the interleaving can be played out rather than raced for.</b> The
+    /// window between the connection latching the answer and this taking the gate is a few
+    /// instructions wide and cannot be widened from outside the class, so
+    /// <c>LostPromptTests</c> makes the two calls in the order the race makes them.
+    /// </para>
+    /// </remarks>
+    internal void Settled(SeatPrompt asked, SeatAnswer answer)
+    {
         lock (_gate)
         {
             Answered++;
@@ -295,6 +333,12 @@ public sealed class SeatBoard : IDisposable
             // Answered, so the question is done with — said now rather than when the round
             // thread gets round to clearing it, because a control that stays live after it was
             // pressed is a control somebody presses twice.
+            if (!ReferenceEquals(Asking, asked))
+            {
+                // A question arrived in the gap. It stands, and so does the hand it brought.
+                return;
+            }
+
             Asking = null;
 
             if (answer is SeatAnswer.Discard thrown && Hand is { } held)
@@ -302,9 +346,6 @@ public sealed class SeatBoard : IDisposable
                 Hand = Without(held, thrown.Card, asked.MoneyCards);
             }
         }
-
-        Changed?.Invoke();
-        return true;
     }
 
     /// <summary>

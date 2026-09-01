@@ -9030,7 +9030,7 @@ is answered by Blazor**; only the clipboard needs a real press (P60).
 
 ---
 
-### P67 — The throw prompt the server is holding and the screen is not ☐ — **added 2026-09-01 by P66**
+### P67 — The throw prompt the server is holding and the screen is not ☑ — **added 2026-09-01 by P66, done 2026-09-01**
 
 **Goal.** Stop a person's turn costing a patience. **Read first:** P66's *What it turned out to be*
 above, `BurmesePoker.Web/SeatBoard.cs` (`Answer`, `OnTold`, `Read`) and `SeatChannel.Ask`.
@@ -9059,6 +9059,88 @@ above, `BurmesePoker.Web/SeatBoard.cs` (`Answer`, `OnTold`, `Read`) and `SeatCha
 through a browser where every human turn is answered without a reload and without a
 `ran out of time` line; and the deployed table's rounds back to about two minutes with a person in
 a seat.
+
+#### What it turned out to be
+
+🔥 **The attribution held, and the fence is one line.** `SeatBoard.Settled` — the bookkeeping that
+follows an accepted answer — puts the question down **only when it is still the question that was
+answered**: `if (!ReferenceEquals(Asking, asked)) return;`. A prompt `OnTold` installed in the gap
+is kept, and so is the hand it brought. ⚠️ **`Read()` was not used and must not be**: between the
+answer latching and `Ask` returning, the channel's `_pending` is still the *answered* prompt, so
+re-reading would put back a control that has already been pressed.
+
+🔥 **Build item 1 could not be done as written, and that is the packet's finding.** The window is
+between `SeatBoard.Answer` letting go of `_gate` to hand the answer to the connection and taking it
+again a few instructions later — **and nothing outside the class can be made to run inside it.**
+Every call in that stretch belongs to the answering thread; there is no seam to widen, no lock an
+outsider can hold, and the engine's own path to the next prompt (wake, latch, apply the take, build
+a `SeatPrompt` with a `HandView` and a hint in it) is *orders of magnitude longer* than the two
+frame-returns the answering thread has left. ⚠️ **A test that hoped to win that race would be a test
+that passed by luck**, which is the opposite of a fence. **So the interleaving is played out rather
+than raced for**: latch the answer on the connection directly, wait for the engine to ask the next
+question and for the board to hear it, and only then run the step the answering thread runs when it
+arrives late. ⚠️ **That is why `SeatBoard.Settled` is `internal` and `BurmesePoker.Web` gained the
+solution's second `InternalsVisibleTo`** — the first is the Domain's, for the same reason (P21): a
+claim about an internal step that no public call can demonstrate.
+
+✅ **Both facts were proved able to fail, at the shipped seed and for the right reason.**
+`LostPromptTests` mutated back to the unconditional `Asking = null` fails on `Assert.Same` for both
+pairs — **take → throw** (the tight one, same thread, microseconds apart) and **throw → the next
+take** (four computer seats away) — and passes on the fix. ⚠️ **`Assert.Same`, never *not null***: a
+seat is asked twice a turn (P59). 🔥 **The take prompt carries thirteen cards and the throw prompt
+fourteen**, which is what made P66's screenshot readable as a mechanism, so the fence asserts the
+fourteen too.
+
+⚠️ **The fixture found a rule of the game the packet's shape had assumed away: the opening seat is
+never asked to take.** It is asked whether to claim the turned-up money card (RULES.md §4.5) and
+then throws — so a script holding *the first throw it sees* holds one with no take in front of it,
+which is not the pair this is about. The script therefore holds from the seat's **first take**
+onwards, and never holds a claim's permission, which is asked while somebody else is playing (P28)
+and would stop the table rather than the turn.
+
+✅ **Build item 3 is one guard because there is one answer.** All five questions — take, claim,
+permit, throw, declare — are `=> Answer(...)` on `SeatBoard`, and `YourSeat`/`HandPanel` reach the
+seat through nothing else; a third fact asserts that shape, so a question that grew its own
+answering path would be a red build rather than a second home for this defect.
+
+✅ **Build item 4 was done locally, in a real browser circuit.** Headless Chromium over CDP
+(P61/P66's instrument) against `dotnet run --project BurmesePoker.Web -- --people 1 --pace 200`
+played **160 answers over four minutes and twelve settled rounds** with **zero
+`ran out of time` lines**, zero exceptions, and **no reload**: every `Take a card` press was
+followed by `Throw one away` on the next poll, which is the pair that was vanishing.
+⚠️ **The third clause of the acceptance is still owed and cannot be paid by a work cycle** — the
+deployed table's rounds are a measurement on `poker.nickjones.dev`, and **`git push origin main` is
+the CI trigger with the role's `pull: true` taking the image on the next play.** That is `P68`.
+
+---
+
+### P68 — The fix on the deployed table, and the notice inside the window ☐ — **added 2026-09-01 by P67**
+
+**Goal.** Close P67's third acceptance clause on the site, and pay off the browser look P64 has been
+owed since it shipped. **Read first:** P67 and P66 above, and P64's finding (4).
+
+**Build.**
+
+1. **Push and redeploy, and read what is *running* rather than what is pulled** — `docker inspect
+   <container> --format '{{.Image}}'` against `docker images`, P60's finding (2). The deployed image
+   is not built from `main` until the push lands and the play runs.
+2. **Sit down with a person and time the rounds.** P66's contrast is the instrument: a stalled round
+   was 18m20s for 40 turns where the same table's answered rounds were 34–46 s. **The acceptance is
+   the log**, not the feel — `is dealing round N` / `settled round N in T turns` (P65) — with **no
+   `ran out of time` line against the person's seat**. ⚠️ **`ssh -L 8081:<container-ip>:8080 <nas>`
+   needs no credential** and separates the app from Traefik (P66 finding 6).
+3. **Then drop the circuit *inside* the two-minute retention window and come back**, which is the
+   one shape P64's *played for you while away* notice has never been drawn in. P66 watched the
+   drop **past** the window, where the notice is correctly absent because the seat returns as a
+   fresh `SeatBoard` (P13.6). ⚠️ **`curl` is not a person, a synthesized touch is not a person, and
+   a headless engine answers its own media queries** — this one wants a real browser.
+4. **If a stall is seen anyway, the log now says which silence it is** (P65): between *is dealing*
+   and *settled* the engine is parked in `Ask`.
+
+**Acceptance.** The running image is stated and is built from a commit containing P67; a person's
+rounds on the deployed table are seconds rather than minutes, with the log to show it; and the
+*played for you while away* notice is either seen on a screen or recorded as still unseen with the
+reason.
 
 ---
 

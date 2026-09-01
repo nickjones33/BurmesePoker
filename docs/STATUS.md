@@ -10,6 +10,59 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
+🔥 **`P67` shipped 2026-09-01 on Opus 5: a person's turn stops costing a patience — the question
+that arrives in the gap is no longer wiped by the answer that was in flight.** `RULES.md` stays
+**rev 31**, the tree is green at **957**, from 954 — ⚠️ **`Domain`, `Presentation`, `Server`,
+`Console` and `Sim` are byte-identical**, so no measurement can move; the diff is `SeatBoard.cs`,
+the `Web` csproj, one new test file and documents.
+
+- 🔥 **(1) The fix is one line, and it is where P66 said the clobber was.** `SeatBoard.Settled` —
+  the bookkeeping that follows an accepted answer — puts the question down **only when it is still
+  the question that was answered**: `if (!ReferenceEquals(Asking, asked)) return;`. A prompt
+  `OnTold` installed in the gap is kept, and so is the hand it brought. ⚠️ **`Read()` is not the
+  fix and must not be used**: between the answer latching and `SeatChannel.Ask` returning, the
+  channel's pending prompt is still the *answered* one, so re-reading would put back a control that
+  has already been pressed — the thing clearing it eagerly exists to prevent.
+- 🔥 **(2) Build item 1 could not be done as written, and that is this packet's finding.** The
+  window is between `Answer` letting go of `_gate` to hand the answer to the connection and taking
+  it again a few instructions later, and **nothing outside the class can be made to run inside
+  it**: every call in that stretch belongs to the answering thread, there is no lock an outsider can
+  hold, and the engine's own route to the next prompt — wake, latch, apply the take, build a
+  `SeatPrompt` with a `HandView` and a hint in it — is orders of magnitude longer than the two frame
+  returns the answering thread has left. ⚠️ **A test that hoped to win that race would be a test
+  that passed by luck.** So the interleaving is **played out rather than raced for**: latch the
+  answer on the connection, wait for the engine to ask the next question and for the board to hear
+  it, then run the step the answering thread runs when it arrives late.
+- ⚠️ **(3) Which is why `SeatBoard.Settled` is `internal` and `BurmesePoker.Web` gained the
+  solution's second `InternalsVisibleTo`.** The first is the Domain's, added by P21 for the same
+  reason: a claim about an internal step that no public call can be made to demonstrate.
+- ✅ **(4) Both facts were proved able to fail, at the shipped seed and for the right reason.**
+  Mutated back to the unconditional `Asking = null`, `LostPromptTests` fails on `Assert.Same` for
+  **take → throw** (the tight pair, same thread, microseconds apart) and for **throw → the next
+  take** (four computer seats away). ⚠️ **`Assert.Same`, never *not null*** — a seat is asked twice
+  a turn (P59). 🔥 **The take prompt carries thirteen cards and the throw prompt fourteen**, which
+  is what made P66's screen readable as a mechanism, so the fourteen is asserted too. A third fact
+  holds all five questions to the one `Answer`, so the guard is not per-question.
+- ⚠️ **(5) The fixture found a rule the packet's shape had assumed away: the opening seat is never
+  asked to take.** It is asked whether to claim the turned-up money card (RULES.md §4.5) and then
+  throws — so a script holding *the first throw it sees* holds one with no take in front of it,
+  which is not the pair this is about. The script holds from the seat's **first take** onwards, and
+  never holds a claim's permission, which is asked while somebody else is playing (P28) and would
+  stop the table rather than the turn.
+- ✅ **(6) It was looked at in a browser, locally.** Headless Chromium over CDP (P61/P66's
+  instrument) against `dotnet run --project BurmesePoker.Web -- --people 1 --pace 200` played
+  **160 answers over four minutes and twelve settled rounds** with **zero `ran out of time` lines**,
+  zero exceptions and **no reload** — every `Take a card` press followed by `Throw one away` on the
+  next poll.
+- ⚠️ **(7) The third acceptance clause is owed and a work cycle cannot pay it.** *The deployed
+  table's rounds back to seconds with a person in a seat* is a measurement on
+  `poker.nickjones.dev`, and **`git push origin main` is the CI trigger** with the role's
+  `pull: true` taking the image on the next play. **That is `P68`**, which also finally looks at
+  P64's *played for you while away* notice **inside** the retention window — the one shape it has
+  never been drawn in.
+
+---
+
 🔥 **`P66` shipped 2026-09-01 on Opus 5: the stall is reproduced on the deployed table, and the
 cause is a question the server is holding that the screen never draws.** `RULES.md` stays **rev 31**,
 the tree is green at **954**, ⚠️ **and no test was added because none could be from a sitting** —
@@ -5610,6 +5663,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 | --- | --- | --- |
+| 2026-09-01 | P67 | **Done — a person's turn stops costing a patience, on Opus 5.** Tree green at **957**, from 954; ⚠️ **`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical**, so no measurement can move. 🔥 **The fix is one line**: `SeatBoard.Settled` puts the question down only when it is still the question that was answered, so a prompt `OnTold` installed in the gap survives the answer that was in flight. ⚠️ **`Read()` deliberately not used** — the channel's pending prompt is still the answered one at that moment. 🔥 **Build item 1 could not be done as written and that is the finding**: the window is a few instructions wide and nothing outside the class can be made to run inside it, so **the interleaving is played out rather than raced for** — which is why `Settled` is internal and `BurmesePoker.Web` gained the solution's second `InternalsVisibleTo` (the first being the Domain's, P21). ✅ **Both facts proved able to fail** on the unconditional `Asking = null`, for take → throw and for throw → the next take; a third fact holds all five questions to the one `Answer`. ⚠️ **The fixture found that the opening seat is never asked to take** — it claims and then throws — so the script holds from the seat's first take onwards. ✅ **Looked at in a browser locally**: 160 answers, twelve settled rounds, **zero `ran out of time` lines**. ⚠️ **The deployed half is owed** — a work cycle does not push — and is `P68`. No rules question; `RULES.md` stays rev 31. |
 | 2026-09-01 | P66 | **Done — the stall is reproduced on the deployed table and attributed, on Opus 5.** Tree green at **954**, unchanged; ⚠️ **the whole diff in this repository is documents** — no test was added because none could be from a sitting. ✅ **The deployed image was read off the running container first** (`c70789d633` = tag `0c57515` = HEAD), so **P65's instrument was really on the site**, and three of its four lines were seen live. 🔥 **Round 1 took 18m20s for 40 turns; round 3, answered promptly, took 34 seconds for 27** — the whole of the difference is questions put to a person that the person was never shown. 🔥 **The cause: after the seat answers *Take*, the action bar reads *It is not your turn* while the server holds a `Discard` question — proved by reloading eighteen seconds in and getting `Throw one away` and the same fourteen cards.** 🔥 **The mechanism is a lost update**: `SeatBoard.Answer` hands the answer over outside its gate, the engine asks the next question at once, `OnTold` installs it, and the answering thread then runs `Asking = null` over the top of it — take → discard being the tight pair, which is why the throw prompt is the one that vanishes. ⚠️ **A race and not a certainty** (two misses out of two, then ten clean pairs), recorded rather than guessed at. ✅ **A round boundary was watched either side of a circuit drop**, and the seat came back by name with the question intact. ⚠️ **P64's away-notice was correctly absent past retention and is still owed a look inside it.** `P67` is the fix, and its first build item is to prove the fence can go red. No rules question; `RULES.md` stays rev 31. |
 | 2026-08-31 | P65 | **Done — the hosted table says why it is not taking turns, on Opus 5.** Tree green at **954**, from 949; ⚠️ **`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical** — the diff is `Web`, the test project and documents, so **no measurement can move**. 🔥 **The packet's journal half was measured and withdrawn**: a hosted journal keeps the whole match in memory and rewrites the whole file every round — **~5.2 KB and ~55 lines a round**, so a month of house table is a **~110 MB file rewritten every two minutes** against a **512m** container, an **OOM-kill restart loop** rather than an instrument. 🔥 **What went in is four log lines that cannot grow** — `is dealing round N`, `settled round N in T turns`, `gave up on round N after L`, `is not dealing: W watching, S seat(s) still to be claimed, closed: C` — so **a silence between the first two is the engine parked in `Ask`**, and it is the only silence left. 🔥 **Writing the test found the case the dealer's line cannot cover**: a table nobody has sat down at starts no dealer and said nothing, so **the sentence is said in one place and called from two** (`Consider` declining, `Deal` stopping), never holding the gate. ✅ **P63's `_attending`-leak hypothesis is eliminated by test**, proved able to fail by making `StandUp` stop freeing the seat — ⚠️ **though `Leave`'s clamp makes an over-count invisible at one viewer**, a mutation that stayed green and is recorded. ⚠️ **`TablePlan.RoundTimeLimit` is new** (a hosted round could not be abandoned from a test before). ⚠️ **The ops half is in `ansible-nas`, default off, not run**, and **the stall is neither reproduced nor explained** — nothing here is on the deployed site. No rules question; `RULES.md` stays rev 31. |
 | 2026-08-31 | P64 | **Done — the patience clock joined to the circuit, on Opus 5.** Tree green at **949**, from 941; ⚠️ **`Domain`, `Presentation`, `Console` and `Sim` byte-identical** — the diff is `Server`, `Web`, the test project and documents, so **no measurement can move**. 🔥 **The fix is one deadline**: `SeatChannel.Ask` waits to a deadline it re-reads rather than for a duration, and `CircuitDropped` moves that deadline to *now* plus the patience — **a restart, not a hold**, because a frozen tab runs no timers (P63 (4)) and a circuit the framework abandons never says so. 🔥 **What tells the seat is `SeatPresence`, a scoped `CircuitHandler` registered twice** — the page hands it the seat, the framework calls it — **the only thing in this client that knows a socket exists.** ✅ **The inequality is a `[Theory]` today's code passes half of**: the same drop at **0.0** and **0.6** of a patience, read back at **+0.8**, with the early case green and the late one red — **P63's finding (6) as a build failure** — and ✅ **an end-to-end twin over a real socket**, proved able to fail by un-registering the handler. ⚠️ **Identity, not presence**, because a seat is asked twice a turn (P59). ✅ **The silence is broken for the retained circuit**: `SeatBoard.PlayedForYouWhileAway` counts `SeatPlayedByTheComputer` between the drop and the return and `YourSeat` draws a `role="status"` notice put down by pressing it — ⚠️ **and *not* for the re-sit past the window**, where a fresh `SeatBoard` has heard nothing (P13.6) and the round log is the record. ⚠️ **A ceiling of twice the patience**, derived rather than a second constant, or a flapping client would stop the round. ⚠️ **`ContainerTests`' constants fence is kept and joined** by one that says the wiring exists — deleting the handler would leave the old fence passing over nothing. 🔥 **Neither constant moved**, as P63 instructed. ⚠️ **Owed: the notice has never been drawn in a browser** — `curl` is not a person, a synthesized touch is not a person, a headless engine answers its own media queries. No rules question; `RULES.md` stays rev 31. |

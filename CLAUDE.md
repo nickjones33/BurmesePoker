@@ -14,7 +14,7 @@ over ad-hoc changes.
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
 recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
-F10) was the last of them; the tree is green at 954.**
+F10) was the last of them; the tree is green at 957.**
 🔥 **A fourth track was added 2026-08-28 at Nick's direction: `P51`–`P54`, *taking the table
 online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
@@ -134,6 +134,42 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 ⚠️ **One P46 follow-up owned, not done**: the race-reach instrument recomputes an uncached cover
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
+
+**What P67 built, and the five things a cold session needs from it.**
+🔥 **(1) A person's turn stops costing a patience, and the fix is one line where P66 said the
+clobber was.** `SeatBoard.Settled` — the bookkeeping after an accepted answer — puts the question
+down **only when it is still the question that was answered**
+(`if (!ReferenceEquals(Asking, asked)) return;`), so a prompt `OnTold` installed in the gap
+survives, and so does the hand it brought. ⚠️ **`Read()` is not the fix**: between the answer
+latching and `SeatChannel.Ask` returning, the channel's pending prompt is still the *answered* one,
+so re-reading would put back a control that has already been pressed.
+🔥 **(2) The packet's first build item could not be done as written, and that is the finding.** The
+window is between `Answer` letting go of `_gate` and taking it again a few instructions later, and
+**nothing outside the class can be made to run inside it** — every call in that stretch belongs to
+the answering thread, and the engine's route to the next prompt (wake, latch, apply the take, build
+a `SeatPrompt` with a `HandView` and a hint) is orders of magnitude longer than the two frame
+returns the answering thread has left. ⚠️ **A test that hoped to win that race would pass by luck.**
+So the interleaving is **played out rather than raced for**: latch the answer on the connection,
+wait for the engine to ask the next question and for the board to hear it, then run the late step.
+⚠️ **Which is why `SeatBoard.Settled` is `internal` and `BurmesePoker.Web` gained the solution's
+second `InternalsVisibleTo`** — the first is the Domain's, added by P21 for the same reason.
+✅ **(3) Both facts were proved able to fail** on the unconditional `Asking = null`, for
+**take → throw** (the tight pair) and for **throw → the next take** (four computer seats away).
+⚠️ **`Assert.Same`, never *not null*** — a seat is asked twice a turn (P59) — and 🔥 **the take
+prompt carries thirteen cards while the throw prompt carries fourteen**, which is what made P66's
+screen readable as a mechanism. A third fact holds all five questions to the one `Answer`.
+⚠️ **(4) The fixture found a rule the packet's shape had assumed away: the opening seat is never
+asked to take.** It is asked whether to claim the turned-up money card (RULES.md §4.5) and then
+throws, so a script holding *the first throw it sees* holds one with no take in front of it. It
+holds from the seat's **first take** onwards, and never holds a claim's permission (P28).
+✅ **(5) Looked at in a browser locally — 160 answers, twelve settled rounds, zero
+`ran out of time` lines**, no reload, over headless Chromium against
+`--people 1 --pace 200`. ⚠️ **The deployed half is owed and a work cycle cannot pay it**: *the
+deployed table's rounds back to seconds* is a measurement on `poker.nickjones.dev`, and
+`git push origin main` is the CI trigger. **That is `P68`**, which also looks at P64's *played for
+you while away* notice **inside** the retention window — the one shape it has never been drawn in.
+Tree green at **957**, from 954; `Domain`, `Presentation`, `Server`, `Console` and `Sim`
+byte-identical.
 
 **What P66 found, and the five things a cold session needs from it.**
 🔥 **(1) The stall is reproduced on the deployed table and the cause is named: a question the

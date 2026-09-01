@@ -8,6 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- ⚠️ The second InternalsVisibleTo in the solution, and it is here for the same reason as
+         the Domain's (P21): a claim about an internal step that no public call can be made to
+         demonstrate. P67's lost prompt lives in a window a few instructions wide between the
+         connection latching an answer and SeatBoard retaking its own gate — unwidenable from
+         outside the class — so the test plays the two halves out in the order the race makes
+         them. -->
+    <InternalsVisibleTo Include="BurmesePoker.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Domain, the view model, and the table server — and never BurmesePoker.Console, whose
          drawing is Spectre markup and reusable across a wire by nothing (BUILD-PLAN §2). -->
     <ProjectReference Include="..\BurmesePoker.Domain\BurmesePoker.Domain.csproj" />
