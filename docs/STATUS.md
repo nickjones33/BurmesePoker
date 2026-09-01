@@ -2050,6 +2050,40 @@ unasserted altogether.
 
 ## What is next
 
+🔥 **As of 2026-09-01 the open work is `P69` and `P70`, and for the first time since P57
+neither is blocked on anything.** Nick ruled on **eleven** of `RULES.md` §9's thirteen open rows the
+same day P68 shipped. ⚠️ **The rulings are written into `BUILD-PLAN.md` §5 P69 and *not* into
+`RULES.md`, deliberately**: recording them bumps the document to **rev 32**, and
+`GameJournalTests` binds the rev to `JournalHeader.CurrentRulesRevision` while `RulebookTests`
+binds `RULEBOOK.md`'s appendix to the set of rows still open — **so the document, the constant, the
+code and the fences have to land in one commit or the tree is red.** P69 is that commit.
+
+- 🔥 **Eight rows close on the default already in force** — **#33, #36, #37, #38, #40, #44, #48,
+  #49, #50** — **no code changes at all.** ⚠️ **#33 is the one worth reading**: *"you can block
+  joker discards by taking one"* makes the joker block **deliberate**, so §7.3's bonus really is
+  unreachable to a hand that must shed a joker early, and `STRATEGY.md` §14's jokerless rate is a
+  floor by ruling rather than by caveat.
+- 🔥 **Three change play**: **#41** the streak **resets when it pays**; **#46** is **struck as
+  moot** because a **re-seating resets the streak**, so one can never span a seat change; **#47**
+  agreement is a **majority of the seats that expressed a preference** — ⚠️ **not of all seats**,
+  because `SeatingOpinion.Consent` is a no-op by design and four consenting bots must not outvote
+  the one person who asked.
+- ⚠️ **One row stays open: #39** (does the deal bonus multiply with the clean bonus). Nick was
+  unsure and left it on today's default, ×6 at five seats — **which P35 recorded as the weakest
+  default it ever took**, so it is now **the first question to put to an expert.**
+- ✅ **`P70` is `§10` #7**, the oldest entry in that list and the only one no packet has ever owned:
+  Nick ruled the minimum table down to **two**. ⚠️ **No rule changes** — §2 has said 2-to-6 since
+  rev 1 and §7.1.1's small-table conditions are built and tested; they are merely unreachable from
+  a dealt game. 🔥 **What it makes ordinary is §5.1's mutual lock**, which can quietly remove a
+  player from contention — settled rules meeting, not a defect.
+
+⚠️ **Still blocked on Nick, unchanged:** `P40` needs the vetted Burmese text, re-run against the
+rev-31 rulebook; the **WebKit half of `P53`** needs an iPhone. ⚠️ **`P47`'s two rungs stay blocked**
+on instruments that do not exist, and closing the strategy programme outright is a decision nobody
+has taken. ⚠️ **`ansible-nas` still carries the unrun journal wiring**, switched off.
+
+⚠️ **What follows was written before P68 and is kept for its reasoning.**
+
 🔥 **As of 2026-09-01, the open work is `P67` — the throw prompt the server holds and the screen
 does not — and it is the first packet in a fortnight that is blocked on nothing.** P66 reproduced
 the stall on the deployed table and named its cause; the fix is one line in `SeatBoard.Answer` and a

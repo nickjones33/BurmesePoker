@@ -9194,6 +9194,161 @@ log is the only record.
 
 ---
 
+### P69 — The rows Nick ruled: a streak that resets, and an agreement that is a majority ☐ — **added 2026-09-01**
+
+**Goal.** Record eleven `§9` rulings Nick gave on 2026-09-01, build the three that change play, and
+take `RULES.md` to **rev 32**. **Read first:** `RULES.md` §5.1, §7.3, §7.4, §7.5 and §3 step 2, and
+the §9 rows named below. ⚠️ **All eleven are `PLAYER` provenance** — Nick's recollection, which
+ranks below `EXPERT` — so **every fence keeps its `…UntilTheExpertSaysOtherwise` name**: these rows
+move from *recommended default* to *recorded ruling*, and Mya Lay or Aung Aung can still overturn
+any of them.
+
+#### The rulings
+
+**Eight rows close on the default that was already in force — no code changes at all.**
+
+| Row | Ruling |
+|---|---|
+| **#33** | **Exception 2 only.** 🔥 Nick's words are *"you can block joker discards by taking one"* — so the blocking is **deliberate**, not an accident of the ban's breadth. A joker may be shed into a closed rank **only** as the declaring discard, and a hand that must shed one earlier cannot reach §7.3's bonus that round. ⚠️ **`STRATEGY.md` §14's jokerless rate stays a floor, and now says so as a ruling rather than as a caveat.** |
+| **#36** | The multiplier reaches the **round payment only**, not the money-card settlement. |
+| **#37** | **Yes** — six or more seats is ×3, as §7.1.1 groups them. |
+| **#38** | *"On the initial deal"* is the **dealt thirteen alone**, before any draw. |
+| **#40** | The deal bonus reaches the **round payment only**. |
+| **#44** | The streak substitution reaches the **round payment only**. ⚠️ **Its consequence is now ruled rather than derived**: a blamed seat that pays the whole round prize can still finish the round **ahead** on money cards. |
+| **#48** | Two seats dealt a winning thirteen — **the earlier in turn order** takes it. |
+| **#49** | **Yes** — a claimed turned-up money card lies face up, like any open take. |
+| **#50** | **The player chooses** which physical copy leaves. Nick: *"the selected one."* |
+
+**Three change play.**
+
+- 🔥 **#41 — the streak resets when it pays.** Having won three in a row and been paid by the seat
+  above, the count **starts over**: a fourth consecutive win is an ordinary round, and it takes
+  three more wins to fire again. ⚠️ **This reverses the recorded default** (*it keeps firing*).
+- 🔥 **#46 — struck as moot, not answered.** Nick's ruling is that **a re-seating resets the
+  streak**, so a streak can never span a seat change and *"which seating names the blamed seat"*
+  never arises. ⚠️ **This is a new rule about §7.5 rather than a choice between #46's two readings**,
+  and it is why the row is struck rather than closed.
+- 🔥 **#47 — agreement is a majority, not unanimity.** ⚠️ **Of the seats that expressed a
+  preference**, which is the whole of the subtlety: `SeatingOpinion.Consent` is a **no-op by
+  design** (BUILD-PLAN §3.13 — it is what lets a computer seat consent without making every all-bot
+  table reshuffle itself each deal). **A majority counted over all seats would mean a five-handed
+  table with one person could never re-seat**, since four consenting bots would outvote the one
+  asker. So the rule is `asks > refuses`, **ties fail closed**.
+
+**One row stays open: #39** (does the deal bonus multiply with the clean bonus). Nick was unsure and
+chose to leave it on today's default — **it multiplies, ×6 at five seats** — which P35 recorded as
+the weakest default it took. ⚠️ **It is now the only Unknown row in §9 with a live default**, which
+makes it the first question to put to an expert.
+
+#### Build
+
+1. **`WinStreak` learns to reset, and the reset is a method rather than a caller's arithmetic.**
+   `After(winner)` is not enough any more: `MatchEngine.PlayRound` must know whether §7.5 *fired*
+   this round, and set the streak back to `None` when it did. ⚠️ **Reset to `None`, not to a run of
+   one** — *"the count starts over"* means the paying round is spent, so the very next win is
+   length 1 and the next firing is three wins later. ⚠️ **`BlamedAt` and `BlamesTheSeatAboveIfWonBy`
+   are unchanged**; what changes is what follows a round that fired. **Rewrite the remark on
+   `BlamesTheSeatAboveIfWonBy` rather than contradicting it** — it currently states #41's opposite
+   as a default.
+2. **A re-seating resets the streak, in `MatchEngine.NextSeating`'s one place.** ⚠️ **It is the
+   *event*, not a comparison of orders**: `Drawn()` may legitimately come out identical (its own
+   remark says so), and a table that got up and sat down again has changed seats whatever the
+   result. ⚠️ **Both routes reset** — the table's agreement (P37) and the standing policy (P36) —
+   and ⚠️ **the default policy is `Held`**, so in ordinary play this bites only when a table agrees.
+3. **`WhoAskedForAChange` counts instead of latching.** It keeps the *first* asker and the *first*
+   refuser today; a majority needs **totals**. Keep asking every seat (the existing remark's reason
+   still holds), keep *who asked* as the first asker in seating order so a replay names the same
+   seat, and return the asker when `asks > refuses`. ⚠️ **`IGameObserver.SeatingRefused(asker,
+   objector)` changes meaning** — a refusal no longer blocks — so either it is narrated only when
+   the refusals actually carried it, or it is renamed. **Decide it explicitly; do not leave a
+   narration that says the seating was refused when it moved.**
+4. **`RULES.md` to rev 32**, with the eleven rulings written into §9 (provenance `PLAYER`, dated
+   2026-09-01), #46 struck with its reason, and the prose in §5.1, §7.3, §7.4, §7.5 and §3 that
+   currently says *"recorded default"* for these rows updated to say *ruled*. ⚠️ **Bump
+   `JournalHeader.CurrentRulesRevision` to 32 in the same commit** — `GameJournalTests` binds the
+   two, so a forgotten bump is a red build.
+5. **`docs/RULEBOOK.md`'s house-readings appendix must move with it.** `RulebookTests` derives the
+   citation set from `RULES.md` **by table shape** and requires the rulebook to cite *exactly* the
+   rows still open — so closing nine rows and striking one is a **red build** until the appendix is
+   re-read. 🔥 **This is P38's two-way binding doing the job it was built for**, and it is the
+   cheapest reminder in the tree.
+
+#### Acceptance
+
+1. **Each of the three behaviour changes has a fence that was proved able to fail**, by mutating
+   the production code back to the old rule rather than by editing the test.
+2. **The three existing fences are flipped, not deleted**:
+   `MatchEngineTests.TheStreakKeepsFiringUntilTheExpertSaysOtherwise` becomes the resetting fact;
+   `SeatingAgreementTests.AgreementIsUnanimousUntilTheExpertSaysOtherwise` becomes the majority one
+   and **must still play the separating case** — three asking and one refusing, which moves the
+   seats now and did not before; and
+   `RoundEngineTests.TheSeatBlamedIsTakenFromTheSeatingOfTheRoundBeingSettled` is **replaced** by
+   one asserting that a streak does not survive a re-seating at all.
+3. **A tie fails closed**: two asking and two refusing leaves the seating alone, asserted.
+4. **The eight no-change rows keep their fences and their names**, and a test says so — a ruling
+   that is `PLAYER` rather than `EXPERT` must not quietly become unfenced.
+5. 🔥 **No published measurement moves, asserted rather than argued** (P41's procedure): a seeded
+   300-game `Sim` run writes a **byte-identical `measurements.csv`** either side of the change.
+   ⚠️ **The expectation is that this is free**: `RoundsPerGame = 1` (§3.8) means no experiment ever
+   plays a second round, so no streak and no between-round re-seating can occur in any of them.
+   **Verify it; do not assume it.**
+6. **A journal written before rev 32 still replays** — `JournalPlayerAgent` peeks, and P37's
+   precedent is that a pre-change journal must not become unreadable.
+7. **The conformance harness's §7.5 case is re-read.** It counts streaks over 120 ordinary rounds
+   and fails if none occurs; a resetting streak changes how often one is reachable, so the case
+   either still finds one or is re-derived — ⚠️ **and a case that passes by never firing is worse
+   than no case at all.**
+
+---
+
+### P70 — The two-handed table, dealt at last ☐ — **added 2026-09-01**
+
+**Goal.** Discharge `RULES.md` §10 **#7** — the oldest entry in that list and the only one no packet
+has ever owned. **Read first:** §2, §7.1.1, §5.1's *two-handed: the mutual lock*, and §10.
+
+🔥 **Nothing here is a rules change.** §2 has recorded **2 to 6** as Settled since rev 1, §7.1.1's
+two- and three-handed win conditions are **implemented and tested**, and `TableRules.For(2)` and
+`For(3)` are correct — they are simply **unreachable from a dealt game**, because
+`RoundEngine.MinimumPlayers` is **4**. Nick ruled on 2026-09-01 that the minimum comes down to
+**two**.
+
+**Build.**
+
+1. **`RoundEngine.MinimumPlayers` 4 → 2**, and the front-end clamps that read it follow — the
+   console's seat prompt, the browser lobby's `Open`, and `Sim`'s `--seats`. ⚠️ **`DefaultPlayers`
+   does not move**: five is the default table (P32) and this packet is about the floor, not the
+   default.
+2. **Walk what becomes reachable, and fence what is newly reachable rather than newly written.**
+   §7.1.1 at two seats is **series only with a set illegal as a meld**, and it demands a
+   **joker-free** series; §7.3's clean bonus is ×2 there. **All of that is built** — the packet's
+   real work is proving a two-handed round can be dealt, played and settled end to end.
+3. 🔥 **§5.1's mutual lock stops being a curiosity and becomes an ordinary round.** Two players
+   alternate, so each is both the feeder and the fed, and the same rank taken in both directions is
+   **dead to both of them for the rest of the round**. `RULES.md` records that this can *quietly
+   remove a player from contention* — a player holding **two** unmeldable dead cards cannot win at
+   all. ⚠️ **This is settled rules meeting, not a defect**, and the packet must not "fix" it.
+
+**Acceptance.**
+
+1. **A two-handed and a three-handed match are played end to end in a test** — dealt, played,
+   settled, banks conserved — at several seeds, and the win condition asserted to be §7.1.1's.
+2. 🔥 **A round is played that ends because the mutual lock removed a player from contention**, or
+   the packet states that it could not construct one and says what it tried. **The measurement is
+   whether the turn cap fires**: `SimulationOptions.TurnCap` and the hosted table's
+   `RoundTimeLimit` are what stand behind convergence since P27, and two-handed is where they are
+   most likely to be needed. ⚠️ **If a two-handed table of thinking rungs fails to converge at a
+   measurable rate, that is a finding and belongs in `STRATEGY.md` §12 beside the abandoned-round
+   figures** — it must not be discovered later by a player.
+3. **`§10` #7 is struck**, and §10 is empty for the fifth time.
+4. **No published measurement moves** — `sim suite` measures five seats and this packet changes no
+   rule at any table size. Assert it the same way P69 does.
+5. ⚠️ **Not owed**: a four-handed re-measurement, a suite regeneration, or a difficulty re-fit.
+   `docs/strategy/dial-away-from-the-default-table.md` measures four and six seats and **is not a
+   row in `measurements.csv` on purpose**; if two-handed is ever wanted there it is a console
+   command and a paragraph, not this packet.
+
+---
+
 ## 6. Cold-start protocol
 
 For picking up in a fresh session with no memory of this conversation.
