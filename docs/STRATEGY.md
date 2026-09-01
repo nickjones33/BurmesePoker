@@ -1257,6 +1257,70 @@ of four levels is a table of four `outs` with mistake rates: a seat that throws 
 card is a seat that takes longer to go out, so **a weaker table is a slower one**, and the
 strongest and most homogeneous field — two arms of `outs` — is the fastest at 23.9.
 
+### The two-handed table does not converge, and P70 is where that was found
+
+🔥 **Added by P70, the packet that lowered `RoundEngine.MinimumPlayers` from four to two** so that
+RULES.md §7.1.1's two- and three-handed win conditions could be reached from a dealt game at all
+(§10 #7). ⚠️ **It is the first table size at which a field of thinking rungs fails to converge**,
+and the paragraph above — *no table of thinking rungs has yet failed to converge* — stops being
+true of every size the engine deals.
+
+| table | rounds that settled | turns a settled round | rounds abandoned at the cap |
+|---|--:|--:|--:|
+| two-handed `outs`, cap 400 | 73 of 200 | 25.8 | **127 of 200** |
+| two-handed `outs`, cap 4,000 | 25 of 60 | 27.8 | **35 of 60** |
+| three-handed `outs`, cap 400 | 200 of 200 | 24.8 | **0** |
+
+⚠️ **A console measurement and not a row in `measurements.csv`**, deliberately: `sim suite`
+measures the five-handed table (§11), and a table size it does not measure has no row to quote.
+The commands are below and reproduce it.
+
+```bash
+dotnet run -c Release --project BurmesePoker.Sim -- --games 200 --seats 2 --strategies outs
+dotnet run -c Release --project BurmesePoker.Sim -- --games 60 --seats 2 --strategies outs --turn-cap 4000
+dotnet run -c Release --project BurmesePoker.Sim -- --games 200 --seats 3 --strategies outs
+```
+
+🔥 **A stalled two-handed round is stuck rather than slow, and that is the load-bearing
+measurement.** Ten times the cap moved the settled share by about five points and left the settled
+rounds at the same length — so the rounds that do not end are not rounds that need longer, and a
+turn cap is doing real work rather than trimming a tail. **Three-handed is unaffected**: it settles
+every round at the four-handed length, so this is a property of the two-handed table and not of
+small tables generally.
+
+⚠️ **Two candidate mechanisms, named and not chosen between**, because nothing here separates them:
+
+1. **Every rung maximises cover count, and two-handed cover count is not the win condition.** Sets
+   are illegal *as melds* at two seats (§7.1.1, §9 #22), so a hand can be fully covered by a
+   partition it may not declare on, and nothing in any rung's ranking is aimed at runs. P25 wrote
+   this down as a consequence of the win condition being a function of the table size — *"every
+   rung is maximising cover count at a table where cover count is no longer the win condition"* —
+   and two seats is the size where the two diverge most.
+2. **§5.1's mutual lock.** Two players alternate, so each is both the feeder and the fed, and the
+   same rank taken in both directions is dead to both of them for the rest of the round with
+   neither release reachable (RULES.md §5.1, *Two-handed*). It is cheap there and expensive
+   everywhere else — three-handed needs a full cycle of takes — which fits the shape of the result
+   but is not evidence for it over (1).
+
+🔥 **And §5.1's mutual lock is not the answer, which was the packet's own first guess.** The plan
+expected the two-handed lock — the same rank closed in both directions, which RULES.md §5.1 records
+as a state that can quietly remove a player from contention — to stop being a curiosity and become
+an ordinary round. **It did not happen once**: nought in 400 rounds at a 60-turn cap and nought in
+120 at 400, against **315 of those 400** ending with some rank closed against somebody and 118 with
+both seats carrying one. ⚠️ **The reason is the rungs' own behaviour, not the rule.** A rank closes
+against A when B takes it out of A's pile; it closes against B only if A then takes it out of
+**B's** pile — which needs B to throw back the very rank it took because it wanted it, and a
+cover-maximising rung practically never does. **So the mutual lock is a legal state the rules allow
+and this field does not reach**, and a rung that shed ranks it had taken would be the thing that
+found it.
+
+⚠️ **Neither is a defect and neither is to be "fixed" in the rules.** What is owed is a rung that
+plays the table it is sitting at, and that is a measured packet rather than a patch: a rung whose
+cover search is asked for §7.1.1's partition rather than for any partition. ⚠️ **And it has a
+product consequence said out loud**: the browser lobby offers a two-handed table since P70, and a
+person sitting at one will see rounds given up on their time limit. **Nothing published moves** —
+every figure in this document is five-handed.
+
 ### What refusing a claim is worth: nothing
 
 **RULES.md §4.5 gives the seat before the opener a veto over the opener's claim of the turned-up

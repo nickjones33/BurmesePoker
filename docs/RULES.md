@@ -2348,7 +2348,15 @@ not a question.**
 
 Decisions here that the implementation contradicts or lacks.
 
-✅ **Empty again as of 2026-08-23 (P41), the same day it reopened.** Rev 31's #24 — §5's public
+✅ **Empty again as of 2026-09-01 (P70), and this time with no standing exception.** #7 — *make
+player count configurable, 2–6* — was the oldest entry in this list and the only one no packet had
+ever owned: `RoundEngine.MinimumPlayers` was **4** while §2 recorded 2 to 6 as Settled and §7.1.1's
+two- and three-handed win conditions sat implemented, tested and unreachable from a dealt game.
+**Nick ruled on 2026-09-01 that the floor comes down to two**, and P70 dealt them. ⚠️ **No rule
+changed at any table size** — this was the code catching up with rev 17 — so the rev did not move
+and no measurement could.
+
+✅ **Empty as of 2026-08-23 (P41), the same day it reopened.** Rev 31's #24 — §5's public
 piles and §5.2's face-up taken cards, Settled and shown nowhere — was discharged by P41 within
 the day: one fold over the public events (`TableLook`), both front ends, the concealment
 discriminator, and fences on §9 #49 and #50's defaults. The registry's §5.2 exemption is
@@ -2366,13 +2374,18 @@ Aung Aung volunteered in rev 27 — were the last two, and they were discharged 
 that had to invent both a round with no turn in it and the first state in this game that reaches
 across rounds.
 
-⚠️ **With one standing exception, said out loud rather than left to the reader to notice (P34):
+~~⚠️ **With one standing exception, said out loud rather than left to the reader to notice (P34):
 #7.** `RoundEngine.MinimumPlayers` is **4**, and §2 records 2 to 6 as Settled, so the two- and
 three-handed rules are implemented, tested and **unreachable from a dealt game**. It is the
 oldest entry here that nothing has discharged, **no packet owns it**, and *"§10 is empty"* is
-true of every rule that can be reached and not of that one.
+true of every rule that can be reached and not of that one.~~ ✅ **Discharged 2026-09-01 by P70.**
+🔥 **It stood for five months and thirty-odd packets because nothing ever went red over it** — the
+small-table rules had tests, the constant had no test at all, and *"§10 is empty"* was said four
+times over the top of it. **The lesson is P34's own, one layer down: an exemption nobody owns is a
+rule quietly abandoned**, and a number that disagrees with the document needs an assertion binding
+the two (`SmallTableTests.TheSmallestTableTheRulesDefineIsTheSmallestTableADealAccepts`).
 
-⚠️ **This section has now been emptied four times and reopened four — rev 31 is the fourth reopening.** The pattern is worth
+⚠️ **This section has now been emptied five times and reopened four — rev 31 was the fourth reopening, and P70's emptying is the first that leaves nothing standing beside it.** The pattern is worth
 naming: a rules conversation adds a rule, this list records what the code does not do, and a
 packet closes it. **An entry here is a debt with an owner, and one that names no packet is the
 thing that should worry a reader.**
@@ -2385,7 +2398,15 @@ thing that should worry a reader.**
 4. **Sets must forbid duplicate suits** (§6.2), capping a set at 4 cards.
 5. **No table meld state** (§6.3). Play is concealed; `Table` needs no meld model.
 6. **Move the claimed money card, don't clone it** (§4.5). Currently invents a 109th card.
-7. **Make player count configurable, 2–6** (§2). ⚠️ **Rev 17 moved the floor from four to two**, and `RoundEngine.MinimumPlayers` is 4.
+7. ~~**Make player count configurable, 2–6** (§2). ⚠️ **Rev 17 moved the floor from four to two**, and `RoundEngine.MinimumPlayers` is 4.~~
+    ✅ **Discharged 2026-09-01 (P70).** `RoundEngine.MinimumPlayers` is **2**, bound to
+    `TableRules.SmallestTable` by a test, and a two- and a three-handed match are played end to
+    end — dealt, settled, banks conserved, and the declared partition checked against §7.1.1
+    rather than against the evaluator's verdict. §5.1's **mutual lock** is an ordinary event at
+    two seats and is asserted as one; it is a legal state of the game and is not special-cased.
+    ⚠️ **`DefaultPlayers` did not move**: five is the table this game is played at (P32), and the
+    floor is not a default — every default that used to read this constant now writes its number
+    down.
 8. **Add configurable stakes** — round value and money card value (§4.3).
 9. **Implement settlement** (§7.2): flat round payment, then pairwise money-card settlement.
 10. **Set `MoneyCardOwner` during the deal** (§4.4), pending confirmation.

@@ -17,9 +17,11 @@ namespace BurmesePoker.Tests.Play;
 /// wipe a release. Those are in <c>RoundEngineTests</c> and at the bottom here.
 /// </para>
 /// <para>
-/// ⚠️ <b>Four-handed throughout, because that is the only table a round may be dealt for</b>
-/// (RULES.md §10 #7). The rule has no player-count branch (§9 #25), so a table size is never the
-/// variable in any of this.
+/// ⚠️ <b>Four-handed throughout, because the rule has no player-count branch</b> (§9 #25), so a
+/// table size is never the variable in any of this. ⚠️ <b>It used to say "because four is the only
+/// table a round may be dealt for" (§10 #7), and that stopped being true at P70</b> — the floor is
+/// two now, and the two-handed case has its own facts at the bottom of this file and in
+/// <c>SmallTableTests</c>.
 /// </para>
 /// </remarks>
 public class FeedingBanTests
@@ -261,8 +263,9 @@ public class FeedingBanTests
     /// ⚠️ <b>Two-handed the seat that feeds you is the seat you feed</b>, and the mutual lock that
     /// produces is a legal state of the game rather than a defect (RULES.md §5.1, Two-handed;
     /// §9 #25). The rule has no player-count branch, and this asserts that there is none in the
-    /// code either — even though <c>RoundEngine.MinimumPlayers</c> is still 4, so no dealt game
-    /// reaches it (§10 #7).
+    /// code either. ✅ <b>A dealt game reaches it since P70</b> — <c>RoundEngine.MinimumPlayers</c>
+    /// is 2 and §10 #7 is discharged — so this unit fact now has an ordinary-play twin,
+    /// <c>SmallTableTests.TheMutualLockHappensInOrdinaryTwoHandedPlayAndTheRoundStillEnds</c>.
     /// </remarks>
     [Fact]
     public void TwoHandedEachSeatIsBothTheFeederAndTheFed()

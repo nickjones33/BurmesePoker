@@ -33,10 +33,11 @@ public class SettledRuleCoverageTests
     {
         ["2"] = Checked(
             "108 cards wherever they sit, at every event: RuleConformance.EverythingHolds; "
-            + "13 dealt a seat: RuleConformance.Watch; table sizes 4–6 played: "
-            + "RuleConformanceTests.OrdinaryRoundsBreakNoSettledRule. ⚠️ The two-player floor "
-            + "is Settled and unreachable — RoundEngine.MinimumPlayers is 4, the recorded "
-            + "divergence (§10 #7), so 2–3-handed conformance waits on the packet that discharges it."),
+            + "13 dealt a seat: RuleConformance.Watch; table sizes 2–6 played: "
+            + "RuleConformanceTests.OrdinaryRoundsBreakNoSettledRule. ✅ THE TWO-PLAYER FLOOR IS "
+            + "REACHED (P70, §10 #7 discharged): RoundEngine.MinimumPlayers is 2, bound to "
+            + "TableRules.SmallestTable by SmallTableTests, and two- and three-handed matches are "
+            + "played end to end there. It read 'Settled and unreachable' from P30.2 until P70."),
         ["3"] = Checked(
             "Deal order and the two turn-ups: RuleConformance.RoundStarted/Watch (ownership at "
             + "the deal, turned-up cards owned by nobody). ✅ STEP 2 AS REV 28 CORRECTS IT — a "
@@ -107,10 +108,11 @@ public class SettledRuleCoverageTests
             + "discard with no exception: RuleConformance.PlayerDeclared (declarer is the seat "
             + "that just discarded, holding thirteen)."),
         ["7.1.1"] = Checked(
-            "The series and clean-series counts the table size requires, at 4, 5 and 6 seats: "
-            + "RuleConformance.ADeclaredHandSatisfiesTheTable against TableRules.For; the "
-            + "four-versus-five mutant; the table itself: HandEvaluatorTests. ⚠️ 2–3-handed is "
-            + "correct and unreachable (§10 #7), as §2's entry records."),
+            "The series and clean-series counts the table size requires, at 2, 3, 4, 5 and 6 "
+            + "seats: RuleConformance.ADeclaredHandSatisfiesTheTable against TableRules.For; the "
+            + "four-versus-five mutant; the table itself: HandEvaluatorTests. ✅ 2–3-handed is "
+            + "reached and played since P70 (§10 #7 discharged): SmallTableTests re-derives the "
+            + "partition a small table won on, sets banned two-handed and two clean series three."),
         ["7.2"] = Checked(
             "Round value from each loser (flat in what they held; see §7.3 for the multiplier "
             + "on how they won), money settled separately by owner, no deadwood penalty, zero "

@@ -57,9 +57,15 @@ public class RoundEngineTests
         }
     }
 
+    /// <remarks>
+    /// ⚠️ <b>It read 3 and 7 until P70.</b> Three-handed is a real game (RULES.md §7.1.1) and was
+    /// refused only because <see cref="RoundEngine.MinimumPlayers"/> was 4 — §10 #7, discharged.
+    /// The bounds are one below the floor and one above the ceiling, so this fact moves with the
+    /// constants rather than restating them.
+    /// </remarks>
     [Theory]
-    [InlineData(3)]
-    [InlineData(7)]
+    [InlineData(RoundEngine.MinimumPlayers - 1)]
+    [InlineData(RoundEngine.MaximumPlayers + 1)]
     public void SetupRejectsATableThatCannotBeDealtMeaningfully(int players)
     {
         var order = Order(DealBuilder.ForPlayers(players));

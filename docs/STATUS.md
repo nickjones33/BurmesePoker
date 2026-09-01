@@ -10,6 +10,56 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
+🔥 **`P70` shipped 2026-09-01 on Opus 5: the two- and three-handed games are dealt at last, and
+`RULES.md` §10 #7 — the oldest ruling in that list and the only one no packet ever owned — is
+discharged.** `RULES.md` stays **rev 32** (no rule changed, at any table size), and the tree is
+green at **1001**, from 981.
+
+- ✅ **(1) `RoundEngine.MinimumPlayers` is 2, and it is bound to the document.**
+  `SmallTableTests.TheSmallestTableTheRulesDefineIsTheSmallestTableADealAccepts` asserts it equals
+  `TableRules.SmallestTable` — 🔥 **the constant had no assertion against the rules at all**, which
+  is why a Settled size sat unreachable for thirty-odd packets with nothing ever going red over it.
+  ⚠️ **`DefaultPlayers` did not move** (five is the table, P32), and **every default that read the
+  floor meaning *four* now writes four down**: `SimulationOptions`, `TournamentOptions`,
+  `MoneySweepOptions` and `DifficultyCalibrationTests`. **Nothing may read the floor meaning the
+  ordinary table.**
+- 🔥 **(2) Build item 1 had a consequence the packet did not name: the lobby can now open a table
+  the felt could not draw.** `TableRing` laid out four to six seats and **threw** for anything
+  else, so a two-handed browser table would have been an exception on the page. `[2] = [Top]` and
+  `[3] = [Left, Right]` now — 🔥 **two-handed is the one table where the seat after you and the
+  seat before you are the same seat**, so it has no left and no right, and two `TableRingTests`
+  facts had assumed both existed.
+- 🔥 **(3) Acceptance 2 is a null, and it falsifies the packet's own premise.** The plan said the
+  mutual lock *"stops being a curiosity and becomes an ordinary round"*. **It never happened once**
+  — nought in 400 rounds at a 60-turn cap, nought in 120 at 400 — against **315 of those 400**
+  ending with some rank closed against somebody and 118 with both seats carrying one. ⚠️ **The
+  mechanism is the rungs' and not the rule's**: a rank closes against A when B takes it from A's
+  pile, and against B only if A takes it from **B's** pile — which needs B to throw back the very
+  rank it took because it wanted it. **The lock stays asserted where it can be constructed**, at
+  the table state (`FeedingBanTests`), and the zero is **not** fenced: a rung that shed ranks it
+  had taken would reach it, and that is a finding rather than a failure.
+- 🔥 **(4) What the turn cap found instead is bigger: a two-handed table of `outs` does not
+  converge.** **127 of 200 rounds abandoned** at the harness cap and **35 of 60 at ten times it**,
+  with the settled rounds at 25.8 turns either way — so a stalled two-handed round is **stuck
+  rather than slow**. **Three-handed settles 200 of 200 at 24.8 turns**, so this is a property of
+  the two-handed table and not of small tables. `docs/STRATEGY.md` §12 carries it as a console
+  measurement with its commands, **both candidate mechanisms named and neither chosen**: every rung
+  maximises cover count, which two-handed is *not* the win condition (sets are legal covers and
+  illegal declarations — **P25 predicted exactly this**), or §5.1's lock, which (3) argues against.
+  ⚠️ **Every two-handed test is therefore cap-aware** — `SeatRecorder` is the only bound a round
+  has, `RoundEngine` has none, and an unbounded two-handed loop hangs.
+- ✅ **(5) Nothing published moves, and it was measured rather than argued.** A seeded 300-game
+  five-handed run (`--seed 20260901`) writes a **byte-identical CSV** either side (a HEAD worktree
+  against the tree). Conformance now runs at **2, 3, 4, 5 and 6** seats, ⚠️ **two-handed bounded at
+  60 turns as a stated cost decision** — three rounds in five stall there and each stall costs its
+  whole cap.
+- ⚠️ **(6) What is owed is a decision, not a line.** The browser lobby offers a two-handed table
+  and a person sitting at one will watch rounds given up on their time limit. Either **a rung asked
+  for §7.1.1's partition rather than for any partition** — a measured packet, the obvious next one
+  — or the lobby declines a size the engine can deal. ⚠️ **Do not "fix" it in the rules.**
+
+---
+
 🔥 **`P69` shipped 2026-09-01 on Opus 5: eleven §9 rows are rulings rather than recommendations,
 three of them change play, and `RULES.md` is **rev 32**.** The tree is green at **981**, from 957 —
 ⚠️ **`Presentation`, `Server`, `Sim` and `Web` are byte-identical**; the diff is `WinStreak`,
@@ -5840,6 +5890,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 | --- | --- | --- |
+| 2026-09-01 | P70 | **Done — the two-handed table dealt at last, on Opus 5.** `RULES.md` stays **rev 32** (no rule changed), tree green at **1001** from 981. ✅ **`RoundEngine.MinimumPlayers` is 2**, bound to `TableRules.SmallestTable` by a test — **§10 #7 discharged**, the oldest ruling in that list, and §10 is empty for the fifth time with nothing standing beside it. ⚠️ **`DefaultPlayers` did not move**, and every default that read the floor meaning *four* now writes four down (three `Sim` option records, `DifficultyCalibrationTests`) — P32's mistake one layer down. 🔥 **Build item 1 had an unnamed consequence: the lobby can open a table the felt could not draw.** `TableRing` covered four to six and threw otherwise; it has `[2] = [Top]` and `[3] = [Left, Right]` now, and 🔥 **two-handed is the one table where the seat after you and the seat before you are the same seat**, which two `TableRingTests` facts had assumed away. 🔥 **Acceptance 2 came back a null that falsifies the packet's own premise**: §5.1's mutual lock never happened **once** — nought in 400 rounds at a 60-turn cap and nought in 120 at 400 — while 315 of those 400 ended with a rank closed against somebody. ⚠️ **The mechanism is the rungs', not the rule's**: the mirror ban needs a seat to throw back the rank it took because it wanted it. 🔥 **What the cap did find is bigger — a two-handed table of `outs` does not converge: 127 of 200 rounds abandoned, and 35 of 60 at ten times the cap**, so a stalled round is **stuck rather than slow**; three-handed settles **200 of 200**. `STRATEGY.md` §12, both candidate mechanisms named and neither chosen. ⚠️ **So the tests are cap-aware** — `SeatRecorder` is the only bound a round has. ✅ **No published measurement moved, measured**: a seeded 300-game five-handed run writes a byte-identical CSV either side. ⚠️ **What is owed is a decision**: the lobby now offers a two-handed table where a person will watch rounds given up on their time limit. |
 | 2026-09-01 | P69 | **Done — eleven §9 rows ruled, three of them changing play, on Opus 5.** `RULES.md` **rev 32**, `JournalHeader.CurrentRulesRevision` **32**, tree green at **981** from 957. 🔥 **The streak resets when it pays (#41) and a re-seating resets it too (#46, struck as moot)** — `WinStreak.After(winner, blameWasPaid)` and `AfterAReseating()`, the second called from `MatchEngine.Reseated()`, ⚠️ **the one place both routes to a re-draw pass through**, resetting on the **event** rather than on a changed order. 🔥 **Agreement is a majority of the seats that expressed a preference (#47)**, `asks > refuses`, ⚠️ **a tie failing closed** — not a majority of the table, because a consenting bot is a no-op by design. 🔥 **`IGameObserver.SeatingRefused` narrowed rather than renamed**: it fires only when the refusals carried it. 🔥 **The re-seating reset cannot be asserted after the round** — the next round overwrites the streak — so the fence reads it **at the deal** from an observer's `RoundStarted` and walks out of the round; ⚠️ **the observer must be armed**, and ⚠️ **the second re-seating is announced in a different seat's name**, because the asker narrated is the first asker in turn order and the order moved. ✅ **All three changes mutation-proved.** ✅ **No published measurement moves, measured**: a seeded 300-game run writes a byte-identical CSV either side, journals identical bar the rev stamp, and a pre-rev-32 journal replays byte-identically. ✅ **The conformance §7.5 case needed one arm and still finds a streak in 120 rounds.** ⚠️ **Nine rows changed no code**, so `RuledRowTests` holds each ruled row to a named test that exists and to saying who ruled it and when — a `PLAYER` ruling is still a question. ⚠️ **#39 stays open on the weakest default this document ever took** and is the first question for an expert. ⚠️ **The plan miscounted its own table (eight against nine).** |
 | 2026-09-01 | P68 | **Done — P67's fix measured on the deployed table, on Opus 5.** Tree green at **957**, unchanged; ⚠️ **the whole diff in this repository is documents.** ✅ **Running image stated the way P60 says to**: container `3627cff93c13` runs `d6a67496138c` = tag **`26f4043`** = `main` = P67, where before the play the host ran `c70789d633` = `0c57515` (P65) — **the fix genuinely was not on the site until now.** ⚠️ **Nick pushed and ran the playbook** — the packet stopped and asked rather than pushing. 🔥 **Three rounds from a real Chrome through Traefik and basicauth — 28 turns in 2m07s, 37 in 2m22s, 28 in 6m07s — with zero `ran out of time` lines and zero exceptions**, every `Take a card` followed by `Throw one away` on the next poll; ⚠️ **those wall clocks are the pace of the hand answering, ~4 s a turn, against P66's stalled 27.5 s a turn made of three 180 s patiences.** 🔥 **P64's restarted deadline was seen working in the wild**: a claim answered 3m30s after it was asked, past its 180 s patience, without a stand-in, because the drop restarted it. 🔥 **The finding: `PlayedForYouWhileAway` cannot exceed zero on a return inside the window after one drop** — patience **180 s** against retention **120 s** means the stand-in is always later than the framework's giving-up — ⚠️ **and it is reachable only through `_ceiling` after two drops** (ask+2×patience clamps the stand-in inside a later drop's window). **The notice is the flapping-connection case, and the ordinary shape can never draw it.** ⚠️ **So it is recorded as still unseen with the reason**, and the instrument that failed is written down: **`Blazor.disconnect()` posts `/_blazor/disconnect`, the framework's graceful teardown — not a drop** (the reconnect returned true, the page redrew, and no press was ever answered again); a reload then recovered the seat by name with the standing question. ✅ **P54's copy-link seen on the deployed lobby** — P61's owed device check. No rules question; `RULES.md` stays rev 31. |
 | 2026-09-01 | P67 | **Done — a person's turn stops costing a patience, on Opus 5.** Tree green at **957**, from 954; ⚠️ **`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical**, so no measurement can move. 🔥 **The fix is one line**: `SeatBoard.Settled` puts the question down only when it is still the question that was answered, so a prompt `OnTold` installed in the gap survives the answer that was in flight. ⚠️ **`Read()` deliberately not used** — the channel's pending prompt is still the answered one at that moment. 🔥 **Build item 1 could not be done as written and that is the finding**: the window is a few instructions wide and nothing outside the class can be made to run inside it, so **the interleaving is played out rather than raced for** — which is why `Settled` is internal and `BurmesePoker.Web` gained the solution's second `InternalsVisibleTo` (the first being the Domain's, P21). ✅ **Both facts proved able to fail** on the unconditional `Asking = null`, for take → throw and for throw → the next take; a third fact holds all five questions to the one `Answer`. ⚠️ **The fixture found that the opening seat is never asked to take** — it claims and then throws — so the script holds from the seat's first take onwards. ✅ **Looked at in a browser locally**: 160 answers, twelve settled rounds, **zero `ran out of time` lines**. ⚠️ **The deployed half is owed** — a work cycle does not push — and is `P68`. No rules question; `RULES.md` stays rev 31. |

@@ -364,16 +364,26 @@ public class TableSessionTests
     /// first round: a table that cannot be dealt should fail while somebody is still setting
     /// it up.
     /// </remarks>
+    /// <remarks>
+    /// ⚠️ <b>Two seats were the example here until P70</b>, when the floor came down to the one
+    /// RULES.md §2 has recorded since rev 1 (§10 #7 discharged) — a head-to-head table opens now.
+    /// One seat is what cannot be dealt.
+    /// </remarks>
     [Fact]
     public void ATableTooSmallToDealIsRefusedWhenItOpens()
     {
-        var seats = new[]
+        var seats = new[] { TableSeat.Person(One, "Nick") };
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => TableSession.Open(seats, Options(18)));
+
+        // …and the smallest table the rules describe is opened rather than refused.
+        var two = new[]
         {
             TableSeat.Person(One, "Nick"),
             TableSeat.Computer(Two, "Ruby (bot)", new GreedyBotAgent())
         };
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => TableSession.Open(seats, Options(18)));
+        Assert.NotNull(TableSession.Open(two, Options(18)));
     }
 
     [Fact]

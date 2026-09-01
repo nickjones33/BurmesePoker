@@ -25,11 +25,18 @@ public class TableRingTests
 
     public static TheoryData<int> Sizes => new(TableRing.Sizes);
 
-    /// <summary>Four, five and six — the tables this game is played at.</summary>
+    /// <summary>Every table a round may be dealt for, from the floor to the ceiling.</summary>
+    /// <remarks>
+    /// ⚠️ <b>It read <c>[4, 5, 6]</c> until P70</b>, which was the engine's floor rather than the
+    /// game's (RULES.md §10 #7). The floor is two now, so the lobby can open a table this had no
+    /// layout for — and an unlaid-out table is an exception on the felt, not a smaller ring.
+    /// </remarks>
     [Fact]
     public void EveryTableTheGameAllowsCanBeLaidOut()
     {
-        Assert.Equal([4, 5, 6], TableRing.Sizes.Order());
+        Assert.Equal([2, 3, 4, 5, 6], TableRing.Sizes.Order());
+        Assert.Equal(RoundEngine.MinimumPlayers, TableRing.Sizes.Min());
+        Assert.Equal(RoundEngine.MaximumPlayers, TableRing.Sizes.Max());
     }
 
     [Theory]
@@ -78,6 +85,13 @@ public class TableRingTests
     [MemberData(nameof(Sizes))]
     public void TheSeatAfterYouIsOnYourLeftAndTheSeatBeforeYouIsOnYourRight(int seats)
     {
+        // ⚠️ Two-handed the two are one seat, so there is nothing to put on either side of you;
+        // its own fact below says where that seat goes instead.
+        if (seats == 2)
+        {
+            return;
+        }
+
         var seating = Seating(seats);
 
         for (var at = 0; at < seats; at++)
@@ -102,13 +116,19 @@ public class TableRingTests
     public void TheOrderIsTurnOrderEndingWithYours(int seats)
     {
         var seating = Seating(seats);
-        var ring = TableRing.Around(seating, seating[2]);
 
-        Assert.Equal(
-            [.. Enumerable.Range(1, seats).Select(step => seating[(2 + step) % seats])],
-            ring.Select(place => place.Player));
+        // ⚠️ Asked of every seat rather than of the third: a two-handed table has no third seat,
+        // and the claim was never about which one you were dealt.
+        for (var at = 0; at < seats; at++)
+        {
+            var ring = TableRing.Around(seating, seating[at]);
 
-        Assert.True(ring[^1].IsYours);
+            Assert.Equal(
+                [.. Enumerable.Range(1, seats).Select(step => seating[(at + step) % seats])],
+                ring.Select(place => place.Player));
+
+            Assert.True(ring[^1].IsYours);
+        }
     }
 
     /// <summary>A watcher has no seat, so the table is not turned and nothing is theirs.</summary>
@@ -141,7 +161,9 @@ public class TableRingTests
     [Fact]
     public void ATableThisCannotSeatIsRefusedRatherThanDrawnWrong()
     {
-        Assert.Throws<ArgumentException>(() => TableRing.Around(Seating(3), new PlayerId(1)));
+        // ⚠️ Three seats was in this list until P70 laid it out; the sizes refused are the ones
+        // no round can be dealt for (RULES.md §2.1).
+        Assert.Throws<ArgumentException>(() => TableRing.Around(Seating(1), new PlayerId(0)));
         Assert.Throws<ArgumentException>(() => TableRing.Around(Seating(7), new PlayerId(1)));
     }
 
@@ -150,4 +172,26 @@ public class TableRingTests
     {
         Assert.Throws<ArgumentException>(() => TableRing.Around(Seating(4), new PlayerId(9)));
     }
+
+    /// <summary>
+    /// 🔥 <b>Two-handed the seat after you and the seat before you are the same seat</b> — the
+    /// one table where that is true (RULES.md §5.1, Two-handed, which is why the mutual lock is
+    /// cheap there) — so the felt puts your one opponent across from you rather than on a side.
+    /// </summary>
+    [Fact]
+    public void TwoHandedYourOneOpponentFacesYouAcrossTheFelt()
+    {
+        var seating = Seating(2);
+
+        foreach (var you in seating)
+        {
+            var ring = TableRing.Around(seating, you);
+            var other = Assert.Single(ring, place => !place.IsYours);
+
+            Assert.Equal(RingSeat.Top, other.Place);
+            Assert.Equal(RingSeat.Bottom, Assert.Single(ring, place => place.IsYours).Place);
+            Assert.DoesNotContain(ring, place => place.Place is RingSeat.Left or RingSeat.Right);
+        }
+    }
+
 }

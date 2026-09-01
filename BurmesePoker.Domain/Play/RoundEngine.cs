@@ -41,14 +41,25 @@ public sealed class RoundEngine
     /// <summary>Cards dealt to each player (RULES.md §2).</summary>
     public const int HandSize = 13;
 
-    /// <summary>Fewest players a round may be dealt for.</summary>
+    /// <summary>Fewest players a round may be dealt for — <b>two</b> (RULES.md §2, §2.1).</summary>
     /// <remarks>
+    /// <para>
     /// ⚠️ <b>Not the same thing as <see cref="DefaultPlayers"/>, and P32 is the packet that
     /// found out why it matters.</b> Every default in the project read this constant, so the
     /// table everything was built and measured at was four <em>because four is the smallest
-    /// legal one</em> and not because anybody chose it.
+    /// legal one</em> and not because anybody chose it. ⚠️ <b>Nothing may read this constant
+    /// meaning <em>the ordinary table</em></b> — a default that wants a number writes the
+    /// number down.
+    /// </para>
+    /// <para>
+    /// 🔥 <b>It was 4 from P0 until P70 and the document never agreed with it.</b> RULES.md §2
+    /// has recorded <b>2 to 6</b> as Settled since rev 1 and §2.1 moved the floor to two in
+    /// rev 17; §7.1.1's two- and three-handed win conditions have been implemented and tested
+    /// since P25 and were simply <em>unreachable from a dealt game</em> — the oldest entry in
+    /// §10's ruling list (#7). Lowering it deals them; it changes no rule at any table size.
+    /// </para>
     /// </remarks>
-    public const int MinimumPlayers = 4;
+    public const int MinimumPlayers = 2;
 
     /// <summary>
     /// Players a table is dealt for unless somebody says otherwise — <b>five</b> (BUILD-PLAN P32).

@@ -22,7 +22,7 @@ Then it asks five things:
 
 | Question | What to say |
 |---|---|
-| **How many at the table?** | 4 to 6. A round is not played with fewer or more (`RULES.md` §2.1). |
+| **How many at the table?** | 2 to 6. A round is not played with fewer or more (`RULES.md` §2.1). ⚠️ **Two- and three-handed are a stricter game**, not a smaller one: two-handed you must go out on runs alone, three-handed on two clean runs (§7.1.1). |
 | **How many of you are people?** | **1**, for solo play. The rest of the seats are filled by named bots — *Ruby (bot)*, *Sable (bot)*, … **0 is allowed**, and leaves the computer playing itself, which is worth watching once. |
 | **How hard should the computer be?** | Four settings, **hardest first**: *expert*, *hard*, *medium*, *easy*. They are the same player throughout — the best one there is — differing only in how often it slips and throws the wrong one of two good cards. How far apart they are — measured, and it is far enough to feel — and which one to sit with is `HOW-TO-PLAY-WELL.md`'s job. Pressing return takes the top of the list, which is *expert*. |
 | **How long do the seats hold?** | **held** (the default), *every-round*, or *every-5-rounds*. Held is the rule: the seats are drawn once, at the start, and kept — so the player before you and the player after you are the same people all evening, which is what the feeding ban (§5.1) and the money-card permission (§4.5) are about. The other two are house arrangements; in a real game the seats change **when everybody agrees to change them**, which the computer cannot yet be asked. |

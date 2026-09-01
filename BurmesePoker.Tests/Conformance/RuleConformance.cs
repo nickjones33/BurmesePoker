@@ -95,8 +95,9 @@ internal sealed class RuleConformance : IGameObserver
         _seating = [.. seating];
         _turnedUp = [.. turnedUp];
 
-        // §3 step 4: two money cards are turned up. §2: between two and six play — the engine's
-        // own floor of four is the recorded divergence (§10 #7), so the audit takes the wider rule.
+        // §3 step 4: two money cards are turned up. §2: between two and six play. ⚠️ The audit
+        // took the document's wider floor while the engine's own was four (§10 #7); P70 lowered
+        // the engine's to two and the two agree, so this range is no longer the generous reading.
         Assert.Equal(2, turnedUp.Count);
         Assert.InRange(seating.Count, TableRules.SmallestTable, RoundEngine.MaximumPlayers);
         Assert.Equal(seating.Count, seating.Distinct().Count());

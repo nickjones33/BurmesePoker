@@ -9339,7 +9339,7 @@ makes it the first question to put to an expert.
 
 ---
 
-### P70 — The two-handed table, dealt at last ☐ — **added 2026-09-01**
+### P70 — The two-handed table, dealt at last ☑ — **added 2026-09-01, shipped 2026-09-01**
 
 **Goal.** Discharge `RULES.md` §10 **#7** — the oldest entry in that list and the only one no packet
 has ever owned. **Read first:** §2, §7.1.1, §5.1's *two-handed: the mutual lock*, and §10.
@@ -9384,6 +9384,43 @@ two- and three-handed win conditions are **implemented and tested**, and `TableR
    `docs/strategy/dial-away-from-the-default-table.md` measures four and six seats and **is not a
    row in `measurements.csv` on purpose**; if two-handed is ever wanted there it is a console
    command and a paragraph, not this packet.
+
+**What it built, and what it found.** ✅ **`RoundEngine.MinimumPlayers` is 2**, bound to
+`TableRules.SmallestTable` by a test — §10 #7 discharged and §10 empty for the fifth time, with
+nothing standing beside it for the first time. ✅ Two- and three-handed matches are played end to
+end, and `RuleConformanceTests.OrdinaryRoundsBreakNoSettledRule` runs at **2, 3, 4, 5 and 6** seats.
+✅ **No published measurement moved and it was measured**: a seeded 300-game five-handed run writes
+a byte-identical CSV either side (a HEAD worktree against the tree).
+
+🔥 **(1) Build item 1 had a consequence the packet did not name: the lobby can now open a table the
+felt could not draw.** `TableRing` laid out four to six seats and threw for anything else, so the
+first two-handed browser table would have been an exception on the page rather than a small ring.
+It has `[2] = [Top]` and `[3] = [Left, Right]` now — 🔥 **two-handed is the one table where the seat
+after you and the seat before you are the same seat**, so it has no left and no right, and two of
+`TableRingTests`' facts had assumed both existed.
+
+🔥 **(2) Acceptance 2's answer is a null, and it falsifies the packet's own premise.** The plan said
+§5.1's mutual lock *"stops being a curiosity and becomes an ordinary round"*. **It never happened
+once** — nought in 400 rounds at a 60-turn cap and nought in 120 at 400 — while 315 of those 400
+rounds ended with some rank closed against somebody. ⚠️ **The mechanism is the rungs', not the
+rule's**: the mirror ban needs a seat to throw back the very rank it took because it wanted it, and
+a cover-maximising rung practically never does. The lock stays asserted where it can be
+constructed, at the table state (`FeedingBanTests`).
+
+🔥 **(3) What the turn cap did find is bigger: a two-handed table of `outs` does not converge.**
+**127 of 200 rounds abandoned** at the harness cap, and **35 of 60 at ten times the cap** — so a
+stalled two-handed round is **stuck rather than slow**, and the settled ones run 25.8 turns either
+way. Three-handed settles **200 of 200** at 24.8 turns. `docs/STRATEGY.md` §12 carries it with both
+candidate mechanisms named and neither chosen: **every rung maximises cover count, which two-handed
+is not the win condition** (sets are legal covers and illegal declarations — P25 predicted exactly
+this), or §5.1's lock (which (2) argues against). ⚠️ **So the tests are cap-aware**: `SeatRecorder`
+is the only bound a round has, `RoundEngine` has none, and an unbounded two-handed loop hangs.
+
+⚠️ **(4) What is owed, and it is a decision rather than a line.** The browser lobby offers a
+two-handed table and a person sitting at one will watch rounds given up on their time limit. Either
+a rung that plays §7.1.1's partition rather than any partition (**a measured packet**, and the
+obvious `P71`), or the lobby declines to open the size the engine can deal. **Do not "fix" it in the
+rules** — nothing here is a rules change, and the four-handed and five-handed games are untouched.
 
 ---
 

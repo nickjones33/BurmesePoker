@@ -11,8 +11,9 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
-🔥 **Where the tree stands right now: green at 981 tests, `RULES.md` at rev 32, `P69` the last
-packet shipped and `P70` — the two-handed table — the next one.** Everything below this line is the
+🔥 **Where the tree stands right now: green at 1001 tests, `RULES.md` at rev 32, `P70` the last
+packet shipped and nothing after it on the plan — the next packet is Nick's call, and the strongest
+candidate is written down in P70's block below.** Everything below this line is the
 running narrative, newest-first; ⚠️ **a figure further down was true when it was written.**
 
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
@@ -138,6 +139,46 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 ⚠️ **One P46 follow-up owned, not done**: the race-reach instrument recomputes an uncached cover
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
+
+**What P70 built, and the six things a cold session needs from it.**
+🔥 **(1) `RoundEngine.MinimumPlayers` is 2, and `RULES.md` §10 #7 — the oldest ruling in that list
+and the only one no packet ever owned — is discharged.** §2 recorded **2 to 6** as Settled from rev
+1, §7.1.1's small-table win conditions have been implemented since P25, and they were simply
+unreachable from a dealt game. ⚠️ **No rule changed at any table size**, so the rev did not move.
+🔥 **The reason it stood for thirty-odd packets is that the constant had no assertion against the
+document** — `SmallTableTests.TheSmallestTableTheRulesDefineIsTheSmallestTableADealAccepts` is now
+that assertion. ⚠️ **`DefaultPlayers` did not move** (five is the table, P32), and **every default
+that read the floor meaning *four* now writes four down** — `SimulationOptions`, `TournamentOptions`,
+`MoneySweepOptions`, `DifficultyCalibrationTests`. **Nothing may read the floor meaning the ordinary
+table.**
+🔥 **(2) Lowering the floor let the lobby open a table the felt could not draw.** `TableRing` laid
+out four to six and **threw** otherwise; it has `[2] = [Top]` and `[3] = [Left, Right]` now.
+🔥 **Two-handed is the one table where the seat after you and the seat before you are the same
+seat**, so it has **no left and no right** — two `TableRingTests` facts had assumed both existed.
+🔥 **(3) Acceptance 2 came back a null that falsifies the packet's own premise.** The plan said
+§5.1's mutual lock *"becomes an ordinary round"* two-handed. **It never happened once** — nought in
+400 rounds at a 60-turn cap and nought in 120 at 400 — while **315 of those 400** ended with a rank
+closed against somebody. ⚠️ **The mechanism is the rungs' and not the rule's**: the mirror ban needs
+a seat to throw back the very rank it took because it wanted it, which a cover-maximising rung
+practically never does. **The lock stays asserted at the table state** (`FeedingBanTests`) and
+⚠️ **the zero is deliberately not fenced.**
+🔥 **(4) What the turn cap found instead is bigger: a two-handed table of `outs` does not
+converge.** **127 of 200 rounds abandoned** at the harness cap, **35 of 60 at ten times it**,
+settled rounds 25.8 turns either way — **stuck rather than slow**. **Three-handed settles 200 of
+200.** `STRATEGY.md` §12 carries it as a console measurement with its commands, **two candidate
+mechanisms named and neither chosen**: every rung maximises cover count, which two-handed is *not*
+the win condition (sets are legal covers and illegal declarations — **P25 predicted exactly this**),
+or §5.1's lock, which (3) argues against.
+⚠️ **(5) Every two-handed test is cap-aware, and it has to be.** `RoundEngine` has **no cap** — the
+harness's `SeatRecorder` is the only bound a round has ever had — so an unbounded two-handed loop
+hangs. Conformance runs at **2, 3, 4, 5 and 6** seats, ⚠️ **two-handed bounded at 60 turns as a
+stated cost decision** (three rounds in five stall, and each stall costs its whole cap).
+✅ **No published measurement moved and it was measured**: a seeded 300-game five-handed run writes
+a byte-identical CSV either side. Tree green at **1001**, from 981.
+⚠️ **(6) What is owed is a decision, not a line.** The lobby offers a two-handed table and a person
+sitting at one will watch rounds given up on their time limit. Either **a rung asked for §7.1.1's
+partition rather than for any partition** — a measured packet, and the obvious next one — or the
+lobby declines a size the engine can deal. ⚠️ **Do not "fix" it in the rules.**
 
 **What P69 built, and the six things a cold session needs from it.**
 🔥 **(1) Eleven §9 rows stopped being recommendations. `RULES.md` is rev 32, and three of them

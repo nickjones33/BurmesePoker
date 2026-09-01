@@ -29,6 +29,18 @@ namespace BurmesePoker.Tests.Sim;
 public class DifficultyCalibrationTests
 {
     /// <summary>
+    /// The table this class calibrates at — <b>four</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Written down rather than derived (P70).</b> Every one of these runs said
+    /// <c>RoundEngine.MinimumPlayers</c> and meant <em>four seats</em>, which was true only
+    /// while the floor happened to be four; P70 lowered it to two. The number is what this
+    /// class always ran at, and the dial's published spacing is quoted from the suite rather
+    /// than from here.
+    /// </remarks>
+    private const int FourHanded = 4;
+
+    /// <summary>
     /// The reference table: every level at one table, fully crossed.
     /// </summary>
     /// <remarks>
@@ -53,8 +65,8 @@ public class DifficultyCalibrationTests
         return Simulator.Run(new SimulationOptions
         {
             Strategies = levels,
-            Assignments = SeatingPlan.Balanced(levels, RoundEngine.MinimumPlayers),
-            Seats = RoundEngine.MinimumPlayers,
+            Assignments = SeatingPlan.Balanced(levels, FourHanded),
+            Seats = FourHanded,
             Games = 256,
             RoundsPerGame = 1,
             MasterSeed = 20260819,
@@ -100,7 +112,7 @@ public class DifficultyCalibrationTests
         var run = new SimulationOptions
         {
             Strategies = StrategyCatalog.Levels,
-            Seats = RoundEngine.MinimumPlayers,
+            Seats = FourHanded,
             Games = 8,
             RoundsPerGame = 2,
             MasterSeed = 20260819,
@@ -137,7 +149,7 @@ public class DifficultyCalibrationTests
         {
             Strategies = StrategyCatalog.Levels,
             Pairs = PairFamily.Adjacent,
-            Seats = RoundEngine.MinimumPlayers,
+            Seats = FourHanded,
             GamesPerCell = 14,
             MasterSeed = 20260819,
             Parallel = false
@@ -163,7 +175,7 @@ public class DifficultyCalibrationTests
         var everyone = Tournament.Run(new TournamentOptions
         {
             Strategies = StrategyCatalog.Levels,
-            Seats = RoundEngine.MinimumPlayers,
+            Seats = FourHanded,
             GamesPerCell = 14,
             MasterSeed = 20260819,
             Parallel = false

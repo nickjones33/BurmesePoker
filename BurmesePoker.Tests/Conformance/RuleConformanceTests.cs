@@ -4,6 +4,7 @@ using BurmesePoker.Domain.Cards;
 using BurmesePoker.Domain.Melds;
 using BurmesePoker.Domain.Money;
 using BurmesePoker.Domain.Play;
+using BurmesePoker.Sim;
 using BurmesePoker.Tests.Play;
 
 namespace BurmesePoker.Tests.Conformance;
@@ -39,13 +40,25 @@ public class RuleConformanceTests
         .. DifficultyLadder.All.Select(level => (Func<int, IPlayerAgent>)level.Create)
     ];
 
+    /// <remarks>
+    /// ⚠️ <b>Two and three seats arrived with P70</b> (RULES.md §10 #7): they are Settled sizes
+    /// that no dealt game could reach while <see cref="RoundEngine.MinimumPlayers"/> was 4.
+    /// 🔥 <b>Two-handed rounds are bounded and the bound is load-bearing</b> — P70 measured about
+    /// three two-handed rounds in five failing to converge at all (docs/STRATEGY.md §12), and
+    /// <see cref="RoundEngine"/> has no cap of its own, so an unbounded loop here would hang.
+    /// A stalled round is skipped: every event it produced was still audited on the way past, and
+    /// only the settlement check is owed a settlement.
+    /// </remarks>
     [Theory]
+    [InlineData(2, 40)]
+    [InlineData(3, 60)]
     [InlineData(4, 60)]
     [InlineData(5, 60)]
     [InlineData(6, 60)]
     public void OrdinaryRoundsBreakNoSettledRule(int seats, int games)
     {
         var players = (IReadOnlyList<PlayerId>)[.. Enumerable.Range(0, seats).Select(id => new PlayerId(id))];
+        var settled = 0;
 
         for (var game = 0; game < games; game++)
         {
@@ -54,17 +67,44 @@ public class RuleConformanceTests
             var seed = seats * 100_000 + game;
             var agents = players.ToDictionary(
                 player => player,
-                player => Field[(game + player.Value) % Field.Count](seed + player.Value));
+                player => Bounded(Field[(game + player.Value) % Field.Count](seed + player.Value), seats));
 
             var audit = new RuleConformance();
             var engine = RoundEngine.Shuffled(
                 players, agents, Stakes.Standard, new Random(seed), observer: audit);
 
             audit.Watch(engine.Table);
-            engine.Play();
+
+            try
+            {
+                engine.Play();
+            }
+            catch (RoundAbandonedException)
+            {
+                continue;
+            }
+
             audit.RoundIsSettled();
+            settled++;
         }
+
+        // Non-vacuity: a size whose every round stalled would have audited no settlement at all.
+        Assert.True(settled > 0, $"no {seats}-handed round of {games} settled.");
     }
+
+    /// <summary>
+    /// The harness cap, and the only bound a round has (BUILD-PLAN §3.7, P12).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Wide enough not to be the thing under test.</b> Ordinary rounds run 21–30 turns at
+    /// every table size measured; 400 is what the harness has used since P12, and it never fires
+    /// at three seats or more. 🔥 <b>Two-handed it is 60, and that is a cost decision made from a
+    /// measurement</b>: three rounds in five stall there, a stalled round costs its whole cap, and
+    /// a round that has not settled by 28 turns is stuck rather than slow — so 400 would buy this
+    /// theory row six minutes and nothing else.
+    /// </remarks>
+    private static IPlayerAgent Bounded(IPlayerAgent agent, int seats) =>
+        new SeatRecorder(agent, turnCap: seats == 2 ? 60 : 400);
 
     /// <summary>
     /// ✅ <b>§7.5, the first Settled rule that cannot be audited from one round</b> — so this is

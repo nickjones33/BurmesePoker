@@ -28,8 +28,16 @@ public sealed record MoneySweepOptions
     /// </summary>
     public required IReadOnlyList<Stakes> Ratios { get; init; }
 
-    /// <summary>Seats at the table (RULES.md §2.1).</summary>
-    public int Seats { get; init; } = RoundEngine.MinimumPlayers;
+    /// <summary>Seats at the table.</summary>
+    /// <remarks>
+    /// ⚠️ <b>Four, written down rather than derived (P70).</b> This read
+    /// <c>RoundEngine.MinimumPlayers</c> while that constant happened to be four — P32's exact
+    /// mistake, one layer down — and P70 lowered the floor to two. The number is kept at four
+    /// so that every programmatic caller that omits it plays the table it always played;
+    /// <c>Sim</c>'s own command line has defaulted to <see cref="SuiteOptions.DefaultSeats"/>
+    /// since P32 and does not reach this.
+    /// </remarks>
+    public int Seats { get; init; } = 4;
 
     /// <summary>Games wanted in each cell, rounded up to a whole number of seatings.</summary>
     public int GamesPerCell { get; init; } = 2000;

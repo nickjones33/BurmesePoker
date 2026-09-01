@@ -193,8 +193,10 @@ public class MatchEngineTests
     {
         var agents = Agents(ScriptedPlayerAgent.Passive());
 
+        // ⚠️ A three-handed table was refused here until P70, when the floor came down to the one
+        // RULES.md §2 has always recorded (§10 #7). One seat is a table no round can be dealt for.
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => new MatchEngine([Alice, Bob, Carol], agents, Stakes.Standard, new Random(1)));
+            () => new MatchEngine([Alice], agents, Stakes.Standard, new Random(1)));
         Assert.Throws<ArgumentException>(
             () => new MatchEngine([Alice, Bob, Carol, Carol], agents, Stakes.Standard, new Random(1)));
         Assert.Throws<ArgumentException>(

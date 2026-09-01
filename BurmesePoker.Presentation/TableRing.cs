@@ -77,17 +77,23 @@ public static class TableRing
     /// Read left to right, they are the ring anticlockwise from the front seat — which, seen
     /// from the front seat, is clockwise from its left. Four seats fill the sides and the far
     /// end; five leave the far end empty and pair the corners; six fill everything.
+    /// ⚠️ <b>Two and three arrived with P70</b>, when the engine's floor came down to the one
+    /// the rules have always recorded (RULES.md §2, §10 #7 discharged). 🔥 <b>Two-handed is the
+    /// one table where the seat after you and the seat before you are the same seat</b>, so it
+    /// has no left and no right: the single opponent faces you across the felt.
     /// </remarks>
     private static readonly Dictionary<int, RingSeat[]> Ring = new()
     {
+        [2] = [RingSeat.Top],
+        [3] = [RingSeat.Left, RingSeat.Right],
         [4] = [RingSeat.Left, RingSeat.Top, RingSeat.Right],
         [5] = [RingSeat.Left, RingSeat.TopLeft, RingSeat.TopRight, RingSeat.Right],
         [6] = [RingSeat.Left, RingSeat.TopLeft, RingSeat.Top, RingSeat.TopRight, RingSeat.Right]
     };
 
     /// <summary>
-    /// Every table size this can lay out — four seats (the engine's floor today, RULES.md
-    /// §10 #7) to six (the practical ceiling, §2.1).
+    /// Every table size this can lay out — two seats (the floor, RULES.md §2, dealt since P70)
+    /// to six (the practical ceiling, §2.1).
     /// </summary>
     public static IReadOnlyCollection<int> Sizes => Ring.Keys;
 
@@ -114,8 +120,8 @@ public static class TableRing
         if (!Ring.TryGetValue(seating.Count, out var others))
         {
             throw new ArgumentException(
-                $"A table of {seating.Count} is not one this lays out; the layouts cover four "
-                + "to six seats — the sizes the engine can deal today (RULES.md §10 #7, §2.1).",
+                $"A table of {seating.Count} is not one this lays out; the layouts cover two "
+                + "to six seats — the sizes the engine deals (RULES.md §2, §2.1).",
                 nameof(seating));
         }
 
