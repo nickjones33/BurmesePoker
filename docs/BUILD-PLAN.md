@@ -9114,7 +9114,7 @@ the CI trigger with the role's `pull: true` taking the image on the next play.**
 
 ---
 
-### P68 — The fix on the deployed table, and the notice inside the window ☐ — **added 2026-09-01 by P67**
+### P68 — The fix on the deployed table, and the notice inside the window ☑ — **added 2026-09-01 by P67, done the same day**
 
 **Goal.** Close P67's third acceptance clause on the site, and pay off the browser look P64 has been
 owed since it shipped. **Read first:** P67 and P66 above, and P64's finding (4).
@@ -9141,6 +9141,56 @@ owed since it shipped. **Read first:** P67 and P66 above, and P64's finding (4).
 rounds on the deployed table are seconds rather than minutes, with the log to show it; and the
 *played for you while away* notice is either seen on a screen or recorded as still unseen with the
 reason.
+
+---
+
+✅ **Build item 1 done, and the *running* image is what was read** (P60's finding (2)): container
+`3627cff93c13` runs image `d6a67496138c`, tagged **`26f4043`** = `main` = P67. Before the play the
+host ran `c70789d633` = **`0c57515`** (P65) — the image P66 measured — so **the fix genuinely was
+not on the site until this packet.** ⚠️ **The push and the playbook were Nick's**: a work cycle does
+not push, and the packet stopped and asked rather than doing it itself.
+
+✅ **Build item 2 done from a real browser on `poker.nickjones.dev`**, through Traefik and basicauth
+(Claude in Chrome, credentials entered by Nick — the dialog blocks automation, which is itself worth
+knowing). **Round 1: 28 turns in 2m07s. Round 2: 37 turns in 2m22s. Round 3: 28 turns in 6m07s.**
+**Zero `ran out of time` lines and zero exceptions**, and every `Take a card` press was followed by
+`Throw one away` on the next poll — P66's vanishing pair, drawing every time. ⚠️ **Read those wall
+clocks honestly**: they are the pace of the hand answering (a screenshot and a round trip an answer,
+~4 s a turn on rounds 1 and 2), and round 3 contains this packet's own 68-second disconnection and a
+reload. **The contrast that matters is with P66's stalled round at 27.5 s a turn, which was three
+180 s patiences spent on a person who had been asked something the screen never drew.**
+
+🔥 **Item 3 produced the packet's finding instead of the picture it asked for: on the shipped
+numbers the notice cannot be drawn by one drop.** The patience is **180 s** (`Lobby.cs`) and
+`DisconnectedCircuitRetentionPeriod` is **120 s** (`Program.cs`). `SeatChannel.CircuitDropped`
+restarts the stand-in to *drop*+180 while the framework gives the circuit up at *drop*+120, so
+**the computer can never have played for you while the framework is still holding you**, and
+`SeatBoard.PlayedForYouWhileAway` is zero on every ordinary return inside the window. ⚠️ **It is
+reachable only through `_ceiling`** — the ask plus **twice** the patience — **and only after two or
+more drops**: drops at 170 s and 250 s clamp the stand-in to *ask*+360 inside a window that closes
+at 370 s. **The notice is the flapping-connection case; the ordinary shape can never draw it.**
+⚠️ **Do not "fix" this by moving a constant** — P63 settled that the two clocks start at different
+events and that no pair satisfies the old fence.
+
+⚠️ **And the instrument that failed is worth more than another attempt.** `Blazor.disconnect()`
+was used to drop the circuit with the tab intact; it posts **`/_blazor/disconnect`**, the
+framework's *graceful* teardown (what a page unload sends), and the server log shows that POST
+returning **200**. **A graceful teardown is not a drop**: `Blazor.reconnect()` afterwards returned
+`true` and the page redrew, but **no press was ever answered again**. ✅ A reload then recovered the
+seat **by name** with the standing question and the same hand (P13.6). ⚠️ **Wrapping
+`window.WebSocket` after navigation captures nothing** — `blazor.web.js` has already opened its
+socket — so a tab-intact drop still needs the network interrupted underneath the browser, which is
+what P63 got for free by backgrounding a tab on a phone.
+
+🔥 **One thing was seen that the packet did not ask for: P64's restarted deadline working in the
+wild.** The round-3 claim was asked at 13:24:5x and answered at **13:28:2x — 3m30s, past its 180 s
+patience — without a stand-in**, because the drop at 13:25:58 moved the deadline to 13:28:58.
+✅ **And P54's copy-link renders on the deployed lobby**, which closes the look P61 recorded as owed.
+
+⚠️ **What the acceptance leaves open, and it is a packet rather than a line**: either write the
+reachability down as a fact with a test that constructs the two-drop case, or decide that a seat
+returning *past* the window should also be told what was decided while it was gone — today the round
+log is the only record.
 
 ---
 

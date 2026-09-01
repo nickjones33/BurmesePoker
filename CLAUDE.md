@@ -135,6 +135,42 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
 
+**What P68 found, and the five things a cold session needs from it.**
+🔥 **(1) P67's fix is on the site, and *pulled* is still not *running*.** Container
+`3627cff93c13` runs image `d6a67496138c` = tag **`26f4043`** = `main` = P67; before the play the host
+ran `c70789d633` = **`0c57515`** (P65), the image P66 measured — **the fix genuinely was not
+deployed until this packet.** ⚠️ **The push and the playbook were Nick's** — a work cycle does not
+push, and the packet stopped and asked.
+🔥 **(2) The stall did not recur, and the acceptance is the log.** Three rounds from a real
+Chrome through Traefik and basicauth: **28 turns in 2m07s, 37 in 2m22s, 28 in 6m07s**, with **zero
+`ran out of time` lines and zero exceptions**, every `Take a card` followed by `Throw one away` on
+the next poll. ⚠️ **Those wall clocks are the pace of the hand answering** (~4 s a turn; round 3
+holds this packet's own 68-second disconnection and a reload) — **the contrast that matters is
+P66's stalled round at 27.5 s a turn, three 180 s patiences spent on a question the screen never
+drew.**
+🔥 **(3) The finding: P64's *played for you while away* notice cannot be drawn by one drop.**
+Patience **180 s** (`Lobby.cs`) against `DisconnectedCircuitRetentionPeriod` **120 s**
+(`Program.cs`): `CircuitDropped` restarts the stand-in to *drop*+180 while the framework gives the
+circuit up at *drop*+120, so **the computer can never have played for you while the framework is
+still holding you**. ⚠️ **Reachable only through `_ceiling`** — the ask plus **twice** the patience
+— **and only after two or more drops** (drops at 170 s and 250 s clamp the stand-in to *ask*+360
+inside a window closing at 370 s). **It is the flapping-connection case.** ⚠️ **Do not "fix" it by
+moving a constant** — P63 settled that the two clocks start at different events.
+⚠️ **(4) `Blazor.disconnect()` is not a circuit drop, and an hour can be lost to that.** It posts
+**`/_blazor/disconnect`**, the framework's *graceful* teardown (what a page unload sends); the
+server answers **200** and lets the circuit go. `Blazor.reconnect()` then returns `true` and the
+page redraws — **and not one press is answered afterwards.** ✅ A reload recovered the seat **by
+name** with the standing question and the same hand (P13.6). ⚠️ **Wrapping `window.WebSocket` after
+navigation captures nothing** — `blazor.web.js` has already opened its socket — so a tab-intact drop
+needs the network interrupted underneath the browser, which is what P63 got by backgrounding a tab
+on a phone.
+🔥 **(5) Two things seen for free.** **P64's restarted deadline works in the wild**: a claim asked
+at 13:24:5x was answered at **13:28:2x — past its 180 s patience, without a stand-in** — because the
+drop restarted it. And ✅ **P54's copy-link renders on the deployed lobby**, closing the look P61
+recorded as owed. Tree green at **957**, unchanged; ⚠️ **the whole diff in this repository is
+documents.** **What is owed is a decision, not a line**: either fence the two-drop reachability with
+a test, or tell a seat returning *past* the window what was decided while it was gone.
+
 **What P67 built, and the five things a cold session needs from it.**
 🔥 **(1) A person's turn stops costing a patience, and the fix is one line where P66 said the
 clobber was.** `SeatBoard.Settled` — the bookkeeping after an accepted answer — puts the question
@@ -166,8 +202,9 @@ holds from the seat's **first take** onwards, and never holds a claim's permissi
 `ran out of time` lines**, no reload, over headless Chromium against
 `--people 1 --pace 200`. ⚠️ **The deployed half is owed and a work cycle cannot pay it**: *the
 deployed table's rounds back to seconds* is a measurement on `poker.nickjones.dev`, and
-`git push origin main` is the CI trigger. **That is `P68`**, which also looks at P64's *played for
-you while away* notice **inside** the retention window — the one shape it has never been drawn in.
+`git push origin main` is the CI trigger. ✅ **`P68` paid it 2026-09-01** — the fix is on the site,
+three rounds ran with **zero `ran out of time` lines**, and P64's *played for you while away* notice
+turned out to be **unreachable on a single drop** (see the P68 block above).
 Tree green at **957**, from 954; `Domain`, `Presentation`, `Server`, `Console` and `Sim`
 byte-identical.
 

@@ -10,6 +10,57 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
+🔥 **`P68` shipped 2026-09-01 on Opus 5: P67's fix is on the deployed table and a person's rounds are
+back to minutes-with-a-slow-hand rather than minutes-of-patience — and the notice P64 has owed a
+browser since it shipped turns out to be unreachable on a single drop, by arithmetic.** `RULES.md`
+stays **rev 31**, the tree is green at **957**, unchanged — ⚠️ **the whole diff in this repository is
+documents**, as in P60, P62, P63 and P66.
+
+- ✅ **(1) The running image is stated, and it was read the way P60 says to read it.** The container
+  `3627cff93c13` runs image `d6a67496138c`, which `docker images` tags **`26f4043`** = `main` = P67.
+  ⚠️ **Nick did the push and ran the play** — a work cycle does not push, and the packet stopped and
+  asked rather than doing it. Before the play the same host ran `c70789d633` = **`0c57515`** (P65),
+  which is P66's image: **the fix genuinely was not on the site until this packet.**
+- 🔥 **(2) The stall did not recur, and the acceptance is the log rather than the feel.** Three
+  rounds played from a real Chrome on `poker.nickjones.dev` through Traefik and basicauth:
+  **round 1, 28 turns in 2m07s; round 2, 37 turns in 2m22s; round 3, 28 turns in 6m07s** — and
+  **zero `ran out of time` lines and zero exceptions across the whole sitting.** ⚠️ **The honest
+  reading of those wall clocks is that they are the pace of the hand answering, not of the table**:
+  each answer here costs a screenshot and a round trip, ~4 s a turn on rounds 1 and 2, and round 3
+  contains this packet's deliberate 68-second disconnection and a reload. **P66's stalled round was
+  27.5 s a turn and consisted of three 180 s patiences being spent on a person who had been asked
+  something the screen never drew.** ✅ **Every `Take a card` press was followed by `Throw one away`
+  on the next poll** — P66's vanishing pair, drawing every time.
+- 🔥 **(3) P64's restarted deadline was seen working on the site, incidentally and for free.** The
+  round-3 claim question was asked at 13:24:5x and answered at **13:28:2x — 3m30s, past its 180 s
+  patience** — because the drop at 13:25:58 restarted the deadline to 13:28:58. **The seat was not
+  stood in for**, which is exactly what P64 built and what nothing had watched happen in the wild.
+- 🔥 **(4) The finding: `PlayedForYouWhileAway` cannot be greater than zero on a return inside the
+  retention window, after one drop.** The patience is **180 s** (`Lobby.cs`) and
+  `DisconnectedCircuitRetentionPeriod` is **120 s** (`Program.cs`). A drop at *d* seconds after the
+  question restarts the stand-in to *d*+180 (`SeatChannel.CircuitDropped`) while the framework gives
+  the circuit up at *d*+120 — **so the computer can never have played for you while the framework is
+  still holding you.** ⚠️ **It is reachable, but only through the ceiling and only after two drops**:
+  `_ceiling` is the ask plus **twice** the patience, so a second drop later than *ask*+240 clamps the
+  stand-in to *ask*+360 while retention runs to *drop₂*+120 — e.g. drops at 170 s and 250 s put the
+  stand-in at 360 s inside a window that closes at 370 s. **The notice is not dead code; it is the
+  flapping-connection case, and the ordinary one-drop shape can never draw it.**
+- ⚠️ **(5) So the notice is recorded as still unseen, with the reason — and the instrument that
+  failed is worth writing down.** `Blazor.disconnect()` was used to drop the circuit with the tab
+  intact; it posts **`/_blazor/disconnect`**, which is the framework's *graceful* teardown (what a
+  page unload sends), and the server log shows that POST returning **200**. **A graceful teardown is
+  not a drop**: `Blazor.reconnect()` afterwards returned `true` and the page redrew, but **no press
+  was ever answered again** — the circuit was gone, not retained. ✅ **A reload then recovered the
+  seat by name with the standing question and the same hand** (P13.6, and P66's finding (3) from the
+  other side). ⚠️ **Wrapping `window.WebSocket` after navigation captures nothing** — `blazor.web.js`
+  has already opened its socket — so a genuine tab-intact drop still has no instrument short of
+  interrupting the network under the browser.
+- ✅ **(6) P54's copy-link was seen on the deployed lobby**, rendering beside the URL — P61's fix
+  (the `:global()` rule the rewriter was scoping to nothing) drawn on the site rather than in a
+  headless engine, which P61 recorded as owed.
+
+---
+
 🔥 **`P67` shipped 2026-09-01 on Opus 5: a person's turn stops costing a patience — the question
 that arrives in the gap is no longer wiped by the answer that was in flight.** `RULES.md` stays
 **rev 31**, the tree is green at **957**, from 954 — ⚠️ **`Domain`, `Presentation`, `Server`,
@@ -3679,6 +3730,43 @@ harness prints today would be a guess wearing a number.
 
 ## Notes for the next session
 
+### What P68 leaves behind (2026-09-01)
+
+🔥 **(1) The stall track is closed, and the closing evidence is the log rather than a screen.**
+P65's four lines, P66's attribution and P67's one-line fix now stand together on the deployed
+table: three rounds, no `ran out of time` line, no exception, and every take answered by a throw
+prompt that actually drew. ⚠️ **What is *not* proved is that the race cannot still fire** — P66
+recorded two misses out of two on one circuit and none on the next, so a clean sitting is
+consistent with a race that did not happen. **The fix is fenced by `LostPromptTests` (P67), which
+is the stronger statement**; this packet's contribution is that the fence's subject is the code
+the site is running.
+
+🔥 **(2) The one live question this packet opened, and it is P64's own notice.** With the shipped
+numbers — **patience 180 s, retention 120 s** — a seat cannot be stood in for while the framework
+is still holding its circuit, so **`SeatBoard.PlayedForYouWhileAway` is zero on every ordinary
+return inside the window.** It becomes non-zero only through `SeatChannel`'s `_ceiling` (the ask
+plus twice the patience) after **two or more** drops. ⚠️ **This is not a bug and must not be
+"fixed" by moving a constant** — P63 settled that the two clocks start at different events and
+that no pair of constants satisfies the old fence; raising retention is fenced to raising the
+patience, which taxes everybody else. **The honest options are (a) write the reachability down as
+a fact with a test that constructs the two-drop case, or (b) decide the notice should also be said
+to a seat that returns *past* the window, where the round log is currently the only record.**
+Either is a packet; neither is a line.
+
+⚠️ **(3) The instrument gap, stated so the next session does not lose an hour to it.**
+**`Blazor.disconnect()` is not a circuit drop.** It posts `/_blazor/disconnect` — the graceful
+teardown a page unload sends — and the server answers **200** and lets the circuit go; the page
+still redraws after `Blazor.reconnect()` returns `true`, and **not one press is answered
+afterwards**. Wrapping `window.WebSocket` from `javascript_tool` after navigation captures nothing,
+because `blazor.web.js` has already opened its socket. **A tab-intact drop needs the network
+interrupted underneath the browser** — P63 got one for free by backgrounding a tab on a phone, and
+that remains the cheapest instrument for this shape.
+
+⚠️ **(4) Two smaller things.** ✅ **P54's copy-link renders on the deployed lobby**, which closes
+P61's owed look. And **the deployed table is still `hard`, five seats, one for people**, so a
+sitting occupies the house table for as long as it lasts; the seat is freed by closing the tab
+(`TableView.Dispose`).
+
 ### What P64 leaves behind (2026-08-31)
 
 ⚠️ **(1) The next packet is Nick's call, and `P65` is the one this work did not touch.** P63's
@@ -5663,6 +5751,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 | --- | --- | --- |
+| 2026-09-01 | P68 | **Done — P67's fix measured on the deployed table, on Opus 5.** Tree green at **957**, unchanged; ⚠️ **the whole diff in this repository is documents.** ✅ **Running image stated the way P60 says to**: container `3627cff93c13` runs `d6a67496138c` = tag **`26f4043`** = `main` = P67, where before the play the host ran `c70789d633` = `0c57515` (P65) — **the fix genuinely was not on the site until now.** ⚠️ **Nick pushed and ran the playbook** — the packet stopped and asked rather than pushing. 🔥 **Three rounds from a real Chrome through Traefik and basicauth — 28 turns in 2m07s, 37 in 2m22s, 28 in 6m07s — with zero `ran out of time` lines and zero exceptions**, every `Take a card` followed by `Throw one away` on the next poll; ⚠️ **those wall clocks are the pace of the hand answering, ~4 s a turn, against P66's stalled 27.5 s a turn made of three 180 s patiences.** 🔥 **P64's restarted deadline was seen working in the wild**: a claim answered 3m30s after it was asked, past its 180 s patience, without a stand-in, because the drop restarted it. 🔥 **The finding: `PlayedForYouWhileAway` cannot exceed zero on a return inside the window after one drop** — patience **180 s** against retention **120 s** means the stand-in is always later than the framework's giving-up — ⚠️ **and it is reachable only through `_ceiling` after two drops** (ask+2×patience clamps the stand-in inside a later drop's window). **The notice is the flapping-connection case, and the ordinary shape can never draw it.** ⚠️ **So it is recorded as still unseen with the reason**, and the instrument that failed is written down: **`Blazor.disconnect()` posts `/_blazor/disconnect`, the framework's graceful teardown — not a drop** (the reconnect returned true, the page redrew, and no press was ever answered again); a reload then recovered the seat by name with the standing question. ✅ **P54's copy-link seen on the deployed lobby** — P61's owed device check. No rules question; `RULES.md` stays rev 31. |
 | 2026-09-01 | P67 | **Done — a person's turn stops costing a patience, on Opus 5.** Tree green at **957**, from 954; ⚠️ **`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical**, so no measurement can move. 🔥 **The fix is one line**: `SeatBoard.Settled` puts the question down only when it is still the question that was answered, so a prompt `OnTold` installed in the gap survives the answer that was in flight. ⚠️ **`Read()` deliberately not used** — the channel's pending prompt is still the answered one at that moment. 🔥 **Build item 1 could not be done as written and that is the finding**: the window is a few instructions wide and nothing outside the class can be made to run inside it, so **the interleaving is played out rather than raced for** — which is why `Settled` is internal and `BurmesePoker.Web` gained the solution's second `InternalsVisibleTo` (the first being the Domain's, P21). ✅ **Both facts proved able to fail** on the unconditional `Asking = null`, for take → throw and for throw → the next take; a third fact holds all five questions to the one `Answer`. ⚠️ **The fixture found that the opening seat is never asked to take** — it claims and then throws — so the script holds from the seat's first take onwards. ✅ **Looked at in a browser locally**: 160 answers, twelve settled rounds, **zero `ran out of time` lines**. ⚠️ **The deployed half is owed** — a work cycle does not push — and is `P68`. No rules question; `RULES.md` stays rev 31. |
 | 2026-09-01 | P66 | **Done — the stall is reproduced on the deployed table and attributed, on Opus 5.** Tree green at **954**, unchanged; ⚠️ **the whole diff in this repository is documents** — no test was added because none could be from a sitting. ✅ **The deployed image was read off the running container first** (`c70789d633` = tag `0c57515` = HEAD), so **P65's instrument was really on the site**, and three of its four lines were seen live. 🔥 **Round 1 took 18m20s for 40 turns; round 3, answered promptly, took 34 seconds for 27** — the whole of the difference is questions put to a person that the person was never shown. 🔥 **The cause: after the seat answers *Take*, the action bar reads *It is not your turn* while the server holds a `Discard` question — proved by reloading eighteen seconds in and getting `Throw one away` and the same fourteen cards.** 🔥 **The mechanism is a lost update**: `SeatBoard.Answer` hands the answer over outside its gate, the engine asks the next question at once, `OnTold` installs it, and the answering thread then runs `Asking = null` over the top of it — take → discard being the tight pair, which is why the throw prompt is the one that vanishes. ⚠️ **A race and not a certainty** (two misses out of two, then ten clean pairs), recorded rather than guessed at. ✅ **A round boundary was watched either side of a circuit drop**, and the seat came back by name with the question intact. ⚠️ **P64's away-notice was correctly absent past retention and is still owed a look inside it.** `P67` is the fix, and its first build item is to prove the fence can go red. No rules question; `RULES.md` stays rev 31. |
 | 2026-08-31 | P65 | **Done — the hosted table says why it is not taking turns, on Opus 5.** Tree green at **954**, from 949; ⚠️ **`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical** — the diff is `Web`, the test project and documents, so **no measurement can move**. 🔥 **The packet's journal half was measured and withdrawn**: a hosted journal keeps the whole match in memory and rewrites the whole file every round — **~5.2 KB and ~55 lines a round**, so a month of house table is a **~110 MB file rewritten every two minutes** against a **512m** container, an **OOM-kill restart loop** rather than an instrument. 🔥 **What went in is four log lines that cannot grow** — `is dealing round N`, `settled round N in T turns`, `gave up on round N after L`, `is not dealing: W watching, S seat(s) still to be claimed, closed: C` — so **a silence between the first two is the engine parked in `Ask`**, and it is the only silence left. 🔥 **Writing the test found the case the dealer's line cannot cover**: a table nobody has sat down at starts no dealer and said nothing, so **the sentence is said in one place and called from two** (`Consider` declining, `Deal` stopping), never holding the gate. ✅ **P63's `_attending`-leak hypothesis is eliminated by test**, proved able to fail by making `StandUp` stop freeing the seat — ⚠️ **though `Leave`'s clamp makes an over-count invisible at one viewer**, a mutation that stayed green and is recorded. ⚠️ **`TablePlan.RoundTimeLimit` is new** (a hosted round could not be abandoned from a test before). ⚠️ **The ops half is in `ansible-nas`, default off, not run**, and **the stall is neither reproduced nor explained** — nothing here is on the deployed site. No rules question; `RULES.md` stays rev 31. |
