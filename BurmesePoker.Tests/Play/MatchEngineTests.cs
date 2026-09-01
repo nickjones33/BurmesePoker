@@ -452,11 +452,17 @@ public class MatchEngineTests
 
         Assert.Equal(WinStreak.None, match.Streak);
 
-        for (var round = 1; round <= 3; round++)
+        for (var round = 1; round <= 2; round++)
         {
             match.PlayRound(Deal());
             Assert.Equal(new WinStreak(Alice, round), match.Streak);
         }
+
+        // ⚠️ And the third is where the count is spent rather than reaching three: the round
+        // that fires §7.5 puts it back to nothing (RULES.md §9 #41, ruled 2026-09-01).
+        match.PlayRound(Deal());
+
+        Assert.Equal(WinStreak.None, match.Streak);
     }
 
     [Fact]
@@ -490,26 +496,92 @@ public class MatchEngineTests
     }
 
     /// <summary>
-    /// ⚠️ <b>RULES.md §9 #41's recorded default, fenced</b>: the streak is stated as a property
-    /// of a run rather than as a prize collected once, so a <b>fourth</b> consecutive win is
-    /// blamed exactly as the third was. <b>The day an expert says it resets, this is the test
-    /// that fails.</b>
+    /// ⚠️ <b>RULES.md §9 #41 as Nick ruled it on 2026-09-01, fenced</b>: the run is <b>spent</b>
+    /// when the blame is paid, so a <b>fourth</b> consecutive win is an ordinary round and it
+    /// takes three more wins to fire again. <b>The day an expert says it keeps firing, this is
+    /// the test that fails.</b>
     /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Reset to nothing, not to a run of one</b> — <em>the count starts over</em> means the
+    /// paying round is spent, so the very next win is length 1. The sixth round below is what
+    /// tells the two readings apart in the other direction: reset-to-one would have fired on the
+    /// fifth.
+    /// </remarks>
     [Fact]
-    public void TheStreakKeepsFiringUntilTheExpertSaysOtherwise()
+    public void TheStreakResetsWhenItPaysUntilTheExpertSaysOtherwise()
     {
         var match = Match(WinsImmediately());
 
-        for (var round = 1; round <= 3; round++)
+        for (var round = 1; round <= 2; round++)
         {
             match.PlayRound(Deal());
         }
 
+        var third = match.PlayRound(Deal());
+
+        Assert.True(third.Result.Win.ThirdConsecutiveWin);
+        Assert.Equal(WinStreak.None, match.Streak);
+
+        // The fourth win is an ordinary round: everybody pays their share of it again.
         var fourth = match.PlayRound(Deal());
 
-        Assert.True(fourth.Result.Win.ThirdConsecutiveWin);
-        Assert.Equal(new WinStreak(Alice, 4), match.Streak);
-        Assert.Equal(-28, fourth.Result.Payouts[Dan]);
+        Assert.False(fourth.Result.Win.ThirdConsecutiveWin);
+        Assert.Equal(new WinStreak(Alice, 1), match.Streak);
+        Assert.Equal(-8, fourth.Result.Payouts[Dan]);
+
+        var fifth = match.PlayRound(Deal());
+
+        Assert.False(fifth.Result.Win.ThirdConsecutiveWin);
+        Assert.Equal(new WinStreak(Alice, 2), match.Streak);
+
+        // …and three wins later it fires again, out of the same pocket.
+        var sixth = match.PlayRound(Deal());
+
+        Assert.True(sixth.Result.Win.ThirdConsecutiveWin);
+        Assert.Equal(WinStreak.None, match.Streak);
+        Assert.Equal(-28, sixth.Result.Payouts[Dan]);
+    }
+
+    /// <summary>
+    /// 🔥 <b>RULES.md §9 #46 as Nick ruled it on 2026-09-01: a re-seating resets the streak</b>,
+    /// so a run can never span a seat change and <em>which seating names the blamed seat</em>
+    /// never arises. <b>Replaces P35's fence on that row's old default.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠️ <b>Read at the deal rather than after the round</b>, because the round that follows a
+    /// re-seating writes its own winner into the streak and would hide the reset behind it. The
+    /// observer is told the round has started — which is after <c>NextSeating</c> and before
+    /// anybody has played — and then walks away, exactly as <see cref="AbandonsTheRound"/> does,
+    /// because a shuffled deal to seats that never improve runs for ever.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>The policy is asked on <c>PlayRound()</c> and never on the scripted overload</b>, so
+    /// the two rounds that build the streak are dealt to the seating this match was given.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void AReseatingResetsTheStreak()
+    {
+        MatchEngine? match = null;
+        var watcher = new ReadsTheStreakAsTheRoundIsDealt(() => match!.Streak);
+
+        match = new MatchEngine(
+            FourPlayers, Agents(WinsImmediately()), Stakes.Standard, new Random(1),
+            watcher, SeatingPolicy.EveryRound);
+
+        match.PlayRound(Deal());
+        match.PlayRound(Deal());
+
+        Assert.Equal(new WinStreak(Alice, 2), match.Streak);
+
+        // The two rounds above were dealt to the seating this match was given; only the shuffling
+        // entry point draws seats, and only that round is walked out of.
+        watcher.Arm();
+
+        Assert.Throws<AbandonedException>(() => match.PlayRound());
+
+        Assert.Equal(WinStreak.None, watcher.AtTheDeal);
     }
 
     [Fact]
@@ -565,6 +637,30 @@ public class MatchEngineTests
     }
 
     private sealed class AbandonedException : Exception;
+
+    /// <summary>
+    /// Reads the match's streak the moment a round is dealt, and abandons the round there.
+    /// </summary>
+    private sealed class ReadsTheStreakAsTheRoundIsDealt(Func<WinStreak> streak) : IGameObserver
+    {
+        private bool _armed;
+
+        public WinStreak? AtTheDeal { get; private set; }
+
+        /// <summary>Read and abandon the next round to be dealt, and no earlier one.</summary>
+        public void Arm() => _armed = true;
+
+        public void RoundStarted(int round, IReadOnlyList<PlayerId> seating, IReadOnlyList<Card> turnedUp)
+        {
+            if (!_armed)
+            {
+                return;
+            }
+
+            AtTheDeal = streak();
+            throw new AbandonedException();
+        }
+    }
 
     /// <summary>Wins on its first turn, writing down which round and turn it was asked about.</summary>
     private sealed class RecordsTheRound(List<(int Round, int Turn)> seen) : IPlayerAgent

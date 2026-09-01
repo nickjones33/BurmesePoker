@@ -110,7 +110,7 @@ public sealed class ConsoleObserver : IGameObserver
     /// leaves the seating itself to the line that always carries it.
     /// </remarks>
     public void SeatingChanged(PlayerId asked, IReadOnlyList<PlayerId> seating) =>
-        Say($"[{Palette.Quiet}]{Who(asked)} asked to change seats, and nobody minded.[/]");
+        Say($"[{Palette.Quiet}]{Who(asked)} asked to change seats, and the table agreed.[/]");
 
     public void SeatingRefused(PlayerId asked, PlayerId refused) =>
         Say(

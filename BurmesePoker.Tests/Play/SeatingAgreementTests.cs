@@ -84,19 +84,21 @@ public class SeatingAgreementTests
     }
 
     /// <summary>
-    /// ⚠️ <b>§9 #47 — <em>agree</em> means everybody, and that is a recorded default rather than
-    /// a settled rule.</b>
+    /// 🔥 <b>§9 #47 as Nick ruled it on 2026-09-01: agreement is a majority of the seats that
+    /// expressed a preference</b>, and three asking against one refusing moves the seats.
     /// </summary>
     /// <remarks>
-    /// <b>The fence this packet owes.</b> §9 #47 asks whether agreement is unanimous or a
-    /// majority; the recommendation, taken here, is <b>unanimous among the people at the
-    /// table</b> — because a majority moves somebody's seat against their will in a game with
-    /// money on it. Three asking and one refusing is exactly the case that separates the two
-    /// readings, and under a majority the seats would move. <b>They do not.</b> If an expert
-    /// overturns #47, this test is the one that fails, and it says so.
+    /// <b>The separating case, played the other way round.</b> Three-and-one is exactly what
+    /// tells unanimity from a majority, and until this ruling the seats stood. ⚠️ <b>It is a
+    /// majority of the <em>preferences</em> and not of the table</b>: consent is a no-op by
+    /// design (BUILD-PLAN §3.13), so counting a consenting bot as a vote against would leave a
+    /// five-handed table with one person at it unable ever to re-seat. ⚠️ <b>And the refusal is
+    /// not narrated</b>, because a refusal that was outvoted did not refuse anything — the table
+    /// is told the seating changed. <b>The day an expert says agreement is unanimous, this is the
+    /// test that fails.</b>
     /// </remarks>
     [Fact]
-    public void AgreementIsUnanimousUntilTheExpertSaysOtherwise()
+    public void AgreementIsAMajorityUntilTheExpertSaysOtherwise()
     {
         var observer = new RecordingObserver();
 
@@ -111,13 +113,72 @@ public class SeatingAgreementTests
             match.PlayRound();
         }
 
-        // Three of four wanted it. The seating stands, and the table is told why by name.
+        // Round 1 is the opening seating; the two questions after it both carry.
+        Assert.Equal(FourPlayers, observer.Seatings[0]);
+        Assert.NotEqual(FourPlayers, observer.Seatings[1]);
+
+        // Both questions carried. ⚠️ The second one is announced in somebody else's name — the
+        // asker narrated is the first asker in *turn order*, and the first re-seating moved the
+        // turn order — but it is never the seat that refused.
+        Assert.Equal(2, observer.SeatingChanges.Count);
+        Assert.Equal($"{FourPlayers[0]} asked", observer.SeatingChanges[0]);
+        Assert.DoesNotContain($"{FourPlayers[3]} asked", observer.SeatingChanges);
+        Assert.Empty(observer.SeatingRefusals);
+    }
+
+    /// <summary>
+    /// ⚠️ <b>A tie fails closed</b>: two asking and two refusing leaves the seating alone
+    /// (RULES.md §9 #47, ruled 2026-09-01).
+    /// </summary>
+    /// <remarks>
+    /// Half the table is not the table, and the seats move when the table wants them moved. ✅
+    /// <b>The refusal is narrated here</b>, because these refusals are what carried it — which is
+    /// the whole of the distinction the observer's event now draws.
+    /// </remarks>
+    [Fact]
+    public void ATieLeavesTheSeatingAlone()
+    {
+        var observer = new RecordingObserver();
+
+        var match = Match(
+            observer,
+            player => player == FourPlayers[0] || player == FourPlayers[1]
+                ? new SaysAboutTheSeating(SeatingOpinion.Ask)
+                : new SaysAboutTheSeating(SeatingOpinion.Refuse));
+
+        for (var round = 0; round < 3; round++)
+        {
+            match.PlayRound();
+        }
+
         Assert.All(observer.Seatings, seating => Assert.Equal(FourPlayers, seating));
         Assert.Equal(
-            [$"{FourPlayers[0]} asked, {FourPlayers[3]} refused",
-             $"{FourPlayers[0]} asked, {FourPlayers[3]} refused"],
+            [$"{FourPlayers[0]} asked, {FourPlayers[2]} refused",
+             $"{FourPlayers[0]} asked, {FourPlayers[2]} refused"],
             observer.SeatingRefusals);
         Assert.Empty(observer.SeatingChanges);
+    }
+
+    /// <summary>
+    /// ⚠️ <b>One seat asking at a table of consenting computers still moves the seats</b> — the
+    /// case a majority counted over the whole table would have made impossible.
+    /// </summary>
+    [Fact]
+    public void OneAskerAgainstThreeConsentingSeatsCarriesIt()
+    {
+        var observer = new RecordingObserver();
+
+        var match = Match(
+            observer,
+            player => player == FourPlayers[0]
+                ? new SaysAboutTheSeating(SeatingOpinion.Ask)
+                : new GreedyBotAgent());
+
+        match.PlayRound();
+        match.PlayRound();
+
+        Assert.NotEqual(FourPlayers, observer.Seatings[1]);
+        Assert.Equal([$"{FourPlayers[0]} asked"], observer.SeatingChanges);
     }
 
     /// <summary>

@@ -2,13 +2,56 @@
 
 Cross-session progress tracker. **`/poker` reads this first and updates it last.**
 
-Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 31) · Skill: `.claude/skills/poker/SKILL.md`
+Plan: `BUILD-PLAN.md` · Rules: `RULES.md` (rev 32) · Skill: `.claude/skills/poker/SKILL.md`
 
 State markers: `☐` not started · `◐` in progress · `☑` done
 
 ---
 
 ## Current state
+
+🔥 **`P69` shipped 2026-09-01 on Opus 5: eleven §9 rows are rulings rather than recommendations,
+three of them change play, and `RULES.md` is **rev 32**.** The tree is green at **981**, from 957 —
+⚠️ **`Presentation`, `Server`, `Sim` and `Web` are byte-identical**; the diff is `WinStreak`,
+`MatchEngine`, `GameJournal`'s constant, `IGameObserver`'s and the console's wording, the test
+project and documents.
+
+- 🔥 **(1) The streak resets when it pays, and a re-seating resets it too** (§9 #41; #46 **struck as
+  moot**). `WinStreak.After(winner, blameWasPaid)` hands back `None` on the round that fired §7.5 —
+  ⚠️ **`None`, not a run of one**, because the paying round is spent — and `AfterAReseating()` is
+  called from `MatchEngine.Reseated()`, ⚠️ **the one place both routes to a re-draw pass through**
+  (the table's agreement and the standing policy). ⚠️ **It resets on the *event*, never on a
+  changed order**: a fresh draw may legitimately come out identical.
+- 🔥 **(2) Agreement is a majority of the seats that expressed a preference** (§9 #47), `asks >
+  refuses`, ⚠️ **a tie failing closed** — and ⚠️ **not a majority of the table**, because
+  `SeatingOpinion.Consent` is a no-op by design and four consenting bots must not outvote the one
+  person who asked. 🔥 **`IGameObserver.SeatingRefused` was narrowed rather than renamed**: it fires
+  only when the refusals **carried** it, since a refusal that was outvoted is not a refused seating.
+  ⚠️ **The console's *"and nobody minded"* had quietly become false** and now says *"and the table
+  agreed."*
+- 🔥 **(3) The re-seating reset is invisible after the round, which is what the test had to solve.**
+  The round that follows a re-draw writes its own winner into the streak, so
+  `MatchEngineTests.AReseatingResetsTheStreak` reads the streak **at the deal** — from an observer's
+  `RoundStarted` — and then walks out of the round, because a shuffled deal to scripted seats that
+  never improve runs for ever. ⚠️ **The observer has to be armed**: it is attached for the two
+  scripted rounds that build the streak as well. ✅ **All three behaviour changes were proved able
+  to fail** by mutating the production code back to the old rule.
+- ✅ **(4) Nothing published moves, and it was measured rather than argued.** A seeded 300-game run
+  (`--seed 20260901`) writes a **byte-identical CSV** either side of the change (a HEAD worktree
+  against the tree); the journals are identical **bar the rev stamp**; and the pre-rev-32 journal
+  **replays to a byte-identical CSV**. ✅ **The conformance §7.5 case needed one arm and no
+  re-derivation** — it resets its own count after a firing round, and 120 rounds at four and five
+  seats still contain a streak.
+- ⚠️ **(5) Nine of the eleven rows changed no code at all, which is exactly how a fence rots.**
+  `RuledRowTests` holds every ruled row to a named test that **exists** and to saying *ruled by
+  Nick* with the date — ⚠️ **a `PLAYER` ruling is still a question**, and `EXPERT` outranks it.
+  ⚠️ **#39 stays open on today's default** (the two bonuses multiply, ×6 at five seats): Nick was
+  unsure, so it is **the only Unknown row with a live default and the first question for an
+  expert.** ⚠️ **The plan miscounted its own table** — *eight rows* over a list of **nine**.
+- ⚠️ **(6) One number for the next session: `dotnet test` is 14 minutes on this workstation**, not
+  the 6m33s recorded at P21.
+
+---
 
 🔥 **`P68` shipped 2026-09-01 on Opus 5: P67's fix is on the deployed table and a person's rounds are
 back to minutes-with-a-slow-hand rather than minutes-of-patience — and the notice P64 has owed a
@@ -2049,6 +2092,18 @@ unasserted altogether.
 ---
 
 ## What is next
+
+🔥 **As of 2026-09-01, with `P69` shipped, the open work is `P70` — the two-handed table — and it
+is blocked on nothing.** `RoundEngine.MinimumPlayers` comes down from 4 to 2, §7.1.1's small-table
+conditions are already built and tested, and the packet's real work is proving a two-handed round
+can be dealt, played and settled — and watching whether §5.1's mutual lock stops rounds converging.
+⚠️ **`P69` left it nothing to inherit**: no rule it touches moves at any table size, and no
+measurement moved. ⚠️ **Still blocked on Nick, unchanged:** `P40` needs the vetted Burmese text; the
+**WebKit half of `P53`** needs an iPhone; `P47`'s two rungs need instruments that do not exist; and
+`ansible-nas` still carries the unrun journal wiring. 🔥 **And §9 #39 is now the first question to
+put to an expert** — the only Unknown row left with a live default, and the weakest one P35 took.
+
+⚠️ **What follows was written before P69 and is kept for its reasoning.**
 
 🔥 **As of 2026-09-01 the open work is `P69` and `P70`, and for the first time since P57
 neither is blocked on anything.** Nick ruled on **eleven** of `RULES.md` §9's thirteen open rows the
@@ -5785,6 +5840,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 | --- | --- | --- |
+| 2026-09-01 | P69 | **Done — eleven §9 rows ruled, three of them changing play, on Opus 5.** `RULES.md` **rev 32**, `JournalHeader.CurrentRulesRevision` **32**, tree green at **981** from 957. 🔥 **The streak resets when it pays (#41) and a re-seating resets it too (#46, struck as moot)** — `WinStreak.After(winner, blameWasPaid)` and `AfterAReseating()`, the second called from `MatchEngine.Reseated()`, ⚠️ **the one place both routes to a re-draw pass through**, resetting on the **event** rather than on a changed order. 🔥 **Agreement is a majority of the seats that expressed a preference (#47)**, `asks > refuses`, ⚠️ **a tie failing closed** — not a majority of the table, because a consenting bot is a no-op by design. 🔥 **`IGameObserver.SeatingRefused` narrowed rather than renamed**: it fires only when the refusals carried it. 🔥 **The re-seating reset cannot be asserted after the round** — the next round overwrites the streak — so the fence reads it **at the deal** from an observer's `RoundStarted` and walks out of the round; ⚠️ **the observer must be armed**, and ⚠️ **the second re-seating is announced in a different seat's name**, because the asker narrated is the first asker in turn order and the order moved. ✅ **All three changes mutation-proved.** ✅ **No published measurement moves, measured**: a seeded 300-game run writes a byte-identical CSV either side, journals identical bar the rev stamp, and a pre-rev-32 journal replays byte-identically. ✅ **The conformance §7.5 case needed one arm and still finds a streak in 120 rounds.** ⚠️ **Nine rows changed no code**, so `RuledRowTests` holds each ruled row to a named test that exists and to saying who ruled it and when — a `PLAYER` ruling is still a question. ⚠️ **#39 stays open on the weakest default this document ever took** and is the first question for an expert. ⚠️ **The plan miscounted its own table (eight against nine).** |
 | 2026-09-01 | P68 | **Done — P67's fix measured on the deployed table, on Opus 5.** Tree green at **957**, unchanged; ⚠️ **the whole diff in this repository is documents.** ✅ **Running image stated the way P60 says to**: container `3627cff93c13` runs `d6a67496138c` = tag **`26f4043`** = `main` = P67, where before the play the host ran `c70789d633` = `0c57515` (P65) — **the fix genuinely was not on the site until now.** ⚠️ **Nick pushed and ran the playbook** — the packet stopped and asked rather than pushing. 🔥 **Three rounds from a real Chrome through Traefik and basicauth — 28 turns in 2m07s, 37 in 2m22s, 28 in 6m07s — with zero `ran out of time` lines and zero exceptions**, every `Take a card` followed by `Throw one away` on the next poll; ⚠️ **those wall clocks are the pace of the hand answering, ~4 s a turn, against P66's stalled 27.5 s a turn made of three 180 s patiences.** 🔥 **P64's restarted deadline was seen working in the wild**: a claim answered 3m30s after it was asked, past its 180 s patience, without a stand-in, because the drop restarted it. 🔥 **The finding: `PlayedForYouWhileAway` cannot exceed zero on a return inside the window after one drop** — patience **180 s** against retention **120 s** means the stand-in is always later than the framework's giving-up — ⚠️ **and it is reachable only through `_ceiling` after two drops** (ask+2×patience clamps the stand-in inside a later drop's window). **The notice is the flapping-connection case, and the ordinary shape can never draw it.** ⚠️ **So it is recorded as still unseen with the reason**, and the instrument that failed is written down: **`Blazor.disconnect()` posts `/_blazor/disconnect`, the framework's graceful teardown — not a drop** (the reconnect returned true, the page redrew, and no press was ever answered again); a reload then recovered the seat by name with the standing question. ✅ **P54's copy-link seen on the deployed lobby** — P61's owed device check. No rules question; `RULES.md` stays rev 31. |
 | 2026-09-01 | P67 | **Done — a person's turn stops costing a patience, on Opus 5.** Tree green at **957**, from 954; ⚠️ **`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical**, so no measurement can move. 🔥 **The fix is one line**: `SeatBoard.Settled` puts the question down only when it is still the question that was answered, so a prompt `OnTold` installed in the gap survives the answer that was in flight. ⚠️ **`Read()` deliberately not used** — the channel's pending prompt is still the answered one at that moment. 🔥 **Build item 1 could not be done as written and that is the finding**: the window is a few instructions wide and nothing outside the class can be made to run inside it, so **the interleaving is played out rather than raced for** — which is why `Settled` is internal and `BurmesePoker.Web` gained the solution's second `InternalsVisibleTo` (the first being the Domain's, P21). ✅ **Both facts proved able to fail** on the unconditional `Asking = null`, for take → throw and for throw → the next take; a third fact holds all five questions to the one `Answer`. ⚠️ **The fixture found that the opening seat is never asked to take** — it claims and then throws — so the script holds from the seat's first take onwards. ✅ **Looked at in a browser locally**: 160 answers, twelve settled rounds, **zero `ran out of time` lines**. ⚠️ **The deployed half is owed** — a work cycle does not push — and is `P68`. No rules question; `RULES.md` stays rev 31. |
 | 2026-09-01 | P66 | **Done — the stall is reproduced on the deployed table and attributed, on Opus 5.** Tree green at **954**, unchanged; ⚠️ **the whole diff in this repository is documents** — no test was added because none could be from a sitting. ✅ **The deployed image was read off the running container first** (`c70789d633` = tag `0c57515` = HEAD), so **P65's instrument was really on the site**, and three of its four lines were seen live. 🔥 **Round 1 took 18m20s for 40 turns; round 3, answered promptly, took 34 seconds for 27** — the whole of the difference is questions put to a person that the person was never shown. 🔥 **The cause: after the seat answers *Take*, the action bar reads *It is not your turn* while the server holds a `Discard` question — proved by reloading eighteen seconds in and getting `Throw one away` and the same fourteen cards.** 🔥 **The mechanism is a lost update**: `SeatBoard.Answer` hands the answer over outside its gate, the engine asks the next question at once, `OnTold` installs it, and the answering thread then runs `Asking = null` over the top of it — take → discard being the tight pair, which is why the throw prompt is the one that vanishes. ⚠️ **A race and not a certainty** (two misses out of two, then ten clean pairs), recorded rather than guessed at. ✅ **A round boundary was watched either side of a circuit drop**, and the seat came back by name with the question intact. ⚠️ **P64's away-notice was correctly absent past retention and is still owed a look inside it.** `P67` is the fix, and its first build item is to prove the fence can go red. No rules question; `RULES.md` stays rev 31. |

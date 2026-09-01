@@ -187,11 +187,14 @@ is on it now was raised *by* those answers rather than left over from before:
 1. ✅ **Does the ×5 need the 7♦ and the A♠ specifically?** **Answered: it does** — no other pair
    of tripled cards is a jackpot.
 
-What is open now is all downstream of the two scoring rules above: how the deal bonus combines
-with the clean bonus, whether either reaches the money cards, whether a streak keeps firing at a
-fourth win, and what happens if two players are dealt a winning thirteen at once. Every one of
-them is being **played on a recorded default** rather than left undecided, and each default has a
-test named after the question, so the day an expert answers, the failing test is the change list.
+What was open downstream of the two scoring rules above was ruled by Nick on 2026-09-01 —
+`PLAYER`, so an expert still outranks it. A streak **resets when it pays** (the fourth win in a
+row is an ordinary round), a **re-seating resets it too**, seats are re-drawn on a **majority of
+those with an opinion**, neither bonus reaches the money cards, and the earlier seat in turn order
+takes a deal both were dealt. ⚠️ **One thing is still genuinely undecided: whether the deal bonus
+multiplies with the clean bonus** — it does today, ×6 at five seats, and that is the first
+question to put to an expert. Every one of them is **played on a recorded reading** with a test
+named after the question, so the day an expert answers, the failing test is the change list.
 
 The two items this section used to carry were settled long ago and are kept struck through so the
 rot stays visible:

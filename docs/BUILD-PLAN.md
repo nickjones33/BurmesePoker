@@ -9194,7 +9194,45 @@ log is the only record.
 
 ---
 
-### P69 — The rows Nick ruled: a streak that resets, and an agreement that is a majority ☐ — **added 2026-09-01**
+### P69 — The rows Nick ruled: a streak that resets, and an agreement that is a majority ☑ — **added and done 2026-09-01**
+
+✅ **Shipped 2026-09-01.** `RULES.md` is **rev 32**, `JournalHeader.CurrentRulesRevision` is **32**,
+and the tree is green at **981** (from 957). **What a later packet needs from it:**
+
+- 🔥 **The reset is two methods on `WinStreak`, and neither is a caller's arithmetic**:
+  `After(winner, blameWasPaid)` hands back `None` when the round fired §7.5, and
+  `AfterAReseating()` is what `MatchEngine.Reseated()` calls. ⚠️ **Both routes to a re-seating go
+  through `Reseated()`** — the table's agreement and the standing policy — so the rule is in one
+  place; it resets on the **event**, never on a comparison of orders.
+- 🔥 **The re-seating reset cannot be asserted after the round, and that is the finding.** The round
+  that follows a re-seating writes its own winner into the streak, so a reset is invisible by the
+  time `PlayRound()` returns. `MatchEngineTests.AReseatingResetsTheStreak` reads the streak **at the
+  deal**, from an observer's `RoundStarted`, and then walks out of the round — because a shuffled
+  deal to scripted seats that never improve runs for ever. ⚠️ **The observer must be armed**: it is
+  attached for the two scripted rounds that build the streak as well.
+- ⚠️ **`WhoAskedForAChange` counts and still latches names.** The totals decide; *who asked* and
+  *who refused* stay the first of each in seating order. 🔥 **The narration was narrowed rather than
+  renamed**: `IGameObserver.SeatingRefused` now fires only when the refusals **carried** it, because
+  a refusal that was outvoted is not a refused seating — and the console's *"and nobody minded"*
+  became *"and the table agreed"*, which had quietly become false.
+- ⚠️ **The second re-seating is announced in a different seat's name**, which a test assumed away
+  at first: the asker narrated is the first asker **in turn order**, and the first re-seating moves
+  the turn order. **Assert the count and the absence of the refuser, not a repeated name.**
+- ✅ **Nothing published moves, measured rather than argued**: a seeded 300-game run at
+  `--seed 20260901` writes a **byte-identical CSV** either side of the change (HEAD worktree against
+  the tree), the journals are identical **bar the rev stamp**, and the pre-rev-32 journal **replays
+  to a byte-identical CSV**. `RoundsPerGame = 1`, so no experiment can reach a streak or a
+  between-round agreement.
+- ✅ **The conformance case needed one arm and no re-derivation**: it resets its own count after a
+  firing round, and 120 rounds at four and five seats still contain a streak, so the non-vacuity
+  assertion is not weakened.
+- ⚠️ **Nine rows changed nothing, which is exactly how a fence rots.**
+  `RuledRowTests` holds all eleven ruled rows to a named test that **exists**, and holds each row to
+  saying *ruled by Nick* with the date — a `PLAYER` ruling is still a question.
+- ⚠️ **The plan's own count was off by one**: it said *eight rows close on the default* over a table
+  listing **nine** (#33, #36, #37, #38, #40, #44, #48, #49, #50). The nine are what shipped.
+
+**The packet as it was planned follows.**
 
 **Goal.** Record eleven `§9` rulings Nick gave on 2026-09-01, build the three that change play, and
 take `RULES.md` to **rev 32**. **Read first:** `RULES.md` §5.1, §7.3, §7.4, §7.5 and §3 step 2, and

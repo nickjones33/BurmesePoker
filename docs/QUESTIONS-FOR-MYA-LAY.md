@@ -756,6 +756,12 @@ why this may not be decided in the document.
 
 ### The rest, in order of what they block
 
+⚠️ **Ten of the questions below were ruled by Nick on 2026-09-01** (`RULES.md` rev 32) — `PLAYER`,
+which an expert answer outranks, **so every one is still worth asking**. 🔥 **Ask them the way they
+are written**: the rulings are deliberately not repeated here, because reading one out first is the
+mistake this file exists to avoid. **Question 3 below (§9 #39) is the one Nick was unsure of and
+the one to ask first.**
+
 2. **What "on the initial deal" means.** *"I pick up my thirteen and they already all meld, before
    anybody has drawn anything. What happens next, and what do the others pay me?"* (§9 #38 — this
    decides whether §7.4 is a rule about the deal or about the first turn, and under one reading

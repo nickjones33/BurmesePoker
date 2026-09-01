@@ -153,10 +153,11 @@ public sealed class MatchEngine
     /// answer and never asks, exactly as it is told whether the declaration was jokerless.
     /// </para>
     /// <para>
-    /// ⚠️ <b>It is not reset by a re-seating.</b> The seats can move between the rounds of a
-    /// streak — by policy (P36) or because the table agreed (P37) — and the streak is about who
-    /// keeps winning rather than about where anybody sits. Who gets <em>blamed</em> is read off
-    /// the seating of the round being settled, which is RULES.md §9 #46's recorded default.
+    /// 🔥 <b>Two things end it besides somebody else winning</b>, both ruled by Nick on
+    /// 2026-09-01: paying the blame spends the run (§9 #41) and <b>a re-seating resets it</b>
+    /// (§9 #46). The second is why every round of a run shares one seating and the blamed seat
+    /// is never in doubt — ⚠️ <b>and it is the re-seating <em>event</em> that resets, not a
+    /// changed order</b>: a fresh draw may come out identical and the table has still moved.
     /// </para>
     /// </remarks>
     public WinStreak Streak { get; private set; } = WinStreak.None;
@@ -201,7 +202,11 @@ public sealed class MatchEngine
 
         var result = engine.Play();
         RoundsPlayed++;
-        Streak = Streak.After(result.Winner);
+
+        // §7.5 fired if the seat above paid the lot, and a run that has been paid for is spent
+        // (RULES.md §9 #41, ruled 2026-09-01). The round says what happened; the streak says
+        // what that leaves behind.
+        Streak = Streak.After(result.Winner, result.Win.PaidByTheSeatAboveAlone);
 
         foreach (var (player, delta) in result.Payouts)
         {
@@ -242,14 +247,14 @@ public sealed class MatchEngine
     {
         if (RoundsPlayed > 0 && WhoAskedForAChange() is { } asker)
         {
-            var agreed = Drawn();
+            var agreed = Reseated();
 
             // Narrated after the draw, because what a table is told is the seating it is getting.
             _observer?.SeatingChanged(asker, agreed);
             return agreed;
         }
 
-        return SeatingPolicy.ReseatsBefore(RoundsPlayed) ? Drawn() : Seating;
+        return SeatingPolicy.ReseatsBefore(RoundsPlayed) ? Reseated() : Seating;
     }
 
     /// <summary>
@@ -258,10 +263,20 @@ public sealed class MatchEngine
     /// </summary>
     /// <remarks>
     /// <para>
-    /// 🔥 <b>Somebody asked and nobody refused</b> — that is the whole rule, and §9 #47's recorded
-    /// default (unanimous among the people at the table) is the <em>nobody</em> in it. ⚠️ <b>A
-    /// table of consenting seats changes nothing</b>: consent is not desire, which is what lets a
-    /// computer seat consent without making every all-bot table shuffle itself every deal.
+    /// 🔥 <b>More seats asked than refused</b> — that is the whole rule, and it is §9 #47 as Nick
+    /// ruled it on 2026-09-01: agreement is a <b>majority of the seats that expressed a
+    /// preference</b>. ⚠️ <b>Not a majority of the table</b>, which is the whole of the subtlety:
+    /// <see cref="SeatingOpinion.Consent"/> is a no-op by design (BUILD-PLAN §3.13), so counting
+    /// consents as votes against would mean a five-handed table with one person at it could never
+    /// re-seat — four consenting bots outvoting the one seat that asked.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>A tie fails closed.</b> Two asking and two refusing leaves the seating alone: the
+    /// seats move when the table wants them moved, and half of it is not the table.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>A table of consenting seats changes nothing</b>: consent is not desire, which is what
+    /// lets a computer seat consent without making every all-bot table shuffle itself every deal.
     /// </para>
     /// <para>
     /// ⚠️ <b>Every seat is asked, even once a refusal has been heard.</b> The question is public
@@ -271,13 +286,16 @@ public sealed class MatchEngine
     /// </para>
     /// <para>
     /// <b>Asked in seating order</b>, so <em>who asked</em> and <em>who refused</em> are the first
-    /// of each in turn order and a replay names the same pair.
+    /// of each in turn order and a replay names the same pair — the totals decide, and the names
+    /// are how the table is told about it.
     /// </para>
     /// </remarks>
     private PlayerId? WhoAskedForAChange()
     {
         PlayerId? asked = null;
         PlayerId? refused = null;
+        var asks = 0;
+        var refusals = 0;
 
         foreach (var player in Seating)
         {
@@ -285,10 +303,12 @@ public sealed class MatchEngine
             {
                 case SeatingOpinion.Ask:
                     asked ??= player;
+                    asks++;
                     break;
 
                 case SeatingOpinion.Refuse:
                     refused ??= player;
+                    refusals++;
                     break;
 
                 case SeatingOpinion.Consent:
@@ -302,7 +322,10 @@ public sealed class MatchEngine
             return null;
         }
 
-        if (refused is { } objector)
+        // A refusal is narrated only when the refusals actually carried it. Saying the seating
+        // was refused on a round the seats moved would be a narration that contradicts the deal
+        // the table is about to be given (BUILD-PLAN P69 build item 3).
+        if (asks <= refusals && refused is { } objector)
         {
             _observer?.SeatingRefused(asker, objector);
             return null;
@@ -319,6 +342,22 @@ public sealed class MatchEngine
     /// are randomised, not that they must move; forcing a derangement would make the seating less
     /// random rather than more.
     /// </remarks>
+    /// <summary>
+    /// A fresh draw, and the streak it ends (RULES.md §9 #46, ruled 2026-09-01).
+    /// </summary>
+    /// <remarks>
+    /// 🔥 <b>Both routes to a re-seating come through here</b> — the table's agreement (P37) and
+    /// the standing policy (P36) — which is what keeps <em>a re-seating resets the streak</em> in
+    /// one place rather than in two. ⚠️ <b>The reset is the event and not a comparison</b>:
+    /// <see cref="Drawn"/> may hand back the order it was given, and the table has still got up
+    /// and sat down again.
+    /// </remarks>
+    private IReadOnlyList<PlayerId> Reseated()
+    {
+        Streak = Streak.AfterAReseating();
+        return Drawn();
+    }
+
     private IReadOnlyList<PlayerId> Drawn()
     {
         var drawn = Players.ToArray();

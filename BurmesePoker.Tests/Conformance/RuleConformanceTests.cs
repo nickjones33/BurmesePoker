@@ -80,6 +80,11 @@ public class RuleConformanceTests
     /// <see cref="RuleConformance"/> from that round's seating (§9 #46).
     /// </para>
     /// <para>
+    /// ⚠️ <b>The streak is spent when it pays</b> (RULES.md §9 #41, ruled 2026-09-01), so the
+    /// count restarts from nothing after a firing round — which makes a run rarer than it was
+    /// and the non-vacuity assertion below worth more.
+    /// </para>
+    /// <para>
     /// ⚠️ <b>The non-vacuity assertion is the point of the count.</b> Ordinary bots produce
     /// streaks by luck, so a run that happened to contain none would pass this test having
     /// checked nothing at all — which is exactly the failure mode P30.2's mutants exist to
@@ -131,6 +136,17 @@ public class RuleConformanceTests
                 Assert.All(
                     players.Where(player => player != above && player != result.Winner),
                     player => Assert.Equal(0, rounds[player]));
+            }
+
+            // 🔥 A run that has been paid for is spent (RULES.md §9 #41, ruled 2026-09-01), so
+            // the count starts over rather than going on to four. ⚠️ The audit keeps this
+            // arithmetic itself, exactly as it keeps the count — mirroring MatchEngine here
+            // would make the case check the engine against itself.
+            if (result.Win.ThirdConsecutiveWin)
+            {
+                last = null;
+                inARow = 0;
+                continue;
             }
 
             inARow = last == result.Winner ? inARow + 1 : 1;

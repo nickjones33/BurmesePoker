@@ -82,10 +82,16 @@ public interface IGameObserver
     void SeatingChanged(PlayerId asked, IReadOnlyList<PlayerId> seating) { }
 
     /// <summary>
-    /// Somebody asked to change seats and somebody would rather not, so the seating stands
-    /// (RULES.md §3 step 2; §9 #47's recorded default — agreement is unanimous).
+    /// Somebody asked to change seats and at least as many seats would rather not, so the seating
+    /// stands (RULES.md §3 step 2; §9 #47, ruled 2026-09-01 — agreement is a majority of the
+    /// seats that expressed a preference, and a tie fails closed).
     /// </summary>
-    /// <param name="asked">Who asked.</param>
+    /// <remarks>
+    /// ⚠️ <b>Narrated only when the refusals carried it.</b> A refusal outvoted is not a refused
+    /// seating, and saying so would contradict the deal the table is about to be given — so a
+    /// round the seats moved on narrates <see cref="SeatingChanged"/> and nothing else.
+    /// </remarks>
+    /// <param name="asked">Who asked. The first seat to ask, in turn order.</param>
     /// <param name="refused">Who would rather not. The first seat to refuse, in turn order.</param>
     void SeatingRefused(PlayerId asked, PlayerId refused) { }
 }

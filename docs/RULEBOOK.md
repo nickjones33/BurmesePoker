@@ -1,7 +1,7 @@
 # Burmese Poker — The Rulebook
 
 *The game, taught front to back for somebody who has never seen it. Derived from the official
-rules in `RULES.md` at **rev 31** — that document decides every rule; this one only teaches
+rules in `RULES.md` at **rev 32** — that document decides every rule; this one only teaches
 them. A short list of points our table has had to choose for itself is at the end.*
 
 ---
@@ -41,7 +41,8 @@ it; you stop when you decide to stop.
 
 1. Shuffle both decks together.
 2. **Draw for seats.** Seating is random, and it is drawn **once** — you keep your seat round
-   after round until the whole table agrees to draw again. Turn order is fixed and circular.
+   after round until the table agrees to draw again, which takes more players wanting it than
+   objecting. Turn order is fixed and circular.
 3. **Deal thirteen cards** to each player, one at a time around the table.
 4. **Turn up two cards** — one from the **bottom** of the deck, one from the **top** — and lay
    them face up on the table. These two designate the round's money cards (explained in *The
@@ -204,8 +205,10 @@ Three things can change that payment:
 - **A third win in a row.** Win three consecutive rounds and the **player immediately before
   you in turn order pays your whole round payment alone** — everyone else pays nothing. They
   are blamed for feeding you: theirs are the discards you have been taking. You still collect
-  exactly what you would have collected; it just all comes out of one pocket. Keep winning and
-  it keeps working this way, round after round, until you lose one.
+  exactly what you would have collected; it just all comes out of one pocket. **The count then
+  starts over**: your fourth win in a row is an ordinary round, and it takes three more wins in
+  a row before one seat carries it again. **Drawing for seats also starts the count over**, so a
+  run only ever counts rounds played in one seating.
 
 All three touch the round payment only. The money cards, next, settle the same way whatever
 the round was worth.
@@ -259,7 +262,10 @@ Everyone settles with everyone — the winner pays and collects in this step lik
 ## Changing seats
 
 Seats hold from round to round. Any player may propose drawing seats again in the gap between
-rounds; the seats are re-drawn **when the table agrees to it**, and only then.
+rounds, and everyone says whether they want it. The seats are re-drawn when **more players want
+it than object** — a player with no opinion is not a vote against, and an even split leaves the
+seats where they are. Drawing again also **resets a winning streak** (see *A third win in a
+row*), so a run of wins is always a run within one seating.
 
 ## A worked round
 
@@ -352,7 +358,7 @@ requirement.
 
 **The winner collects** the round value from everyone — **×2** jokerless (2–4 players) or
 **×3** (5–6), **×2** again dealt-complete, multipliers stacking; a **third straight win** is
-paid entirely by the seat before the winner.
+paid entirely by the seat before the winner, after which the count starts over.
 
 **The money cards** — the 7♦, A♠ and all jokers always; the two turn-ups' exact twins this
 round. Owned only if the deck dealt or drew them to you, and owned for ever. Each pays its
@@ -375,20 +381,19 @@ game elsewhere, these are the lines to compare before money is on the table:
    draws. A hand completed on your first turn is just a fast ordinary win.
 5. **Stacking the bonuses** (#39). The deal ×2 and the jokerless ×2/×3 multiply together.
 6. **The deal bonus and the money cards** (#40). Round payment only, like the other bonus.
-7. **A fourth win in a row** (#41). The streak keeps firing — the seat before the winner goes
-   on paying alone until the streak breaks.
+7. **A fourth win in a row** (#41). The streak resets when it pays: the fourth win is an
+   ordinary round, and three more wins in a row are needed before one seat carries it again.
 8. **The streak and the money cards** (#44). The substitution covers the round payment only;
    money cards settle pairwise as always.
-9. **Changing seats** (#45). Seats are re-drawn when the players agree to it — not because one
-   player demands it.
-10. **What "agree" means** (#47). Everybody. One objection keeps the seats where they are.
-11. **A re-seat in the middle of a streak** (#46). Whoever sits immediately before the winner
-    in the round they win their third — that seating, not an earlier one — pays.
-12. **Two players dealt winning hands at once** (#48). The earlier in turn order wins. The
+9. **Changing seats** (#45). Seats are re-drawn when the players agree to it, so anybody may
+   object and be counted — not because one player demands it over the table's objection.
+10. **What "agree" means** (#47). More players wanting it than objecting. Players with no
+    opinion are not counted, and a tie keeps the seats where they are.
+11. **Two players dealt winning hands at once** (#48). The earlier in turn order wins. The
     offer goes around in turn order, and the first to accept takes the round.
-13. **The claimed turned-up card** (#49). It lies face up in front of the claimer like any
+12. **The claimed turned-up card** (#49). It lies face up in front of the claimer like any
     other card taken in the open, until it leaves their hand.
-14. **Throwing a duplicate of a face-up card** (#50). You choose which physical copy you
+13. **Throwing a duplicate of a face-up card** (#50). You choose which physical copy you
     throw. Throw the hidden one, and the face-up card stays on the table in front of you.
 
 The numbers are the rows in `RULES.md` §9 where each reading is recorded, with the reasoning

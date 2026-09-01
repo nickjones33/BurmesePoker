@@ -690,44 +690,13 @@ public class RoundEngineTests
             result.Payouts);
     }
 
-    /// <summary>
-    /// ⚠️ <b>RULES.md §9 #46's recorded default, fenced</b>: the seats can move between the
-    /// rounds of a streak — by a house policy (P36) or because the table agreed to it (P37) — so
-    /// <b>which</b> seating names the payer is a live question. The default is <b>the round
-    /// being settled</b>, which is what settling a round from its own state already means.
-    /// <b>The day an expert says the run's first seating decides, this is the test that
-    /// fails.</b>
-    /// </summary>
-    [Fact]
-    public void TheSeatBlamedIsTakenFromTheSeatingOfTheRoundBeingSettled()
-    {
-        // The same four people, dealt in a different order: Alice now sits second, so the seat
-        // above her is Bob and not Dan. Nothing about the streak changed — only where everybody
-        // is sitting for the round that settles it.
-        PlayerId[] seating = [Bob, Alice, Carol, Dan];
-
-        var order = Order(DealBuilder.ForPlayers(4).Give(1, WinningHand));
-        var agents = FourPlayers.ToDictionary(
-            player => player,
-            player => player == Alice
-                ? (IPlayerAgent)new ScriptedPlayerAgent(new ScriptedTurn { Declare = true })
-                : ScriptedPlayerAgent.Passive());
-
-        var result = new RoundEngine(
-            seating, agents, Stakes.Standard, order, new Random(1),
-            streak: new WinStreak(Alice, 2)).Play();
-
-        Assert.Equal(Alice, result.Winner);
-        Assert.True(result.Win.ThirdConsecutiveWin);
-
-        // $30 from Bob, nothing from Carol or Dan.
-        var rounds = Settlement.RoundPayments(seating, Alice, Stakes.Standard, result.Win);
-
-        Assert.Equal(-30, rounds[Bob]);
-        Assert.Equal(0, rounds[Carol]);
-        Assert.Equal(0, rounds[Dan]);
-        Assert.Equal(30, rounds[Alice]);
-    }
+    // 🔥 <b>RULES.md §9 #46 is struck as moot since 2026-09-01</b>, so the fence that used to
+    // stand here — the same streak settled at two different seatings — has been replaced rather
+    // than deleted: Nick ruled that <b>a re-seating resets the streak</b>, so a run can never
+    // span a seat change and there is no second seating to choose between. The fact now lives
+    // where the reset does, at <c>MatchEngineTests.AReseatingResetsTheStreak</c>. ⚠️ This engine
+    // is still told a streak and still reads the payer off the seating it was handed; what
+    // changed is that nothing can hand it a streak drawn under a different one.
 
     [Fact]
     public void ARoundInNoStreakBillsEverybodyAsItAlwaysDid()

@@ -166,8 +166,17 @@ public sealed record JournalHeader(
     /// this revision that happens to deal a winning thirteen will diverge <em>loudly</em> on
     /// replay rather than quietly, which is the intended behaviour. §7.5 needs nothing written
     /// down at all: a streak is derived from the results a replay reproduces anyway.
+    /// Rev 32 is eleven rulings from Nick, three of which change play (RULES.md §9 #41, #46,
+    /// #47). ⚠️ <b>Only one of the three can reach a replay, and it reaches it the same way §7.5
+    /// does — through the results rather than through the file.</b> The streak now resets when it
+    /// pays and when the seats are drawn again, and a streak has never been written down; the
+    /// agreement is already recorded as a decision per seat, and the majority is counted from
+    /// those same answers, so a journal written before this revision replays under the new count
+    /// exactly as it was written. 🔥 <b>A pre-rev-32 journal whose table asked and was outvoted
+    /// therefore replays to a <em>different</em> seating</b> — which is the loud divergence a
+    /// rules change is supposed to produce, and the reason this constant moves at all.
     /// </remarks>
-    public const int CurrentRulesRevision = 31;
+    public const int CurrentRulesRevision = 32;
 
     /// <summary>
     /// How long the seating held (RULES.md §3 step 2), as the policy this match played under.

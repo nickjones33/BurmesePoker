@@ -11,10 +11,14 @@ build packet, update the docs, re-plan what follows, commit, and report. Defined
 `.claude/skills/poker/SKILL.md`. It is the intended way to work on this project — prefer it
 over ad-hoc changes.
 
+🔥 **Where the tree stands right now: green at 981 tests, `RULES.md` at rev 32, `P69` the last
+packet shipped and `P70` — the two-handed table — the next one.** Everything below this line is the
+running narrative, newest-first; ⚠️ **a figure further down was true when it was written.**
+
 🔥 **READ THIS FIRST — the plan grew eight entries on 2026-08-23, at Nick's direction:
 `P43`–`P50`, the strategy frontier and the writing-down** (`BUILD-PLAN.md` §5, one model
 recommendation per packet). ✅ **P43–P50 are all done (below). `P50` (the documentation cleanup —
-F10) was the last of them; the tree is green at 957.**
+F10) was the last of them, and the tree was green at every one of them.**
 🔥 **A fourth track was added 2026-08-28 at Nick's direction: `P51`–`P54`, *taking the table
 online*** (`BUILD-PLAN.md` §5, `docs/HOSTING.md`). ⚠️ **It is ops, not the rules/strategy
 programme** — no rule changes, `Domain` untouched by all four, **no suite regeneration owed**, and
@@ -120,8 +124,8 @@ diff is `Sim` + tests + docs only, no agent touched.
 digit-free and fenced — a pure-doc packet, no production code, tree 906 → 907), ✅ **P50** the
 documentation cleanup — F10 discharged (⚠️ **most of the known list was already current**: P43–P46's
 blast radius had brought §3/§4/§6/§12 up to date, so the genuine staleness was the top-block
-revision claims — `24/26/29`, `P35/P36 unbuilt`, `235 measurements`, all fixed to **rev 31 / built /
-372** — plus §7's resolution floor (`0.52/1.02 → 0.41/0.81`), §8's map and `cautious`/`counting`
+revision claims — `24/26/29`, `P35/P36 unbuilt`, `235 measurements`, all fixed to **the rev of the
+day / built / 372** — plus §7's resolution floor (`0.52/1.02 → 0.41/0.81`), §8's map and `cautious`/`counting`
 bullets (four-handed `± 1.0` → `± 0.8`), §10's "The answer" and §15's deal-win summary). 🔥 **The
 fence choice was extend-not-strip** (`PublishedFigureTests.TheProseFiguresTheStrategyDocumentQuotesAreTheFiguresInTheCsv`):
 `STRATEGY.md` is the measurement authority whose voice *is* inline figures, so a digit-free rewrite
@@ -134,6 +138,46 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 ⚠️ **One P46 follow-up owned, not done**: the race-reach instrument recomputes an uncached cover
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
+
+**What P69 built, and the six things a cold session needs from it.**
+🔥 **(1) Eleven §9 rows stopped being recommendations. `RULES.md` is rev 32, and three of them
+change play.** ⚠️ **All eleven are `PLAYER`** — Nick's recollection, which `EXPERT` outranks — so
+every one keeps its `…UntilTheExpertSaysOtherwise` fence. Nine close on the reading already built
+(#33, #36, #37, #38, #40, #44, #48, #49, #50); ⚠️ **#33 is the one worth reading** — *"you can block
+joker discards by taking one"* makes the joker block **deliberate**, so `STRATEGY.md` §14's
+jokerless rate is a floor **by ruling** rather than by caveat.
+🔥 **(2) The streak resets when it pays (#41), and a re-seating resets it too (#46, struck as
+moot).** `WinStreak.After(winner, blameWasPaid)` returns **`None`** on the round that fired §7.5 —
+⚠️ **`None`, not a run of one**: the paying round is spent, so the next win is length 1 and the next
+firing is three wins away — and `AfterAReseating()` is called from **`MatchEngine.Reseated()`**,
+⚠️ **the one place both routes to a re-draw pass through** (the agreement and the standing policy).
+⚠️ **It resets on the *event*, never on a changed order** — a fresh draw may come out identical.
+🔥 **(3) Agreement is a majority of the seats that expressed a preference (#47)** — `asks >
+refuses`, ⚠️ **a tie failing closed** — and ⚠️ **not a majority of the table**, because
+`SeatingOpinion.Consent` is a no-op by design and four consenting bots must not outvote the one
+person who asked. 🔥 **`IGameObserver.SeatingRefused` was narrowed rather than renamed**: it fires
+only when the refusals **carried** it. ⚠️ **The console's *"nobody minded"* had quietly become
+false.**
+🔥 **(4) The re-seating reset is invisible after the round, and that is the packet's finding.** The
+round that follows a re-draw writes its own winner into the streak, so
+`MatchEngineTests.AReseatingResetsTheStreak` reads the streak **at the deal**, from an observer's
+`RoundStarted`, and then walks out of the round — a shuffled deal to scripted seats that never
+improve runs for ever. ⚠️ **The observer must be armed** (it is attached for the scripted rounds
+too), and ⚠️ **the second re-seating is announced in a different seat's name**: the asker narrated
+is the first asker **in turn order**, and the first re-draw moved the order. ✅ **All three changes
+proved able to fail** by mutating the production code back.
+✅ **(5) No published measurement moves, measured rather than argued.** A seeded 300-game run
+(`--seed 20260901`) writes a **byte-identical CSV** either side (HEAD worktree against the tree),
+the journals are identical **bar the rev stamp**, and a **pre-rev-32 journal replays to a
+byte-identical CSV**. ✅ The conformance §7.5 case needed **one arm** — it resets its own count —
+and 120 rounds at four and five seats still contain a streak.
+⚠️ **(6) Nine rows changed no code, which is exactly how a fence rots.** `RuledRowTests` holds every
+ruled row to a named test that **exists** and to saying *ruled by Nick* with the date. ⚠️ **#39
+stays open on today's default** (the bonuses multiply, ×6 at five seats) — Nick was unsure, so it is
+**the only Unknown row with a live default and the first question to put to an expert**. ⚠️ **The
+plan miscounted its own table**: *eight rows* over a list of **nine**. ⚠️ **`dotnet test` is 14
+minutes on this workstation**, not P21's 6m33s. Tree green at **981**, from 957; `Presentation`,
+`Server`, `Sim` and `Web` byte-identical.
 
 **What P68 found, and the five things a cold session needs from it.**
 🔥 **(1) P67's fix is on the site, and *pulled* is still not *running*.** Container

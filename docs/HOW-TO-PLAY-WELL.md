@@ -140,9 +140,11 @@ been measured, and the answer came back the way this game keeps answering.
   has not been measured; nothing measured so far recommends it.
 - **The win on the deal** pays double, and it is luck: about one deal in thousands arrives
   already melded. There is no decision to make — if your dealt thirteen covers, declare.
-- **The third consecutive win** is paid entirely by the player above the winner. Whether a
-  table should change seats before somebody's third win — the one defence the rules offer —
-  has never been measured, and the computer never asks for it.
+- **The third consecutive win** is paid entirely by the player above the winner, and then the
+  count starts over. **Drawing for seats again resets it too** — which makes asking for a
+  re-draw the one defence the rules offer against somebody's run, available to anybody at the
+  table. ⚠️ **It has never been measured** (no experiment plays a second round), and the computer
+  never asks for it.
 
 ## Which computer should you sit with
 
