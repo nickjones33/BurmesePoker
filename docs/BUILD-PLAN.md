@@ -8933,7 +8933,7 @@ the deployed site — a work cycle does not push, and `pull: true` takes the ima
 
 ---
 
-### P66 — The stall, chased with the instrument that now exists ☐ — **added 2026-08-31 by P65**
+### P66 — The stall, chased with the instrument that now exists ☑ — **added 2026-08-31 by P65; done 2026-09-01 (Opus 5) — the stall is reproduced, and the cause is a prompt the server is holding that the screen never draws**
 
 **Goal.** Close P63's observation: reproduce the deployed table's three-minute stall with a cause
 named, or write it down as not reproduced. **Read first:** P63's finding (7) and P65 above.
@@ -8962,6 +8962,103 @@ play, neither of which a work cycle does. **It is Nick's two commands and then a
 **Acceptance.** The four lines are seen in the deployed container's log; a round boundary is watched
 either side of a circuit drop; and the P63 observation is either attributed or recorded as not
 reproduced.
+
+#### What it turned out to be
+
+✅ **The instrument works and nothing filters it.** The deployed container (image `c70789d633`, which
+`docker images` tags `0c57515` — HEAD, P65) said `Table 1 is not dealing: 1 watching, 1 seat(s)
+still to be claimed, closed: False.` and, 27 ms later, `Table 1 is dealing round 1.`; later
+`settled round 1 in 40 turns` and `settled round 2 in 34 turns`. **Three of the four lines were
+seen live**; `gave up on round N` was not, because it needs a round to run out the two-hour limit.
+
+🔥 **The stall reproduced on the first round, and it is a person's seat.** Round 1 was dealt at
+08:59:15 and settled at **09:17:35 — eighteen minutes for 40 turns**. 🔥 **The contrast is the
+measurement** — ⚠️ **and it is against this table's own later rounds rather than against P65's
+estimate of two minutes a round, which this sitting did not reproduce and did not test**: with the
+seat
+answered promptly, **rounds 3, 4 and 5 took 34 s, 34 s and 46 s for 27, 27 and 37
+turns.** Same table, same five seats, same patience; the whole of the difference is questions put
+to a person that the person was never shown. Watched from the page, the round log stood at **7 entries
+for a whole minute, jumped to 9, and then stood at 9 for the next three minutes** — the shape P63
+recorded exactly: nobody taking a turn, no exception, `/healthz` 200. **Each freeze is one patience**
+(the deployed table's is **180 s**), and each one ends `… ran out of time — the computer is playing
+this seat`.
+
+🔥 **The cause is a question the server is holding that the screen never draws.** At 04:12:07 local
+the seat answered *Take*; the hand went to fourteen cards and the action bar went to **`It is not
+your turn. Your hand is above.`** and stayed there until the computer threw for it three minutes
+later. ✅ **Proved server-side rather than inferred**: on the second occurrence the page was
+reloaded eighteen seconds in and came straight back with **`Throw one away`** and the fourteen
+cards — **the question was standing the whole time.** That is P63's *cleared on reload* as a
+mechanism rather than a coincidence.
+
+🔥 **The mechanism named, from reading the two files it lives in.** `SeatBoard.Answer` hands the
+answer to the connection **outside its own gate**; the engine thread that was parked in
+`SeatChannel.Ask` wakes, latches it, and **asks the very next question immediately** — which raises
+`Updated`, so `SeatBoard.OnTold` takes the gate and `Read()` installs the new prompt. The answering
+thread then takes the gate and runs `Asking = null`, **wiping the prompt that had just arrived**,
+and no further notification is ever sent for it. ⚠️ **Take → Discard is the tight pair** — the same
+thread asks it microseconds later — while Discard → the next Take waits for four computer seats,
+which is why the *take* prompt is always drawn and **the throw prompt is the one that vanishes.**
+⚠️ **One lead, stated as a correlation and not as a mechanism.** Both misses were on the **first**
+circuit — the one whose seat the computer had already stood in for twice — and the **second**
+circuit, which never timed out, drew every take/throw pair cleanly through **round 14**. **A seat
+that has been played for may be the state that arms it**; P67 should try that shape first, and must
+not treat it as established.
+
+⚠️ **It is a race and not a certainty**: it missed on two answers out of two on the first circuit
+and then drew every take/throw pair cleanly on a second one, through round 14. **The variance is unexplained and is
+recorded rather than guessed at**; a fence that cannot go red on today's code would falsify this
+attribution, which is the first thing P67 must find out.
+
+✅ **A round boundary was watched either side of a circuit drop.** The browser was killed at 09:18:2x
+(a drop with no close frame), the seat was given up past the two-minute retention, and re-sitting by
+the same name at **09:22:10** produced the standing `Throw one away` **at once**, fourteen cards,
+round intact; round 2 settled 47 s later. ⚠️ **P64's *played for you while away* notice was not
+drawn, correctly**: past the retention window the seat comes back as a fresh `SeatBoard` that has
+heard nothing, which is what P64 said it could not speak for. **It is still owed a look inside the
+window.**
+⚠️ **And the drop showed one more thing the log cannot say**: `Deal` gives up only at a round
+boundary, so a table whose only person walks away **plays the rest of that round at a patience a
+question** and says nothing until it ends.
+
+⚠️ **The instrument this sitting used, worth keeping.** `ssh -L 8081:<container-ip>:8080 <nas>`
+reaches the deployed container's own port: **no Traefik, no basicauth, no credential**, and it
+separates the application from the proxy — the passphrase P53 put in the gitignored inventory was
+never needed. Headless Chromium over CDP drove the seat (P61's instrument), and **`element.click()`
+is answered by Blazor**; only the clipboard needs a real press (P60).
+
+---
+
+### P67 — The throw prompt the server is holding and the screen is not ☐ — **added 2026-09-01 by P66**
+
+**Goal.** Stop a person's turn costing a patience. **Read first:** P66's *What it turned out to be*
+above, `BurmesePoker.Web/SeatBoard.cs` (`Answer`, `OnTold`, `Read`) and `SeatChannel.Ask`.
+
+**Build.**
+
+1. **Reproduce it in a test first, and do not skip this.** The whole attribution rests on the race,
+   so a fence that cannot be made red against today's code means P66 named the wrong cause and the
+   packet stops and says so. The shape: answer a `Take` on a real `SeatBoard` whose engine asks the
+   `Discard` on the answering thread's heels, then assert `Asking` is the **new** prompt.
+   ⚠️ **If it will not go red, try the state P66's correlation points at first** — a seat the
+   computer has already been stood in for — before concluding the cause was named wrongly.
+   ⚠️ **`Assert.Same` on the prompt** — a seat is asked twice a turn (P59), so *not null* proves
+   nothing.
+2. **Fix it where the clobber is**: null `Asking` only when it is still the prompt that was
+   answered — `if (ReferenceEquals(Asking, asked)) { Asking = null; }` — so a prompt `OnTold`
+   installed in the gap is kept. ⚠️ **Do not replace it with `Read()`**: between the answer latching
+   and `Ask` returning, `_pending` is still the *answered* prompt, and re-reading would draw a
+   control that has already been pressed, which is the thing the eager null exists to prevent.
+3. **Look for the same shape at the other four questions** — claim, permit, discard, declare — and
+   at `HandPanel`'s throw controls. The fix is one line; the fence should name the pair it is about.
+4. **Then look at it in a browser**, because that is where it was found and no test in this tree
+   could see it.
+
+**Acceptance.** A test that goes red on today's code and green on the fix; a hosted round played
+through a browser where every human turn is answered without a reload and without a
+`ran out of time` line; and the deployed table's rounds back to about two minutes with a person in
+a seat.
 
 ---
 

@@ -10,6 +10,57 @@ State markers: `☐` not started · `◐` in progress · `☑` done
 
 ## Current state
 
+🔥 **`P66` shipped 2026-09-01 on Opus 5: the stall is reproduced on the deployed table, and the
+cause is a question the server is holding that the screen never draws.** `RULES.md` stays **rev 31**,
+the tree is green at **954**, ⚠️ **and no test was added because none could be from a sitting** —
+**the whole diff in this repository is documents**, as in P60, P62 and P63. ⚠️ **The deployed image
+was read off the running container first**: `c70789d633`, which `docker images` tags **`0c57515`** —
+HEAD, so P65's instrument really was on the site.
+
+- ✅ **(1) Three of the four lines were seen live, unfiltered.** `Table 1 is not dealing: 1 watching,
+  1 seat(s) still to be claimed, closed: False.`, then 27 ms later `Table 1 is dealing round 1.`,
+  then `settled round 1 in 40 turns` and `settled round 2 in 34 turns`. **`gave up on round N` was
+  not seen** and could not be: it needs a round to run out the two-hour limit.
+- 🔥 **(2) The stall reproduced immediately, and the measurement is the contrast.** Round 1 was dealt
+  at 08:59:15 and settled at **09:17:35 — eighteen minutes for 40 turns**. With the seat answered
+  promptly, **rounds 3, 4 and 5 took 34 s, 34 s and 46 s for 27, 27 and 37 turns.** Same table, same five seats, same patience.
+  From the page it looked exactly as P63 described it: the round log stood at **7 entries for a
+  minute, jumped to 9, and stood at 9 for three more** — one **180 s** patience a freeze, each
+  ending `… ran out of time — the computer is playing this seat`.
+- 🔥 **(3) The cause is a lost prompt, and it was proved server-side rather than inferred.** After
+  the seat answered *Take*, the hand went to fourteen cards and the action bar read **`It is not
+  your turn. Your hand is above.`** ✅ **Reloading eighteen seconds in came straight back with
+  `Throw one away` and the same fourteen cards** — the question was standing the whole time. That is
+  P63's *cleared on reload* turned into a mechanism.
+- 🔥 **(4) The mechanism, from the two files it lives in.** `SeatBoard.Answer` hands the answer over
+  **outside its own gate**; the engine thread parked in `SeatChannel.Ask` wakes, latches it and
+  **asks the next question at once**, so `OnTold` → `Read()` installs the new prompt — and then the
+  answering thread takes the gate and runs `Asking = null`, **wiping it**, with no further
+  notification ever sent. ⚠️ **Take → Discard is the tight pair** (same thread, microseconds), while
+  Discard → the next Take waits for four computer seats — **which is why the take prompt always
+  draws and the throw prompt is the one that vanishes.** ⚠️ **It is a race, not a certainty**: two
+  misses out of two on the first circuit, then every pair clean on a second one through round 14.
+  ⚠️ **One lead, as a correlation and not a mechanism**: the circuit that missed had already had its
+  seat stood in for twice, and the clean one never timed out — **a seat that has been played for may
+  be the state that arms it**, which P67 should try first and must not assume.
+- ✅ **(5) A round boundary was watched either side of a circuit drop.** The browser was killed with
+  no close frame; past the two-minute retention the seat was given up; re-sitting by the same name
+  produced the standing `Throw one away` **at once**, round intact. ⚠️ **P64's *played for you while
+  away* notice was correctly absent** — past retention the seat returns as a fresh `SeatBoard` that
+  has heard nothing — **so that notice is still owed a look inside the window.** ⚠️ **And `Deal`
+  gives up only at a round boundary**, so a table whose only person walks away plays the rest of the
+  round at a patience a question and says nothing until it ends.
+- ⚠️ **(6) The instrument, worth keeping.** `ssh -L 8081:<container-ip>:8080 <nas>` reaches the
+  deployed container's own port — **no Traefik, no basicauth, no credential**, and it separates the
+  app from the proxy; the passphrase in the gitignored inventory was never needed. Headless Chromium
+  over CDP drove the seat (P61's), and **`element.click()` is answered by Blazor** — only the
+  clipboard needs a real press (P60).
+- 🔥 **(7) `P67` is the fix and its first build item is a falsification.** Null `Asking` only when it
+  is still the prompt that was answered. ⚠️ **A fence that cannot be made red on today's code means
+  P66 named the wrong cause**, and the packet stops and says so.
+
+---
+
 🔥 **`P65` shipped 2026-08-31 on Opus 5: the hosted table says when it is dealing, when it settled,
 when it gave up and when it is not dealing at all — and the journal half of the packet was withdrawn
 on a measurement.** `RULES.md` stays **rev 31**, the tree is green at **954**, from 949 —
@@ -1894,6 +1945,19 @@ unasserted altogether.
 ---
 
 ## What is next
+
+🔥 **As of 2026-09-01, the open work is `P67` — the throw prompt the server holds and the screen
+does not — and it is the first packet in a fortnight that is blocked on nothing.** P66 reproduced
+the stall on the deployed table and named its cause; the fix is one line in `SeatBoard.Answer` and a
+fence that must be proved able to go red first. ⚠️ **Behind it: the WebKit half of `P53` needs an
+iPhone, and `P40` needs Nick's vetted Burmese text.** ⚠️ **A push is still Nick's**: `git push origin
+main` is the CI trigger and the role's `pull: true` takes the image on the next play, so P67 will
+not be on the site the day it is built. ⚠️ **What the browser sitting still owes**: P64's *played for
+you while away* notice **inside** the retention window, P54's reaping watched live, P56's advanced
+group and two-step form, P61's touch-screen name column. ⚠️ **`ansible-nas` also carries an unrun
+change**: `roles/burmesepoker` has the journal wiring, switched off, committed but never played.
+
+⚠️ **What follows was written before P66 and is kept for its reasoning.**
 
 🔥 **As of 2026-08-31, the open work is `P66`, the WebKit half of `P53`, and `P40` — and every one
 of them is blocked on something only Nick can supply.** ⚠️ **`P66` (the stall, chased) cannot start
@@ -5546,6 +5610,7 @@ the other jokers (*"I'd assume"*), and that doubling is the ceiling — **supers
 
 | Date | Packet | Outcome |
 | --- | --- | --- |
+| 2026-09-01 | P66 | **Done — the stall is reproduced on the deployed table and attributed, on Opus 5.** Tree green at **954**, unchanged; ⚠️ **the whole diff in this repository is documents** — no test was added because none could be from a sitting. ✅ **The deployed image was read off the running container first** (`c70789d633` = tag `0c57515` = HEAD), so **P65's instrument was really on the site**, and three of its four lines were seen live. 🔥 **Round 1 took 18m20s for 40 turns; round 3, answered promptly, took 34 seconds for 27** — the whole of the difference is questions put to a person that the person was never shown. 🔥 **The cause: after the seat answers *Take*, the action bar reads *It is not your turn* while the server holds a `Discard` question — proved by reloading eighteen seconds in and getting `Throw one away` and the same fourteen cards.** 🔥 **The mechanism is a lost update**: `SeatBoard.Answer` hands the answer over outside its gate, the engine asks the next question at once, `OnTold` installs it, and the answering thread then runs `Asking = null` over the top of it — take → discard being the tight pair, which is why the throw prompt is the one that vanishes. ⚠️ **A race and not a certainty** (two misses out of two, then ten clean pairs), recorded rather than guessed at. ✅ **A round boundary was watched either side of a circuit drop**, and the seat came back by name with the question intact. ⚠️ **P64's away-notice was correctly absent past retention and is still owed a look inside it.** `P67` is the fix, and its first build item is to prove the fence can go red. No rules question; `RULES.md` stays rev 31. |
 | 2026-08-31 | P65 | **Done — the hosted table says why it is not taking turns, on Opus 5.** Tree green at **954**, from 949; ⚠️ **`Domain`, `Presentation`, `Server`, `Console` and `Sim` byte-identical** — the diff is `Web`, the test project and documents, so **no measurement can move**. 🔥 **The packet's journal half was measured and withdrawn**: a hosted journal keeps the whole match in memory and rewrites the whole file every round — **~5.2 KB and ~55 lines a round**, so a month of house table is a **~110 MB file rewritten every two minutes** against a **512m** container, an **OOM-kill restart loop** rather than an instrument. 🔥 **What went in is four log lines that cannot grow** — `is dealing round N`, `settled round N in T turns`, `gave up on round N after L`, `is not dealing: W watching, S seat(s) still to be claimed, closed: C` — so **a silence between the first two is the engine parked in `Ask`**, and it is the only silence left. 🔥 **Writing the test found the case the dealer's line cannot cover**: a table nobody has sat down at starts no dealer and said nothing, so **the sentence is said in one place and called from two** (`Consider` declining, `Deal` stopping), never holding the gate. ✅ **P63's `_attending`-leak hypothesis is eliminated by test**, proved able to fail by making `StandUp` stop freeing the seat — ⚠️ **though `Leave`'s clamp makes an over-count invisible at one viewer**, a mutation that stayed green and is recorded. ⚠️ **`TablePlan.RoundTimeLimit` is new** (a hosted round could not be abandoned from a test before). ⚠️ **The ops half is in `ansible-nas`, default off, not run**, and **the stall is neither reproduced nor explained** — nothing here is on the deployed site. No rules question; `RULES.md` stays rev 31. |
 | 2026-08-31 | P64 | **Done — the patience clock joined to the circuit, on Opus 5.** Tree green at **949**, from 941; ⚠️ **`Domain`, `Presentation`, `Console` and `Sim` byte-identical** — the diff is `Server`, `Web`, the test project and documents, so **no measurement can move**. 🔥 **The fix is one deadline**: `SeatChannel.Ask` waits to a deadline it re-reads rather than for a duration, and `CircuitDropped` moves that deadline to *now* plus the patience — **a restart, not a hold**, because a frozen tab runs no timers (P63 (4)) and a circuit the framework abandons never says so. 🔥 **What tells the seat is `SeatPresence`, a scoped `CircuitHandler` registered twice** — the page hands it the seat, the framework calls it — **the only thing in this client that knows a socket exists.** ✅ **The inequality is a `[Theory]` today's code passes half of**: the same drop at **0.0** and **0.6** of a patience, read back at **+0.8**, with the early case green and the late one red — **P63's finding (6) as a build failure** — and ✅ **an end-to-end twin over a real socket**, proved able to fail by un-registering the handler. ⚠️ **Identity, not presence**, because a seat is asked twice a turn (P59). ✅ **The silence is broken for the retained circuit**: `SeatBoard.PlayedForYouWhileAway` counts `SeatPlayedByTheComputer` between the drop and the return and `YourSeat` draws a `role="status"` notice put down by pressing it — ⚠️ **and *not* for the re-sit past the window**, where a fresh `SeatBoard` has heard nothing (P13.6) and the round log is the record. ⚠️ **A ceiling of twice the patience**, derived rather than a second constant, or a flapping client would stop the round. ⚠️ **`ContainerTests`' constants fence is kept and joined** by one that says the wiring exists — deleting the handler would leave the old fence passing over nothing. 🔥 **Neither constant moved**, as P63 instructed. ⚠️ **Owed: the notice has never been drawn in a browser** — `curl` is not a person, a synthesized touch is not a person, a headless engine answers its own media queries. No rules question; `RULES.md` stays rev 31. |
 | 2026-08-31 | P63 | **Done — the backgrounded tab measured on a phone on a carrier, and neither number moved, on Opus 5.** Tree green at **941**, unchanged; ⚠️ **no test was added and none could be** — the whole diff is documents. ⚠️ **Deployed commit read off the *running* container**: image `a7b9b7187dfb`, tagged **both `97230e3` and `be1056e`** (HEAD) — 🔥 **a documents-only commit rebuilds a byte-identical image, so one digest carries two tags.** 🔥 **The measurement: backgrounding the tab kills the circuit in 5.56 s** (`57889.6996ms` lifetime, Kestrel logging *the application aborted the connection*), **reproduced at 5.55 s** — ⚠️ **so P62's 4 min 26 s carrier idle timeout is not the binding constraint and is irrelevant to the pocket case.** ✅ **Attribution clean**: the close preceded the screen going off, and the rest of the window ran screen-on and `Awake`. 🔥 **A hidden tab never reconnects — zero `negotiate` in 5 min 51 s — which refutes P63's own keepalive option outright**, a frozen tab running no timers; the reconnect fires **1.69 s / 0.49 s** after foregrounding. ✅ **Inside the window nothing is lost** (62 s → identical board, no stand-in, no stand-up); **past it two stand-ins**, then the seat recovered **by name** with the round intact — P59's *losing the circuit is not losing the game* against a real radio — ⚠️ **and nothing on the returning screen said anything had been decided in the gap.** 🔥 **The decision is that neither constant moves, because the fence compares two clocks that start at different events**: retention starts at the drop, the patience started at the question, so the believed 60 s margin is 60 s only if you vanish the instant you are asked. ⚠️ **Run 1 shows it failing live — `ran out of time` is logged *before* `left the table`**, the computer playing the turn of a player the framework was still holding, which is precisely what P54's pairing exists to prevent. **No pair of constants can satisfy it**, and raising retention is fenced to raising the patience, **which taxes every other player rather than the absent one**. Successor `P64`. ⚠️ **A stall was observed and is recorded as unexplained**: ~3 min with no seat taking a turn, two independent reads, `/healthz` 200, zero exceptions, cleared on reload into Round 5 — 🔥 **the cause cannot be established because the app logs requests and never turns**, and **P24.1's hosted-table journal is the instrument that exists and was not switched on** (`P65`). ⚠️ **Carrier NAT rotated the source address within one session** (`172.59.190.202` → `.242`) and **`VPN by Google` armed itself the moment wifi went off** — two more reasons P62's *not the home range* test was weak. 🔥 **The APN is IPv6-only with 464XLAT** (`clat RUNNING`), so **P62's finding (7) does not generalise even to the same carrier and phone**; CLAT hides the missing `AAAA`. ✅ **P61's copy-link is visible on a real device** — its owed redeploy-and-device check. ⚠️ **A18 still unstressed** (a levels table has short names) and **the WebKit half of P53 still open.** No rules question; `RULES.md` stays rev 31. |

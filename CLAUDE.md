@@ -135,6 +135,42 @@ and the P45 laptop slept mid-run — re-time with `sim bench`, never trust a pas
 search per crossed-table discard (measured cheap — ~54 µs/call — but wasteful); a quick pass to
 share the seat's `OutsCache` is queued and does not change the measurement.
 
+**What P66 found, and the five things a cold session needs from it.**
+🔥 **(1) The stall is reproduced on the deployed table and the cause is named: a question the
+server is holding that the screen never draws.** The deployed image was read off the *running*
+container first (`c70789d633` = tag **`0c57515`** = HEAD), so **P65's instrument really was on the
+site**, and three of its four lines were seen live (`gave up on round N` needs a two-hour round).
+🔥 **Round 1 took 18m20s for 40 turns; rounds 3, 4 and 5, answered promptly, took 34 s, 34 s and 46 s** — same
+table, same seats, same patience. **The whole of the difference is questions put to a person that
+the person was never shown.**
+🔥 **(2) Proved server-side rather than inferred.** After the seat answers *Take* the hand goes to
+fourteen cards and the action bar reads **`It is not your turn. Your hand is above.`** — and
+**reloading eighteen seconds in comes straight back with `Throw one away` and the same fourteen
+cards.** That is P63's *cleared on reload* turned into a mechanism, and each miss costs one
+patience (**180 s** deployed), ending `… ran out of time — the computer is playing this seat`.
+🔥 **(3) The mechanism is a lost update across `SeatBoard` and `SeatChannel`.** `SeatBoard.Answer`
+hands the answer over **outside its own gate**; the engine thread parked in `Ask` wakes, latches it
+and **asks the next question at once**, so `OnTold` → `Read()` installs the new prompt — and then
+the answering thread takes the gate and runs `Asking = null` **over the top of it**, with no further
+notification ever sent. ⚠️ **Take → Discard is the tight pair** (same thread, microseconds) while
+Discard → the next Take waits for four computer seats, **which is why the take prompt always draws
+and the throw prompt is the one that vanishes.** ⚠️ **A race, not a certainty** — two misses out of
+two on one circuit, every pair clean on the next through round 14 — ⚠️ **and the one lead is a
+correlation rather than a mechanism**: the circuit that missed had already had its seat stood in for
+twice, the clean one never timed out. **`P67` is the fix and its first build item is to prove the fence can go red**;
+if it cannot, this attribution is wrong.
+✅ **(4) A round boundary was watched either side of a circuit drop.** Killed with no close frame,
+given up past the two-minute retention, re-sat by the same name — the standing `Throw one away`
+arrived **at once**, round intact. ⚠️ **P64's *played for you while away* notice was correctly
+absent** (past retention the seat is a fresh `SeatBoard` that has heard nothing) — **so it is still
+owed a look inside the window**. ⚠️ **`Deal` gives up only at a round boundary**, so a table whose
+only person walks away plays out that round at a patience a question and says nothing until it ends.
+⚠️ **(5) The instrument, and it needs no credential.** `ssh -L 8081:<container-ip>:8080 <nas>`
+reaches the deployed container's own port — **no Traefik, no basicauth** — which also separates the
+app from the proxy; headless Chromium over CDP drove the seat (P61's instrument), and
+**`element.click()` is answered by Blazor** — only the clipboard needs a real press (P60).
+⚠️ **Tree green at 954, unchanged: the whole diff in this repository is documents.**
+
 **What P65 built, and the five things a cold session needs from it.**
 🔥 **(1) The packet asked for the journal and measuring it withdrew that half.** `--journal` on a
 hosted table keeps **every decision of the match in memory** and **rewrites the whole file after
