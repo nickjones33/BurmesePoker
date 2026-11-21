@@ -20,7 +20,7 @@ jobs:
     runs-on: docker-builder
     steps:
       - name: Check out the tree
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Log in to the Gitea container registry
         # ⚠️ --password-stdin, never -p: an argument is visible in the process list and in
@@ -48,20 +48,24 @@ jobs:
       # The one request that separates a working image from a perfect-looking dead one
       # (P51's finding). A 404 here means the published image would draw the table once and
       # never move again.
+      # ⚠️ curl is pinned by digest, like the checkout action above by commit: this job runs with
+      # the host's docker socket, so a re-pushed upstream tag would run as root on the VM.
       - name: Prove the published image serves the script that starts the circuit
+        env:
+          CURL_IMAGE: curlimages/curl:latest@sha256:3fb7e13e5d179a845c97d78204f3f1064d1907037f26a3ebf91710571151fd93
         run: |
           docker rm -f burmesepoker-ci-check 2>/dev/null || true
           docker run -d --name burmesepoker-ci-check gitea.nickjones.dev/nickjones/burmesepoker:${{ github.sha }}
           for i in $(seq 1 30); do
             docker exec burmesepoker-ci-check dotnet --info >/dev/null 2>&1 || true
-            if docker run --rm --network container:burmesepoker-ci-check curlimages/curl:latest \
+            if docker run --rm --network container:burmesepoker-ci-check "$CURL_IMAGE" \
                  -sSf http://localhost:8080/healthz >/dev/null 2>&1; then
               break
             fi
             sleep 2
           done
-          docker run --rm --network container:burmesepoker-ci-check curlimages/curl:latest \
+          docker run --rm --network container:burmesepoker-ci-check "$CURL_IMAGE" \
             -sSf http://localhost:8080/healthz
-          docker run --rm --network container:burmesepoker-ci-check curlimages/curl:latest \
+          docker run --rm --network container:burmesepoker-ci-check "$CURL_IMAGE" \
             -sSf -o /dev/null http://localhost:8080/_framework/blazor.web.js
           docker rm -f burmesepoker-ci-check
